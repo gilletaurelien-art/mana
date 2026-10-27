@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="120" height="96" viewBox="0 0 120 96">
   <!-- Bandes horizontales dorées de même largeur, esprit marinière
-       ARMOR lux : lignes régulières sur bleu nuit, filigrane. -->
-  <g fill="none" stroke="#c9a227" stroke-width="2" opacity="0.45">
-    <line x1="0" y1="12" x2="120" y2="12"/>
-    <line x1="0" y1="36" x2="120" y2="36"/>
-    <line x1="0" y1="60" x2="120" y2="60"/>
-    <line x1="0" y1="84" x2="120" y2="84"/>
+       ARMOR lux : rayures pleines et régulières sur bleu nuit. -->
+  <g fill="#c9a227" opacity="0.45">
+    <rect x="0" y="8" width="120" height="8"/>
+    <rect x="0" y="32" width="120" height="8"/>
+    <rect x="0" y="56" width="120" height="8"/>
+    <rect x="0" y="80" width="120" height="8"/>
   </g>
 </svg>
