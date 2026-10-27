@@ -2,6 +2,7 @@ import { useState } from "react";
 import { usePath, baseUrl, routePromenade } from "./router";
 import { WALKS } from "./walks";
 import {
+  GlyphRecherche,
   GlyphRadio,
   GlyphNavigation,
   GlyphSecurite,
@@ -73,17 +74,21 @@ export default function App() {
     <>
       <header className="site-header">
         <div className="wrap">
-          <a className="brand" href={`${B}/`}>
-            MANA<em>.bzh</em>
-          </a>
           <nav className="nav">
-            <a href={`${B}/promenades`}>
-              <GlyphSentier />
-              <span>Promenades</span>
+            <a href={`${B}/`} aria-label="Rechercher — accueil" title="Rechercher">
+              <GlyphRecherche />
+              <span className="sr-only">Rechercher</span>
             </a>
             <a href={`${B}/radio`}>
               <GlyphRadio />
               <span>Radio</span>
+            </a>
+            <a className="brand" href={`${B}/`}>
+              MANA<em>.bzh</em>
+            </a>
+            <a href={`${B}/promenades`}>
+              <GlyphSentier />
+              <span>Promenades</span>
             </a>
             <a href={`${B}/territoire`}>
               <GlyphTerritoire />

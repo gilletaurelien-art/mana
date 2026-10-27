@@ -30,6 +30,16 @@ export function GlyphPorte({ size = 24 }: GlyphProps) {
   );
 }
 
+export function GlyphRecherche({ size = 24 }: GlyphProps) {
+  return (
+    <svg {...base} width={size} height={size} aria-hidden="true">
+      <circle cx="10.5" cy="10.5" r="6.5" />
+      <path d="m15.5 15.5 4.5 4.5" />
+      <Accent cx={10.5} cy={10.5} r={1.1} />
+    </svg>
+  );
+}
+
 export function GlyphRadio({ size = 24 }: GlyphProps) {
   return (
     <svg {...base} width={size} height={size} aria-hidden="true">
