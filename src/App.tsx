@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { usePath, baseUrl, routePromenade } from "./router";
 import { WALKS } from "./walks";
 import {
@@ -61,6 +62,12 @@ const MODULES = [
 
 export default function App() {
   const path = usePath();
+  const [lieu, setLieu] = useState("");
+
+  const chercher = () => {
+    const q = lieu.trim();
+    window.location.assign(`${B}/promenades${q ? `?q=${encodeURIComponent(q)}` : ""}`);
+  };
 
   return (
     <>
@@ -138,12 +145,38 @@ export default function App() {
           <section className="hero">
             <div className="wrap bulle-xl hero-moteur">
               <p className="hero-label">Terre, Mer & Lumière — Bretagne</p>
-              <h1 className="brand-grand">
-                MANA<em>.bzh</em>
-              </h1>
+              <h1 className="brand-grand">Où marchez-vous ?</h1>
               <p className="lede">
                 Promenades bretonnes.
               </p>
+
+              {/* Moteur de saisie de localité */}
+              <div className="moteur-barre" role="search" aria-label="Rechercher une localité">
+                <svg className="moteur-loupe" viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="10.5" cy="10.5" r="6.5" />
+                  <path d="m15.5 15.5 4.5 4.5" />
+                </svg>
+                <input
+                  id="moteur-lieu"
+                  type="search"
+                  autoComplete="off"
+                  placeholder="Commune, cap, grève…"
+                  value={lieu}
+                  onChange={(e) => setLieu(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && chercher()}
+                />
+                <button
+                  type="button"
+                  className="moteur-fleche"
+                  aria-label="Rechercher"
+                  onClick={chercher}
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4 12h15" />
+                    <path d="m13 6 6 6-6 6" />
+                  </svg>
+                </button>
+              </div>
 
               {/* Swipe des balades : scroll manuel, jamais auto */}
               <div className="swipe-balades" role="region" aria-label="Les balades — glisser pour explorer">

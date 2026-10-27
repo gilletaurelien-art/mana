@@ -15,6 +15,11 @@ export function Promenades() {
   const [boucle, setBoucle] = useState<FiltreBoucle>("tous");
   const [acc, setAcc] = useState<FiltreAcc>("tous");
   const [chien, setChien] = useState<FiltreChien>("tous");
+  const [q, setQ] = useState("");
+
+  useEffect(() => {
+    setQ((new URLSearchParams(window.location.search).get("q") ?? "").toLowerCase());
+  }, []);
 
   useEffect(() => {
     document.title = "Promenades — MANA.bzh";
@@ -28,7 +33,10 @@ export function Promenades() {
       w.dureeH <= dureeMax &&
       (boucle === "tous" || (boucle === "boucle" ? w.boucle : !w.boucle)) &&
       (acc === "tous" || w.poussettePmr) &&
-      (chien === "tous" || w.chiens !== "non")
+      (chien === "tous" || w.chiens !== "non") &&
+      (!q ||
+        w.lieu.toLowerCase().includes(q) ||
+        w.titre.toLowerCase().includes(q))
   );
 
   return (
@@ -91,6 +99,7 @@ export function Promenades() {
             </select>
           </div>
           <p className="page-note">
+            {q && <strong>Recherche « {q} » — </strong>}
             {resultats.length} parcours — la pause crêperie arrive avec
             les données réelles (aucun établissement inventé).
           </p>
