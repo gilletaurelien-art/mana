@@ -1,6 +1,6 @@
 // Glyphes SVG inline — zéro dépendance, zéro requête réseau.
-// Ultra-fins (1.5px), arrondis, accent ajonc en point focal —
-// vocabulaire littoral : porte, maison, vague, cap, estran.
+// Style « synapse » : trait 1.4, géométrie régulière sur grille 24,
+// arrondis généreux, accent or (pastille) en point focal.
 
 type GlyphProps = { size?: number };
 
@@ -10,7 +10,7 @@ const base = {
   viewBox: "0 0 24 24",
   fill: "none",
   stroke: "currentColor",
-  strokeWidth: 1.5,
+  strokeWidth: 1.4,
   strokeLinecap: "round" as const,
   strokeLinejoin: "round" as const,
 };
