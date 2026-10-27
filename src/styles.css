@@ -227,7 +227,7 @@ html {
     gap: var(--sp-1);
   }
   .site-header { padding: 0; }
-  .bulle, .bulle-xl { max-width: 100%; width: 100%; }
+  .bulle, .bulle-xl { max-width: 100%; }
 }
 .bulle .section-texte,
 .bulle .section-accroche {
