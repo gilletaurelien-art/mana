@@ -145,7 +145,7 @@ export default function App() {
           <section className="hero">
             <div className="wrap bulle-xl hero-moteur">
               <p className="hero-label">Terre, Mer & Lumière — Bretagne</p>
-              <h1 className="brand-grand">Où marchez-vous ?</h1>
+              <h1 className="brand-grand">Se promener</h1>
               <p className="lede">
                 Promenades bretonnes.
               </p>
