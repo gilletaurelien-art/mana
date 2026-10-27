@@ -1,7 +1,6 @@
 // Glyphes SVG inline — zéro dépendance, zéro requête réseau.
-// Style « synapse » : trait 1.4, géométrie régulière sur grille 24,
-// arrondis généreux, accent or (pastille) en point focal — l'icône
-// signe, elle ne décore pas.
+// Ultra-fins (1.5px), arrondis, accent ajonc en point focal —
+// vocabulaire littoral : porte, maison, vague, cap, estran.
 
 type GlyphProps = { size?: number };
 
@@ -11,12 +10,12 @@ const base = {
   viewBox: "0 0 24 24",
   fill: "none",
   stroke: "currentColor",
-  strokeWidth: 1.4,
+  strokeWidth: 1.5,
   strokeLinecap: "round" as const,
   strokeLinejoin: "round" as const,
 };
 
-function Accent({ cx, cy, r = 1.6 }: { cx: number; cy: number; r?: number }) {
+function Accent({ cx, cy, r = 1.5 }: { cx: number; cy: number; r?: number }) {
   return <circle cx={cx} cy={cy} r={r} fill="currentColor" stroke="none" />;
 }
 
@@ -64,8 +63,10 @@ export function GlyphFrance({ size = 24 }: GlyphProps) {
 export function GlyphTerritoire({ size = 24 }: GlyphProps) {
   return (
     <svg {...base} width={size} height={size} aria-hidden="true">
-      <path d="M9.4 4.6 5.8 7l.4 4.4 2.2 2.6-.3 2.6 2.6 3.1 2.7-.6 1.1-2.9 3.5-1.9-.6-3.9-2.8-1.6-1.5-3.2-2.6.4-2.1z" />
-      <Accent cx={11.6} cy={11.8} r={1.4} />
+      <path d="M4.5 8.5c2.4-1.2 4-1.2 5.8 0 1.8 1.2 3.6 1.2 5.4 0 1.6-1 3.1-1.2 4.8-.5" />
+      <path d="M4.5 13.5c2.4-1.2 4-1.2 5.8 0 1.8 1.2 3.6 1.2 5.4 0 1.6-1 3.1-1.2 4.8-.5" />
+      <path d="M4.5 18c2.4-1 4-1 5.8 0" />
+      <Accent cx={17.6} cy={18.2} r={1.6} />
     </svg>
   );
 }
@@ -73,11 +74,11 @@ export function GlyphTerritoire({ size = 24 }: GlyphProps) {
 export function GlyphEcosysteme({ size = 24 }: GlyphProps) {
   return (
     <svg {...base} width={size} height={size} aria-hidden="true">
-      <circle cx="12" cy="12" r="3.4" />
-      <circle cx="5.2" cy="7.2" r="2.1" />
-      <circle cx="18.8" cy="7.2" r="2.1" />
-      <circle cx="12" cy="19.6" r="2.1" />
-      <path d="M9.2 10.3 6.9 8.6M14.8 10.3l2.3-1.7M12 15.4v2.1" />
+      <circle cx="12" cy="12" r="3.2" />
+      <circle cx="5.2" cy="7.2" r="2" />
+      <circle cx="18.8" cy="7.2" r="2" />
+      <circle cx="12" cy="19.6" r="2" />
+      <path d="M9.2 10.4 7 8.8M14.8 10.4l2.2-1.6M12 15.2v2.4" />
     </svg>
   );
 }

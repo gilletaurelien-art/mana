@@ -134,7 +134,7 @@ export default function App() {
         <>
           <section className="hero">
             <div className="wrap bulle-xl hero-moteur">
-              <p className="hero-label">Terre & lumière — Bretagne</p>
+              <p className="hero-label">Élégance côtière & sauvage — Bretagne</p>
               <h1 className="brand-grand">
                 MANA<em>.bzh</em>
               </h1>

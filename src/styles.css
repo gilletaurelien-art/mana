@@ -1,15 +1,19 @@
-/* ===== MANA.bzh — design system « Terre & Lumière » =====
-   Encre, sable, or discret. L'intelligence se voit dans le service,
-   pas dans les effets visuels. Budget < 20 Ko, zéro dépendance UI. */
+/* ===== MANA.bzh — design system « Élégance Côtière & Sauvage » =====
+   Glaz breton, sable de grève, ardoise profonde, ajonc. Luxe outdoor,
+   ancrage breton contemporain — zéro folklore. Budget < 20 Ko,
+   zéro dépendance UI. */
 
 :root {
-  --ink: #1b2a4a;
-  --primary: #b08a2e;
-  --primary-deep: #8f6d1f;
-  --sand: #faf8f3;
-  --blanc-chaud: #ffffff;
-  --ecume: #e5e0d6;
-  --or: #c9a227;
+  /* Palette */
+  --glaz: #2b5b6c;
+  --glaz-profond: #1d4351;
+  --ajonc: #d98a6c;
+  --ajonc-clair: #e8ad52;
+  --sable: #f8f6f0;
+  --blanc: #ffffff;
+  --ecume: #e7e2d8;
+  --ardoise: #1c252c;
+  --ardoise-60: rgb(28 37 44 / 60%);
 
   --t-xs: 0.875rem;
   --t-s: 1rem;
@@ -25,27 +29,27 @@
   --sp-6: 48px;
   --sp-12: 96px;
 
-  --serif: "Marelle Baton 2", Georgia, serif;
-  --sans: "Rubik", system-ui, sans-serif;
+  --serif: "Cormorant Garamond", Georgia, serif;
+  --sans: "Plus Jakarta Sans", system-ui, sans-serif;
 }
 
 * { box-sizing: border-box; }
 
 @font-face {
-  font-family: "Marelle Baton 2";
-  src: url("./fonts/MarelleBaton2-Regular.woff2") format("woff2");
+  font-family: "Cormorant Garamond";
+  src: url("./fonts/cormorant-garamond-latin-600-normal.woff2") format("woff2");
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Plus Jakarta Sans";
+  src: url("./fonts/plus-jakarta-sans-latin-400-normal.woff2") format("woff2");
   font-weight: 400;
   font-display: swap;
 }
 @font-face {
-  font-family: "Rubik";
-  src: url("./fonts/Rubik-Regular.ttf") format("truetype");
-  font-weight: 400;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Rubik";
-  src: url("./fonts/Rubik-Bold.ttf") format("truetype");
+  font-family: "Plus Jakarta Sans";
+  src: url("./fonts/plus-jakarta-sans-latin-700-normal.woff2") format("woff2");
   font-weight: 700;
   font-display: swap;
 }
@@ -55,14 +59,14 @@ body {
   font-family: var(--sans);
   font-size: var(--t-s);
   line-height: 1.6;
-  color: var(--ink);
+  color: var(--ardoise);
   hyphens: auto;
 }
-html { background: var(--sand); }
+html { background: var(--sable); }
 
 .wrap { max-width: 1080px; margin: 0 auto; padding: 0 var(--sp-4); }
 
-/* ===== Header : pilule ovale flottante, en lévitation ===== */
+/* ===== Header : pilule flottante, glaze et lumière ===== */
 .site-header {
   position: sticky;
   top: var(--sp-2);
@@ -76,31 +80,31 @@ html { background: var(--sand); }
   align-items: center;
   justify-content: center;
   gap: var(--sp-4);
-  background: rgb(250 248 243 / 92%);
+  background: rgb(255 255 255 / 88%);
   border: 1px solid var(--ecume);
   border-radius: 999px;
   box-shadow:
-    inset 0 2px 6px rgb(255 255 255 / 85%),
-    0 4px 12px rgb(27 42 74 / 10%),
-    0 0 0 4px rgb(201 162 39 / 14%),
-    0 36px 80px rgb(27 42 74 / 26%);
+    inset 0 1px 2px rgb(255 255 255 / 90%),
+    0 4px 16px rgb(28 37 44 / 8%),
+    0 0 0 4px rgb(43 91 108 / 10%);
   padding: var(--sp-1) var(--sp-4);
   max-width: 1080px;
   width: fit-content;
 }
 .brand {
-  font-family: "Marelle Baton 2", var(--serif);
-  font-size: var(--t-m);
-  font-weight: 400;
-  color: var(--ink);
+  font-family: var(--serif);
+  font-size: var(--t-l);
+  font-weight: 600;
+  color: var(--glaz);
   margin: 0;
   text-decoration: none;
   white-space: nowrap;
+  letter-spacing: 0.01em;
 }
-.brand em { color: var(--or); font-style: normal; }
+.brand em { color: var(--ajonc); font-style: normal; }
 .nav { display: flex; gap: var(--sp-1); align-items: center; }
 .nav a {
-  color: var(--ink);
+  color: var(--ardoise);
   text-decoration: none;
   display: inline-flex;
   flex-direction: row;
@@ -111,28 +115,24 @@ html { background: var(--sand); }
   padding: 8px 16px;
   border-radius: 999px;
   border: 1px solid transparent;
-  transition: box-shadow 160ms ease, transform 160ms ease, border-color 160ms ease;
+  transition: box-shadow 160ms ease, transform 160ms ease, border-color 160ms ease, color 160ms ease;
 }
 .nav a:hover {
-  color: var(--primary);
+  color: var(--glaz);
   border-color: var(--ecume);
-  box-shadow:
-    inset 0 1px 2px rgb(255 255 255 / 90%),
-    0 3px 8px rgb(27 42 74 / 12%);
+  box-shadow: 0 3px 10px rgb(28 37 44 / 10%);
   transform: translateY(-1px);
 }
 .nav .nav-cta {
-  color: var(--primary);
-  background: rgb(255 255 255 / 70%);
-  border-color: var(--ecume);
-  box-shadow:
-    inset 0 1px 2px rgb(255 255 255 / 90%),
-    0 3px 10px rgb(27 42 74 / 14%);
+  color: var(--blanc);
+  background: var(--glaz);
+  border-color: var(--glaz);
 }
 .nav .nav-cta:hover {
-  box-shadow:
-    inset 0 1px 2px rgb(255 255 255 / 90%),
-    0 6px 16px rgb(27 42 74 / 20%);
+  color: var(--blanc);
+  background: var(--glaz-profond);
+  border-color: var(--glaz-profond);
+  box-shadow: 0 6px 16px rgb(43 91 108 / 30%);
   transform: translateY(-1px);
 }
 /* Mobile : icônes seules — le libellé passe en sr-only */
@@ -150,7 +150,7 @@ html { background: var(--sand); }
 
 /* ===== Hero ===== */
 .hero {
-  min-height: 78vh;
+  min-height: 74vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -161,41 +161,40 @@ html { background: var(--sand); }
 .hero .wrap { position: relative; max-width: 860px; }
 .hero-label {
   font-size: var(--t-xs);
-  letter-spacing: 0.18em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--primary);
+  color: var(--ajonc);
   margin: 0 0 var(--sp-2);
 }
 .hero h1.brand-grand {
-  font-family: "Marelle Baton 2", var(--serif);
-  font-size: clamp(2.4rem, 7vw, 4.5rem);
+  font-family: var(--serif);
+  font-size: clamp(2.6rem, 7vw, 4.8rem);
   white-space: nowrap;
-  line-height: 1.1;
-  font-weight: 400;
+  line-height: 1.05;
+  font-weight: 600;
   margin: 0 auto var(--sp-2);
-  color: var(--ink);
+  color: var(--ardoise);
 }
-.hero h1.brand-grand em { color: var(--or); font-style: normal; }
+.hero h1.brand-grand em { color: var(--ajonc); font-style: normal; }
 .hero .lede {
   font-size: var(--t-m);
   max-width: 46ch;
   margin: 0 auto var(--sp-4);
-  opacity: 0.9;
+  opacity: 0.85;
 }
 
-/* ===== Système bulle : UNE seule bulle, identique partout =====
-   Forme synapse : blob organique (rayons mixtes), anneau or,
-   reflet supérieur, ombre de lévitation — la signature MANA. */
+/* ===== Surfaces : cartes claires sur sable, panneau glaz =====
+   Rayons généreux (littoral), filets fins, ombres douces — pas de
+   dégradés décoratifs, pas de glassmorphism. */
 .bulle,
 .bulle-xl {
-  background: rgb(255 255 255 / 90%);
+  background: var(--blanc);
   border: 1px solid var(--ecume);
-  border-radius: 44px 56px 40px 52px / 52px 42px 56px 46px;
+  border-radius: 40px 52px 36px 48px / 48px 38px 52px 42px;
   box-shadow:
-    inset 0 2px 6px rgb(255 255 255 / 85%),
-    0 4px 12px rgb(27 42 74 / 10%),
-    0 0 0 4px rgb(201 162 39 / 14%),
-    0 36px 80px rgb(27 42 74 / 26%);
+    inset 0 1px 2px rgb(255 255 255 / 90%),
+    0 4px 16px rgb(28 37 44 / 7%),
+    0 0 0 4px rgb(43 91 108 / 8%);
   padding: var(--sp-2) var(--sp-4) var(--sp-2);
   text-align: center;
   max-width: 720px;
@@ -205,7 +204,7 @@ html { background: var(--sand); }
 .bulle-xl { padding: var(--sp-4) var(--sp-6) var(--sp-6); }
 @media (max-width: 720px) {
   .bulle, .bulle-xl {
-    border-radius: 28px 36px 24px 32px / 32px 26px 36px 30px;
+    border-radius: 26px 34px 22px 30px / 30px 24px 34px 28px;
     padding: var(--sp-4);
   }
   .site-header .wrap {
@@ -241,18 +240,18 @@ html { background: var(--sand); }
 .landing-section + .landing-section { margin-top: var(--sp-6); }
 .section-num {
   font-size: var(--t-xs);
-  letter-spacing: 0.14em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--primary);
+  color: var(--glaz);
   margin: 0 0 var(--sp-2);
 }
 .section-title {
   font-family: var(--serif);
   font-size: var(--t-xl);
-  font-weight: 400;
-  text-transform: uppercase;
-  line-height: 1.2;
+  font-weight: 600;
+  line-height: 1.15;
   margin: 0 0 var(--sp-4);
+  color: var(--ardoise);
 }
 .section-accroche {
   font-family: var(--sans);
@@ -262,15 +261,14 @@ html { background: var(--sand); }
 }
 .section-texte { margin: 0 0 var(--sp-4); opacity: 0.85; }
 
-/* Sous-bulle : l'accroche et le texte vivent dans une bulle
-   intérieure encre, posée dans la bulle de section */
+/* Sous-bulle : panneau glaz — l'accroche et le texte dedans */
 .sous-bulle {
-  background: var(--ink);
-  border: 1px solid var(--ink);
-  border-radius: 20px 26px 18px 24px;
+  background: var(--glaz);
+  border: 1px solid var(--glaz-profond);
+  border-radius: 22px 30px 20px 26px;
   box-shadow:
-    inset 0 1px 3px rgb(255 255 255 / 12%),
-    0 3px 10px rgb(27 42 74 / 14%);
+    inset 0 1px 3px rgb(255 255 255 / 14%),
+    0 6px 20px rgb(29 67 81 / 25%);
   padding: var(--sp-4);
   margin: 0 auto;
   max-width: 60ch;
@@ -281,12 +279,12 @@ html { background: var(--sand); }
     width: calc(100% + 2 * var(--sp-4));
     margin-left: calc(-1 * var(--sp-4));
     margin-right: calc(-1 * var(--sp-4));
-    border-radius: 16px 16px 24px 24px;
+    border-radius: 18px 18px 26px 26px;
   }
   .bulle.landing-section { padding-bottom: 0; }
 }
-.sous-bulle .section-accroche { font-size: var(--t-l); color: var(--sand); }
-.sous-bulle .section-texte { font-size: var(--t-s); color: #fff; opacity: 0.92; }
+.sous-bulle .section-accroche { font-size: var(--t-l); color: var(--sable); }
+.sous-bulle .section-texte { font-size: var(--t-s); color: var(--blanc); opacity: 0.92; }
 .sous-bulle .est-actions { margin-bottom: 0; }
 
 /* ===== Boutons ===== */
@@ -297,60 +295,52 @@ html { background: var(--sand); }
   font-size: var(--t-s);
   padding: 12px 26px;
   border-radius: 999px;
-  border: 1px solid var(--primary);
+  border: 1px solid var(--ajonc);
   text-decoration: none;
   cursor: pointer;
-  box-shadow: inset 0 1px 2px rgb(255 255 255 / 25%);
   transition: all 170ms ease;
 }
 .btn:hover { transform: translateY(-1px); }
 .btn-primary {
-  background: var(--ink);
-  color: var(--sand);
-  border-color: var(--ink);
-  box-shadow:
-    inset 0 1px 2px rgb(255 255 255 / 18%),
-    0 6px 18px rgb(27 42 74 / 22%);
+  background: var(--ajonc);
+  color: var(--blanc);
+  border-color: var(--ajonc);
+  box-shadow: 0 6px 18px rgb(217 138 108 / 30%);
 }
 .btn-primary:hover {
-  background: var(--primary);
-  border-color: var(--primary);
+  background: #c97a5c;
+  border-color: #c97a5c;
+  box-shadow: 0 8px 22px rgb(217 138 108 / 38%);
 }
 .btn-ghost {
-  background: rgb(255 255 255 / 75%);
-  color: var(--primary);
+  background: transparent;
+  color: var(--glaz);
   border-color: var(--ecume);
-  box-shadow: inset 0 1px 2px rgb(255 255 255 / 85%);
 }
 .btn-ghost:hover {
-  background: var(--or);
-  color: #fff;
-  border-color: var(--or);
-  box-shadow:
-    inset 0 1px 2px rgb(255 255 255 / 25%),
-    0 6px 18px rgb(201 162 39 / 35%);
+  background: var(--glaz);
+  color: var(--blanc);
+  border-color: var(--glaz);
 }
-/* Boutons dans la sous-bulle encre : blanc plein et blanc contour */
+.btn[disabled] { opacity: 0.45; cursor: not-allowed; transform: none; }
+/* Boutons dans le panneau glaz : blanc plein et contour */
 .btn-clair {
-  background: var(--blanc-chaud);
-  color: var(--ink);
-  border-color: var(--blanc-chaud);
-  box-shadow:
-    inset 0 1px 2px rgb(255 255 255 / 90%),
-    0 6px 18px rgb(27 42 74 / 25%);
+  background: var(--blanc);
+  color: var(--glaz-profond);
+  border-color: var(--blanc);
+  box-shadow: 0 6px 16px rgb(29 67 81 / 30%);
 }
-.btn-clair:hover { background: var(--sand); color: var(--primary); border-color: var(--sand); }
+.btn-clair:hover { background: var(--sable); color: var(--glaz); border-color: var(--sable); }
 .btn-clair-ghost {
   background: transparent;
-  color: var(--sand);
+  color: var(--sable);
   border-color: rgb(255 255 255 / 45%);
 }
 .btn-clair-ghost:hover {
   background: rgb(255 255 255 / 12%);
-  color: #fff;
+  color: var(--blanc);
   border-color: rgb(255 255 255 / 70%);
 }
-.btn[disabled] { opacity: 0.45; cursor: not-allowed; transform: none; }
 .est-actions {
   display: flex;
   gap: var(--sp-2);
@@ -358,7 +348,7 @@ html { background: var(--sand); }
   margin: 0 0 var(--sp-3);
 }
 
-/* ===== Hero-moteur : la porte d'entrée EST le produit ===== */
+/* ===== Hero-moteur : la porte d'entrée ===== */
 .moteur { max-width: 680px; margin: 0 auto var(--sp-2); }
 .moteur-categories {
   display: flex;
@@ -370,42 +360,42 @@ html { background: var(--sand); }
 .moteur-categorie-btn {
   font: inherit;
   font-size: var(--t-xs);
-  color: var(--ink);
-  background: rgb(255 255 255 / 55%);
+  color: var(--ardoise);
+  background: rgb(255 255 255 / 60%);
   border: 1px solid var(--ecume);
   border-radius: 999px;
   padding: 6px 16px;
   cursor: pointer;
   transition: all 160ms ease;
 }
-.moteur-categorie-btn:hover { border-color: var(--or); }
+.moteur-categorie-btn:hover { border-color: var(--glaz); color: var(--glaz); }
 .moteur-categorie-btn.on {
-  background: var(--ink);
-  color: var(--sand);
-  border-color: var(--ink);
+  background: var(--glaz);
+  color: var(--blanc);
+  border-color: var(--glaz);
 }
 .moteur-barre {
   display: flex;
   align-items: center;
   gap: var(--sp-1);
-  background: var(--blanc-chaud);
+  background: var(--blanc);
   border: 1px solid var(--ecume);
   border-radius: 999px;
   padding: 6px 6px 6px 18px;
   box-shadow:
-    inset 0 2px 6px rgb(255 255 255 / 85%),
-    0 4px 12px rgb(27 42 74 / 8%),
-    0 0 0 4px rgb(201 162 39 / 10%);
+    inset 0 1px 2px rgb(255 255 255 / 90%),
+    0 4px 12px rgb(28 37 44 / 7%),
+    0 0 0 4px rgb(43 91 108 / 8%);
 }
 .moteur-loupe {
   width: 18px;
   height: 18px;
   flex: 0 0 auto;
   fill: none;
-  stroke: var(--primary);
-  stroke-width: 1.6;
+  stroke: var(--glaz);
+  stroke-width: 1.5;
   stroke-linecap: round;
-  opacity: 0.8;
+  opacity: 0.85;
 }
 .moteur-barre input {
   flex: 1 1 auto;
@@ -415,13 +405,14 @@ html { background: var(--sand); }
   border: none;
   background: transparent;
   padding: 10px 4px;
+  color: var(--ardoise);
 }
 .moteur-barre input:focus { outline: none; }
 .moteur-barre:focus-within {
   box-shadow:
-    inset 0 2px 6px rgb(255 255 255 / 85%),
-    0 4px 12px rgb(27 42 74 / 8%),
-    0 0 0 4px rgb(201 162 39 / 28%);
+    inset 0 1px 2px rgb(255 255 255 / 90%),
+    0 4px 12px rgb(28 37 44 / 7%),
+    0 0 0 4px rgb(43 91 108 / 22%);
 }
 .moteur-note { font-size: var(--t-xs); opacity: 0.6; margin: var(--sp-2) 0 0; }
 @media (max-width: 720px) {
@@ -430,7 +421,7 @@ html { background: var(--sand); }
   .moteur-barre input { flex: 1 1 auto; min-width: 0; font-size: var(--t-s); padding: 10px 10px; border: none; }
   .moteur-fleche { width: 44px; height: 44px; flex: 0 0 44px; }
 }
-/* Flèche de recherche : pilule or ronde, dans la barre après le champ */
+/* Flèche : pilule glaz ronde, dans la barre après le champ */
 .moteur-fleche {
   flex: 0 0 auto;
   display: grid;
@@ -439,7 +430,7 @@ html { background: var(--sand); }
   height: 40px;
   border: none;
   border-radius: 50%;
-  background: var(--or);
+  background: var(--glaz);
   cursor: pointer;
   transition: transform 160ms ease, box-shadow 160ms ease;
 }
@@ -448,13 +439,13 @@ html { background: var(--sand); }
   height: 18px;
   fill: none;
   stroke: #fff;
-  stroke-width: 2;
+  stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 .moteur-fleche:hover {
   transform: translateX(2px);
-  box-shadow: 0 4px 14px rgb(201 162 39 / 45%);
+  box-shadow: 0 4px 14px rgb(43 91 108 / 45%);
 }
 
 /* ===== Pages éditoriales ===== */
@@ -462,25 +453,26 @@ html { background: var(--sand); }
 .page-titre {
   font-family: var(--serif);
   font-size: var(--t-xl);
-  font-weight: 400;
-  text-transform: uppercase;
-  line-height: 1.2;
+  font-weight: 600;
+  line-height: 1.15;
   margin: 0 0 var(--sp-4);
+  color: var(--ardoise);
 }
 .apercu-label {
   font-size: var(--t-xs);
-  letter-spacing: 0.14em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--primary);
+  color: var(--glaz);
   margin: 0 0 var(--sp-2);
 }
 .page-panel {
-  background: rgb(255 255 255 / 92%);
+  background: var(--blanc);
   border: 1px solid var(--ecume);
-  border-radius: 12px;
+  border-radius: 24px 30px 20px 28px;
   padding: var(--sp-6);
   max-width: 720px;
   margin: 0 0 var(--sp-4);
+  box-shadow: 0 4px 16px rgb(28 37 44 / 6%);
 }
 .page-intro {
   font-family: var(--sans);
@@ -488,31 +480,29 @@ html { background: var(--sand); }
   line-height: 1.6;
   max-width: 56ch;
   margin: 0;
-  color: var(--ink);
+  color: var(--ardoise);
 }
 .page-texte { margin: 0; line-height: 1.7; }
 .page-note { font-size: var(--t-xs); opacity: 0.6; margin-top: var(--sp-4); max-width: 60ch; }
 
-/* ===== Footer bulle encre ===== */
+/* ===== Footer : panneau ardoise ===== */
 .site-footer {
   border-top: none;
   padding: var(--sp-4) 0 var(--sp-6);
   font-size: var(--t-xs);
 }
 .site-footer > .wrap {
-  background: var(--ink);
-  border: 1px solid var(--ecume);
-  border-radius: 44px 56px 40px 52px / 52px 42px 56px 46px;
+  background: var(--ardoise);
+  border: 1px solid var(--ardoise);
+  border-radius: 40px 52px 36px 48px / 48px 38px 52px 42px;
   box-shadow:
-    inset 0 2px 6px rgb(255 255 255 / 85%),
-    0 4px 12px rgb(27 42 74 / 10%),
-    0 0 0 4px rgb(201 162 39 / 14%),
-    0 36px 80px rgb(27 42 74 / 26%);
+    inset 0 1px 3px rgb(255 255 255 / 10%),
+    0 8px 28px rgb(28 37 44 / 30%);
   padding: var(--sp-4) var(--sp-6);
   max-width: 1080px;
 }
 @media (max-width: 720px) {
-  .site-footer > .wrap { padding: var(--sp-4); border-radius: 20px 28px 18px 26px; }
+  .site-footer > .wrap { padding: var(--sp-4); border-radius: 22px 30px 20px 28px; }
 }
 /* Desktop : colonne 1 = 2/3 (présentation+contact), colonne 2 = 1/3 (liens) */
 @media (min-width: 721px) {
@@ -534,7 +524,7 @@ html { background: var(--sand); }
   gap: var(--sp-6);
   flex-wrap: wrap;
   padding-bottom: var(--sp-4);
-  color: var(--sand);
+  color: var(--sable);
   align-items: flex-start;
 }
 .footer-colonnes > div,
@@ -543,31 +533,31 @@ html { background: var(--sand); }
   border: none;
   padding: 0;
 }
-.footer-colonnes .brand { font-size: var(--t-m); margin: 0 0 var(--sp-1); }
-.site-footer .brand { color: #fff; }
-.footer-note { font-size: var(--t-xs); opacity: 0.8; margin-top: var(--sp-1); max-width: 55ch; }
+.footer-colonnes .brand { font-size: var(--t-l); margin: 0 0 var(--sp-1); }
+.site-footer .brand { color: var(--blanc); }
+.footer-note { font-size: var(--t-xs); opacity: 0.75; margin-top: var(--sp-1); max-width: 55ch; }
 .footer-nav { display: flex; flex-direction: column; gap: 6px; }
 .footer-nav a {
-  color: var(--sand);
+  color: var(--sable);
   text-decoration: none;
   display: inline-block;
-  background: rgb(255 255 255 / 8%);
-  border: 1px solid rgb(255 255 255 / 25%);
-  border-radius: 14px 18px 12px 16px;
+  background: rgb(255 255 255 / 6%);
+  border: 1px solid rgb(255 255 255 / 20%);
+  border-radius: 12px 16px 10px 14px;
   padding: 6px 14px;
   font-size: var(--t-xs);
   transition: all 160ms ease;
 }
 .footer-nav a:hover {
-  background: var(--sand);
-  color: var(--ink);
-  border-color: var(--sand);
+  background: var(--sable);
+  color: var(--ardoise);
+  border-color: var(--sable);
   transform: translateY(-1px);
 }
 
 /* ===== Formulaire de contact ===== */
 .contact-form { margin-top: var(--sp-4); text-align: left; }
-.contact-form .apercu-label { color: var(--primary); }
+.contact-form .apercu-label { color: var(--ajonc-clair); }
 .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2); }
 @media (max-width: 720px) { .contact-grid { grid-template-columns: 1fr; } }
 .contact-form .champ { margin-bottom: var(--sp-2); }
@@ -575,7 +565,7 @@ html { background: var(--sand); }
   display: block;
   font-size: var(--t-xs);
   font-weight: 700;
-  color: var(--sand);
+  color: var(--sable);
   margin-bottom: 4px;
 }
 .contact-form .champ input,
@@ -586,18 +576,19 @@ html { background: var(--sand); }
   padding: 10px 14px;
   border: 1px solid var(--ecume);
   border-radius: 12px 16px 10px 14px;
-  background: var(--blanc-chaud);
+  background: var(--blanc);
+  color: var(--ardoise);
 }
 .contact-form .champ input:focus,
 .contact-form .champ textarea:focus {
-  outline: 2px solid var(--or);
+  outline: 2px solid var(--ajonc-clair);
   outline-offset: -1px;
 }
 .contact-merci {
   font-size: var(--t-s);
-  color: var(--ink);
-  background: rgb(201 162 39 / 12%);
-  border: 1px solid var(--or);
+  color: var(--ardoise);
+  background: rgb(232 173 82 / 14%);
+  border: 1px solid var(--ajonc-clair);
   border-radius: 14px 18px 12px 16px;
   padding: var(--sp-2) var(--sp-4);
 }
