@@ -27,6 +27,8 @@
 
   --serif: "Marelle Baton 2", Georgia, serif;
   --sans: "Rubik", system-ui, sans-serif;
+  /* Largeur commune : header, bulles, panneaux, footer */
+  --largeur: 860px;
 }
 
 * { box-sizing: border-box; }
@@ -68,7 +70,7 @@ html {
   background-attachment: fixed;
 }
 
-.wrap { max-width: 1080px; margin: 0 auto; padding: 0 var(--sp-4); }
+.wrap { max-width: var(--largeur); margin: 0 auto; padding: 0 var(--sp-4); }
 
 /* ===== Header : pilule ovale flottante, en lévitation ===== */
 .site-header {
@@ -93,7 +95,7 @@ html {
     0 0 0 4px rgb(201 162 39 / 14%),
     0 36px 80px rgb(27 42 74 / 26%);
   padding: var(--sp-1) var(--sp-4);
-  max-width: 1080px;
+  max-width: var(--largeur);
   width: fit-content;
 }
 .brand {
@@ -166,7 +168,7 @@ html {
   position: relative;
   padding: var(--sp-12) 0 var(--sp-6);
 }
-.hero .wrap { position: relative; max-width: 860px; }
+.hero .wrap { position: relative; max-width: var(--largeur); }
 .hero-label {
   font-size: var(--t-xs);
   letter-spacing: 0.18em;
@@ -206,7 +208,7 @@ html {
     0 36px 80px rgb(27 42 74 / 26%);
   padding: var(--sp-2) var(--sp-4) var(--sp-2);
   text-align: center;
-  max-width: 720px;
+  max-width: var(--largeur);
   margin-left: auto;
   margin-right: auto;
 }
@@ -487,8 +489,8 @@ html {
   border: 1px solid var(--or);
   border-radius: 12px;
   padding: var(--sp-6);
-  max-width: 720px;
-  margin: 0 0 var(--sp-4);
+  max-width: var(--largeur);
+  margin: 0 auto var(--sp-4);
 }
 .page-intro {
   font-family: var(--sans);
@@ -517,7 +519,7 @@ html {
     0 0 0 4px rgb(201 162 39 / 14%),
     0 36px 80px rgb(27 42 74 / 26%);
   padding: var(--sp-4) var(--sp-6);
-  max-width: 1080px;
+  max-width: var(--largeur);
 }
 @media (max-width: 720px) {
   .site-footer > .wrap { padding: var(--sp-4); border-radius: 20px 28px 18px 26px; }
