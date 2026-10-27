@@ -59,8 +59,13 @@ body {
   hyphens: auto;
 }
 /* Bleu nuit en fond de tout le site : les bulles blanches
-   flottent dessus, comme le footer. */
-html { background: var(--ink); }
+   flottent dessus, comme le footer. Motif torsades dorées
+   (esprit pull ARMOR lux) posé en filigrane discret. */
+html {
+  background:
+    url("/mana/motif.svg") repeat,
+    var(--ink);
+}
 
 .wrap { max-width: 1080px; margin: 0 auto; padding: 0 var(--sp-4); }
 

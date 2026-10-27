@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140" viewBox="0 0 140 140">
+  <!-- Motif MANA.bzh : torsades tricot, lignes dorées sur bleu nuit.
+       Esprit pull ARMOR lux : câbles entrelacés en colonnes. -->
+  <g fill="none" stroke="#c9a227" stroke-width="1.6" stroke-linecap="round" opacity="0.14">
+    <!-- Colonne de torsade 1 : deux câbles qui s'entrecroisent -->
+    <path d="M28 0v18c0 10 6 16 14 16s14-6 14-16V0"/>
+    <path d="M56 0v18c0 10-6 16-14 16s-14-6-14-16V0"/>
+    <!-- Colonne de torsade 2 (décalée) -->
+    <path d="M84 34v18c0 10 6 16 14 16s14-6 14-16V34"/>
+    <path d="M112 34v18c0 10-6 16-14 16s-14-6-14-16V34"/>
+    <!-- Point mousse (losange de maille) -->
+    <path d="M98 14l6 6-6 6-6-6z" stroke-width="1.2"/>
+    <path d="M42 98l6 6-6 6-6-6z" stroke-width="1.2"/>
+    <!-- Chevrons de vague entre les colonnes -->
+    <path d="M0 70h20l8 8 8-8h20"/>
+    <path d="M0 122h20l8 8 8-8h20" stroke-width="1.2"/>
+    <path d="M112 76h20" stroke-width="1.2"/>
+  </g>
+</svg>
