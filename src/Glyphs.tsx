@@ -71,6 +71,16 @@ export function GlyphTerritoire({ size = 24 }: GlyphProps) {
   );
 }
 
+export function GlyphSentier({ size = 24 }: GlyphProps) {
+  return (
+    <svg {...base} width={size} height={size} aria-hidden="true">
+      <path d="M5 19c2.5-.5 4-2 5.5-4.5C12 12 13 9.5 15.5 8c1.7-1 3.4-1.4 5-1" />
+      <path d="M5 13.5c2-.4 3.2-1.6 4.4-3.6" strokeDasharray="2 3" />
+      <Accent cx={19.5} cy={7.2} r={1.7} />
+    </svg>
+  );
+}
+
 export function GlyphEcosysteme({ size = 24 }: GlyphProps) {
   return (
     <svg {...base} width={size} height={size} aria-hidden="true">

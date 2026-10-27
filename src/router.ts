@@ -11,3 +11,8 @@ export function usePath(): string {
 export function baseUrl(): string {
   return import.meta.env.BASE_URL.replace(/\/$/, "");
 }
+
+export function routePromenade(path: string): string | null {
+  const m = path.match(/^\/promenade\/([\w-]+)\/?$/);
+  return m ? m[1] : null;
+}

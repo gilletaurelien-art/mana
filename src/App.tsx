@@ -7,11 +7,14 @@ import {
   GlyphTerritoire,
   GlyphEcosysteme,
 } from "./Glyphs";
-import { usePath, baseUrl } from "./router";
+import { usePath, baseUrl, routePromenade } from "./router";
 import { Ecosysteme } from "./Ecosysteme";
 import { Territoire } from "./Territoire";
+import { Promenades } from "./Promenades";
+import { Promenade } from "./Promenade";
 import { MentionsLegales } from "./MentionsLegales";
 import { ContactForm } from "./ContactForm";
+import { GlyphSentier } from "./Glyphs";
 
 const B = baseUrl();
 
@@ -53,6 +56,15 @@ const SECTIONS = [
       "manahome.org — le pilote territorial de Crozon (Finistère) : annonces gratuites, estimation indicative, services à l'habitat, index des communes. Sans commission, sans mise en avant payante.",
     cta: { label: "Voir manahome.org", href: "https://manahome.org/" },
   },
+  {
+    glyphe: GlyphSentier,
+    num: "04",
+    titre: "Promenades & découvertes",
+    accroche: "Le territoire, à pied.",
+    texte:
+      "Des parcours bretons qui marchent hors ligne : carte et profil d'altitude dans la poche, GPS et alerte hors-sentier, audio-guide discret, export GPX. Marées et météo : sources officielles uniquement.",
+    cta: { label: "Découvrir les promenades", href: "/promenades" },
+  },
 ];
 
 export default function App() {
@@ -93,6 +105,10 @@ export default function App() {
               <GlyphTerritoire />
               <span>Territoire</span>
             </a>
+            <a href={`${B}/promenades`}>
+              <GlyphSentier />
+              <span>Promenades</span>
+            </a>
             <a href="https://manahome.org/" target="_blank" rel="noopener noreferrer">
               <GlyphMaison />
               <span>MANAhome</span>
@@ -113,6 +129,10 @@ export default function App() {
         <Ecosysteme />
       ) : path === "/territoire" ? (
         <Territoire />
+      ) : path === "/promenades" ? (
+        <Promenades />
+      ) : routePromenade(path) ? (
+        <Promenade slug={routePromenade(path)!} />
       ) : path === "/mentions-legales" ? (
         <MentionsLegales />
       ) : path === "/contact" ? (
@@ -245,6 +265,7 @@ export default function App() {
           <nav className="footer-nav" aria-label="Pied de page">
             <a href={`${B}/ecosysteme`}>L'écosystème MANA</a>
             <a href={`${B}/territoire`}>Le territoire</a>
+            <a href={`${B}/promenades`}>Promenades & découvertes</a>
             <a href="https://manahome.org/" target="_blank" rel="noopener noreferrer">manahome.org — l'habitat</a>
             <a href="https://mana.love/" target="_blank" rel="noopener noreferrer">mana.love — la rencontre</a>
             <a href="https://manafrance.org/" target="_blank" rel="noopener noreferrer">manafrance.org — l'horizon</a>

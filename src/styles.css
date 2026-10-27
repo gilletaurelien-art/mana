@@ -597,3 +597,34 @@ html { background: var(--sable); }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+
+/* ===== Promenades : filtres, alerte, profil ===== */
+.filtre {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  font-size: var(--t-xs);
+  color: var(--ardoise);
+}
+.filtre input[type="range"] { accent-color: var(--glaz); }
+.filtre-select {
+  font: inherit;
+  font-size: var(--t-xs);
+  color: var(--ardoise);
+  background: var(--blanc);
+  border: 1px solid var(--ecume);
+  border-radius: 999px;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+.filtre-select:focus { outline: 2px solid var(--glaz); outline-offset: -1px; }
+.hors-sentier {
+  border-color: var(--ajonc);
+  background: rgb(217 138 108 / 8%);
+}
+.hors-sentier .apercu-label { color: #b0562f; }
+.altitude-profile figcaption {
+  font-size: var(--t-xs);
+  opacity: 0.6;
+  margin-top: var(--sp-1);
+}
