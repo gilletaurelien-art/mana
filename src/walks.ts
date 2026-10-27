@@ -138,6 +138,49 @@ export const WALKS: Walk[] = [
       },
     ],
   },
+  {
+    slug: "cap-frehel",
+    titre: "Cap Fréhel — falaises & lande",
+    lieu: "Plévenon, Côtes-d'Armor",
+    resume:
+      "Les falaises de grès rose, le phare et la lande de bruyère : le souffle du Vent d'Ouest sur la Côte d'Émeraude.",
+    distanceKm: 7.8,
+    dureeH: 2.25,
+    difficulte: "moyen",
+    boucle: true,
+    poussettePmr: false,
+    chiens: "laisse",
+    points: [
+      { lat: 48.6749, lon: -2.3226, ele: 30 },
+      { lat: 48.6772, lon: -2.3298, ele: 46 },
+      { lat: 48.6789, lon: -2.3379, ele: 62 },
+      { lat: 48.6796, lon: -2.3468, ele: 74 },
+      { lat: 48.6791, lon: -2.3557, ele: 68 },
+      { lat: 48.6774, lon: -2.3641, ele: 54 },
+      { lat: 48.6751, lon: -2.3718, ele: 41 },
+      { lat: 48.6726, lon: -2.3786, ele: 33 },
+      { lat: 48.6702, lon: -2.3849, ele: 27 },
+      { lat: 48.6681, lon: -2.3916, ele: 36 },
+      { lat: 48.6669, lon: -2.3992, ele: 49 },
+      { lat: 48.6666, lon: -2.4073, ele: 58 },
+      { lat: 48.6672, lon: -2.4154, ele: 44 },
+      { lat: 48.6688, lon: -2.4229, ele: 32 },
+      { lat: 48.6711, lon: -2.4297, ele: 26 },
+      { lat: 48.6749, lon: -2.3226, ele: 30 },
+    ],
+    waypoints: [
+      {
+        nom: "Départ — parking du cap",
+        point: { lat: 48.6749, lon: -2.3226, ele: 30 },
+        audio: "Départ du cap. La lande sent le bruit de mer et la bruyère.",
+      },
+      {
+        nom: "Falaises",
+        point: { lat: 48.6796, lon: -2.3468, ele: 74 },
+        audio: "Les falaises de grès rose. Guettez les oiseaux marins — restez sur le sentier.",
+      },
+    ],
+  },
 ];
 
 // Géo-outils maison (zéro dépendance).

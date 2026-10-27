@@ -1,4 +1,5 @@
 import { usePath, baseUrl, routePromenade } from "./router";
+import { WALKS } from "./walks";
 import {
   GlyphRadio,
   GlyphNavigation,
@@ -73,6 +74,10 @@ export default function App() {
               <GlyphSentier />
               <span>Promenades</span>
             </a>
+            <a href={`${B}/radio`}>
+              <GlyphRadio />
+              <span>Radio</span>
+            </a>
             <a href={`${B}/territoire`}>
               <GlyphTerritoire />
               <span>Territoire</span>
@@ -81,7 +86,31 @@ export default function App() {
         </div>
       </header>
 
-      {path === "/promenades" ? (
+      {path === "/radio" ? (
+        <main className="page">
+          <div className="wrap">
+            <p className="hero-label">Écouter</p>
+            <h1 className="page-titre">MANAradio</h1>
+            <section className="page-panel">
+              <p className="page-intro">
+                La radio du territoire : histoires de promenades,
+                légendes du littoral, voix de celles et ceux qui
+                font la Bretagne. Épisode après épisode, à écouter
+                en marchant.
+              </p>
+              <div className="est-actions" style={{ marginTop: "var(--sp-2)" }}>
+                <a className="btn btn-primary" href="mailto:radio@mana.bzh">
+                  Proposer une histoire
+                </a>
+              </div>
+              <p className="page-note">
+                Lecteur audio et épisodes en préparation — aucune
+                émission simulée en attendant les vraies.
+              </p>
+            </section>
+          </div>
+        </main>
+      ) : path === "/promenades" ? (
         <Promenades />
       ) : routePromenade(path) ? (
         <Promenade slug={routePromenade(path)!} />
@@ -116,15 +145,21 @@ export default function App() {
                 Promenades bretonnes.
               </p>
 
-              {/* MANAradio : le centre du hub */}
-              <div className="hub-radio sous-bulle">
-                <GlyphRadio size={44} />
-                <p className="section-accroche">MANAradio</p>
-                <p className="section-texte">
-                  La radio de l'écosystème, au centre de tout. Elle
-                  émettra bientôt : histoire, marée du jour, voix du
-                  territoire. En sommeil — aucun flux simulé.
-                </p>
+              {/* Swipe des balades : scroll manuel, jamais auto */}
+              <div className="swipe-balades" role="region" aria-label="Les balades — glisser pour explorer">
+                {WALKS.map((w) => (
+                  <a
+                    key={w.slug}
+                    className="swipe-carte"
+                    href={`${B}/promenade/${w.slug}`}
+                  >
+                    <p className="swipe-lieu">{w.lieu}</p>
+                    <p className="swipe-titre">{w.titre}</p>
+                    <p className="swipe-meta">
+                      {w.distanceKm} km · {w.dureeH} h · {w.difficulte}
+                    </p>
+                  </a>
+                ))}
               </div>
             </div>
           </section>
@@ -149,6 +184,26 @@ export default function App() {
               </section>
               );
             })}
+
+            {/* 05 — MANAradio : en ligne */}
+            <section className="landing-section bulle">
+              <p className="section-num">05</p>
+              <GlyphRadio size={36} />
+              <h2 className="section-title">MANAradio</h2>
+              <div className="sous-bulle">
+                <p className="section-accroche">En ligne.</p>
+                <p className="section-texte">
+                  La radio du territoire émet : histoires bretonnes,
+                  voix des promeneurs, murmures du littoral. À écouter
+                  en marchant — ou au coin du feu.
+                </p>
+                <div className="est-actions">
+                  <a className="btn btn-clair" href={`${B}/radio`}>
+                    Écouter MANAradio
+                  </a>
+                </div>
+              </div>
+            </section>
           </main>
         </>
       )}
@@ -172,6 +227,7 @@ export default function App() {
             <a href={`${B}/promenades`}>Promenades</a>
             <a href={`${B}/promenade/gr34-crozon`}>GR34 — Crozon</a>
             <a href={`${B}/promenade/pointe-du-raz`}>Pointe du Raz</a>
+            <a href={`${B}/radio`}>MANAradio</a>
             <a href={`${B}/territoire`}>Le territoire</a>
             <a href={`${B}/contact`}>Contact</a>
             <a href={`${B}/mentions-legales`}>Mentions légales</a>

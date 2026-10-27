@@ -616,3 +616,44 @@ html { background: var(--ink); }
 /* ===== Fond bleu nuit : labels et titres de page en clair ===== */
 .page .hero-label { color: var(--or); }
 .page .page-titre { color: var(--sand); }
+
+/* ===== Swipe des balades : scroll manuel, jamais auto ===== */
+.swipe-balades {
+  display: flex;
+  gap: var(--sp-2);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: var(--sp-1) var(--sp-1) var(--sp-2);
+  max-width: 680px;
+  margin: 0 auto var(--sp-2);
+  scrollbar-width: thin;
+  scrollbar-color: var(--or) transparent;
+}
+.swipe-carte {
+  scroll-snap-align: center;
+  flex: 0 0 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 4px;
+  text-decoration: none;
+  text-align: left;
+  color: var(--ink);
+  background: var(--blanc-chaud);
+  border: 1px solid var(--or);
+  border-radius: 18px 24px 16px 22px;
+  box-shadow: inset 0 1px 2px rgb(255 255 255 / 85%), 0 4px 12px rgb(27 42 74 / 12%);
+  padding: var(--sp-2);
+  min-height: 120px;
+  transition: transform 160ms ease;
+}
+.swipe-carte:hover { transform: translateY(-2px); }
+.swipe-lieu {
+  font-size: var(--t-xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--primary);
+  margin: 0;
+}
+.swipe-titre { font-weight: 700; font-size: var(--t-s); margin: 0; line-height: 1.3; }
+.swipe-meta { font-size: var(--t-xs); opacity: 0.65; margin: 0; }
