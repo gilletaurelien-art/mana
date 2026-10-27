@@ -58,7 +58,9 @@ body {
   color: var(--ink);
   hyphens: auto;
 }
-html { background: var(--sand); }
+/* Bleu nuit en fond de tout le site : les bulles blanches
+   flottent dessus, comme le footer. */
+html { background: var(--ink); }
 
 .wrap { max-width: 1080px; margin: 0 auto; padding: 0 var(--sp-4); }
 
@@ -610,3 +612,7 @@ html { background: var(--sand); }
 /* ===== Hub : MANAradio au centre, dans le hero ===== */
 .hub-radio { margin-top: var(--sp-4); max-width: 52ch; }
 .hub-radio .section-accroche { margin: var(--sp-2) 0 var(--sp-1); }
+
+/* ===== Fond bleu nuit : labels et titres de page en clair ===== */
+.page .hero-label { color: var(--or); }
+.page .page-titre { color: var(--sand); }

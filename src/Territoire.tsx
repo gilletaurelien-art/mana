@@ -79,12 +79,14 @@ export function Territoire() {
           </section>
         ))}
 
-        <p className="page-note">
-          Les informations territoriales publiées par l'écosystème MANA
-          s'appuient sur des sources publiques réelles (notamment
-          geo.api.gouv.fr pour les communes) — jamais sur des chiffres
-          inventés.
-        </p>
+        <section className="page-panel">
+          <p className="page-note" style={{ marginTop: 0 }}>
+            Les informations territoriales publiées par l'écosystème MANA
+            s'appuient sur des sources publiques réelles (notamment
+            geo.api.gouv.fr pour les communes) — jamais sur des chiffres
+            inventés.
+          </p>
+        </section>
       </div>
     </main>
   );
