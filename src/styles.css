@@ -73,7 +73,7 @@ html {
 .wrap { max-width: var(--largeur); margin: 0 auto; padding: 0 var(--sp-4); }
 /* PWA/mobile : jamais plus large que l'écran réel */
 @media (max-width: 720px) {
-  .wrap { width: calc(100% - 2 * var(--sp-2)); }
+  .wrap { width: calc(100% - 2 * var(--sp-2)); padding: 0; }
 }
 
 /* ===== Header : pilule ovale flottante, en lévitation ===== */
@@ -172,7 +172,7 @@ html {
   position: relative;
   padding: var(--sp-12) 0 var(--sp-6);
 }
-.hero .wrap { position: relative; max-width: var(--largeur); padding-left: var(--sp-4); padding-right: var(--sp-4); }
+.hero .wrap { position: relative; max-width: var(--largeur); }
 .hero-label {
   font-size: var(--t-xs);
   letter-spacing: 0.18em;
@@ -524,9 +524,15 @@ html {
     0 36px 80px rgb(27 42 74 / 26%);
   padding: var(--sp-4) var(--sp-6);
   max-width: var(--largeur);
+  width: 100%;
 }
 @media (max-width: 720px) {
-  .site-footer > .wrap { padding: var(--sp-4); border-radius: 20px 28px 18px 26px; }
+  .site-footer > .wrap { padding: var(--sp-4); width: 100%; max-width: 100%; border-radius: 20px 28px 18px 26px; }
+}
+/* Sur desktop le wrap du footer garde son padding interne : le
+   panneau reprend ces 32px pour s'aligner sur le header */
+@media (min-width: 721px) {
+  .site-footer > .wrap { margin-left: auto; margin-right: auto; }
 }
 /* Desktop : colonne 1 = 2/3 (présentation+contact), colonne 2 = 1/3 (liens) */
 @media (min-width: 721px) {
