@@ -147,7 +147,7 @@ export default function App() {
               <p className="hero-label">Terre, Mer & Lumière — Bretagne</p>
               <h1 className="brand-grand">Promenades bretonnes</h1>
               <p className="lede">
-                Au départ de
+                en Armor & Argoat
               </p>
 
               {/* Moteur de saisie de localité */}
@@ -160,7 +160,7 @@ export default function App() {
                   id="moteur-lieu"
                   type="search"
                   autoComplete="off"
-                  placeholder="Commune, cap, grève…"
+                  placeholder="Au départ de…"
                   value={lieu}
                   onChange={(e) => setLieu(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && chercher()}
