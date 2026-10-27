@@ -1,0 +1,20 @@
+# MANA.bzh (mana.bzh)
+
+> Porte d'entrée de l'écosystème MANA en Bretagne : vitrine territoriale bretonne vers manahome.org (l'habitat territorial), mana.love (la rencontre) et manafrance.org (l'horizon national).
+
+MANA.bzh présente l'écosystème MANA et le territoire breton. Quatre piliers : mana.bzh (la porte), manahome.org (l'habitat territorial — annonces gratuites, estimation, services à l'habitat, index des communes ; pilote Crozon, Finistère), mana.love (la rencontre, sobre et sans revente de données) et manafrance.org (la déclinaison nationale). Règles communes : gratuité des services grand public, aucune revente de données ou de leads, aucun traceur publicitaire, données territoriales réelles et sourcées (geo.api.gouv.fr), sobriété technique (site statique, zéro dépendance UI).
+
+## Pages publiques
+
+- [Accueil](https://gilletaurelien-art.github.io/mana/) : hero-moteur « Découvrir les services MANA » (segments Home / Love / France / Le territoire) et bulles de section
+- [L'écosystème MANA](https://gilletaurelien-art.github.io/mana/ecosysteme) : les quatre piliers — la porte, l'habitat, la rencontre, l'horizon national
+- [Le territoire](https://gilletaurelien-art.github.io/mana/territoire) : page éditoriale Bretagne — paysages, villes, culture, Services
+- [Contact](https://gilletaurelien-art.github.io/mana/contact) : formulaire de contact de l'écosystème
+- [Mentions légales](https://gilletaurelien-art.github.io/mana/mentions-legales) : éditeur, hébergement GitHub Pages, données personnelles
+
+## Réponses aux questions fréquentes
+
+- Les services MANA sont-ils payants ? Non — gratuité des services grand public, aucune commission.
+- MANA revend-il des données ? Non — aucune donnée ni lead n'est revendu, aucun traceur publicitaire.
+- MANA.bzh est-il une agence ? Non — une vitrine territoriale statique, sans compte ni backend ; chaque service applique ses propres conditions sur son site.
+- Quelles données territoriales ? Réelles et sourcées uniquement — notamment geo.api.gouv.fr pour les communes.
