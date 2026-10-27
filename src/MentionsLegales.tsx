@@ -25,11 +25,10 @@ export function MentionsLegales() {
         <section className="page-panel">
           <p className="apercu-label">Éditeur</p>
           <p className="page-intro">
-            MANA.bzh est édité par l'écosystème MANA (manahome.org,
-            mana.love, manafrance.org), dans le cadre de la vitrine
-            territoriale bretonne. Les coordonnées complètes de l'éditeur
-            seront publiées avec la structure juridique définitive du
-            projet.
+            MANA.bzh est édité par l'écosystème MANA, dans le cadre
+            de la vitrine territoriale bretonne. Les coordonnées
+            complètes de l'éditeur seront publiées avec la structure
+            juridique définitive du projet.
           </p>
         </section>
 
@@ -45,10 +44,9 @@ export function MentionsLegales() {
         <section className="page-panel">
           <p className="apercu-label">Nature du service</p>
           <p className="page-intro">
-            MANA.bzh est une porte d'entrée : il présente l'écosystème MANA
-            et le territoire breton, et renvoie vers les services
-            (manahome.org, mana.love, manafrance.org). Chaque service
-            applique ses propres conditions, publiées sur son site.
+            MANA.bzh est une vitrine de promenades et de découvertes
+            en Bretagne. Les parcours sont indicatifs (prototype) :
+            consultez les sources officielles avant de partir.
           </p>
         </section>
 
@@ -63,9 +61,6 @@ export function MentionsLegales() {
         </section>
 
         <div className="est-actions">
-          <a className="btn btn-ghost" href={`${B}/ecosysteme`}>
-            L'écosystème MANA
-          </a>
           <a className="btn btn-primary" href={`${B}/`}>
             Retour à l'accueil
           </a>

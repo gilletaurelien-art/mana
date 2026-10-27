@@ -1,93 +1,65 @@
-import { useState } from "react";
-import {
-  GlyphPorte,
-  GlyphMaison,
-  GlyphRencontre,
-  GlyphFrance,
-  GlyphTerritoire,
-  GlyphEcosysteme,
-} from "./Glyphs";
 import { usePath, baseUrl, routePromenade } from "./router";
-import { Ecosysteme } from "./Ecosysteme";
-import { Territoire } from "./Territoire";
+import {
+  GlyphRadio,
+  GlyphNavigation,
+  GlyphSecurite,
+  GlyphDecouverte,
+  GlyphSentier,
+  GlyphTerritoire,
+} from "./Glyphs";
 import { Promenades } from "./Promenades";
 import { Promenade } from "./Promenade";
+import { Territoire } from "./Territoire";
 import { MentionsLegales } from "./MentionsLegales";
 import { ContactForm } from "./ContactForm";
-import { GlyphSentier } from "./Glyphs";
 
 const B = baseUrl();
 
-// Hero-moteur : la porte d'entrée EST le produit.
-// Segments : les services MANA + le territoire ; le champ affine
-// l'intention (« Commune ou projet ») et la flèche route.
-const MOTEUR_CATEGORIES = [
-  { v: "home", l: "Home", glyph: GlyphMaison },
-  { v: "love", l: "Love", glyph: GlyphRencontre },
-  { v: "france", l: "France", glyph: GlyphFrance },
-  { v: "territoire", l: "Le territoire", glyph: GlyphTerritoire },
-];
+// MANAradio : au centre du hub — la radio de l'écosystème, en
+// sommeil comme le backend (aucun flux simulé), mais positionnée.
 
-const SECTIONS = [
+// Les 4 modules de la promenade, autour de la radio.
+const MODULES = [
   {
-    glyphe: GlyphEcosysteme,
+    glyphe: GlyphNavigation,
     num: "01",
-    titre: "L'écosystème MANA",
-    accroche: "Quatre services, une même exigence.",
+    titre: "Navigation & cartographie",
+    accroche: "Le parcours dans la poche.",
     texte:
-      "mana.bzh est la porte ; manahome.org couvre l'habitat ; mana.love la rencontre ; manafrance.org l'horizon national. Gratuité des services grand public, aucune revente de données, sobriété : les mêmes règles partout.",
-    cta: { label: "Découvrir l'écosystème", href: "/ecosysteme" },
+      "Hors ligne (PWA) : carte et parcours restent sans réseau. GPS en temps réel avec boussole, alerte si vous vous éloignez de 50 m du sentier, profil d'altitude lisible.",
+    cta: { label: "Voir les parcours", href: "/promenades" },
   },
   {
-    glyphe: GlyphTerritoire,
+    glyphe: GlyphSecurite,
     num: "02",
-    titre: "Un territoire, des services",
-    accroche: "La Bretagne, concrètement.",
+    titre: "Sécurité côte",
+    accroche: "Prudence honnête.",
     texte:
-      "Trouver un logement, comprendre une commune, s'installer durablement : l'écosystème MANA travaille le territoire réel — données sourcées (geo.api.gouv.fr), présentation honnête, zéro compteur de vanité.",
-    cta: { label: "Découvrir le territoire", href: "/territoire" },
+      "SOS en un geste : position GPS partagée par SMS aux secours ou aux proches. Marées et météo : renvoi systématique vers les sources officielles — aucune donnée simulée.",
+    cta: { label: "Découvrir", href: "/promenade/gr34-crozon" },
   },
   {
-    glyphe: GlyphMaison,
+    glyphe: GlyphDecouverte,
     num: "03",
-    titre: "L'habitat, autrement",
-    accroche: "Gratuit, accompagné, lisible par les IA.",
+    titre: "Découverte & patrimoine",
+    accroche: "La Bretagne racontée.",
     texte:
-      "manahome.org — le pilote territorial de Crozon (Finistère) : annonces gratuites, estimation indicative, services à l'habitat, index des communes. Sans commission, sans mise en avant payante.",
-    cta: { label: "Voir manahome.org", href: "https://manahome.org/" },
+      "Audio-guide vocal discret aux points d'intérêt, anecdotes du littoral, filtres concrets : durée, poussette/PMR, chiens, boucle ou aller-retour.",
+    cta: { label: "Explorer", href: "/promenades" },
   },
   {
     glyphe: GlyphSentier,
     num: "04",
-    titre: "Promenades & découvertes",
-    accroche: "Le territoire, à pied.",
+    titre: "Carnet & export",
+    accroche: "Gardez la trace.",
     texte:
-      "Des parcours bretons qui marchent hors ligne : carte et profil d'altitude dans la poche, GPS et alerte hors-sentier, audio-guide discret, export GPX. Marées et météo : sources officielles uniquement.",
-    cta: { label: "Découvrir les promenades", href: "/promenades" },
+      "Export GPX en un clic, lisible par toutes les montres et applications. Fonctionne hors ligne, du cap à la grève — le réseau n'attendra pas, nous non plus.",
+    cta: { label: "Ouvrir un parcours", href: "/promenade/pointe-du-raz" },
   },
 ];
 
 export default function App() {
   const path = usePath();
-  const [moteurCategorie, setMoteurCategorie] = useState("home");
-  const [moteurLieu, setMoteurLieu] = useState("");
-
-  const moteurRechercher = () => {
-    if (moteurCategorie === "territoire") {
-      window.location.assign(`${B}/territoire`);
-      return;
-    }
-    const q = moteurLieu.trim();
-    if (moteurCategorie === "home") {
-      window.location.assign(
-        `https://manahome.org/${q ? `annonces/${encodeURIComponent(q)}` : ""}`
-      );
-    } else if (moteurCategorie === "love") {
-      window.location.assign("https://mana.love/");
-    } else {
-      window.location.assign("https://manafrance.org/");
-    }
-  };
 
   return (
     <>
@@ -97,42 +69,24 @@ export default function App() {
             MANA<em>.bzh</em>
           </a>
           <nav className="nav">
-            <a href={`${B}/ecosysteme`}>
-              <GlyphEcosysteme />
-              <span>Écosystème</span>
+            <a href={`${B}/promenades`}>
+              <GlyphSentier />
+              <span>Promenades</span>
             </a>
             <a href={`${B}/territoire`}>
               <GlyphTerritoire />
               <span>Territoire</span>
             </a>
-            <a href={`${B}/promenades`}>
-              <GlyphSentier />
-              <span>Promenades</span>
-            </a>
-            <a href="https://manahome.org/" target="_blank" rel="noopener noreferrer">
-              <GlyphMaison />
-              <span>MANAhome</span>
-            </a>
-            <a href="https://mana.love/" target="_blank" rel="noopener noreferrer">
-              <GlyphRencontre />
-              <span>MANA.love</span>
-            </a>
-            <a href="https://manafrance.org/" target="_blank" rel="noopener noreferrer">
-              <GlyphFrance />
-              <span>MANAfrance</span>
-            </a>
           </nav>
         </div>
       </header>
 
-      {path === "/ecosysteme" ? (
-        <Ecosysteme />
-      ) : path === "/territoire" ? (
-        <Territoire />
-      ) : path === "/promenades" ? (
+      {path === "/promenades" ? (
         <Promenades />
       ) : routePromenade(path) ? (
         <Promenade slug={routePromenade(path)!} />
+      ) : path === "/territoire" ? (
+        <Territoire />
       ) : path === "/mentions-legales" ? (
         <MentionsLegales />
       ) : path === "/contact" ? (
@@ -142,7 +96,7 @@ export default function App() {
             <h1 className="page-titre">Contact</h1>
             <section className="page-panel">
               <p className="page-intro">
-                Une question sur l'écosystème MANA, le territoire, un
+                Une question sur les promenades, le territoire, un
                 partenariat ? Écrivez-nous — nous répondons vite,
                 honnêtement, sans prospection forcée.
               </p>
@@ -159,91 +113,43 @@ export default function App() {
                 MANA<em>.bzh</em>
               </h1>
               <p className="lede">
-                La porte d'entrée de l'écosystème MANA en Bretagne.
+                Les promenades bretonnes, autrement : hors ligne,
+                sûres, racontées.
               </p>
-              <div className="moteur">
-                <div className="moteur-categories" role="group" aria-label="Découvrir les services MANA">
-                  {MOTEUR_CATEGORIES.map((c) => (
-                    <button
-                      key={c.v}
-                      type="button"
-                      className={`moteur-categorie-btn ${moteurCategorie === c.v ? "on" : ""}`}
-                      aria-pressed={moteurCategorie === c.v}
-                      onClick={() => setMoteurCategorie(c.v)}
-                    >
-                      {c.l}
-                    </button>
-                  ))}
-                </div>
 
-                <div className="moteur-barre">
-                  <svg className="moteur-loupe" viewBox="0 0 24 24" aria-hidden="true">
-                    <circle cx="10.5" cy="10.5" r="6.5" />
-                    <path d="m15.5 15.5 4.5 4.5" />
-                  </svg>
-                  <input
-                    id="moteur-lieu"
-                    type="search"
-                    autoComplete="off"
-                    placeholder={
-                      moteurCategorie === "territoire"
-                        ? "Commune ou envie"
-                        : "Commune ou projet"
-                    }
-                    value={moteurLieu}
-                    onChange={(e) => setMoteurLieu(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && moteurRechercher()}
-                  />
-                  <button
-                    type="button"
-                    className="moteur-fleche"
-                    aria-label="Découvrir"
-                    onClick={moteurRechercher}
-                  >
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M4 12h15" />
-                      <path d="m13 6 6 6-6 6" />
-                    </svg>
-                  </button>
-                </div>
-
-                <p className="moteur-note">
-                  Home : l'habitat territorial. Love : la rencontre.
-                  France : l'horizon national. Le territoire : la
-                  Bretagne, éditoriale.
+              {/* MANAradio : le centre du hub */}
+              <div className="hub-radio sous-bulle">
+                <GlyphRadio size={44} />
+                <p className="section-accroche">MANAradio</p>
+                <p className="section-texte">
+                  La radio de l'écosystème, au centre de tout. Elle
+                  émettra bientôt : histoire, marée du jour, voix du
+                  territoire. En sommeil — aucun flux simulé.
                 </p>
               </div>
             </div>
           </section>
 
           <main className="wrap">
-            {SECTIONS.map((s) => (
-              <section key={s.num} className="landing-section bulle">
-                <p className="section-num">{s.num}</p>
-                <s.glyphe size={36} />
-                <h2 className="section-title">{s.titre}</h2>
+            {MODULES.map((m) => {
+              const G = m.glyphe;
+              return (
+              <section key={m.num} className="landing-section bulle">
+                <p className="section-num">{m.num}</p>
+                <G size={36} />
+                <h2 className="section-title">{m.titre}</h2>
                 <div className="sous-bulle">
-                  <p className="section-accroche">{s.accroche}</p>
-                  <p className="section-texte">{s.texte}</p>
+                  <p className="section-accroche">{m.accroche}</p>
+                  <p className="section-texte">{m.texte}</p>
                   <div className="est-actions">
-                    {s.cta.href.startsWith("http") ? (
-                      <a
-                        className="btn btn-clair"
-                        href={s.cta.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {s.cta.label}
-                      </a>
-                    ) : (
-                      <a className="btn btn-clair" href={`${B}${s.cta.href}`}>
-                        {s.cta.label}
-                      </a>
-                    )}
+                    <a className="btn btn-clair" href={`${B}${m.cta.href}`}>
+                      {m.cta.label}
+                    </a>
                   </div>
                 </div>
               </section>
-            ))}
+              );
+            })}
           </main>
         </>
       )}
@@ -255,20 +161,19 @@ export default function App() {
               MANA<em>.bzh</em>
             </p>
             <p className="footer-note">
-              Porte d'entrée de l'écosystème MANA en Bretagne — vitrine
-              territoriale de manahome.org, mana.love et manafrance.org.
-              Gratuit, sobre, sans traceur publicitaire ; aucune donnée
-              ni lead n'est revendu.
+              Les promenades bretonnes : parcours hors ligne (PWA),
+              GPS et sécurité, découverte du patrimoine, export GPX.
+              Gratuit, sobre, sans traceur publicitaire ; aucune
+              donnée ni lead n'est revendu. MANAradio, au centre,
+              émettra bientôt.
             </p>
             <ContactForm />
           </div>
           <nav className="footer-nav" aria-label="Pied de page">
-            <a href={`${B}/ecosysteme`}>L'écosystème MANA</a>
+            <a href={`${B}/promenades`}>Promenades</a>
+            <a href={`${B}/promenade/gr34-crozon`}>GR34 — Crozon</a>
+            <a href={`${B}/promenade/pointe-du-raz`}>Pointe du Raz</a>
             <a href={`${B}/territoire`}>Le territoire</a>
-            <a href={`${B}/promenades`}>Promenades & découvertes</a>
-            <a href="https://manahome.org/" target="_blank" rel="noopener noreferrer">manahome.org — l'habitat</a>
-            <a href="https://mana.love/" target="_blank" rel="noopener noreferrer">mana.love — la rencontre</a>
-            <a href="https://manafrance.org/" target="_blank" rel="noopener noreferrer">manafrance.org — l'horizon</a>
             <a href={`${B}/contact`}>Contact</a>
             <a href={`${B}/mentions-legales`}>Mentions légales</a>
           </nav>

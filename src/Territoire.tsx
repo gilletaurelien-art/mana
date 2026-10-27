@@ -60,22 +60,13 @@ export function Territoire() {
               Un territoire, des services.
             </p>
             <p className="section-texte">
-              Trouver un logement, comprendre une commune, rejoindre une
-              communauté : c'est le travail de l'écosystème MANA. Chaque
-              donnée territoriale est réelle, sourcée, vérifiée quand
-              c'est possible.
+              Marcher, écouter, comprendre : chaque promenade MANA
+              s'appuie sur des données territoriales réelles, sourcées,
+              vérifiées quand c'est possible.
             </p>
             <div className="est-actions">
-              <a className="btn btn-clair" href={`${B}/ecosysteme`}>
-                Découvrir l'écosystème
-              </a>
-              <a
-                className="btn btn-clair-ghost"
-                href="https://manahome.org/"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Voir le pilote habitat — Crozon
+              <a className="btn btn-clair" href={`${B}/promenades`}>
+                Découvrir les promenades
               </a>
             </div>
           </div>

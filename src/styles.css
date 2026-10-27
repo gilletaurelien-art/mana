@@ -606,3 +606,7 @@ html { background: var(--sand); }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+
+/* ===== Hub : MANAradio au centre, dans le hero ===== */
+.hub-radio { margin-top: var(--sp-4); max-width: 52ch; }
+.hub-radio .section-accroche { margin: var(--sp-2) 0 var(--sp-1); }
