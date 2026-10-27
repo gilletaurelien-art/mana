@@ -63,8 +63,9 @@ body {
    (esprit pull ARMOR lux) posé en filigrane discret. */
 html {
   background:
-    url("/mana/motif.svg") repeat,
+    url("/mana/motif.svg") repeat fixed,
     var(--ink);
+  background-attachment: fixed;
 }
 
 .wrap { max-width: 1080px; margin: 0 auto; padding: 0 var(--sp-4); }

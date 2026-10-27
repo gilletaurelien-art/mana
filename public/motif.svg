@@ -1,7 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="120" height="160" viewBox="0 0 120 160">
-  <!-- Bandes horizontales dorées de même largeur (x10), esprit
-       marinière ARMOR lux : rayures pleines sur bleu nuit. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="400" viewBox="0 0 120 400">
+  <!-- Bandes horizontales dorées, esprit marinière ARMOR lux.
+       Les 2 premières bandes or sont supprimées : le haut de page
+       démarre sur 320px de bleu nuit, puis or/bleu alternent. -->
   <g fill="#c9a227" opacity="0.45">
-    <rect x="0" y="0" width="120" height="80"/>
+    <rect x="0" y="320" width="120" height="80"/>
   </g>
 </svg>
