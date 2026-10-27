@@ -150,7 +150,7 @@ export default function App() {
           <section className="hero">
             <div className="wrap bulle-xl hero-moteur">
               <p className="hero-label">Terre, Mer & Lumière — Bretagne</p>
-              <h1 className="brand-grand">Promenades bretonnes</h1>
+              <h1 className="brand-grand">Promenons nous</h1>
               <p className="hero-label">en Armor & Argoat</p>
 
               {/* Moteur de saisie de localité */}
