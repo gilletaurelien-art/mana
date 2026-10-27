@@ -71,6 +71,10 @@ html {
 }
 
 .wrap { max-width: var(--largeur); margin: 0 auto; padding: 0 var(--sp-4); }
+/* PWA/mobile : jamais plus large que l'écran réel */
+@media (max-width: 720px) {
+  .wrap { width: calc(100% - 2 * var(--sp-2)); }
+}
 
 /* ===== Header : pilule ovale flottante, en lévitation ===== */
 .site-header {
@@ -219,13 +223,13 @@ html {
     padding: var(--sp-4);
   }
   .site-header .wrap {
-    width: calc(100vw - 32px);
+    width: 100%;
     max-width: 100%;
     justify-content: space-between;
     gap: var(--sp-1);
   }
   .site-header { padding: 0; }
-  .bulle, .bulle-xl { max-width: calc(100vw - 48px); width: 100%; }
+  .bulle, .bulle-xl { max-width: 100%; width: 100%; }
 }
 .bulle .section-texte,
 .bulle .section-accroche {
@@ -288,12 +292,12 @@ html {
 @media (max-width: 720px) {
   .sous-bulle {
     max-width: none;
-    width: calc(100% + 2 * var(--sp-4));
-    margin-left: calc(-1 * var(--sp-4));
-    margin-right: calc(-1 * var(--sp-4));
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
     border-radius: 16px 16px 24px 24px;
   }
-  .bulle.landing-section { padding-bottom: 0; }
+  .bulle.landing-section { padding-bottom: var(--sp-2); }
 }
 .sous-bulle .section-accroche { font-size: var(--t-l); color: var(--sand); }
 .sous-bulle .section-texte { font-size: var(--t-s); color: #fff; opacity: 0.92; }
