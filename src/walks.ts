@@ -38,6 +38,23 @@ export interface Etape {
   lon: number;
 }
 
+/**
+ * ⚠️ AU-DELÀ DE HUIT HEURES, ON COMPTE EN JOURS.
+ *
+ * « 58 h de marche » pour le Chemin des Douaniers Morlaix–Portsall est juste et
+ * inutilisable : personne ne marche cinquante-huit heures d'affilée. Base de
+ * six heures par jour — une convention, pas un relevé, et elle est DITE.
+ *
+ * ⭐ Cette fonction vit ici, et pas dans chacune des deux pages, parce que le
+ *    défaut a été vu d'abord sur la liste, corrigé là, puis retrouvé identique
+ *    sur la fiche. Une règle d'affichage recopiée se corrige une fois sur deux.
+ */
+export function effortLisible(km: number): string {
+  const h = km / 3.5;
+  if (h <= 8) return `≈ ${Math.round(h * 2) / 2} h de marche`;
+  return `≈ ${Math.ceil(h / 6)} jours de marche (6 h/jour)`;
+}
+
 export interface Walk {
   slug: string;
   titre: string;
@@ -50,6 +67,20 @@ export interface Walk {
   osmUrl: string;
   osmRef: string;
   points: WalkPoint[];
+  /**
+   * ⛔ LES MORCEAUX, QUAND L'ITINÉRAIRE N'EST PAS CONTINU — et c'est un garde,
+   *    pas un raffinement.
+   *
+   * Un itinéraire breton est stocké en portions de ~12 km. Mesuré le
+   * 28/10/2026 sur la Bretagne : 123 jointures sur 575 ont un écart de plus de
+   * 50 m, **jusqu'à 83 km**. Les concaténer en une seule ligne dessinerait une
+   * droite à travers la Bretagne — et elle aurait l'air d'un sentier.
+   *
+   * ⭐ On ne fabrique pas la continuité qu'on n'a pas mesurée. Quand `traits`
+   *    est présent, la carte dessine un sous-chemin par morceau ; `points`
+   *    reste le tout-venant à plat, pour le cadrage et les repères.
+   */
+  traits?: WalkPoint[][];
   etapes: Etape[];
 }
 

@@ -1,54 +1,72 @@
-// Le catalogue des promenades de toute la France — servi en statique par mana.bzh.
+// Les sentiers de randonnée de BRETAGNE — servis en fichiers par mana.bzh.
 //
-// ⛔ CE FICHIER S'APPELAIT `promenades.ts`, ET C'ÉTAIT UN PIÈGE.
-//    `Promenades.tsx` existe déjà : deux fichiers qui ne diffèrent que par la
-//    CASSE. Sur un système insensible à la casse (macOS par défaut), le
-//    résolveur tombe sur le mauvais. C'est exactement le défaut qui empêchait
-//    `manahome-app` de se construire ailleurs que sur la CI Linux (`pros.ts`
-//    contre `Pros.tsx`), découvert le matin même — et je l'ai reproduit le
-//    soir. ⭐ Connaître un piège ne protège pas d'y tomber : il faut un nom
-//    qui le rende impossible.
+// ⭐ POURQUOI DES FICHIERS, ET PAS LA BASE. Cette application n'appelle AUCUNE
+//    fonction de la base MANA : zéro `supabase`, zéro `rpc(` dans tout `src/`.
+//    Elle lit un index et un tracé. Ce n'est pas une économie de moyens, c'est
+//    une propriété : le 28/10/2026, quatre fonctions publiques de l'ancienne
+//    app rendaient des adresses de domicile à qui les appelait. Ici, **il n'y a
+//    rien à appeler.**
 //
-// ⭐ POURQUOI LA DONNÉE N'EST PAS DANS CE DÉPÔT.
-//    La France entière représente ~26 600 tracés et plus de 100 Mo. Mais le
-//    poids n'est pas la raison principale : **la donnée change au rythme de la
-//    MOISSON, le code au rythme des déploiements.** Les mettre ensemble
-//    obligerait à un commit de centaine de mégaoctets à chaque récolte, et
-//    ferait vieillir le dépôt au rythme d'OpenStreetMap.
-//    Elle est donc engendrée par `~/exporter-promenades.py` et servie depuis
-//    `/promenades/`, exactement comme les tuiles le sont depuis `/carte/`.
+// ⭐ ET LA DONNÉE N'EST PAS DANS CE DÉPÔT : elle change au rythme de la
+//    MOISSON, le code au rythme des déploiements. Les réunir obligerait à un
+//    commit de plusieurs mégaoctets à chaque récolte.
+//    Engendrée par `~/export-bretagne/export-bzh.sql`, servie depuis
+//    `/bretagne/`, exactement comme les tuiles depuis `/carte/`.
 //
-// ⚠️ L'ORIGINE DE CETTE PAGE EST DANS UNE LISTE BLANCHE CÔTÉ SERVEUR, la même
-//    que pour la carte. Servie depuis une origine absente de cette liste, la
-//    recherche ne rend RIEN et **aucune erreur ne s'affiche** : seule la
-//    console parle. C'est le même piège que la carte blanche.
+// ⚠️ L'ORIGINE DE CETTE PAGE EST DANS UNE LISTE BLANCHE CÔTÉ SERVEUR. Servie
+//    depuis une origine absente de cette liste, la page ne rend RIEN et
+//    **aucune erreur ne s'affiche** : seule la console parle.
 //
-// ⭐ ET LES QUATRE PROMENADES DE CROZON RESTENT EMBARQUÉES dans `walks.ts`.
-//    Ce n'est pas une duplication par négligence, les deux rôles diffèrent :
-//    l'embarqué s'affiche INSTANTANÉMENT et SANS RÉSEAU (c'est la vitrine, et
-//    c'est ce qui tient la promesse hors ligne) ; le distant est le CATALOGUE.
-//    Les tests ne gardent que l'embarqué — c'est lui qu'on expédie.
+// ⛔ CE FICHIER NE S'APPELLE PAS `promenades.ts` : `Promenades.tsx` existe, et
+//    deux fichiers qui ne diffèrent que par la CASSE se résolvent au hasard sur
+//    macOS. Déjà vécu deux fois dans l'écosystème.
 
-import type { Walk, Etape } from "./walks";
+import type { Walk, WalkPoint, Etape } from "./walks";
 
-const BASE = "https://mana.bzh/promenades";
+const BASE = "https://mana.bzh/bretagne";
+/** Les communes de France servent au seul usage de la recherche par proximité. */
+const COMMUNES = "https://mana.bzh/promenades/communes.json";
 
-/** Ce que porte l'index : de quoi chercher et lister, sans la géométrie. */
+/** Ce que porte l'index : de quoi lister et chercher, sans la géométrie. */
 export interface Fiche {
   /** slug */ s: string;
-  /** titre */ t: string;
-  /** commune */ c: string | null;
+  /** nom de l'itinéraire */ n: string;
   /** longueur en km */ k: number;
-  /** région */ r: string;
-  /** boucle */ b: boolean;
-  /** nombre d'étapes nommées */ e: number;
+  /** commune de départ */ d: string | null;
+  /** commune d'arrivée */ a: string | null;
+  /** nombre de communes traversées */ c: number;
+  /** nombre de morceaux stockés */ p: number;
   /** longitude du départ */ x: number;
   /** latitude du départ */ y: number;
+  /** boucle — MESURÉ : départ et arrivée à moins de 300 m */ o: boolean;
+  /** plus grand écart entre deux morceaux consécutifs, en mètres */ j: number;
+}
+
+/**
+ * ⚠️ AU-DESSUS DE CE SEUIL, ON NE PROMET PLUS D'ARRIVÉE.
+ *
+ * L'arrivée stockée est la fin du DERNIER MORCEAU, pas celle du parcours. Sur
+ * « De Douarnenez à Redon », dont les morceaux sont séparés de 83 km, elle
+ * tombe à Saint-Jean-Brévelay — et la page afficherait « Douarnenez →
+ * Saint-Jean-Brévelay » juste sous un titre qui annonce Redon.
+ * ⭐ Ce qu'on affiche dit ce qu'on promet : un itinéraire morcelé se présente
+ *    « au départ de », jamais « de … à … ».
+ */
+export const SAUT_TOLERE_M = 50;
+
+export const estContinu = (f: Fiche): boolean => f.j < SAUT_TOLERE_M;
+
+/** Comment nommer le trajet d'une fiche, sans rien promettre de faux. */
+export function trajet(f: Fiche): string {
+  if (f.o && f.d) return `boucle au départ de ${f.d}`;
+  if (estContinu(f) && f.d && f.a && f.d !== f.a) return `${f.d} → ${f.a}`;
+  if (f.d) return `au départ de ${f.d}`;
+  return `${f.c} commune${f.c > 1 ? "s" : ""} traversée${f.c > 1 ? "s" : ""}`;
 }
 
 let index: Promise<Fiche[]> | null = null;
 
-/** L'index complet, téléchargé une seule fois par visite. */
+/** L'index complet — 1 032 itinéraires, ~160 Ko, une fois par visite. */
 export function chargerIndex(): Promise<Fiche[]> {
   // ⚠️ On mémorise la PROMESSE, pas le résultat : deux composants qui
   //    demandent l'index en même temps ne doivent pas le télécharger deux fois.
@@ -59,40 +77,48 @@ export function chargerIndex(): Promise<Fiche[]> {
         return r.json();
       })
       .catch((e) => {
-        index = null; // un échec ne doit pas se mémoriser : on pourra réessayer
+        index = null; // un échec ne se mémorise pas : on pourra réessayer
         throw e;
       });
   }
   return index;
 }
 
-interface PromenadeDistante {
-  slug: string; titre: string; commune: string | null; km: number;
-  url: string; boucle: boolean; rep: number;
-  pts: [number, number][];
-  etapes: { n: string; c: string; p: number; x: number; y: number }[];
+interface ItineraireDistant extends Fiche {
+  rel: string;
+  b: [number, number, number, number];
+  g: { type: string; coordinates: [number, number][][] };
 }
 
-/** Une promenade complète, géométrie comprise. */
-export async function chargerPromenade(slug: string): Promise<Walk | null> {
-  const r = await fetch(`${BASE}/${encodeURIComponent(slug)}.json`);
+/** Un itinéraire complet, géométrie comprise. */
+export async function chargerItineraire(slug: string): Promise<Walk | null> {
+  const r = await fetch(`${BASE}/t/${encodeURIComponent(slug)}.json`);
   if (!r.ok) return null;
-  const d: PromenadeDistante = await r.json();
-  const etapes: Etape[] = (d.etapes ?? []).map((e) => ({
-    nom: e.n, categorie: e.c, pos: e.p, lat: e.y, lon: e.x,
-  }));
+  const d: ItineraireDistant = await r.json();
+
+  // ⛔ LES MORCEAUX RESTENT DES MORCEAUX. On les expose en `traits` ; `points`
+  //    n'est que leur concaténation à plat, pour le cadrage et les repères.
+  //    La carte dessine `traits`, donc rien ne relie deux morceaux disjoints.
+  const traits: WalkPoint[][] = (d.g?.coordinates ?? []).map((ligne) =>
+    ligne.map(([lon, lat]) => ({ lon, lat }))
+  );
+  const points: WalkPoint[] = traits.flat();
+  if (points.length === 0) return null;
+
+  const etapes: Etape[] = [];
   return {
-    slug: d.slug,
-    titre: d.titre,
-    lieu: d.commune ?? "France",
+    slug: d.s,
+    titre: d.n,
+    lieu: d.d ?? "Bretagne",
     resume: "",
-    distanceKm: d.km,
+    distanceKm: d.k,
     // Marche à 3,5 km/h — une estimation, jamais un relevé.
-    dureeEstimeeH: Math.round((d.km / 3.5) * 2) / 2,
-    boucle: d.boucle,
-    osmUrl: d.url,
-    osmRef: "",
-    points: d.pts.map(([lon, lat]) => ({ lon, lat })),
+    dureeEstimeeH: Math.round((d.k / 3.5) * 2) / 2,
+    boucle: d.o,
+    osmUrl: `https://www.openstreetmap.org/${d.rel.replace("osm:", "").replace(":", "/")}`,
+    osmRef: d.rel,
+    points,
+    traits,
     etapes,
   };
 }
@@ -102,10 +128,9 @@ export type Commune = [string, number, number];
 
 let communes: Promise<Commune[]> | null = null;
 
-/** Les 35 413 communes de France, pour chercher par PROXIMITÉ. */
 export function chargerCommunes(): Promise<Commune[]> {
   if (!communes) {
-    communes = fetch(`${BASE}/communes.json`)
+    communes = fetch(COMMUNES)
       .then((r) => {
         if (!r.ok) throw new Error(`communes: HTTP ${r.status}`);
         return r.json();
@@ -119,7 +144,7 @@ export function chargerCommunes(): Promise<Commune[]> {
 }
 
 const sansAccent = (s: string) =>
-  s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 /** Distance approchée en km — suffisante pour trier des voisinages. */
 function km(aLon: number, aLat: number, bLon: number, bLat: number): number {
@@ -131,36 +156,47 @@ function km(aLon: number, aLat: number, bLon: number, bLat: number): number {
 /**
  * ⛔ LA RECHERCHE NE SE FAIT PAS SUR LE NOM DE COMMUNE RATTACHÉ.
  *
- * Chaque promenade porte UNE commune : celle de son point MILIEU. Un sentier
- * qui part de Bayonne et finit ailleurs est donc rattaché à Boucau ou à
- * Anglet. Mesuré le 28/10/2026 : chercher « Bayonne » rendait **zéro** alors
- * que **19 promenades** passent à moins de 12 km, et « Ajaccio » zéro pour 7.
- * S'ajoutaient 3 307 promenades (12,4 %) SANS aucune commune — leur milieu
- * tombe en mer ou dans un interstice de contour.
+ * Mesuré le 28/10/2026 sur le catalogue France : chercher « Bayonne » rendait
+ * **zéro** alors que 19 parcours passaient à moins de 12 km. Un sentier porte
+ * une commune, pas les trente qu'il traverse.
+ * ⭐ « Aucun sentier à Bayonne » était une réponse CONFIANTE ET FAUSSE — pire
+ *    qu'une absence de réponse, parce qu'on ne rouvre pas une certitude.
  *
- * ⭐ « Aucune promenade à Bayonne » était une réponse CONFIANTE ET FAUSSE,
- *    et c'est pire qu'une absence de réponse : on ne rouvre pas une certitude.
+ * On résout donc la localité en COORDONNÉES, puis on cherche autour du DÉPART.
  *
- * On résout donc la localité en COORDONNÉES, puis on cherche autour.
+ * ⚠️ Ça reste une approximation assumée : on compare au point de départ, pas au
+ *    tracé. Un GR de 200 km qui passe à Quimper sans en partir ne sortira pas
+ *    sur « Quimper ». Le dire dans l'interface, ne pas le cacher.
  */
-export function chercher(fiches: Fiche[], q: string, lieux: Commune[] | null, rayonKm = 15): Fiche[] {
+export function chercher(
+  fiches: Fiche[],
+  q: string,
+  lieux: Commune[] | null,
+  rayonKm = 20
+): Fiche[] {
   const m = sansAccent(q.trim());
   if (!m) return [];
 
-  const lieu = lieux?.find((c) => sansAccent(c[0]) === m)
-    ?? lieux?.find((c) => sansAccent(c[0]).startsWith(m));
+  const lieu =
+    lieux?.find((c) => sansAccent(c[0]) === m) ??
+    lieux?.find((c) => sansAccent(c[0]).startsWith(m));
 
   if (lieu) {
     const [, lon, lat] = lieu;
-    return fiches
+    const proches = fiches
       .map((f) => ({ f, d: km(lon, lat, f.x, f.y) }))
       .filter((o) => o.d <= rayonKm)
       .sort((a, b) => a.d - b.d)
       .map((o) => o.f);
+    // ⚠️ Une commune bretonne sans sentier au départ existe : on retombe alors
+    //    sur le texte plutôt que de rendre une liste vide trompeuse.
+    if (proches.length > 0) return proches;
   }
 
-  // Pas de commune de ce nom : on retombe sur le texte (nom de sentier, GR…).
   return fiches.filter(
-    (f) => sansAccent(f.c ?? "").includes(m) || sansAccent(f.t).includes(m)
+    (f) =>
+      sansAccent(f.n).includes(m) ||
+      sansAccent(f.d ?? "").includes(m) ||
+      sansAccent(f.a ?? "").includes(m)
   );
 }

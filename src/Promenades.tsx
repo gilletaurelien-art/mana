@@ -1,29 +1,44 @@
 import { useEffect, useMemo, useState } from "react";
 import { baseUrl } from "./router";
-import { WALKS } from "./walks";
-import { chargerIndex, chargerCommunes, chercher } from "./catalogue";
+import { WALKS, effortLisible } from "./walks";
+import { chargerIndex, chargerCommunes, chercher, trajet, estContinu } from "./catalogue";
 import type { Fiche, Commune } from "./catalogue";
 
-// Recherche des promenades — sur TOUTE LA FRANCE.
+// Les sentiers de randonnée de BRETAGNE — 1 032 itinéraires, 14 540 km.
 //
-// ⛔ LES FILTRES « POUSSETTE/PMR » ET « CHIENS » ONT ÉTÉ RETIRÉS LE 28/10/2026.
-//    OpenStreetMap ne porte pas ces attributs. Ils étaient branchés sur des
-//    champs inventés ; une fois les données réelles posées, ils auraient rendu
-//    TOUS les parcours quel que soit le choix.
-//    ⭐ Un filtre qui ne filtre rien ne paraît pas cassé : il paraît PERMISSIF.
-//       L'utilisateur croit avoir trié, et part avec une poussette.
+// ⭐ ON LISTE AU LIEU D'EXIGER UNE RECHERCHE, ET C'EST LE VOLUME QUI LE DIT.
+//    Le catalogue France portait 26 665 parcours : les lister par un ordre
+//    arbitraire ne répondait à aucune question, donc la page restait vide
+//    jusqu'à ce qu'on saisisse une commune. Mille entrées, elles, se
+//    parcourent. ⚠️ Si ce catalogue redevient national, cette page redevient
+//    muette par défaut — le choix suit le NOMBRE, pas le goût.
 //
-// ⚠️ ON N'AFFICHE RIEN TANT QU'AUCUNE LOCALITÉ N'EST SAISIE. Lister 26 600
-//    promenades par ordre arbitraire ne répond à aucune question. La promenade
-//    se cherche « au départ de quelque part ».
+// ⛔ LES FILTRES « POUSSETTE/PMR » ET « CHIENS » ONT ÉTÉ RETIRÉS LE 28/10/2026 :
+//    OpenStreetMap ne porte pas ces attributs. ⭐ Un filtre qui ne filtre rien
+//    ne paraît pas cassé, il paraît PERMISSIF — et quelqu'un part avec une
+//    poussette.
 
-type FiltreBoucle = "tous" | "boucle" | "ar";
+type FiltreForme = "tous" | "boucle" | "aller";
 const MAX_AFFICHES = 40;
+
+/**
+ * 🔴 LE CRAN LE PLUS À DROITE VEUT DIRE « SANS LIMITE », ET C'EST UN CORRECTIF.
+ *
+ * Mesuré à l'écran le 28/10/2026 : le filtre plafonnait à 24 h de marche, soit
+ * 84 km. La page annonçait « 1 032 itinéraires » et en affichait **1 015** —
+ * les 17 plus longs, dont « De Douarnenez à Redon » (355 km) et le Chemin de
+ * Halage (315 km), étaient invisibles **par défaut**.
+ * ⭐ Un filtre dont la valeur initiale exclut les pièces maîtresses du
+ *    catalogue ne paraît pas trop serré : il fait croire qu'elles n'existent
+ *    pas. Et le compte affiché à côté le contredisait sans que rien ne le dise.
+ */
+const DUREE_SANS_LIMITE = 25;
+
 
 export function Promenades() {
   const B = baseUrl();
-  const [dureeMax, setDureeMax] = useState(6);
-  const [boucle, setBoucle] = useState<FiltreBoucle>("tous");
+  const [dureeMax, setDureeMax] = useState(DUREE_SANS_LIMITE);
+  const [forme, setForme] = useState<FiltreForme>("tous");
   const [q, setQ] = useState("");
   const [fiches, setFiches] = useState<Fiche[] | null>(null);
   const [lieux, setLieux] = useState<Commune[] | null>(null);
@@ -34,7 +49,7 @@ export function Promenades() {
   }, []);
 
   useEffect(() => {
-    document.title = "Promenades — MANA.bzh";
+    document.title = "Les sentiers de Bretagne — MANA.bzh";
     return () => {
       document.title = "MANA.bzh — Promenades & découvertes en Bretagne";
     };
@@ -48,31 +63,35 @@ export function Promenades() {
       .then(setFiches)
       // ⚠️ UNE ERREUR SE DIT. Sans ce message, un refus CORS ou une coupure
       //    rendrait une page vide et silencieuse — le visiteur conclurait
-      //    qu'il n'existe aucune promenade.
-      .catch(() => setErreur("Le catalogue des promenades n'a pas pu être chargé. Vérifiez votre connexion."));
+      //    qu'il n'existe aucun sentier.
+      .catch(() =>
+        setErreur(
+          "Les sentiers n'ont pas pu être chargés. Vérifiez votre connexion."
+        )
+      );
   }, []);
 
   const resultats = useMemo(() => {
     if (!fiches) return [];
-    return chercher(fiches, q, lieux)
-      .filter((f) => f.k / 3.5 <= dureeMax)
-      .filter((f) => boucle === "tous" || (boucle === "boucle" ? f.b : !f.b))
-      // déjà trié par distance dans chercher()
-      ;
-  }, [fiches, lieux, q, dureeMax, boucle]);
+    // Sans recherche, on montre TOUT, du plus long au plus court : l'index est
+    // déjà trié ainsi, et les grands itinéraires sont ceux qu'on reconnaît.
+    const base = q.trim() ? chercher(fiches, q, lieux) : fiches;
+    return base
+      .filter((f) => dureeMax >= DUREE_SANS_LIMITE || f.k / 3.5 <= dureeMax)
+      .filter((f) => forme === "tous" || (forme === "boucle" ? f.o : !f.o));
+  }, [fiches, lieux, q, dureeMax, forme]);
 
   return (
     <main className="page">
       <div className="wrap">
-        <p className="hero-label">Où marcher</p>
-        <h1 className="page-titre">Promenades</h1>
+        <p className="hero-label">Où marcher en Bretagne</p>
+        <h1 className="page-titre">Les sentiers</h1>
 
         <section className="page-panel">
           <p className="page-intro">
-            Des parcours réels, tracés d'après OpenStreetMap, sur toute la
-            France. Cherchez une commune : les promenades qui en partent ou qui
-            la traversent s'affichent, les plus riches en points de découverte
-            d'abord.
+            Mille trente-deux itinéraires, quatorze mille cinq cents
+            kilomètres, tracés d'après OpenStreetMap — de la Rance au Pays de
+            Retz. Parcourez la liste, ou cherchez une commune.
           </p>
           <div className="moteur-barre" role="search">
             <svg className="moteur-loupe" viewBox="0 0 24 24" aria-hidden="true">
@@ -82,8 +101,8 @@ export function Promenades() {
             <input
               type="search"
               autoComplete="off"
-              placeholder="Au départ de…"
-              aria-label="Chercher une commune"
+              placeholder="Une commune, un nom de sentier…"
+              aria-label="Chercher une commune ou un sentier"
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
@@ -92,39 +111,41 @@ export function Promenades() {
             {erreur ? (
               <strong>{erreur}</strong>
             ) : !fiches ? (
-              "Chargement du catalogue…"
-            ) : !q.trim() ? (
-              `${fiches.length.toLocaleString("fr-FR")} promenades en base. Tapez une commune pour commencer.`
+              "Chargement des sentiers…"
             ) : (
-              `${resultats.length.toLocaleString("fr-FR")} promenade${resultats.length > 1 ? "s" : ""} pour « ${q} »`
+              `${resultats.length.toLocaleString("fr-FR")} itinéraire${
+                resultats.length > 1 ? "s" : ""
+              }${q.trim() ? ` pour « ${q} »` : ""}`
             )}
           </p>
         </section>
 
-        {fiches && q.trim() !== "" && (
+        {fiches && (
           <section className="page-panel">
             <p className="apercu-label">Filtres</p>
             <div className="est-actions" style={{ marginBottom: 0 }}>
               <label className="filtre">
-                Durée ≤ {dureeMax} h
+                {dureeMax >= DUREE_SANS_LIMITE
+                  ? "Toutes les durées"
+                  : `Marche ≤ ${dureeMax} h`}
                 <input
                   type="range"
                   min={1}
-                  max={6}
-                  step={0.5}
+                  max={DUREE_SANS_LIMITE}
+                  step={1}
                   value={dureeMax}
                   onChange={(e) => setDureeMax(Number(e.target.value))}
                 />
               </label>
               <select
-                value={boucle}
-                onChange={(e) => setBoucle(e.target.value as FiltreBoucle)}
+                value={forme}
+                onChange={(e) => setForme(e.target.value as FiltreForme)}
                 className="filtre-select"
-                aria-label="Type de parcours"
+                aria-label="Forme du parcours"
               >
-                <option value="tous">Boucle ou aller simple</option>
+                <option value="tous">Boucle ou traversée</option>
                 <option value="boucle">Boucle</option>
-                <option value="ar">Aller simple</option>
+                <option value="aller">Traversée</option>
               </select>
             </div>
           </section>
@@ -132,18 +153,24 @@ export function Promenades() {
 
         {resultats.slice(0, MAX_AFFICHES).map((f) => (
           <section key={f.s} className="page-panel">
-            <p className="apercu-label">{f.c ?? f.r}</p>
+            <p className="apercu-label">{trajet(f)}</p>
             <h2 className="section-title" style={{ marginBottom: "var(--sp-2)" }}>
-              {f.t}
+              {f.n}
             </h2>
             <p className="page-note">
-              {f.k} km · ≈ {Math.round((f.k / 3.5) * 2) / 2} h de marche ·{" "}
-              {f.b ? "boucle" : "aller simple"}
-              {f.e > 0 && ` · ${f.e} point${f.e > 1 ? "s" : ""} de découverte`}
+              {f.k} km · {effortLisible(f.k)} · {f.c} commune
+              {f.c > 1 ? "s" : ""}
+              {/* ⚠️ ON LE DIT. Un itinéraire morcelé s'affiche en plusieurs
+                   traits sur la carte, et le visiteur doit savoir pourquoi
+                   AVANT de l'ouvrir, pas en découvrant un trou. */}
+              {!estContinu(f) && ` · tracé incomplet dans OpenStreetMap`}
             </p>
-            <div className="est-actions" style={{ marginTop: "var(--sp-2)", marginBottom: 0 }}>
+            <div
+              className="est-actions"
+              style={{ marginTop: "var(--sp-2)", marginBottom: 0 }}
+            >
               <a className="btn btn-primary" href={`${B}/promenade/${f.s}`}>
-                Ouvrir le parcours
+                Ouvrir l'itinéraire
               </a>
             </div>
           </section>
@@ -152,18 +179,19 @@ export function Promenades() {
         {resultats.length > MAX_AFFICHES && (
           <section className="page-panel">
             <p className="page-note">
-              {resultats.length - MAX_AFFICHES} autres promenades correspondent.
-              Précisez la commune pour les voir.
+              {resultats.length - MAX_AFFICHES} autres itinéraires
+              correspondent. Cherchez une commune, ou resserrez la durée.
             </p>
           </section>
         )}
 
-        {fiches && q.trim() !== "" && resultats.length === 0 && (
+        {fiches && resultats.length === 0 && (
           <section className="page-panel">
             <p className="page-texte">
-              Aucune promenade pour « {q} ». Essayez une commune voisine — la
-              couverture suit OpenStreetMap, elle est inégale selon les
-              territoires.
+              Aucun itinéraire ne correspond. ⚠️ La recherche compare au{" "}
+              <strong>point de départ</strong> : un grand sentier qui traverse
+              la commune sans en partir ne sortira pas. Essayez une commune
+              voisine, ou le nom du sentier.
             </p>
           </section>
         )}
@@ -177,7 +205,11 @@ export function Promenades() {
           </p>
           <div className="est-actions" style={{ marginBottom: 0 }}>
             {WALKS.map((w) => (
-              <a key={w.slug} className="btn btn-ghost" href={`${B}/promenade/${w.slug}`}>
+              <a
+                key={w.slug}
+                className="btn btn-ghost"
+                href={`${B}/promenade/${w.slug}`}
+              >
                 {w.titre}
               </a>
             ))}

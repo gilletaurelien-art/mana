@@ -1,7 +1,7 @@
 import { useEffect, useState, lazy, Suspense } from "react";
 import { baseUrl } from "./router";
-import { WALKS, distAuTrace, distM } from "./walks";
-import { chargerPromenade } from "./catalogue";
+import { WALKS, distAuTrace, distM, effortLisible } from "./walks";
+import { chargerItineraire } from "./catalogue";
 import type { Walk } from "./walks";
 import type { WalkPoint } from "./walks";
 import { WalkMap } from "./WalkMap";
@@ -109,7 +109,7 @@ export function Promenade({ slug }: { slug: string }) {
     if (embarquee) return;
     let vivant = true;
     setCherche(true);
-    chargerPromenade(slug)
+    chargerItineraire(slug)
       .then((w) => vivant && setDistante(w))
       .catch(() => vivant && setDistante(null))
       .finally(() => vivant && setCherche(false));
@@ -210,8 +210,8 @@ export function Promenade({ slug }: { slug: string }) {
         <section className="page-panel">
           {walk.resume && <p className="page-intro">{walk.resume}</p>}
           <p className="page-note">
-            {walk.distanceKm} km · ≈ {walk.dureeEstimeeH} h de marche ·{" "}
-            {walk.boucle ? "boucle" : "aller simple"}. Durée estimée à 3,5 km/h.
+            {walk.distanceKm} km · {effortLisible(walk.distanceKm)} ·{" "}
+            {walk.boucle ? "boucle" : "aller simple"}. Estimation à 3,5 km/h.
           </p>
           <p className="page-note">
             {/* ⛔ On ne dit PAS la difficulté, l'accès poussette/PMR ni les

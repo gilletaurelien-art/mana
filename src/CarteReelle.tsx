@@ -77,14 +77,27 @@ export function CarteReelle({
 
     const redessiner = () => {
       if (!sous || !trait) return;
-      const d =
-        "M " +
-        walk.points
-          .map((p) => {
-            const q = m.project([p.lon, p.lat]);
-            return `${q.x.toFixed(1)} ${q.y.toFixed(1)}`;
-          })
-          .join(" L ");
+      // ⛔ UN SOUS-CHEMIN PAR MORCEAU — « M … L … M … L … », jamais un seul
+      //    « M » suivi de tous les points. Un itinéraire breton est stocké en
+      //    portions, et 123 jointures sur 575 ont un écart de plus de 50 m
+      //    (jusqu'à 83 km). Les enchaîner en un trait unique dessinerait une
+      //    droite à travers la Bretagne, qui aurait l'air d'un sentier.
+      //    ⭐ Le SVG sait déjà faire : plusieurs `M` dans un même `d` sont
+      //       plusieurs traits, et rien ne les relie.
+      const morceaux = walk.traits?.length ? walk.traits : [walk.points];
+      const d = morceaux
+        .filter((m2) => m2.length > 0)
+        .map(
+          (m2) =>
+            "M " +
+            m2
+              .map((p) => {
+                const q = m.project([p.lon, p.lat]);
+                return `${q.x.toFixed(1)} ${q.y.toFixed(1)}`;
+              })
+              .join(" L ")
+        )
+        .join(" ");
       sous.setAttribute("d", d);
       trait.setAttribute("d", d);
     };

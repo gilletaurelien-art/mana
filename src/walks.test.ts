@@ -178,10 +178,15 @@ describe("la recherche trouve par PROXIMITÉ, pas par nom rattaché", () => {
   //    12 km — elles sont rattachées à Boucau, Anglet, Jatxou.
   //    ⭐ « Aucune promenade à Bayonne » est une réponse CONFIANTE ET FAUSSE.
   //       Pire qu'une absence de réponse : on ne rouvre pas une certitude.
+  // ⚠️ LA FORME DES FICHES A CHANGÉ LE 28/10/2026 (catalogue France → sentiers
+  //    de Bretagne) : `t`→`n`, `c`→`d`, et `c` est désormais un NOMBRE de
+  //    communes. Ces tests ont été RETOURNÉS, pas supprimés : le défaut qu'ils
+  //    tiennent — une réponse confiante et fausse sur « Bayonne » — ne dépend
+  //    pas du nom des champs.
   const fiches = [
-    { s: "a", t: "Sentier du phare", c: "Anglet", k: 8, r: "FR-NAQ", b: false, e: 3, x: -1.52, y: 43.49 },
-    { s: "b", t: "Boucle du Boucau", c: "Boucau", k: 5, r: "FR-NAQ", b: true, e: 1, x: -1.47, y: 43.52 },
-    { s: "c", t: "GR 34 — portion 3", c: "Crozon", k: 12, r: "FR-BRE", b: false, e: 9, x: -4.49, y: 48.25 },
+    { s: "a", n: "Sentier du phare", d: "Anglet", a: "Anglet", k: 8, c: 2, p: 1, x: -1.52, y: 43.49, o: false, j: 0 },
+    { s: "b", n: "Boucle du Boucau", d: "Boucau", a: "Boucau", k: 5, c: 1, p: 1, x: -1.47, y: 43.52, o: true, j: 0 },
+    { s: "c", n: "GR 34 — Crozon", d: "Crozon", a: "Camaret-sur-Mer", k: 12, c: 3, p: 2, x: -4.49, y: 48.25, o: false, j: 12 },
   ];
   const communes: [string, number, number][] = [
     ["Bayonne", -1.4679, 43.4856],
