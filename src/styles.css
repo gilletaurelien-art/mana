@@ -685,3 +685,20 @@ html {
   overflow: hidden;
   clip-path: inset(50%);
 }
+
+/* Brand dans la nav : garde son style Marelle, pas de pilule */
+.nav a.brand {
+  font-family: var(--serif);
+  font-size: var(--t-l);
+  font-weight: 400;
+  color: var(--ink);
+  border: none;
+  padding: 0 var(--sp-1);
+}
+.nav a.brand:hover {
+  color: var(--ink);
+  transform: none;
+  box-shadow: none;
+  border: none;
+}
+.nav a.brand em { color: var(--or); font-style: normal; }
