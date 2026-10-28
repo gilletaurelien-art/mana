@@ -30,7 +30,7 @@ const MODULES = [
     titre: "Navigation & cartographie",
     accroche: "Le parcours dans la poche.",
     texte:
-      "Hors ligne (PWA) : carte et parcours restent sans réseau. GPS en temps réel avec boussole, alerte si vous vous éloignez de 50 m du sentier, profil d'altitude lisible.",
+      "Le tracé reste dans la poche sans réseau. GPS en temps réel avec boussole, alerte si vous vous éloignez de 50 m du sentier. Le fond de carte, lui, demande du réseau — hors ligne, le parcours s'affiche en schéma.",
     cta: { label: "Voir les parcours", href: "/promenades" },
   },
   {
@@ -40,7 +40,7 @@ const MODULES = [
     accroche: "Prudence honnête.",
     texte:
       "SOS en un geste : position GPS partagée par SMS aux secours ou aux proches. Marées et météo : renvoi systématique vers les sources officielles — aucune donnée simulée.",
-    cta: { label: "Découvrir", href: "/promenade/gr34-crozon" },
+    cta: { label: "Découvrir", href: "/promenade/cap-frehel" },
   },
   {
     glyphe: GlyphDecouverte,
@@ -58,7 +58,7 @@ const MODULES = [
     accroche: "Gardez la trace.",
     texte:
       "Export GPX en un clic, lisible par toutes les montres et applications. Fonctionne hors ligne, du cap à la grève — le réseau n'attendra pas, nous non plus.",
-    cta: { label: "Ouvrir un parcours", href: "/promenade/pointe-du-raz" },
+    cta: { label: "Ouvrir un parcours", href: "/promenade/beg-leguer" },
   },
 ];
 
@@ -205,7 +205,8 @@ export default function App() {
                 <p className="swipe-lieu">{walk.lieu}</p>
                 <p className="swipe-titre">{walk.titre}</p>
                 <p className="swipe-meta">
-                  {walk.distanceKm} km · {walk.dureeH} h · {walk.difficulte}
+                  {walk.distanceKm} km · ≈ {walk.dureeEstimeeH} h de marche ·{" "}
+                  {walk.boucle ? "boucle" : "aller simple"}
                 </p>
                 <div className="balade-actions">
                   <button
@@ -287,8 +288,8 @@ export default function App() {
           </div>
           <nav className="footer-nav" aria-label="Pied de page">
             <a href={`${B}/promenades`}>Promenades</a>
-            <a href={`${B}/promenade/gr34-crozon`}>GR34 — Crozon</a>
-            <a href={`${B}/promenade/pointe-du-raz`}>Pointe du Raz</a>
+            <a href={`${B}/promenade/cap-frehel`}>Cap Fréhel</a>
+            <a href={`${B}/promenade/beg-leguer`}>Beg Léguer</a>
             <a href={`${B}/radio`}>MANAradio</a>
             <a href={`${B}/territoire`}>Le territoire</a>
             <a href={`${B}/contact`}>Contact</a>

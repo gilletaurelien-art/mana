@@ -1,9 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { baseUrl } from "./router";
 import { WALKS, distAuTrace, distM } from "./walks";
 import type { WalkPoint } from "./walks";
 import { WalkMap } from "./WalkMap";
-import { AltitudeProfile } from "./Altitude";
+// ⚠️ CHARGÉE À LA DEMANDE, et ce n'est pas une optimisation de confort :
+//    maplibre pèse ~900 Ko. Importée normalement, elle partait dans le bundle
+//    d'ACCUEIL — 1,29 Mo au premier écran, pour une carte que l'accueil
+//    n'affiche même pas. Elle ne descend que lorsqu'on ouvre un parcours.
+const CarteReelle = lazy(() =>
+  import("./CarteReelle").then((m) => ({ default: m.CarteReelle }))
+);
 
 // Page promenade : GPS navigateur (position + boussole), alerte
 // hors-sentier à 50 m, export GPX, SOS.
@@ -12,8 +18,10 @@ import { AltitudeProfile } from "./Altitude";
 const HORS_SENTIER_M = 50;
 
 function enGpx(walk: (typeof WALKS)[number]): string {
+  // ⛔ PAS DE <ele> : nous n'avons AUCUNE altitude. Un GPX qui en porterait
+  //    une inventée tromperait la montre du promeneur, pas seulement l'écran.
   const pts = walk.points
-    .map((p) => `      <trkpt lat="${p.lat}" lon="${p.lon}"><ele>${p.ele}</ele></trkpt>`)
+    .map((p) => `      <trkpt lat="${p.lat}" lon="${p.lon}" />`)
     .join("\n");
   return `<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="mana.bzh">
@@ -72,7 +80,6 @@ export function Promenade({ slug }: { slug: string }) {
         const p: WalkPoint = {
           lat: pos.coords.latitude,
           lon: pos.coords.longitude,
-          ele: pos.coords.altitude ?? 0,
         };
         setMoi(p);
         setCap(pos.coords.heading ?? null);
@@ -107,17 +114,22 @@ export function Promenade({ slug }: { slug: string }) {
   return (
     <main className="page">
       <div className="wrap">
-        <p className="hero-label">Promenade — prototype client-side</p>
+        <p className="hero-label">Promenade — tracé OpenStreetMap</p>
         <h1 className="page-titre">{walk.titre}</h1>
 
         <section className="page-panel">
           <p className="page-intro">{walk.resume}</p>
           <p className="page-note">
-            {walk.distanceKm} km · {walk.dureeH} h · {walk.difficulte} ·{" "}
-            {walk.boucle ? "boucle" : "aller-retour"} ·{" "}
-            {walk.poussettePmr ? "accessible poussette/PMR" : "non accessible PMR"} ·
-            chiens {walk.chiens}. Tracé indicatif (prototype) : avant
-            publication, le tracé officiel (IGN) sera sourcé.
+            {walk.distanceKm} km · ≈ {walk.dureeEstimeeH} h de marche ·{" "}
+            {walk.boucle ? "boucle" : "aller simple"}. Durée estimée à 3,5 km/h.
+          </p>
+          <p className="page-note">
+            {/* ⛔ On ne dit PAS la difficulté, l'accès poussette/PMR ni les
+                chiens : OpenStreetMap ne les porte pas pour ce sentier, et une
+                case « facile » inventée envoie quelqu'un sur une falaise. */}
+            Tracé réel issu d'<a href={walk.osmUrl}>OpenStreetMap</a> (ODbL).
+            Difficulté, accessibilité et accueil des chiens ne sont pas
+            renseignés à la source : nous ne les affichons pas.
           </p>
           <div className="est-actions" style={{ marginTop: "var(--sp-2)" }}>
             <button
@@ -162,7 +174,15 @@ export function Promenade({ slug }: { slug: string }) {
 
         <section className="page-panel">
           <p className="apercu-label">Carte</p>
-          <WalkMap walk={walk} moi={moi} capDeg={cap} />
+          {/* Hors ligne, les tuiles ne viennent pas : on retombe sur le
+              schéma SVG, qui ne dépend que du tracé déjà embarqué. */}
+          {horsLigne ? (
+            <WalkMap walk={walk} moi={moi} capDeg={cap} />
+          ) : (
+            <Suspense fallback={<WalkMap walk={walk} moi={moi} capDeg={cap} />}>
+              <CarteReelle walk={walk} moi={moi} />
+            </Suspense>
+          )}
           <p className="page-note">
             {moi
               ? `Position GPS : ${moi.lat.toFixed(5)}, ${moi.lon.toFixed(5)}` + (cap !== null ? ` · cap ${Math.round(cap)}°` : "")
@@ -171,17 +191,19 @@ export function Promenade({ slug }: { slug: string }) {
         </section>
 
         <section className="page-panel">
-          <p className="apercu-label">Profil d'altitude</p>
-          <AltitudeProfile points={walk.points} />
-        </section>
-
-        <section className="page-panel">
-          <p className="apercu-label">Points d'intérêt</p>
-          {walk.waypoints.map((w) => (
-            <p key={w.nom} className="page-texte">
-              <strong>{w.nom}</strong> — {w.audio}
-            </p>
-          ))}
+          <p className="apercu-label">Ce que vous croiserez</p>
+          {/* ⚠️ DANS L'ORDRE DE LA MARCHE (champ `pos`), jamais par distance :
+              sous un titre qui annonce une séquence, un tri par proximité
+              ment. Et aucune narration inventée — seulement le nom porté par
+              OpenStreetMap. */}
+          <ol className="etapes">
+            {walk.etapes.map((e) => (
+              <li key={e.nom}>
+                <strong>{e.nom}</strong>
+                <span className="etape-cat">{e.categorie.replace(/_/g, " ")}</span>
+              </li>
+            ))}
+          </ol>
         </section>
 
         <section className="page-panel">

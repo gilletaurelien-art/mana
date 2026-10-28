@@ -836,3 +836,89 @@ body { padding-bottom: 84px; }
   .footer-colonnes > div:first-child { max-width: 60%; }
 }
 .footer-note { max-width: 44ch; }
+
+/* ── Carte réelle (nos tuiles) ──────────────────────────────────────────── */
+.carte-reelle { margin: 0; }
+.carte-plan {
+  position: relative;
+  border-radius: 14px 18px 12px 16px;
+  overflow: hidden;
+  border: 1px solid var(--ecume);
+  background: var(--sand);
+}
+/* ⚠️ Le calque et les repères sont PAR-DESSUS la carte, jamais dedans :
+   ajouter une source au style empêche les tuiles de se peindre. */
+.carte-calque,
+.carte-reperes {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.carte-calque { width: 100%; height: 100%; }
+#trace-sous { fill: none; stroke: var(--blanc-chaud); stroke-width: 7; stroke-opacity: .85;
+              stroke-linecap: round; stroke-linejoin: round; }
+#trace-trait { fill: none; stroke: #c0392b; stroke-width: 3;
+               stroke-linecap: round; stroke-linejoin: round; }
+
+.carte-reperes { list-style: none; margin: 0; padding: 0; }
+.carte-repere {
+  position: absolute; top: 0; left: 0;
+  display: flex; align-items: center; gap: 6px;
+  margin: -7px 0 0 -7px;
+  white-space: nowrap;
+}
+.carte-pastille {
+  width: 14px; height: 14px; border-radius: 50%; flex: none;
+  background: var(--blanc-chaud); border: 3px solid var(--ink);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 35%);
+}
+.carte-repere-depart .carte-pastille { background: #2a9d4a; border-color: var(--blanc-chaud); }
+.carte-repere-arrivee .carte-pastille { background: #c0392b; border-color: var(--blanc-chaud); }
+.carte-repere-etape .carte-pastille { width: 11px; height: 11px; border-width: 2px; border-color: #c0392b; }
+.carte-repere-moi .carte-pastille { background: #2f6fdd; border-color: var(--blanc-chaud); }
+
+.carte-etiquette {
+  font: 600 11px/1.2 var(--sans);
+  color: var(--ink);
+  background: rgb(255 255 255 / 88%);
+  padding: 2px 6px; border-radius: 5px;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 18%);
+}
+.carte-repere-depart .carte-etiquette,
+.carte-repere-arrivee .carte-etiquette { font-weight: 700; }
+
+.carte-credit {
+  font: 400 var(--t-xs)/1.5 var(--sans);
+  color: #6b6558;
+  margin-top: var(--sp-1);
+}
+.carte-credit a { color: inherit; }
+
+/* ⚠️ LE TITRE EST SABLE SUR UN FOND À MOTIF, dont certaines bandes sont
+   claires : un titre LONG les traverse et devient illisible par endroits.
+   Les titres courts d'origine tenaient sur une ligne et tombaient, par
+   chance, sur du sombre. ⭐ Un contraste qui dépend de la LONGUEUR du texte
+   n'est pas un contraste : c'est un hasard qui a tenu. Le halo d'encre le
+   rend vrai quel que soit le titre. */
+.page .page-titre,
+.page .hero-label {
+  text-shadow: 0 1px 2px rgb(27 42 74 / 95%), 0 0 14px rgb(27 42 74 / 90%);
+}
+
+/* ── Les étapes, dans l'ordre de la marche ──────────────────────────────── */
+.etapes { list-style: none; margin: 0; padding: 0; counter-reset: etape; }
+.etapes li {
+  display: flex; align-items: baseline; gap: var(--sp-1);
+  padding: 10px 0; border-bottom: 1px solid var(--ecume);
+  counter-increment: etape;
+}
+.etapes li:last-child { border-bottom: 0; }
+.etapes li::before {
+  content: counter(etape);
+  font: 700 11px/1 var(--sans); color: var(--primary);
+  min-width: 1.4em; flex: none;
+}
+.etape-cat {
+  margin-left: auto; font: 400 var(--t-xs)/1 var(--sans);
+  color: #6b6558; text-transform: lowercase;
+}

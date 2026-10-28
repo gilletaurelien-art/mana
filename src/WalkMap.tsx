@@ -49,11 +49,11 @@ export function WalkMap({
         strokeDasharray="1 7"
         strokeLinecap="round"
       />
-      {walk.waypoints.map((w) => (
+      {walk.etapes.map((w) => (
         <g key={w.nom}>
           <circle
-            cx={px(w.point.lon)}
-            cy={py(w.point.lat)}
+            cx={px(w.lon)}
+            cy={py(w.lat)}
             r={4}
             fill="var(--blanc-chaud)"
             stroke="var(--ink)"
