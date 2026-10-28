@@ -40,7 +40,7 @@ const MODULES = [
     accroche: "Prudence honnête.",
     texte:
       "SOS en un geste : position GPS partagée par SMS aux secours ou aux proches. Marées et météo : renvoi systématique vers les sources officielles — aucune donnée simulée.",
-    cta: { label: "Découvrir", href: "/promenade/saint-fiacre" },
+    cta: { label: "Découvrir", href: "/promenade/forts-du-goulet" },
   },
   {
     glyphe: GlyphDecouverte,
@@ -288,6 +288,7 @@ export default function App() {
           </div>
           <nav className="footer-nav" aria-label="Pied de page">
             <a href={`${B}/promenades`}>Promenades</a>
+            <a href={`${B}/promenade/forts-du-goulet`}>Les forts du goulet</a>
             <a href={`${B}/promenade/saint-fiacre`}>Saint-Fiacre</a>
             <a href={`${B}/promenade/anse-saint-nicolas`}>L'Anse Saint-Nicolas</a>
             <a href={`${B}/radio`}>MANAradio</a>
