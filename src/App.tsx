@@ -108,9 +108,32 @@ export default function App() {
           <div className="wrap">
             <p className="hero-label">Écouter</p>
             <h1 className="page-titre">MANAradio</h1>
+
+            <section className="page-panel radio-player-panel">
+              <div className="radio-player">
+                <button
+                  type="button"
+                  className="radio-play"
+                  aria-label="Lecture"
+                  title="Hors antenne — bientôt"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M8.5 5.5v13l10-6.5z" />
+                  </svg>
+                </button>
+                <div className="radio-infos">
+                  <p className="radio-etat">Hors antenne</p>
+                  <p className="radio-note">Le direct arrivera bientôt — aucun flux simulé.</p>
+                </div>
+              </div>
+            </section>
+
             <section className="page-panel">
-              <p className="page-intro">
-                À écouter en marchant — ou au coin du feu.
+              <p className="apercu-label">En cours</p>
+              <p className="page-texte">
+                Aucun titre à l'antenne pour l'instant. Les épisodes
+                et la programmation s'afficheront ici dès la première
+                émission réelle.
               </p>
             </section>
           </div>

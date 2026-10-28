@@ -773,3 +773,37 @@ body { padding-bottom: 84px; }
   transform: translateY(-1px);
 }
 .balade-coeur svg { fill: rgb(201 162 39 / 18%); }
+
+/* ===== Page radio : player + titres en cours ===== */
+.radio-player {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+.radio-play {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  border: 1px solid var(--or);
+  background: var(--ink);
+  cursor: pointer;
+  box-shadow: 0 0 0 4px rgb(201 162 39 / 14%);
+  transition: transform 160ms ease;
+}
+.radio-play:hover { transform: translateY(-1px); }
+.radio-play svg {
+  width: 26px;
+  height: 26px;
+  fill: var(--sand);
+  stroke: none;
+}
+.radio-etat {
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: var(--t-l);
+  margin: 0 0 4px;
+}
+.radio-note { font-size: var(--t-xs); opacity: 0.6; margin: 0; }
