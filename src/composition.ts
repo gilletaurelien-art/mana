@@ -30,12 +30,12 @@ export interface Graphe {
   attribution: string;
   /** nœuds : [lon, lat] */
   n: [number, number][];
-  /** arêtes : [nœudA, nœudB, mètres, agrément 0-255, points, distance à la mer]
+  /** arêtes : [nœudA, nœudB, m, agrément, points, distance mer, dénivelé a→b]
    *  ⚠️ La distance à la mer est STOCKÉE en plus d'être fondue dans
    *  l'agrément : sans elle, impossible de VÉRIFIER que le bonus littoral
    *  change le parcours, ni de dire au promeneur « au bord de mer sur 2 km ».
    *  `null` au-delà de 2 km — et absente sur un graphe bâti sans littoral. */
-  a: [number, number, number, number, number[], (number | null)?][];
+  a: [number, number, number, number, number[], (number | null)?, (number | null)?][];
   /** lieux : accrochés à une arête, avec leur fraction le long d'elle */
   l: LieuAccroche[];
 }
@@ -57,12 +57,38 @@ export interface Boucle {
   partRepetee: number;
   /** mètres parcourus à moins de 60 m du trait de côte */
   bordDeMer: number;
+  /** dénivelé POSITIF cumulé, en mètres — la descente ne compte pas */
+  montee: number;
+  /** distance à plat équivalente, montée comprise (règle de Naismith) */
+  ressentie: number;
   lieux: LieuVu[];
   score: number;
 }
 
 /** À moins de ça, on marche VRAIMENT au bord — mesuré : 11 % du réseau. */
 export const BORD_DE_MER_M = 60;
+
+/**
+ * ⭐ LE DÉNIVELÉ N'EST PAS UN DÉSAGRÉMENT, C'EST DE L'EFFORT — et c'est ce qui
+ *    décide où il agit. On pourrait croire qu'une côte raide rend une
+ *    promenade moins plaisante : c'est faux, le point de vue est en haut.
+ *    Ce que la montée change vraiment, c'est le TEMPS. Elle n'a donc rien à
+ *    faire dans l'agrément : elle vit dans la durée, et elle raccourcit la
+ *    boucle quand le terrain monte — ce qui est exactement ce qu'on veut
+ *    quand quelqu'un dit « j'ai deux heures ».
+ *
+ * ⚠️ RÈGLE DE NAISMITH, ET C'EST UNE CONVENTION, PAS UN RELEVÉ : une heure de
+ *    marche à plat vaut 3 km ; une heure de montée vaut 600 m de dénivelé.
+ *    Donc **un mètre de montée coûte cinq mètres de plat**. Elle ignore la
+ *    descente (qui fatigue pourtant) et la condition physique de chacun. On
+ *    l'affiche comme une estimation, jamais comme une promesse.
+ */
+export const COUT_MONTEE = 5;
+
+/** Distance « à plat équivalente » : c'est elle qui tient le budget de temps. */
+export function distanceRessentie(metres: number, montee: number): number {
+  return metres + COUT_MONTEE * montee;
+}
 
 export interface LieuVu {
   categorie: string;
@@ -299,12 +325,14 @@ export function composer(
 
     const total = [...aller, ...retour];
     const m = total.reduce((t, e) => t + g.a[e][2], 0);
-    if (m < cibleM * 0.8 || m > cibleM * 1.15) continue;
+    // ⚠️ Pré-filtre large : la vraie borne porte sur la distance RESSENTIE,
+    //    qu'on ne connaît qu'après avoir compté la montée. Sans ce garde-fou
+    //    lâche, on calculerait le dénivelé de boucles manifestement hors sujet.
+    if (m < cibleM * 0.45 || m > cibleM * 1.15) continue;
 
     const uniques = [...new Set(total)].sort((x, y) => x - y);
     const cle = uniques.join(",");
     if (vues.has(cle)) continue;
-    vues.add(cle);
 
     const compte = new Map<number, number>();
     for (const e of total) compte.set(e, (compte.get(e) ?? 0) + 1);
@@ -315,6 +343,19 @@ export function composer(
       const d = g.a[e][5];
       return t + (d != null && d <= BORD_DE_MER_M ? g.a[e][2] : 0);
     }, 0);
+    // ⚠️ LA MONTÉE SE COMPTE DANS LE SENS DE MARCHE. Une arête prise à
+    //    l'envers descend ; sommer des valeurs absolues doublerait le
+    //    dénivelé d'une boucle, qui monte et redescend toujours autant.
+    let montee = 0;
+    let nMarche = depart;
+    for (const e of total) {
+      const ar = g.a[e];
+      const aLEndroit = ar[0] === nMarche;
+      const dz = ar[6];
+      if (dz != null) montee += Math.max(0, aLEndroit ? dz : -dz);
+      nMarche = aLEndroit ? ar[1] : ar[0];
+    }
+    const ressentie = distanceRessentie(m, montee);
 
     // ⭐ ON SÉLECTIONNE PAR PRIORITÉ, ON AFFICHE DANS L'ORDRE DE MARCHE.
     //    Deux étapes, jamais confondues. Une liste intitulée « ce que vous
@@ -341,11 +382,13 @@ export function composer(
       parcouru += ar[2];
       nAvant = aLEndroit ? ar[1] : ar[0];
     }
+    if (ressentie < cibleM * 0.8 || ressentie > cibleM * 1.15) continue;
+    vues.add(cle);
     boucles.push({
-      aretes: total, metres: m, agrement, partRepetee, bordDeMer,
+      aretes: total, metres: m, agrement, partRepetee, bordDeMer, montee, ressentie,
       lieux: [...vusLieux.values()].sort((x, y) => x.ordre - y.ordre),
       score: agrement + 14 * vusLieux.size
-             - 220 * Math.abs(m - cibleM) / cibleM
+             - 220 * Math.abs(ressentie - cibleM) / cibleM
              - 200 * partRepetee,
     });
     if (boucles.length >= candidats) break;

@@ -26,6 +26,16 @@ const BASE = "https://mana.bzh/bretagne/g";
 /** ⚠️ 3 km/h, pas 4. Une promenade s'arrête, regarde, revient sur ses pas. */
 const ALLURE_KMH = 3;
 
+/**
+ * ⭐ LE BUDGET PORTE SUR LA DISTANCE RESSENTIE, PAS SUR LES KILOMÈTRES.
+ *    Un mètre de montée coûte cinq mètres de plat (règle de Naismith). Donc
+ *    « deux heures » dans un terrain qui monte rend une boucle PLUS COURTE —
+ *    mesuré sur Crozon : 5,2 km réels au lieu de 6, pour 97 m de montée.
+ *    C'est le seul endroit où le dénivelé doit agir : il n'est pas un
+ *    désagrément, c'est de l'effort. Le point de vue est en haut.
+ */
+const budget = (heures: number) => heures * ALLURE_KMH * 1000;
+
 const LIBELLE: Record<string, string> = {
   megalithe: "Mégalithe", plage: "Plage", panorama: "Point de vue",
   chateau: "Fortification", calvaire: "Calvaire", chapelle: "Chapelle",
@@ -81,7 +91,7 @@ export function Composer() {
     if (!graphe || !ix) return;
     const t0 = performance.now();
     const depart = noeudLePlusProche(graphe, position[0], position[1]);
-    const b = composer(graphe, ix, depart, heures * ALLURE_KMH * 1000, { graine: graine.current });
+    const b = composer(graphe, ix, depart, budget(heures), { graine: graine.current });
     setDuree(Math.round(performance.now() - t0));
     setBoucles(b);
     setChoisie(0);
@@ -99,7 +109,10 @@ export function Composer() {
     return {
       slug: "composee", titre: "Votre promenade", lieu: "Crozon", resume: "",
       distanceKm: Math.round(b.metres / 100) / 10,
-      dureeEstimeeH: Math.round((b.metres / 1000 / ALLURE_KMH) * 2) / 2,
+      // ⚠️ La durée se calcule sur le RESSENTI, pas sur les kilomètres :
+      //    annoncer 2 h pour une boucle qui monte de 200 m, c'est promettre
+      //    ce qu'on ne tient pas.
+      dureeEstimeeH: Math.round((b.ressentie / 1000 / ALLURE_KMH) * 2) / 2,
       boucle: true, osmUrl: "https://www.openstreetmap.org/copyright", osmRef: "",
       points: t.flat(), traits: t,
       etapes: b.lieux.map((l, i) => ({
@@ -139,7 +152,10 @@ export function Composer() {
             <p className="apercu-label">Votre promenade</p>
             <div className="est-actions" style={{ marginBottom: "var(--sp-2)" }}>
               <label className="filtre">
-                {heures} h de marche · environ {heures * ALLURE_KMH} km
+                {heures} h de marche
+                <span className="page-note">
+                  {" "}— plus le terrain monte, plus la boucle sera courte
+                </span>
                 <input type="range" min={1} max={5} step={0.5} value={heures}
                        onChange={(e) => setHeures(Number(e.target.value))} />
               </label>
@@ -193,6 +209,7 @@ export function Composer() {
                   onClick={() => setChoisie(i)}
                 >
                   {(x.metres / 1000).toFixed(1)} km
+                  {x.montee >= 40 && ` · +${Math.round(x.montee)} m`}
                   {x.bordDeMer > 300 && ` · ${(x.bordDeMer / 1000).toFixed(1)} km de mer`}
                   {x.lieux.length > 0 && ` · ${x.lieux.length} lieux`}
                 </button>
@@ -211,6 +228,7 @@ export function Composer() {
                 {b.lieux.length > 0
                   ? `${b.lieux.length} lieu${b.lieux.length > 1 ? "x" : ""} sur le chemin`
                   : "Aucun lieu remarquable sur ce parcours — c'est la marche qui compte"}
+                {b.montee >= 40 && ` · ${Math.round(b.montee)} m de montée`}
                 {b.bordDeMer > 300 &&
                   ` · ${(b.bordDeMer / 1000).toFixed(1)} km au bord de mer`}
                 {b.partRepetee > 0.1 && " · une portion se parcourt deux fois"}

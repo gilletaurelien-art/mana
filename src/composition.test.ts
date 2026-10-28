@@ -1,6 +1,6 @@
 import { readdirSync } from "node:fs";
 import { describe, it, expect } from "vitest";
-import { indexer, composer, noeudLePlusProche, traits } from "./composition";
+import { indexer, composer, noeudLePlusProche, traits, distanceRessentie, COUT_MONTEE } from "./composition";
 import type { Graphe } from "./composition";
 
 // Une grille 6×6 à Crozon, maille ~200 m. Deux colonnes sont des « routes »
@@ -180,6 +180,51 @@ describe("composer une boucle", () => {
     expect(ordres.every((o) => o >= 0 && o <= 1)).toBe(true);
     if (vus.includes("Premier") && vus.includes("Troisième"))
       expect(vus.indexOf("Premier")).toBeLessThan(vus.indexOf("Troisième"));
+  });
+
+  it("⭐ la montée se compte dans le SENS DE MARCHE, jamais en valeur absolue", () => {
+    // 🔴 LE DÉFAUT QUE CE TEST TIENT : une boucle revient à son départ, donc
+    //    elle monte exactement autant qu'elle descend. Sommer des |dz|
+    //    DOUBLERAIT son dénivelé — une promenade plate serait annoncée comme
+    //    une montée de 200 m, et le budget de temps la raccourcirait pour rien.
+    //
+    // ⚠️ SA PREMIÈRE VERSION BORNAIT LA MONTÉE À « moins de 200 m » ET LA
+    //    MUTATION PASSAIT. Une borne molle ne tient rien. La propriété exacte,
+    //    elle, est une IDENTITÉ : sur une boucle, montée = descente, donc
+    //    montée = (somme des |dz|) ÷ 2. Avec `Math.abs`, le résultat vaut le
+    //    double et le test refuse. ⭐ Quand une propriété s'écrit en égalité,
+    //    ne jamais l'écrire en inégalité.
+    const { g, cible } = grilleRare();
+    const relief = (n: number) => { const x = n % 14; return x <= 6 ? x * 10 : (12 - x) * 10; };
+    g.a = g.a.map((a) => [a[0], a[1], a[2], a[3], a[4], null,
+                          relief(a[1]) - relief(a[0])] as Graphe["a"][number]);
+    const b = composer(g, indexer(g), 0, cible);
+    expect(b.length).toBeGreaterThan(0);
+    for (const x of b) {
+      const sommeAbs = x.aretes.reduce((t, e) => t + Math.abs(g.a[e][6] ?? 0), 0);
+      expect(x.montee).toBeCloseTo(sommeAbs / 2, 6);
+      expect(x.ressentie).toBeCloseTo(distanceRessentie(x.metres, x.montee), 5);
+    }
+  });
+
+  // ⛔ UN TEST A ÉTÉ RETIRÉ ICI, ET C'EST DOCUMENTÉ PLUTÔT QUE MAQUILLÉ.
+  //    Il prétendait vérifier qu'une altitude inconnue ne vaut pas « plat ».
+  //    Deux raisons de l'ôter :
+  //    ① il comparait deux boucles DIFFÉRENTES — retirer des altitudes change
+  //       la composition, donc la comparaison ne prouvait rien ;
+  //    ② la garantie qu'il visait n'appartient pas à ce fichier. Côté
+  //       composition, `null` et `0` produisent la même montée, et c'est
+  //       correct. Ce qui doit ne jamais écrire `0` pour dire « je ne sais
+  //       pas », c'est le BÂTISSEUR (`poser_denivele.py`), qui valide un
+  //       domaine d'altitudes plausibles [-5 m, 400 m] et une pente maximale
+  //       de 50 % — garde posé après qu'une altitude de -6 748 m eut produit
+  //       une pente de 24 683 %.
+  //    ⭐ Un test qui vise une garantie d'un autre étage ne la tient pas : il
+  //       donne l'impression qu'elle est tenue.
+
+  it("un mètre de montée coûte cinq mètres de plat", () => {
+    expect(COUT_MONTEE).toBe(5);
+    expect(distanceRessentie(1000, 100)).toBe(1500);
   });
 
   it("le nœud le plus proche d'une position est bien le plus proche", () => {
