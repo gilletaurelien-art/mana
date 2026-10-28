@@ -24,43 +24,39 @@ Auto à chaque push sur `main` → https://gilletaurelien-art.github.io/mana/
 - Service worker : network-first sur le HTML (les mises à jour sont
   visibles au rechargement), cache-first sur les assets.
 
-## Les tracés — d'où ils viennent, et pourquoi il n'y en a que deux
+## Les tracés — d'où ils viennent
 
 Les parcours de `src/walks.ts` sont **réels** : OpenStreetMap, via notre table
-`public.sentiers_traces` (moisson du 25/10/2026), sous licence **ODbL** —
-l'attribution est affichée sur la carte et sur chaque fiche.
+`public.sentiers_traces`, sous licence **ODbL** — attribution affichée sur la
+carte et sur chaque fiche.
 
-🔴 **Sur 6 554 tracés en base, 299 seulement sont géométriquement sains
-(4,6 %).** Ailleurs, les morceaux du sentier sont recollés sans être remis
-dans l'ordre : cordes droites de 400 m, coordonnées répétées. En Bretagne,
-**deux** tracés passent le contrôle — ce sont ceux d'ici. En Finistère :
-**aucun sur 132**, d'où l'absence de la presqu'île de Crozon.
+✅ **Quatre promenades de la presqu'île de Crozon.** Le 28/10 au matin il n'y
+en avait AUCUNE d'affichable : les morceaux des sentiers étaient concaténés
+sans remise en ordre, et les **132 tracés du Finistère échouaient tous** au
+contrôle. Après réparation de la moisson, la presqu'île en porte **16**, dont
+15 à **zéro** point répété.
 
 ⛔ **Ne jamais ajouter un tracé sans le passer à `verifierTrace()`.**
 `src/walks.test.ts` l'exécute sur chaque promenade livrée, et `npm run build`
-lance les tests avant de construire : un tracé abîmé fait échouer le
-déploiement.
+lance les tests : un tracé abîmé fait échouer le déploiement.
 
-⭐ **Et ne pas se contenter de vérifier la LONGUEUR.** Le moissonneur coupe
-déjà tout saut de plus de 500 m : les tracés abîmés sortent donc avec une
-longueur parfaitement plausible et passent tout contrôle de distance. Le
-verdict porte sur les **points exactement répétés** — un sentier parcouru dans
-l'ordre ne repasse pas par la même coordonnée.
+⭐ **Mais ce contrôle est un détecteur de fumée, pas une preuve.** L'invariant
+qui tranche — **longueur = somme des ways** — n'existe qu'À LA MOISSON, là où
+les chemins ont encore leur identité. Cette app n'a que la polyligne.
 
-🔴 **Le seuil de saut a été RETOURNÉ le 28/10 au soir.** Il refusait au-delà
-de 150 m ; mesure sur la donnée OSM brute : un chemin porte légitimement des
-segments droits jusqu'à ~308 m (ligne droite en pleine lande). Le garde aurait
-refusé des tracés **parfaits** dès l'arrivée de la moisson réparée — et, comme
-il tourne dans `npm run build`, il aurait fait échouer le déploiement **sur de
-la bonne donnée**. ⭐ Un garde calibré sur des données malades prend la
-guérison pour une panne.
+🔴 **Le seuil de saut a été retourné (150 → 600 m).** Un chemin porte
+légitimement des segments droits jusqu'à ~308 m. À 150 m, le garde refusait
+les tracés **réparés** et faisait échouer le déploiement sur de la bonne
+donnée. ⭐ Un garde calibré sur des données malades prend la guérison pour une
+panne. Et le seuil de points répétés reste **généreux à dessein** : un circuit
+parfaitement recollé en porte 326 (aller-retour vers une pointe).
 
-⏳ **Les deux tracés livrés sont encore imparfaits, et un test le dit** : issus
-de la moisson du 25/10, ils portent 3,1 % et 5,1 % de points répétés, soit
-~2,7 % de longueur fantôme sur le Cap Fréhel (260 m de cordes sur 9,5 km).
-Quand le test « à resserrer après la remoisson » échouera, c'est que la donnée
-réparée sera arrivée : resserrer alors le seuil vers 1 % et RETOURNER le test
-plutôt que le supprimer.
+🔴 **LE NUMÉRO DE PORTION N'EST PAS UNE IDENTITÉ.** `source_ref` finit par
+`#<n>`, et ce n vient du découpage, donc de la longueur, donc de l'état de la
+moisson. La réparation a fait passer `12981381` de 5 à 10 portions : les
+anciens `#4`/`#5` **existent toujours** et désignent un AUTRE tronçon.
+**Choisir un tronçon par sa géométrie, jamais par son numéro** — et un lien
+vers un slug disparu est tenu par un test qui LIT les sources.
 
 ## La carte — nos tuiles, et une liste blanche
 

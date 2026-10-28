@@ -52,9 +52,39 @@ function telecharger(nom: string, contenu: string, type: string) {
   URL.revokeObjectURL(url);
 }
 
-export function Promenade({ slug }: { slug: string }) {
-  const walk = WALKS.find((w) => w.slug === slug) ?? WALKS[0];
+function PromenadeInconnue({ slug }: { slug: string }) {
   const B = baseUrl();
+  return (
+    <main className="page">
+      <div className="wrap">
+        <p className="hero-label">Introuvable</p>
+        <h1 className="page-titre">Cette promenade n'existe pas</h1>
+        <section className="page-panel">
+          <p className="page-intro">
+            Aucun parcours ne porte le nom « {slug} ». Il a pu être renommé
+            après une mise à jour des tracés.
+          </p>
+          <div className="est-actions">
+            <a className="btn btn-primary" href={`${B}/promenades`}>
+              Voir toutes les promenades
+            </a>
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+}
+
+export function Promenade({ slug }: { slug: string }) {
+  const B = baseUrl();
+  // 🔴 AVANT, UN SLUG INCONNU RENDAIT `WALKS[0]` : la page affichait une AUTRE
+  //    promenade sans rien dire. C'est le mode de panne le plus coûteux — une
+  //    page cassée se voit, une page qui montre le mauvais endroit se croit.
+  //    Et il est devenu probable le 28/10 : les numéros de portion des tracés
+  //    ont été renumérotés par la remoisson, donc tout lien figé pointe
+  //    potentiellement ailleurs.
+  const walk = WALKS.find((w) => w.slug === slug);
+  if (!walk) return <PromenadeInconnue slug={slug} />;
 
   const [moi, setMoi] = useState<WalkPoint | null>(null);
   const [cap, setCap] = useState<number | null>(null);

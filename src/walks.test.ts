@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
 import { WALKS, verifierTrace, sautMax, pointsRepetes, distM } from "./walks";
 
 /**
@@ -45,11 +46,26 @@ describe("les étapes sont ordonnées LE LONG du chemin", () => {
 
 describe("on n'affiche QUE ce qu'on sait", () => {
   for (const w of WALKS) {
-    it(`${w.slug} — aucune étape au nom générique`, () => {
-      // « Lande », « Plage », « Point de vue » sont des objets OSM SANS nom.
-      // Les afficher donne du bruit présenté comme un repère.
-      const generiques = /^(plage|lande|point de vue|ch[âa]teau|calvaire|phare|grotte|parc|for[êe]t|sentier|moulin|chapelle)$/i;
-      for (const e of w.etapes) expect(e.nom).not.toMatch(generiques);
+    it(`${w.slug} — aucune étape au libellé AMBIANT`, () => {
+      // ⭐ CETTE RÈGLE A ÉTÉ AFFINÉE LE 28/10 AU SOIR, PAS SUPPRIMÉE.
+      //    Première version : on écartait TOUTE étape dont le nom était un
+      //    simple libellé de catégorie (objet OSM sans nom). Résultat mesuré :
+      //    DEUX fiches sur quatre se retrouvaient sans la moindre étape.
+      //    ⭐ « Sans nom » et « sans intérêt » ne sont pas la même chose. Un
+      //       menhir, un mémorial, une grotte ou un phare restent des REPÈRES
+      //       même anonymes — c'est l'objet qui est remarquable. Une lande ou
+      //       une plage, non : c'est du décor, et « Plage · Lande · Plage »
+      //       est du bruit présenté comme un repère.
+      //    On n'interdit donc plus que les libellés AMBIANTS.
+      const ambiant = /^(plage|lande|point de vue|panorama|parc|for[êe]t|[ée]tang|lac|source|fontaine|[îi]le)$/i;
+      for (const e of w.etapes) expect(e.nom).not.toMatch(ambiant);
+    });
+
+    it(`${w.slug} — une étape ne cite pas le sentier lui-même`, () => {
+      // Relevé le 28/10 : « La balade de Saint-Fiacre » figurait comme étape
+      // DE la balade de Saint-Fiacre, et « Balade Sonore de l'Île Vierge »
+      // comme étape de l'Anse Saint-Nicolas. Un chemin n'est pas un point.
+      for (const e of w.etapes) expect(e.categorie).not.toBe("sentier");
     });
 
     it(`${w.slug} — la longueur annoncée correspond au tracé`, () => {
@@ -120,19 +136,36 @@ describe("le contrôle refuse VRAIMENT — validé par mutation", () => {
     for (const w of WALKS) expect(verifierTrace(w.points)).toEqual([]);
   });
 
-  it("⏳ les tracés livrés portent ENCORE des cordes — à resserrer après la remoisson", () => {
-    // ⚠️ CE TEST DOCUMENTE UNE IMPERFECTION CONNUE PLUTÔT QUE DE LA TAIRE.
-    //    Les deux tracés viennent de la moisson du 25/10, antérieure au
-    //    correctif de recollement : ils portent 3,1 % et 5,1 % de points
-    //    répétés. Mesuré segment par segment contre les 554 ways d'OSM, cela
-    //    représente ~2,7 % de longueur fantôme sur le Cap Fréhel — 260 m de
-    //    cordes sur 9,5 km, la plus longue à 66 m.
-    //    Sur des tracés correctement recollés, le compte tombe à 0,05-0,3 %.
-    // ⭐ QUAND CE TEST ÉCHOUERA, C'EST UNE BONNE NOUVELLE : la donnée réparée
-    //    sera arrivée. Resserrer alors PART_REPETES_MAX vers 1 % et retourner
-    //    ce test, plutôt que de le supprimer.
-    const parts = WALKS.map((w) => pointsRepetes(w.points) / w.points.length);
-    for (const p of parts) expect(p).toBeLessThan(0.08);
-    expect(Math.max(...parts)).toBeGreaterThan(0.01); // encore imparfait
+  it("les tracés livrés viennent de la moisson RÉPARÉE", () => {
+    // ⭐ CE TEST A ÉTÉ RETOURNÉ LE 28/10 AU SOIR, ET C'ÉTAIT PRÉVU.
+    //    Sa version précédente exigeait l'INVERSE — « au moins un tracé porte
+    //    plus de 1 % de points répétés » — pour documenter que la donnée
+    //    livrée venait d'une moisson non réparée. Il était écrit avec la
+    //    consigne : « quand ce test échouera, c'est une bonne nouvelle ».
+    //    Le correctif de recollement est passé, il a échoué, on le retourne.
+    //    Un test qui devient faux se RETOURNE, il ne se supprime pas : ce
+    //    qu'il protégeait est encore vrai, sous une autre forme.
+    for (const w of WALKS) {
+      const part = pointsRepetes(w.points) / w.points.length;
+      expect(part).toBeLessThan(0.01);
+    }
   });
+});
+
+describe("aucun lien interne ne pointe vers une promenade inexistante", () => {
+  // ⛔ UN LIEN MORT NE SE PLAINT PAS ICI. Jusqu'au 28/10, un slug inconnu
+  //    rendait `WALKS[0]` : la page affichait une AUTRE promenade, sans
+  //    erreur, sans 404, sans rien. Et le risque est devenu réel le jour où
+  //    la remoisson a renuméroté les portions de sentier.
+  // ⭐ Ce test LIT les sources plutôt que de décrire ce qu'elles contiennent :
+  //    une liste recopiée dans un commentaire vieillit en silence.
+  const slugs = new Set(WALKS.map((w) => w.slug));
+
+  for (const f of ["src/App.tsx", "src/Promenades.tsx", "src/Promenade.tsx"]) {
+    it(`${f} — tous les /promenade/<slug> existent`, () => {
+      const src = readFileSync(f, "utf8");
+      const cites = [...src.matchAll(/\/promenade\/([a-z0-9-]+)/g)].map((m) => m[1]);
+      for (const s of cites) expect(slugs).toContain(s);
+    });
+  }
 });

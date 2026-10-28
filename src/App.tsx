@@ -40,7 +40,7 @@ const MODULES = [
     accroche: "Prudence honnête.",
     texte:
       "SOS en un geste : position GPS partagée par SMS aux secours ou aux proches. Marées et météo : renvoi systématique vers les sources officielles — aucune donnée simulée.",
-    cta: { label: "Découvrir", href: "/promenade/cap-frehel" },
+    cta: { label: "Découvrir", href: "/promenade/saint-fiacre" },
   },
   {
     glyphe: GlyphDecouverte,
@@ -58,7 +58,7 @@ const MODULES = [
     accroche: "Gardez la trace.",
     texte:
       "Export GPX en un clic, lisible par toutes les montres et applications. Fonctionne hors ligne, du cap à la grève — le réseau n'attendra pas, nous non plus.",
-    cta: { label: "Ouvrir un parcours", href: "/promenade/beg-leguer" },
+    cta: { label: "Ouvrir un parcours", href: "/promenade/anse-saint-nicolas" },
   },
 ];
 
@@ -288,8 +288,8 @@ export default function App() {
           </div>
           <nav className="footer-nav" aria-label="Pied de page">
             <a href={`${B}/promenades`}>Promenades</a>
-            <a href={`${B}/promenade/cap-frehel`}>Cap Fréhel</a>
-            <a href={`${B}/promenade/beg-leguer`}>Beg Léguer</a>
+            <a href={`${B}/promenade/saint-fiacre`}>Saint-Fiacre</a>
+            <a href={`${B}/promenade/anse-saint-nicolas`}>L'Anse Saint-Nicolas</a>
             <a href={`${B}/radio`}>MANAradio</a>
             <a href={`${B}/territoire`}>Le territoire</a>
             <a href={`${B}/contact`}>Contact</a>
