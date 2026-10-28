@@ -285,7 +285,7 @@ html {
     0 3px 10px rgb(27 42 74 / 14%);
   padding: var(--sp-4);
   margin: 0 auto;
-  max-width: 60ch;
+  max-width: 46ch;
 }
 @media (max-width: 720px) {
   .sous-bulle {
