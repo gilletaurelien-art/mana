@@ -65,6 +65,10 @@ const MODULES = [
 export default function App() {
   const path = usePath();
   const [lieu, setLieu] = useState("");
+  const [walkIndex, setWalkIndex] = useState(0);
+
+  const walkSuivant = () => setWalkIndex((i) => (i + 1) % WALKS.length);
+  const walk = WALKS[walkIndex];
 
   const chercher = () => {
     const q = lieu.trim();
@@ -182,17 +186,40 @@ export default function App() {
                 </button>
               </div>
 
-              {/* La balade : une seule, avec sa carte */}
-              <a className="balade-unique" href={`${B}/promenade/${WALKS[0].slug}`}>
+              {/* La balade : une seule, avec sa carte — croix/coeur */}
+              <div className="balade-unique">
                 <div className="balade-carte">
-                  <WalkMap walk={WALKS[0]} width={280} height={180} />
+                  <WalkMap walk={walk} width={280} height={180} />
                 </div>
-                <p className="swipe-lieu">{WALKS[0].lieu}</p>
-                <p className="swipe-titre">{WALKS[0].titre}</p>
+                <p className="swipe-lieu">{walk.lieu}</p>
+                <p className="swipe-titre">{walk.titre}</p>
                 <p className="swipe-meta">
-                  {WALKS[0].distanceKm} km · {WALKS[0].dureeH} h · {WALKS[0].difficulte}
+                  {walk.distanceKm} km · {walk.dureeH} h · {walk.difficulte}
                 </p>
-              </a>
+                <div className="balade-actions">
+                  <button
+                    type="button"
+                    className="balade-btn balade-x"
+                    aria-label="Parcours suivant"
+                    title="Parcours suivant"
+                    onClick={walkSuivant}
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M6 6l12 12M18 6 6 18" />
+                    </svg>
+                  </button>
+                  <a
+                    className="balade-btn balade-coeur"
+                    href={`${B}/promenade/${walk.slug}`}
+                    aria-label="Ouvrir le parcours"
+                    title="Ouvrir le parcours"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M12 20s-6.5-4.1-6.5-9A4.2 4.2 0 0 1 12 8.4 4.2 4.2 0 0 1 18.5 11c0 4.9-6.5 9-6.5 9z" />
+                    </svg>
+                  </a>
+                </div>
+              </div>
             </div>
           </section>
 

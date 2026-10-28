@@ -731,3 +731,45 @@ html {
 
 /* Nav fixe en bas : réserve l'espace pour ne pas masquer le footer */
 body { padding-bottom: 84px; }
+
+/* ===== Croix & coeur sous la fiche balade ===== */
+.balade-actions {
+  display: flex;
+  justify-content: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-1);
+}
+.balade-btn {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--ecume);
+  background: var(--blanc-chaud);
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+.balade-btn svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.balade-x { color: var(--ink); }
+.balade-x:hover {
+  background: var(--ecume);
+  color: var(--ink);
+  transform: translateY(-1px);
+}
+.balade-coeur { color: var(--primary); }
+.balade-coeur:hover {
+  background: rgb(201 162 39 / 14%);
+  border-color: var(--or);
+  color: var(--primary);
+  transform: translateY(-1px);
+}
+.balade-coeur svg { fill: rgb(201 162 39 / 18%); }
