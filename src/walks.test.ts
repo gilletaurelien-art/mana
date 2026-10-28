@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
+import { chercher } from "./catalogue";
 import { WALKS, verifierTrace, sautMax, pointsRepetes, distM } from "./walks";
 
 /**
@@ -168,4 +169,49 @@ describe("aucun lien interne ne pointe vers une promenade inexistante", () => {
       for (const s of cites) expect(slugs).toContain(s);
     });
   }
+});
+
+describe("la recherche trouve par PROXIMITÉ, pas par nom rattaché", () => {
+  // 🔴 LE DÉFAUT QUE CES TESTS TIENNENT, mesuré en ligne le 28/10/2026 :
+  //    chaque promenade porte UNE commune, celle de son point MILIEU. Chercher
+  //    « Bayonne » rendait ZÉRO alors que 19 promenades passent à moins de
+  //    12 km — elles sont rattachées à Boucau, Anglet, Jatxou.
+  //    ⭐ « Aucune promenade à Bayonne » est une réponse CONFIANTE ET FAUSSE.
+  //       Pire qu'une absence de réponse : on ne rouvre pas une certitude.
+  const fiches = [
+    { s: "a", t: "Sentier du phare", c: "Anglet", k: 8, r: "FR-NAQ", b: false, e: 3, x: -1.52, y: 43.49 },
+    { s: "b", t: "Boucle du Boucau", c: "Boucau", k: 5, r: "FR-NAQ", b: true, e: 1, x: -1.47, y: 43.52 },
+    { s: "c", t: "GR 34 — portion 3", c: "Crozon", k: 12, r: "FR-BRE", b: false, e: 9, x: -4.49, y: 48.25 },
+  ];
+  const communes: [string, number, number][] = [
+    ["Bayonne", -1.4679, 43.4856],
+    ["Crozon", -4.4895, 48.2472],
+  ];
+
+  it("« Bayonne » trouve les promenades VOISINES, même rattachées ailleurs", () => {
+    const r = chercher(fiches, "Bayonne", communes);
+    expect(r.map((f) => f.s).sort()).toEqual(["a", "b"]);
+  });
+
+  it("elle NE rend PAS celles d'une autre région", () => {
+    expect(chercher(fiches, "Bayonne", communes).map((f) => f.s)).not.toContain("c");
+  });
+
+  it("les plus proches d'abord", () => {
+    const r = chercher(fiches, "Bayonne", communes);
+    expect(r[0].s).toBe("b"); // Boucau est plus près du centre de Bayonne
+  });
+
+  it("sans le fichier des communes, on retombe sur le texte — pas sur du vide", () => {
+    // ⭐ Une dépendance absente doit DÉGRADER, pas éteindre.
+    expect(chercher(fiches, "Boucau", null).map((f) => f.s)).toEqual(["b"]);
+  });
+
+  it("un nom qui n'est pas une commune cherche dans les titres", () => {
+    expect(chercher(fiches, "GR 34", communes).map((f) => f.s)).toEqual(["c"]);
+  });
+
+  it("les accents et la casse ne comptent pas", () => {
+    expect(chercher(fiches, "crozon", communes).map((f) => f.s)).toEqual(["c"]);
+  });
 });

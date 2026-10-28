@@ -97,11 +97,70 @@ export async function chargerPromenade(slug: string): Promise<Walk | null> {
   };
 }
 
-/** Recherche par commune ou par titre, sans accents ni casse. */
-export function chercher(fiches: Fiche[], q: string): Fiche[] {
-  const n = (s: string) =>
-    s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-  const m = n(q.trim());
+/** Une commune : [nom, lon, lat]. Le point est au centre du territoire. */
+export type Commune = [string, number, number];
+
+let communes: Promise<Commune[]> | null = null;
+
+/** Les 35 413 communes de France, pour chercher par PROXIMITÉ. */
+export function chargerCommunes(): Promise<Commune[]> {
+  if (!communes) {
+    communes = fetch(`${BASE}/communes.json`)
+      .then((r) => {
+        if (!r.ok) throw new Error(`communes: HTTP ${r.status}`);
+        return r.json();
+      })
+      .catch((e) => {
+        communes = null;
+        throw e;
+      });
+  }
+  return communes;
+}
+
+const sansAccent = (s: string) =>
+  s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+/** Distance approchée en km — suffisante pour trier des voisinages. */
+function km(aLon: number, aLat: number, bLon: number, bLat: number): number {
+  const dLat = (bLat - aLat) * 111;
+  const dLon = (bLon - aLon) * 111 * Math.cos((aLat * Math.PI) / 180);
+  return Math.sqrt(dLat * dLat + dLon * dLon);
+}
+
+/**
+ * ⛔ LA RECHERCHE NE SE FAIT PAS SUR LE NOM DE COMMUNE RATTACHÉ.
+ *
+ * Chaque promenade porte UNE commune : celle de son point MILIEU. Un sentier
+ * qui part de Bayonne et finit ailleurs est donc rattaché à Boucau ou à
+ * Anglet. Mesuré le 28/10/2026 : chercher « Bayonne » rendait **zéro** alors
+ * que **19 promenades** passent à moins de 12 km, et « Ajaccio » zéro pour 7.
+ * S'ajoutaient 3 307 promenades (12,4 %) SANS aucune commune — leur milieu
+ * tombe en mer ou dans un interstice de contour.
+ *
+ * ⭐ « Aucune promenade à Bayonne » était une réponse CONFIANTE ET FAUSSE,
+ *    et c'est pire qu'une absence de réponse : on ne rouvre pas une certitude.
+ *
+ * On résout donc la localité en COORDONNÉES, puis on cherche autour.
+ */
+export function chercher(fiches: Fiche[], q: string, lieux: Commune[] | null, rayonKm = 15): Fiche[] {
+  const m = sansAccent(q.trim());
   if (!m) return [];
-  return fiches.filter((f) => n(f.c ?? "").includes(m) || n(f.t).includes(m));
+
+  const lieu = lieux?.find((c) => sansAccent(c[0]) === m)
+    ?? lieux?.find((c) => sansAccent(c[0]).startsWith(m));
+
+  if (lieu) {
+    const [, lon, lat] = lieu;
+    return fiches
+      .map((f) => ({ f, d: km(lon, lat, f.x, f.y) }))
+      .filter((o) => o.d <= rayonKm)
+      .sort((a, b) => a.d - b.d)
+      .map((o) => o.f);
+  }
+
+  // Pas de commune de ce nom : on retombe sur le texte (nom de sentier, GR…).
+  return fiches.filter(
+    (f) => sansAccent(f.c ?? "").includes(m) || sansAccent(f.t).includes(m)
+  );
 }

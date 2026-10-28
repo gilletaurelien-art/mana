@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { baseUrl } from "./router";
 import { WALKS } from "./walks";
-import { chargerIndex, chercher } from "./catalogue";
-import type { Fiche } from "./catalogue";
+import { chargerIndex, chargerCommunes, chercher } from "./catalogue";
+import type { Fiche, Commune } from "./catalogue";
 
 // Recherche des promenades — sur TOUTE LA FRANCE.
 //
@@ -26,6 +26,7 @@ export function Promenades() {
   const [boucle, setBoucle] = useState<FiltreBoucle>("tous");
   const [q, setQ] = useState("");
   const [fiches, setFiches] = useState<Fiche[] | null>(null);
+  const [lieux, setLieux] = useState<Commune[] | null>(null);
   const [erreur, setErreur] = useState("");
 
   useEffect(() => {
@@ -40,6 +41,9 @@ export function Promenades() {
   }, []);
 
   useEffect(() => {
+    // ⚠️ L'échec des communes n'est PAS bloquant : sans elles, la recherche
+    //    retombe sur le texte. Un index chargé vaut mieux qu'une page morte.
+    chargerCommunes().then(setLieux).catch(() => setLieux(null));
     chargerIndex()
       .then(setFiches)
       // ⚠️ UNE ERREUR SE DIT. Sans ce message, un refus CORS ou une coupure
@@ -50,11 +54,12 @@ export function Promenades() {
 
   const resultats = useMemo(() => {
     if (!fiches) return [];
-    return chercher(fiches, q)
+    return chercher(fiches, q, lieux)
       .filter((f) => f.k / 3.5 <= dureeMax)
       .filter((f) => boucle === "tous" || (boucle === "boucle" ? f.b : !f.b))
-      .sort((a, b) => b.e - a.e || a.k - b.k);
-  }, [fiches, q, dureeMax, boucle]);
+      // déjà trié par distance dans chercher()
+      ;
+  }, [fiches, lieux, q, dureeMax, boucle]);
 
   return (
     <main className="page">
