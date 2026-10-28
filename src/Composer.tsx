@@ -172,6 +172,35 @@ export function Composer() {
           </section>
         )}
 
+        {boucles && boucles.length > 1 && (
+          <section className="page-panel">
+            <p className="apercu-label">Trois façons de marcher autant</p>
+            {/* 🔴 ON NE CHOISIT PAS À LA PLACE DU MARCHEUR, ET C'EST UNE
+                MESURE QUI L'IMPOSE. Sur une cible de 6 km, les deux
+                meilleures boucles étaient séparées de 4 points sur 138 — un
+                écart dans le bruit — et elles ne se ressemblaient pas du tout :
+                l'une longeait la mer sur 28 % de son parcours, l'autre sur 4 %.
+                ⭐ Les poids du score (14 par lieu, 220 pour la longueur) sont
+                   des opinions que personne n'a validées en marchant. Quand un
+                   classement ne sait pas trancher, il ne doit pas trancher :
+                   il doit PROPOSER — et c'est aussi l'argument de dispersion
+                   des flux, qui veut cinq promenades plutôt que la meilleure. */}
+            <div className="est-actions" style={{ marginBottom: 0, flexWrap: "wrap" }}>
+              {boucles.slice(0, 3).map((x, i) => (
+                <button
+                  key={i}
+                  className={i === choisie ? "btn btn-primary" : "btn btn-ghost"}
+                  onClick={() => setChoisie(i)}
+                >
+                  {(x.metres / 1000).toFixed(1)} km
+                  {x.bordDeMer > 300 && ` · ${(x.bordDeMer / 1000).toFixed(1)} km de mer`}
+                  {x.lieux.length > 0 && ` · ${x.lieux.length} lieux`}
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
         {b && walk && (
           <>
             <section className="page-panel">
@@ -182,6 +211,8 @@ export function Composer() {
                 {b.lieux.length > 0
                   ? `${b.lieux.length} lieu${b.lieux.length > 1 ? "x" : ""} sur le chemin`
                   : "Aucun lieu remarquable sur ce parcours — c'est la marche qui compte"}
+                {b.bordDeMer > 300 &&
+                  ` · ${(b.bordDeMer / 1000).toFixed(1)} km au bord de mer`}
                 {b.partRepetee > 0.1 && " · une portion se parcourt deux fois"}
                 {" · calculé en "}{duree} ms
               </p>

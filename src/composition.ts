@@ -30,8 +30,12 @@ export interface Graphe {
   attribution: string;
   /** nœuds : [lon, lat] */
   n: [number, number][];
-  /** arêtes : [nœudA, nœudB, mètres, agrément 0-255, points de la géométrie] */
-  a: [number, number, number, number, number[]][];
+  /** arêtes : [nœudA, nœudB, mètres, agrément 0-255, points, distance à la mer]
+   *  ⚠️ La distance à la mer est STOCKÉE en plus d'être fondue dans
+   *  l'agrément : sans elle, impossible de VÉRIFIER que le bonus littoral
+   *  change le parcours, ni de dire au promeneur « au bord de mer sur 2 km ».
+   *  `null` au-delà de 2 km — et absente sur un graphe bâti sans littoral. */
+  a: [number, number, number, number, number[], (number | null)?][];
   /** lieux : accrochés à une arête, avec leur fraction le long d'elle */
   l: LieuAccroche[];
 }
@@ -51,9 +55,14 @@ export interface Boucle {
   metres: number;
   agrement: number;
   partRepetee: number;
+  /** mètres parcourus à moins de 60 m du trait de côte */
+  bordDeMer: number;
   lieux: LieuVu[];
   score: number;
 }
+
+/** À moins de ça, on marche VRAIMENT au bord — mesuré : 11 % du réseau. */
+export const BORD_DE_MER_M = 60;
 
 export interface LieuVu {
   categorie: string;
@@ -302,6 +311,10 @@ export function composer(
     const mRepetee = total.reduce((t, e) => t + (compte.get(e)! > 1 ? g.a[e][2] : 0), 0);
     const partRepetee = mRepetee / Math.max(m, 1);
     const agrement = total.reduce((t, e) => t + g.a[e][3] * g.a[e][2], 0) / Math.max(m, 1);
+    const bordDeMer = uniques.reduce((t, e) => {
+      const d = g.a[e][5];
+      return t + (d != null && d <= BORD_DE_MER_M ? g.a[e][2] : 0);
+    }, 0);
 
     // ⭐ ON SÉLECTIONNE PAR PRIORITÉ, ON AFFICHE DANS L'ORDRE DE MARCHE.
     //    Deux étapes, jamais confondues. Une liste intitulée « ce que vous
@@ -329,7 +342,7 @@ export function composer(
       nAvant = aLEndroit ? ar[1] : ar[0];
     }
     boucles.push({
-      aretes: total, metres: m, agrement, partRepetee,
+      aretes: total, metres: m, agrement, partRepetee, bordDeMer,
       lieux: [...vusLieux.values()].sort((x, y) => x.ordre - y.ordre),
       score: agrement + 14 * vusLieux.size
              - 220 * Math.abs(m - cibleM) / cibleM
