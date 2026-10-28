@@ -508,7 +508,7 @@ html {
 /* ===== Footer bulle encre ===== */
 .site-footer {
   border-top: none;
-  padding: var(--sp-4) 0 var(--sp-6);
+  padding: var(--sp-2) 0 var(--sp-4);
   font-size: var(--t-xs);
 }
 .site-footer > .wrap {
@@ -520,7 +520,7 @@ html {
     0 4px 12px rgb(27 42 74 / 10%),
     0 0 0 4px rgb(201 162 39 / 14%),
     0 36px 80px rgb(27 42 74 / 26%);
-  padding: var(--sp-4) var(--sp-6);
+  padding: var(--sp-3) var(--sp-4);
   max-width: var(--largeur);
 }
 @media (max-width: 720px) {
@@ -548,9 +548,9 @@ html {
 .footer-colonnes {
   display: flex;
   justify-content: space-between;
-  gap: var(--sp-6);
+  gap: var(--sp-4);
   flex-wrap: wrap;
-  padding-bottom: var(--sp-4);
+  padding-bottom: var(--sp-2);
   color: var(--sand);
   align-items: flex-start;
 }
@@ -583,7 +583,7 @@ html {
 }
 
 /* ===== Formulaire de contact ===== */
-.contact-form { margin-top: var(--sp-4); text-align: left; }
+.contact-form { margin-top: var(--sp-2); text-align: left; }
 .contact-form .apercu-label { color: var(--primary); }
 .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2); }
 @media (max-width: 720px) { .contact-grid { grid-template-columns: 1fr; } }
