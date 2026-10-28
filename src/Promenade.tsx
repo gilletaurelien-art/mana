@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { baseUrl } from "./router";
 import { WALKS, distAuTrace, distM } from "./walks";
 import type { WalkPoint } from "./walks";
@@ -6,11 +6,10 @@ import { WalkMap } from "./WalkMap";
 import { AltitudeProfile } from "./Altitude";
 
 // Page promenade : GPS navigateur (position + boussole), alerte
-// hors-sentier à 50 m, audio-guide TTS, export GPX, SOS.
+// hors-sentier à 50 m, export GPX, SOS.
 // Tout client-side — zéro backend, zéro réseau en course.
 
 const HORS_SENTIER_M = 50;
-const AUDIO_RAYON_M = 120;
 
 function enGpx(walk: (typeof WALKS)[number]): string {
   const pts = walk.points
@@ -41,11 +40,8 @@ export function Promenade({ slug }: { slug: string }) {
   const [moi, setMoi] = useState<WalkPoint | null>(null);
   const [cap, setCap] = useState<number | null>(null);
   const [horsSentier, setHorsSentier] = useState(false);
-  const [ecoutes, setEcoutes] = useState<string[]>([]);
-  const ecoutesRef = useRef<string[]>([]);
   const [gpsErreur, setGpsErreur] = useState("");
   const [horsLigne, setHorsLigne] = useState(!navigator.onLine);
-  const audioActif = useRef(false);
 
   useEffect(() => {
     document.title = `${walk.titre} — Promenades MANA.bzh`;
@@ -85,18 +81,6 @@ export function Promenade({ slug }: { slug: string }) {
         setHorsSentier(d > HORS_SENTIER_M);
         if (d > HORS_SENTIER_M && navigator.vibrate) navigator.vibrate(200);
 
-        // Audio-guide : TTS (voix du navigateur) à l'approche d'un spot.
-        if (audioActif.current && "speechSynthesis" in window) {
-          for (const w of walk.waypoints) {
-            if (!ecoutesRef.current.includes(w.nom) && distM(p, w.point) < AUDIO_RAYON_M) {
-              ecoutesRef.current = [...ecoutesRef.current, w.nom];
-              setEcoutes(ecoutesRef.current);
-              const u = new SpeechSynthesisUtterance(w.audio);
-              u.lang = "fr-FR";
-              window.speechSynthesis.speak(u);
-            }
-          }
-        }
       },
       (err) => setGpsErreur(err.message || "GPS indisponible."),
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
@@ -136,16 +120,6 @@ export function Promenade({ slug }: { slug: string }) {
             publication, le tracé officiel (IGN) sera sourcé.
           </p>
           <div className="est-actions" style={{ marginTop: "var(--sp-2)" }}>
-            <button
-              type="button"
-              className={`btn ${audioActif.current ? "btn-primary" : "btn-ghost"}`}
-              onClick={() => {
-                audioActif.current = !audioActif.current;
-                setEcoutes([...ecoutes]);
-              }}
-            >
-              {audioActif.current ? "Audio-guide activé" : "Activer l'audio-guide"}
-            </button>
             <button
               type="button"
               className="btn btn-ghost"
@@ -205,7 +179,7 @@ export function Promenade({ slug }: { slug: string }) {
           <p className="apercu-label">Points d'intérêt</p>
           {walk.waypoints.map((w) => (
             <p key={w.nom} className="page-texte">
-              <strong>{w.nom}</strong>{ecoutes.includes(w.nom) ? " — lu" : ""} — {w.audio}
+              <strong>{w.nom}</strong> — {w.audio}
             </p>
           ))}
         </section>

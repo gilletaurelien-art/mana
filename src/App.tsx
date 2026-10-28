@@ -48,7 +48,7 @@ const MODULES = [
     titre: "Découverte & patrimoine",
     accroche: "La Bretagne racontée.",
     texte:
-      "Audio-guide vocal discret aux points d'intérêt, anecdotes du littoral, filtres concrets : durée, poussette/PMR, chiens, boucle ou aller-retour.",
+      "Anecdotes du littoral, faune et flore, filtres concrets : durée, poussette/PMR, chiens, boucle ou aller-retour.",
     cta: { label: "Explorer", href: "/promenades" },
   },
   {
@@ -249,9 +249,7 @@ export default function App() {
               <div className="sous-bulle">
                 <p className="section-accroche">En ligne.</p>
                 <p className="section-texte">
-                  La radio du territoire émet : histoires bretonnes,
-                  voix des promeneurs, murmures du littoral. À écouter
-                  en marchant — ou au coin du feu.
+                  À écouter en marchant — ou au coin du feu.
                 </p>
                 <div className="est-actions">
                   <a className="btn btn-clair" href={`${B}/radio`}>
