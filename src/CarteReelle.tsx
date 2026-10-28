@@ -19,9 +19,23 @@
 //       chargement. Le tracé est dessiné PAR-DESSUS, en SVG, reprojeté à
 //       chaque rendu — la carte reste intacte.
 
-import { useEffect, useRef } from "react";
-// ⚠️ maplibre-gl v6 n'a PAS d'export par défaut — l'import nommé est obligatoire.
-import { Map as CarteML, NavigationControl } from "maplibre-gl";
+import { useEffect, useRef, useState } from "react";
+// ⚠️ MAPLIBRE EST ÉPINGLÉE EN v4, ET CE N'EST PAS UN RETARD.
+//    La v6 ne livre que de l'ESM, avec son worker dans un FICHIER SÉPARÉ chargé
+//    par `new URL('./maplibre-gl-worker.mjs', import.meta.url)`. Sous une base
+//    `/mana/` et dans un module importé à la demande, cette URL retombe sur
+//    l'index HTML : « Worker failed to load », et la carte n'affiche AUCUNE
+//    tuile. ⚠️ Le défaut était identique au build et au serveur de dev — ce
+//    n'était pas une bizarrerie de développement.
+//    ⭐ Et rien ne le disait à l'écran : le style se chargeait, le fond peignait
+//       sa couleur de base, le tracé SVG s'affichait. Une carte muette ressemble
+//       à une carte qui charge.
+//    La v4 embarque son worker dans le bundle UMD. Avant de remonter de version,
+//    vérifier les tuiles À L'ÉCRAN, pas seulement l'absence d'erreur.
+import maplibregl from "maplibre-gl";
+const CarteML = maplibregl.Map;
+const NavigationControl = maplibregl.NavigationControl;
+type CarteML = maplibregl.Map;
 import "maplibre-gl/dist/maplibre-gl.css";
 import { bbox } from "./walks";
 import type { Walk, WalkPoint } from "./walks";
@@ -39,7 +53,12 @@ export function CarteReelle({
 }) {
   const plan = useRef<HTMLDivElement | null>(null);
   const svg = useRef<SVGSVGElement | null>(null);
-  const carte = useRef<CarteML | null>(null);
+  // ⚠️ ÉTAT, PAS REF. Avec une ref, les repères ne se plaçaient JAMAIS :
+  //    en React, l'effet d'un ENFANT s'exécute AVANT celui du parent. Au
+  //    premier passage la carte n'existait pas encore, l'effet sortait en
+  //    silence — et rien ne le relançait. Mesuré en ligne : huit repères
+  //    présents dans le DOM, `style.transform` vide sur les huit.
+  const [carte, setCarte] = useState<CarteML | null>(null);
 
   useEffect(() => {
     if (!plan.current) return;
@@ -50,7 +69,7 @@ export function CarteReelle({
       zoom: 12,
       attributionControl: false,
     });
-    carte.current = m;
+    setCarte(m);
     m.addControl(new NavigationControl({ showCompass: false }), "top-right");
 
     const sous = svg.current?.querySelector<SVGPathElement>("#trace-sous");
@@ -93,7 +112,7 @@ export function CarteReelle({
       minuteries.forEach(window.clearTimeout);
       ro.disconnect();
       m.remove();
-      carte.current = null;
+      setCarte(null);
     };
   }, [walk]);
 
@@ -109,8 +128,15 @@ export function CarteReelle({
         </svg>
         <ul className="carte-reperes">
           <Repere point={depart} libelle="Départ" carte={carte} variante="depart" />
-          {walk.etapes.map((e) => (
-            <Repere key={e.nom} point={e} libelle={e.nom} carte={carte} variante="etape" />
+          {/* ⚠️ LES ÉTAPES SONT NUMÉROTÉES, PAS NOMMÉES, SUR LA CARTE.
+              Les noms complets ont été essayés : sur un téléphone de 375 px,
+              « Grotte de l'Anse des Sévignés n° 1 » déborde du cadre et
+              « Arrivée » se superposait à « Phare du Cap Fréhel ».
+              ⭐ Le nom n'est pas perdu : la liste sous la carte porte les mêmes
+                 numéros, dans le même ordre. Une carte nomme ce qu'elle peut
+                 montrer ; une liste nomme tout. */}
+          {walk.etapes.map((e, i) => (
+            <Repere key={e.nom} point={e} libelle={String(i + 1)} carte={carte} variante="etape" titre={e.nom} />
           ))}
           <Repere point={arrivee} libelle="Arrivée" carte={carte} variante="arrivee" />
           {moi && <Repere point={moi} libelle="Moi" carte={carte} variante="moi" />}
@@ -131,16 +157,18 @@ function Repere({
   libelle,
   carte,
   variante,
+  titre,
 }: {
   point: WalkPoint;
   libelle: string;
-  carte: React.MutableRefObject<CarteML | null>;
+  carte: CarteML | null;
   variante: string;
+  titre?: string;
 }) {
   const li = useRef<HTMLLIElement | null>(null);
 
   useEffect(() => {
-    const m = carte.current;
+    const m = carte;
     if (!m || !li.current) return;
     const placer = () => {
       const q = m.project([point.lon, point.lat]);
@@ -156,9 +184,15 @@ function Repere({
   }, [carte, point.lat, point.lon]);
 
   return (
-    <li ref={li} className={`carte-repere carte-repere-${variante}`}>
-      <span className="carte-pastille" />
-      <span className="carte-etiquette">{libelle}</span>
+    <li ref={li} className={`carte-repere carte-repere-${variante}`} title={titre ?? libelle}>
+      {variante === "etape" ? (
+        <span className="carte-pastille carte-numero">{libelle}</span>
+      ) : (
+        <>
+          <span className="carte-pastille" />
+          <span className="carte-etiquette">{libelle}</span>
+        </>
+      )}
     </li>
   );
 }

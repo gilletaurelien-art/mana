@@ -894,16 +894,41 @@ body { padding-bottom: 84px; }
 }
 .carte-credit a { color: inherit; }
 
-/* ⚠️ LE TITRE EST SABLE SUR UN FOND À MOTIF, dont certaines bandes sont
+/* ⚠️ LE TITRE EST SABLE SUR UN FOND À MOTIF dont certaines bandes sont
    claires : un titre LONG les traverse et devient illisible par endroits.
    Les titres courts d'origine tenaient sur une ligne et tombaient, par
-   chance, sur du sombre. ⭐ Un contraste qui dépend de la LONGUEUR du texte
-   n'est pas un contraste : c'est un hasard qui a tenu. Le halo d'encre le
-   rend vrai quel que soit le titre. */
-.page .page-titre,
-.page .hero-label {
-  text-shadow: 0 1px 2px rgb(27 42 74 / 95%), 0 0 14px rgb(27 42 74 / 90%);
+   chance, sur du sombre.
+   ⭐ Un contraste qui dépend de la LONGUEUR du texte n'est pas un contraste,
+      c'est un hasard qui a tenu. Le bandeau d'encre le rend vrai quel que
+      soit le titre — `box-decoration-break: clone` le répète LIGNE À LIGNE,
+      sinon les lignes intermédiaires restent nues.
+   (Un halo en `text-shadow` a été essayé d'abord : lisible, mais sale.) */
+.page .page-titre {
+  display: inline;
+  background: var(--ink);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  padding: 0.08em 0.3em;
+  box-shadow: 0.3em 0 0 var(--ink), -0.3em 0 0 var(--ink);
 }
+/* ⚠️ DEUX PIÈGES DE `display: inline`, rencontrés l'un après l'autre :
+   1. les lignes d'un texte qui passe à la ligne se CHEVAUCHENT — l'interligne
+      doit être rendu à la main, sinon le bandeau de la deuxième ligne recouvre
+      la première ;
+   2. un élément de bloc passé en `inline` FUSIONNE avec son voisin : le
+      « PROMENADE » de l'étiquette est venu se coller sur la même ligne que le
+      titre. D'où `display: table` pour elle — une boîte de BLOC qui se
+      rétrécit au contenu, donc un bandeau qui épouse le texte sans quitter sa
+      propre ligne. */
+.page .page-titre { line-height: 1.5; }
+.page .hero-label {
+  display: table;
+  background: var(--ink);
+  padding: 0.25em 0.5em;
+  margin-bottom: var(--sp-1);
+}
+.page .wrap > .page-titre { margin-bottom: 0; }
+.page .wrap > .page-titre + * { margin-top: var(--sp-4); }
 
 /* ── Les étapes, dans l'ordre de la marche ──────────────────────────────── */
 .etapes { list-style: none; margin: 0; padding: 0; counter-reset: etape; }
@@ -921,4 +946,23 @@ body { padding-bottom: 84px; }
 .etape-cat {
   margin-left: auto; font: 400 var(--t-xs)/1 var(--sans);
   color: #6b6558; text-transform: lowercase;
+}
+
+/* 🔴 LE CALQUE DOIT PASSER AU-DESSUS DU CANEVAS DE MAPLIBRE.
+   maplibre AJOUTE son conteneur comme dernier enfant de `.carte-plan` : sans
+   z-index, son canevas recouvre le tracé SVG et les repères, qui sont pourtant
+   bien là. Relevé en ligne le 28/10 : chemin de 12 977 caractères, huit
+   repères dans le DOM, et un rectangle uni à l'écran.
+   ⭐ Un élément présent, correct et INVISIBLE ne se cherche pas au bon endroit :
+      on soupçonne la donnée, alors que c'est l'ordre d'empilement. */
+.carte-calque { z-index: 2; }
+.carte-reperes { z-index: 3; }
+
+/* Pastille numérotée : le numéro renvoie à la liste sous la carte. */
+.carte-numero {
+  display: grid; place-items: center;
+  width: 18px; height: 18px; margin: -2px;
+  background: #c0392b; border-color: var(--blanc-chaud); border-width: 2px;
+  color: var(--blanc-chaud);
+  font: 700 10px/1 var(--sans);
 }

@@ -114,7 +114,7 @@ export function Promenade({ slug }: { slug: string }) {
   return (
     <main className="page">
       <div className="wrap">
-        <p className="hero-label">Promenade — tracé OpenStreetMap</p>
+        <p className="hero-label">Promenade</p>
         <h1 className="page-titre">{walk.titre}</h1>
 
         <section className="page-panel">
