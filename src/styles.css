@@ -1,4 +1,4 @@
-/* ===== MANA.family — design system « Terre, Mer & Lumière » =====
+/* ===== MANA.bzh — design system « Terre & Lumière » =====
    Encre, sable, or discret. L'intelligence se voit dans le service,
    pas dans les effets visuels. Budget < 20 Ko, zéro dépendance UI. */
 
@@ -65,7 +65,7 @@ body {
    (esprit pull ARMOR lux) posé en filigrane discret. */
 html {
   background:
-    url("/manafamily/motif.svg") repeat fixed,
+    url("/mana/motif.svg") repeat fixed,
     var(--ink);
   background-attachment: fixed;
 }
