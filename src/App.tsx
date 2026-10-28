@@ -208,14 +208,11 @@ export default function App() {
                 <p className="section-num">{m.num}</p>
                 <G size={36} />
                 <h2 className="section-title">{m.titre}</h2>
-                <div className="sous-bulle">
-                  <p className="section-accroche">{m.accroche}</p>
-                  <p className="section-texte">{m.texte}</p>
-                  <div className="est-actions">
-                    <a className="btn btn-clair" href={`${B}${m.cta.href}`}>
-                      {m.cta.label}
-                    </a>
-                  </div>
+                <p className="section-texte">{m.texte}</p>
+                <div className="est-actions">
+                  <a className="btn btn-primary" href={`${B}${m.cta.href}`}>
+                    {m.cta.label}
+                  </a>
                 </div>
               </section>
               );

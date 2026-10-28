@@ -249,8 +249,8 @@ html {
 }
 
 /* ===== Sections ===== */
-.landing-section { padding: var(--sp-4) 0; }
-.landing-section + .landing-section { margin-top: var(--sp-6); }
+.landing-section { padding: var(--sp-2) var(--sp-4); }
+.landing-section + .landing-section { margin-top: var(--sp-2); }
 .section-num {
   font-size: var(--t-xs);
   letter-spacing: 0.14em;
@@ -264,7 +264,7 @@ html {
   font-weight: 400;
   text-transform: uppercase;
   line-height: 1.2;
-  margin: 0 0 var(--sp-4);
+  margin: 0 0 var(--sp-2);
 }
 .section-accroche {
   font-family: var(--sans);
@@ -272,7 +272,7 @@ html {
   font-size: var(--t-m);
   margin: 0 0 var(--sp-2);
 }
-.section-texte { margin: 0 0 var(--sp-4); opacity: 0.85; }
+.section-texte { margin: 0 0 var(--sp-2); opacity: 0.85; }
 
 /* Sous-bulle : l'accroche et le texte vivent dans une bulle
    intérieure encre, posée dans la bulle de section */
