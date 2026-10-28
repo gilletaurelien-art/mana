@@ -20,6 +20,11 @@
 //   · la difficulté, l'accès poussette/PMR, les chiens — absents d'OSM ;
 //   · la durée est une ESTIMATION à 3,5 km/h, annoncée comme telle.
 
+/** Au-delà, c'est certainement une corde : le moissonneur découpe déjà à 500 m. */
+const SAUT_MAX_M = 600;
+/** Part de points répétés tolérée — voir verifierTrace(). */
+const PART_REPETES_MAX = 0.08;
+
 export interface WalkPoint { lat: number; lon: number }
 
 export interface Etape {
@@ -427,30 +432,45 @@ export function pointsRepetes(trace: WalkPoint[]): number {
  * ⛔ LE CONTRÔLE D'ADMISSION D'UN TRACÉ — en code, pas en commentaire.
  *
  * Le 28/10/2026, la page affichait un parcours INVENTÉ présenté comme le GR34.
- * Et 95 % des tracés RÉELS de la base échouent à ce contrôle : leurs morceaux
- * sont concaténés sans remise en ordre.
+ * Et la plupart des tracés RÉELS de la base étaient des morceaux de sentier
+ * concaténés sans remise en ordre, donc traversés de cordes droites.
  *
- * ⭐ ET LA LONGUEUR NE DÉTECTE RIEN. Le moissonneur coupe déjà tout saut de
- * plus de 500 m : les tracés abîmés sortent donc avec une longueur
- * parfaitement plausible et passent tout contrôle de distance. C'est le SAUT
- * entre deux points consécutifs qu'il faut regarder — et, à défaut, le dessin.
+ * ⭐ ET LA LONGUEUR NE DÉTECTE RIEN. Le moissonneur coupait tout saut de plus
+ * de 500 m : les tracés abîmés sortaient avec une longueur parfaitement
+ * plausible et passaient tout contrôle de distance.
+ *
+ * 🔴 LE SEUIL DE SAUT A ÉTÉ RETOURNÉ LE 28/10 AU SOIR, ET C'EST IMPORTANT.
+ * Il refusait au-delà de 150 m. Mesure faite sur la donnée OSM brute : **un
+ * way porte légitimement des segments droits allant jusqu'à ~308 m** (ligne
+ * droite en pleine lande). Le seuil à 150 m aurait donc refusé des tracés
+ * PARFAITS dès l'arrivée de la moisson réparée — et, ce garde tournant dans
+ * `npm run build`, il aurait fait échouer le déploiement SUR DE LA BONNE
+ * DONNÉE.
+ * ⭐ Un garde calibré sur des données malades prend la guérison pour une
+ *    panne. Le seuil est désormais à 600 m : au-dessus du découpage du
+ *    moissonneur, donc certainement une corde et jamais un chemin.
+ *
+ * Le verdict repose maintenant sur les POINTS RÉPÉTÉS, qui ne mentent pas :
+ * un sentier parcouru dans l'ordre ne repasse pas par la même coordonnée.
  */
 export function verifierTrace(trace: WalkPoint[]): string[] {
   const maux: string[] = [];
   if (trace.length < 2) maux.push("tracé vide ou réduit à un point");
 
-  // ⭐ LE SAUT TRANCHE : c'est lui qui fabrique la corde droite visible à
-  //    l'écran. Mesuré sur les 6 554 tracés : médiane 420 m, 4,6 % sous 150 m.
+  // Le saut reste un INDICATEUR, plus un verdict : voir l'en-tête.
   const saut = sautMax(trace);
-  if (saut > 150) maux.push(`saut de ${Math.round(saut)} m entre deux points consécutifs`);
+  if (saut > SAUT_MAX_M) maux.push(`saut de ${Math.round(saut)} m entre deux points consécutifs`);
 
-  // ⚠️ LES POINTS RÉPÉTÉS NE SONT QU'UN CORROBORANT, ET LE SEUIL N'EST PAS ZÉRO.
-  //    Un sentier repasse LÉGITIMEMENT par un même nœud : antenne aller-retour
-  //    vers un point de vue, boucle qui se referme. Les deux tracés livrés en
-  //    portent 3,1 % et 5,1 % et sont sains ; les abîmés montent à 10-12 %.
-  //    Un seuil à zéro refuserait les bons — d'où 8 %.
+  // ⚠️ LE SEUIL N'EST PAS ZÉRO, et ne doit pas l'être : un sentier repasse
+  //    LÉGITIMEMENT par un même nœud — antenne aller-retour vers un point de
+  //    vue, boucle qui se referme (`roundtrip=yes`).
+  // ⏳ 8 % EST UN SEUIL DE TRANSITION, à resserrer vers 1 % une fois la
+  //    moisson réparée jouée. Sur les tracés recollés correctement, le compte
+  //    tombe à 1 point répété sur 317 et 5 sur 9 986 (0,3 % et 0,05 %) ;
+  //    les tracés livrés ici en portent encore 3,1 % et 5,1 %, hérités de la
+  //    moisson du 25/10. Les abîmés montent à 10-12 %.
   const rep = pointsRepetes(trace);
-  if (rep / trace.length > 0.08)
+  if (rep / trace.length > PART_REPETES_MAX)
     maux.push(`${rep} points répétés sur ${trace.length} — morceaux recollés dans le désordre`);
 
   return maux;

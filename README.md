@@ -43,8 +43,24 @@ déploiement.
 
 ⭐ **Et ne pas se contenter de vérifier la LONGUEUR.** Le moissonneur coupe
 déjà tout saut de plus de 500 m : les tracés abîmés sortent donc avec une
-longueur parfaitement plausible et passent tout contrôle de distance. C'est le
-**saut entre deux points consécutifs** qui trahit — et, à défaut, le dessin.
+longueur parfaitement plausible et passent tout contrôle de distance. Le
+verdict porte sur les **points exactement répétés** — un sentier parcouru dans
+l'ordre ne repasse pas par la même coordonnée.
+
+🔴 **Le seuil de saut a été RETOURNÉ le 28/10 au soir.** Il refusait au-delà
+de 150 m ; mesure sur la donnée OSM brute : un chemin porte légitimement des
+segments droits jusqu'à ~308 m (ligne droite en pleine lande). Le garde aurait
+refusé des tracés **parfaits** dès l'arrivée de la moisson réparée — et, comme
+il tourne dans `npm run build`, il aurait fait échouer le déploiement **sur de
+la bonne donnée**. ⭐ Un garde calibré sur des données malades prend la
+guérison pour une panne.
+
+⏳ **Les deux tracés livrés sont encore imparfaits, et un test le dit** : issus
+de la moisson du 25/10, ils portent 3,1 % et 5,1 % de points répétés, soit
+~2,7 % de longueur fantôme sur le Cap Fréhel (260 m de cordes sur 9,5 km).
+Quand le test « à resserrer après la remoisson » échouera, c'est que la donnée
+réparée sera arrivée : resserrer alors le seuil vers 1 % et RETOURNER le test
+plutôt que le supprimer.
 
 ## La carte — nos tuiles, et une liste blanche
 

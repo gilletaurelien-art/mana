@@ -79,11 +79,27 @@ describe("le contrôle refuse VRAIMENT — validé par mutation", () => {
     expect(verifierTrace(droit(50))).toEqual([]);
   });
 
-  it("un saut de 400 m est refusé", () => {
+  it("un saut de 900 m est refusé", () => {
     const t = droit(50);
-    const abime = [...t.slice(0, 20), { lat: t[19].lat + 0.004, lon: t[19].lon }, ...t.slice(20)];
-    expect(sautMax(abime)).toBeGreaterThan(150);
+    const abime = [...t.slice(0, 20), { lat: t[19].lat + 0.009, lon: t[19].lon }, ...t.slice(20)];
+    expect(sautMax(abime)).toBeGreaterThan(600);
     expect(verifierTrace(abime).join(" ")).toMatch(/saut/);
+  });
+
+  it("un segment droit de 300 m N'EST PAS refusé", () => {
+    // ⭐ LE SENS DE CE TEST EST L'INVERSE DU PRÉCÉDENT, et il compte autant.
+    //    Le seuil valait 150 m jusqu'au 28/10 au soir. Mesure sur la donnée
+    //    OSM brute : un way porte légitimement des segments droits allant
+    //    jusqu'à ~308 m (ligne droite en pleine lande). Le garde aurait donc
+    //    refusé des tracés PARFAITS dès l'arrivée de la moisson réparée — et,
+    //    tournant dans `npm run build`, il aurait fait échouer le déploiement
+    //    sur de la BONNE donnée.
+    //    Un garde calibré sur des données malades prend la guérison pour une
+    //    panne. Ce test tient la porte ouverte.
+    const t = droit(50);
+    const avecLigneDroite = [...t.slice(0, 20), { lat: t[19].lat + 0.0027, lon: t[19].lon }, ...t.slice(20)];
+    expect(sautMax(avecLigneDroite)).toBeGreaterThan(250);
+    expect(verifierTrace(avecLigneDroite)).toEqual([]);
   });
 
   it("un recollement désordonné (plus de 8 % de points répétés) est refusé", () => {
@@ -102,5 +118,21 @@ describe("le contrôle refuse VRAIMENT — validé par mutation", () => {
 
   it("les tracés RÉELLEMENT livrés passent", () => {
     for (const w of WALKS) expect(verifierTrace(w.points)).toEqual([]);
+  });
+
+  it("⏳ les tracés livrés portent ENCORE des cordes — à resserrer après la remoisson", () => {
+    // ⚠️ CE TEST DOCUMENTE UNE IMPERFECTION CONNUE PLUTÔT QUE DE LA TAIRE.
+    //    Les deux tracés viennent de la moisson du 25/10, antérieure au
+    //    correctif de recollement : ils portent 3,1 % et 5,1 % de points
+    //    répétés. Mesuré segment par segment contre les 554 ways d'OSM, cela
+    //    représente ~2,7 % de longueur fantôme sur le Cap Fréhel — 260 m de
+    //    cordes sur 9,5 km, la plus longue à 66 m.
+    //    Sur des tracés correctement recollés, le compte tombe à 0,05-0,3 %.
+    // ⭐ QUAND CE TEST ÉCHOUERA, C'EST UNE BONNE NOUVELLE : la donnée réparée
+    //    sera arrivée. Resserrer alors PART_REPETES_MAX vers 1 % et retourner
+    //    ce test, plutôt que de le supprimer.
+    const parts = WALKS.map((w) => pointsRepetes(w.points) / w.points.length);
+    for (const p of parts) expect(p).toBeLessThan(0.08);
+    expect(Math.max(...parts)).toBeGreaterThan(0.01); // encore imparfait
   });
 });
