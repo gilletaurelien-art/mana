@@ -76,10 +76,12 @@ html {
   .wrap { width: calc(100% - 2 * var(--sp-2)); padding: 0; }
 }
 
-/* ===== Header : pilule ovale flottante, en lévitation ===== */
+/* ===== Header : pilule flottante fixe en bas d'écran ===== */
 .site-header {
-  position: sticky;
-  top: var(--sp-2);
+  position: fixed;
+  bottom: var(--sp-2);
+  left: 0;
+  right: 0;
   z-index: 10;
   display: flex;
   justify-content: center;
@@ -726,3 +728,6 @@ html {
   overflow: hidden;
   background: var(--sable);
 }
+
+/* Nav fixe en bas : réserve l'espace pour ne pas masquer le footer */
+body { padding-bottom: 84px; }
