@@ -17,6 +17,17 @@ const CarteReelle = lazy(() =>
 
 const HORS_SENTIER_M = 50;
 
+/** Les erreurs de géolocalisation, dites en français et de façon utile. */
+function messageGps(err: GeolocationPositionError): string {
+  if (err.code === err.PERMISSION_DENIED)
+    return "Vous avez refusé l'accès à votre position. Le parcours reste consultable ; pour vous situer dessus, autorisez la localisation dans les réglages de votre navigateur.";
+  if (err.code === err.POSITION_UNAVAILABLE)
+    return "Position introuvable pour l'instant — c'est fréquent sous les falaises ou en intérieur. Le parcours reste affiché.";
+  if (err.code === err.TIMEOUT)
+    return "Le GPS met trop de temps à répondre. Réessayez à l'air libre.";
+  return "GPS indisponible.";
+}
+
 function enGpx(walk: (typeof WALKS)[number]): string {
   // ⛔ PAS DE <ele> : nous n'avons AUCUNE altitude. Un GPX qui en porterait
   //    une inventée tromperait la montre du promeneur, pas seulement l'écran.
@@ -89,7 +100,12 @@ export function Promenade({ slug }: { slug: string }) {
         if (d > HORS_SENTIER_M && navigator.vibrate) navigator.vibrate(200);
 
       },
-      (err) => setGpsErreur(err.message || "GPS indisponible."),
+      // ⛔ NE PAS AFFICHER `err.message` : le navigateur le rend dans SA
+      //    langue, et en anglais la plupart du temps. Relevé en ligne le
+      //    28/10 sur la fiche Cap Fréhel : « User denied Geolocation »,
+      //    affiché tel quel au promeneur. ⭐ Un message d'erreur emprunté à
+      //    une bibliothèque parle toujours la langue de la bibliothèque.
+      (err) => setGpsErreur(messageGps(err)),
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
     );
     return () => navigator.geolocation.clearWatch(id);
