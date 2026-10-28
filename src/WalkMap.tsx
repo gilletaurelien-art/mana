@@ -40,11 +40,11 @@ export function WalkMap({
       aria-label="Carte du parcours"
       style={{ display: "block", width: "100%", height: "auto" }}
     >
-      <rect x={0} y={0} width={width} height={height} rx={18} fill="var(--sable)" stroke="var(--ecume)" />
+      <rect x={0} y={0} width={width} height={height} rx={18} fill="var(--sand)" stroke="var(--ecume)" />
       <path
         d={d}
         fill="none"
-        stroke="var(--glaz)"
+        stroke="var(--ink)"
         strokeWidth={2}
         strokeDasharray="1 7"
         strokeLinecap="round"
@@ -55,17 +55,17 @@ export function WalkMap({
             cx={px(w.point.lon)}
             cy={py(w.point.lat)}
             r={4}
-            fill="var(--blanc)"
-            stroke="var(--glaz)"
+            fill="var(--blanc-chaud)"
+            stroke="var(--ink)"
             strokeWidth={1.5}
           />
         </g>
       ))}
-      <circle cx={px(walk.points[0].lon)} cy={py(walk.points[0].lat)} r={5} fill="var(--ajonc)" />
+      <circle cx={px(walk.points[0].lon)} cy={py(walk.points[0].lat)} r={5} fill="var(--or)" />
       {moi && moiX !== null && moiY !== null && (
         <g>
           <circle cx={moiX} cy={moiY} r={14} fill="rgb(43 91 108 / 18%)" />
-          <circle cx={moiX} cy={moiY} r={6} fill="#2f6fdd" stroke="var(--blanc)" strokeWidth={2} />
+          <circle cx={moiX} cy={moiY} r={6} fill="#2f6fdd" stroke="var(--blanc-chaud)" strokeWidth={2} />
           {capDeg != null && (
             <path
               d={`M${moiX},${moiY} l${(14 * Math.sin((capDeg * Math.PI) / 180)).toFixed(1)},${(-14 * Math.cos((capDeg * Math.PI) / 180)).toFixed(1)}`}

@@ -726,7 +726,7 @@ html {
 .balade-carte {
   border-radius: 12px 18px 10px 16px;
   overflow: hidden;
-  background: var(--sable);
+  background: var(--sand);
 }
 
 /* Nav fixe en bas : réserve l'espace pour ne pas masquer le footer */

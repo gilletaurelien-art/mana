@@ -48,12 +48,12 @@ export function AltitudeProfile({
         <path
           d={pathD.replace(/ L[\d.]+,[\d.]+ L[\d.]+,[\d.]+ Z$/, "")}
           fill="none"
-          stroke="var(--glaz)"
+          stroke="var(--ink)"
           strokeWidth={1.5}
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        <circle cx={x(0)} cy={y(points[0].ele)} r={2.6} fill="var(--ajonc)" />
+        <circle cx={x(0)} cy={y(points[0].ele)} r={2.6} fill="var(--or)" />
       </svg>
       <figcaption>
         Altitude {eleMin}–{eleMax} m · D+ {dPlus} m · tracé indicatif prototype
