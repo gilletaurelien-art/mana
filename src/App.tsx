@@ -12,6 +12,7 @@ import {
 } from "./Glyphs";
 import { WalkMap } from "./WalkMap";
 import { Promenades } from "./Promenades";
+import { Composer } from "./Composer";
 import { Promenade } from "./Promenade";
 import { Territoire } from "./Territoire";
 import { MentionsLegales } from "./MentionsLegales";
@@ -138,6 +139,8 @@ export default function App() {
             </section>
           </div>
         </main>
+      ) : path === "/composer" ? (
+        <Composer />
       ) : path === "/promenades" ? (
         <Promenades />
       ) : routePromenade(path) ? (

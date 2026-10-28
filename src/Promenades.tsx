@@ -198,6 +198,26 @@ export function Promenades() {
 
         {/* La vitrine, toujours accessible : elle est embarquée, donc elle
             s'affiche même sans réseau. */}
+        {/* ⭐ La composition est l'autre moitié du produit : les 1 032
+            itinéraires sont les promenades des AUTRES ; celle-ci est la
+            vôtre, depuis là où vous êtes. */}
+        <section className="page-panel">
+          <p className="apercu-label">Ou bien</p>
+          <h2 className="section-title" style={{ marginBottom: "var(--sp-2)" }}>
+            Composer votre propre promenade
+          </h2>
+          <p className="page-texte">
+            Une boucle fabriquée depuis l'endroit où vous êtes, par les chemins
+            plutôt que par les routes, qui passe devant ce qu'il y a à voir.
+            Pour l'instant sur la presqu'île de Crozon.
+          </p>
+          <div className="est-actions" style={{ marginBottom: 0 }}>
+            <a className="btn btn-primary" href={`${B}/composer`}>
+              Composer une promenade
+            </a>
+          </div>
+        </section>
+
         <section className="page-panel">
           <p className="apercu-label">La presqu'île de Crozon</p>
           <p className="page-texte">
