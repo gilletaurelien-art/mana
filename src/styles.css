@@ -166,13 +166,14 @@ html {
 
 /* ===== Hero ===== */
 .hero {
-  min-height: 78vh;
+  min-height: 70vh;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   text-align: center;
   position: relative;
-  padding: var(--sp-12) 0 var(--sp-6);
+  padding: var(--sp-4) 0 var(--sp-6);
+  margin-top: calc(-1 * var(--sp-6));
 }
 .hero .wrap { position: relative; max-width: var(--largeur); }
 .hero-label {
