@@ -14,8 +14,8 @@ export function WalkMap({
   height = 400,
 }: {
   walk: Walk;
-  moi: WalkPoint | null;
-  capDeg: number | null;
+  moi?: WalkPoint | null;
+  capDeg?: number | null;
   width?: number;
   height?: number;
 }) {
