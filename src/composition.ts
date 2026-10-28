@@ -30,12 +30,15 @@ export interface Graphe {
   attribution: string;
   /** nœuds : [lon, lat] */
   n: [number, number][];
-  /** arêtes : [nœudA, nœudB, m, agrément, points, distance mer, dénivelé a→b]
+  /** arêtes : [nœudA, nœudB, m, agrément, points, dist. mer, dénivelé, marée]
    *  ⚠️ La distance à la mer est STOCKÉE en plus d'être fondue dans
    *  l'agrément : sans elle, impossible de VÉRIFIER que le bonus littoral
    *  change le parcours, ni de dire au promeneur « au bord de mer sur 2 km ».
-   *  `null` au-delà de 2 km — et absente sur un graphe bâti sans littoral. */
-  a: [number, number, number, number, number[], (number | null)?, (number | null)?][];
+   *  `null` au-delà de 2 km — et absente sur un graphe bâti sans littoral.
+   *  Le dénivelé est celui du sens a→b ; `marée` vaut 1 sur un passage qui
+   *  dépend de l'heure de la mer. */
+  a: [number, number, number, number, number[],
+      (number | null)?, (number | null)?, (0 | 1)?][];
   /** lieux : accrochés à une arête, avec leur fraction le long d'elle */
   l: LieuAccroche[];
 }
@@ -63,6 +66,8 @@ export interface Boucle {
   ressentie: number;
   /** quotient isopérimétrique : 1 = cercle, 0 = aller-retour aplati */
   etalement: number;
+  /** mètres de passage dépendant de la marée — 0 si la boucle n'en a aucun */
+  marees: number;
   /** les points du parcours, dans l'ordre de marche */
   contour: [number, number][];
   lieux: LieuVu[];
@@ -93,6 +98,22 @@ export const COUT_MONTEE = 5;
 export function distanceRessentie(metres: number, montee: number): number {
   return metres + COUT_MONTEE * montee;
 }
+
+/**
+ * ⭐ ON DÉTECTE LA MARÉE, ON N'EN ANNONCE PAS L'HEURE. La doctrine du produit
+ *    le dit depuis le début : « marées et météo, renvoi systématique vers les
+ *    sources officielles, aucune donnée simulée ». Prédire une marée demande
+ *    un modèle harmonique ou les données du SHOM ; inventer une prédiction
+ *    serait pire que se taire — quelqu'un s'y fierait.
+ *
+ * ⛔ ET ON N'ÉVITE PAS CES CHEMINS. À marée basse, un estran est souvent le
+ *    plus beau morceau de la promenade. Les écarter appauvrirait le produit
+ *    pour s'épargner un avertissement. On avertit ; le marcheur décide.
+ *
+ * Mesuré sur Crozon : 30 arêtes, 1,9 km, 0,2 % du réseau — rare, et ce sont
+ * exactement les endroits où l'on se fait piéger.
+ */
+export const SOURCE_MAREES = "https://maree.shom.fr/";
 
 /**
  * 🔴 UNE BOUCLE PEUT NE RIEN RÉPÉTER ET RESTER UN ALLER-RETOUR. Mesuré sur
@@ -149,7 +170,7 @@ export interface LieuVu {
   ordre: number;
 }
 
-interface Index {
+export interface Index {
   adj: Map<number, [number, number][]>;   // nœud → [arête, voisin]
   lieuxParArete: Map<number, LieuAccroche[]>;
 }
@@ -180,12 +201,29 @@ export function metres(p: [number, number], q: [number, number]): number {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
-export function noeudLePlusProche(g: Graphe, lon: number, lat: number): number {
-  let best = 0, bd = Infinity;
-  for (let i = 0; i < g.n.length; i++) {
+/**
+ * 🔴 ON NE CHERCHE QUE PARMI LES NŒUDS QUI PORTENT UNE ARÊTE, ET C'EST UN
+ *    CORRECTIF, PAS UNE OPTIMISATION.
+ *
+ * Le graphe stocke **64 028 points** mais seuls **10 601** sont des jonctions :
+ * les autres ne servent qu'à dessiner la courbe d'une arête. Chercher parmi
+ * tous rendait un point sans aucune arête — et la composition rendait ZÉRO
+ * boucle, en silence.
+ *
+ * Mesuré le 28/10 : depuis Morgat, le bourg le plus fréquenté de la presqu'île,
+ * le point le plus proche était à 262 m, portait 0 arête, et sa « composante
+ * connexe » faisait 1 nœud. Quatre durées essayées, quatre fois rien.
+ * ⭐ Le bourg de Crozon tombait sur une jonction PAR CHANCE : le défaut se
+ *    cachait dans le régime que je ne regardais pas.
+ */
+export function noeudLePlusProche(g: Graphe, ix: Index, lon: number, lat: number): number {
+  let best = -1, bd = Infinity;
+  for (const i of ix.adj.keys()) {
     const d = metres(g.n[i], [lon, lat]);
     if (d < bd) { bd = d; best = i; }
   }
+  // ⚠️ Un graphe sans aucune arête n'a pas de départ : on le dit par -1
+  //    plutôt que de rendre 0, qui serait un nœud comme un autre.
   return best;
 }
 
@@ -408,6 +446,7 @@ export function composer(
     }
     const ressentie = distanceRessentie(m, montee);
     const etalement = etalementDe(contour, m);
+    const marees = uniques.reduce((t, e) => t + (g.a[e][7] === 1 ? g.a[e][2] : 0), 0);
 
     // ⭐ ON SÉLECTIONNE PAR PRIORITÉ, ON AFFICHE DANS L'ORDRE DE MARCHE.
     //    Deux étapes, jamais confondues. Une liste intitulée « ce que vous
@@ -438,7 +477,7 @@ export function composer(
     vues.add(cle);
     boucles.push({
       aretes: total, metres: m, agrement, partRepetee, bordDeMer, montee, ressentie,
-      etalement, contour,
+      etalement, contour, marees,
       lieux: [...vusLieux.values()].sort((x, y) => x.ordre - y.ordre),
       score: agrement + 14 * vusLieux.size
              - 220 * Math.abs(ressentie - cibleM) / cibleM

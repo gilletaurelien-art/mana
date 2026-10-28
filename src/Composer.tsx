@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
-import { indexer, composer, noeudLePlusProche, traits, formeDeLaBoucle } from "./composition";
+import { indexer, composer, noeudLePlusProche, traits, formeDeLaBoucle, SOURCE_MAREES } from "./composition";
 import type { Graphe, Boucle } from "./composition";
 import type { Walk } from "./walks";
 
@@ -105,7 +105,7 @@ export function Composer() {
   const lancer = () => {
     if (!graphe || !ix) return;
     const t0 = performance.now();
-    const depart = noeudLePlusProche(graphe, position[0], position[1]);
+    const depart = noeudLePlusProche(graphe, ix, position[0], position[1]);
     const b = composer(graphe, ix, depart, budget(heures), { graine: graine.current });
     setDuree(Math.round(performance.now() - t0));
     setBoucles(b);
@@ -226,6 +226,7 @@ export function Composer() {
                   {(x.metres / 1000).toFixed(1)} km
                   {` · ${FORME[formeDeLaBoucle(x.etalement)]}`}
                   {x.montee >= 40 && ` · +${Math.round(x.montee)} m`}
+                  {x.marees > 0 && " · marée"}
                   {x.bordDeMer > 300 && ` · ${(x.bordDeMer / 1000).toFixed(1)} km de mer`}
                   {x.lieux.length > 0 && ` · ${x.lieux.length} lieux`}
                 </button>
@@ -255,6 +256,30 @@ export function Composer() {
                 {" · calculé en "}{duree} ms
               </p>
             </section>
+
+            {/* 🔴 L'AVERTISSEMENT PASSE AVANT LA CARTE, PAS APRÈS. Une mise en
+                garde qu'on découvre sous le tracé arrive après la décision.
+                ⛔ Et on n'annonce pas l'heure de la mer : prédire une marée
+                   demande un modèle harmonique ; quelqu'un s'y fierait. On
+                   renvoie à la source officielle — c'est la doctrine du
+                   produit pour les marées et la météo depuis le début. */}
+            {b.marees > 0 && (
+              <section className="page-panel">
+                <p className="apercu-label">⚠️ Un passage dépend de la marée</p>
+                <p className="page-texte">
+                  Environ {Math.round(b.marees)} m de ce parcours franchissent
+                  un estran : praticable à marée basse, pas à marée haute.
+                  Vérifiez l'horaire avant de partir — nous ne le calculons
+                  pas, et nous ne le devinons pas.
+                </p>
+                <div className="est-actions" style={{ marginBottom: 0 }}>
+                  <a className="btn btn-ghost" href={SOURCE_MAREES}
+                     target="_blank" rel="noopener noreferrer">
+                    Horaires des marées (SHOM)
+                  </a>
+                </div>
+              </section>
+            )}
 
             <section className="page-panel" style={{ padding: 0, overflow: "hidden" }}>
               <Suspense fallback={<p className="page-note" style={{ padding: "var(--sp-3)" }}>Chargement de la carte…</p>}>

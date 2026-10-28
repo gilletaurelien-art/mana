@@ -1,6 +1,6 @@
 import { readdirSync } from "node:fs";
 import { describe, it, expect } from "vitest";
-import { indexer, composer, noeudLePlusProche, traits, distanceRessentie, COUT_MONTEE, etalementDe, formeDeLaBoucle } from "./composition";
+import { indexer, composer, noeudLePlusProche, traits, distanceRessentie, COUT_MONTEE, etalementDe, formeDeLaBoucle, SOURCE_MAREES } from "./composition";
 import type { Graphe } from "./composition";
 
 // Une grille 6×6 à Crozon, maille ~200 m. Deux colonnes sont des « routes »
@@ -264,15 +264,73 @@ describe("composer une boucle", () => {
     expect(x.etalement).toBeCloseTo(etalementDe(x.contour, x.metres), 6);
   });
 
+  it("⭐ un passage qui dépend de la marée se COMPTE, et ne se contourne pas", () => {
+    // ⛔ On n'écarte pas ces chemins : à marée basse, un estran est souvent le
+    //    plus beau morceau. Les éviter appauvrirait la promenade pour
+    //    s'épargner un avertissement. On compte, on dit, le marcheur décide.
+    const { g, cible } = grilleRare();
+    // on marque quelques arêtes comme dépendantes de la marée
+    g.a = g.a.map((a, i) => (i % 17 === 0
+      ? ([a[0], a[1], a[2], a[3], a[4], null, null, 1] as Graphe["a"][number])
+      : a));
+    const b = composer(g, indexer(g), 0, cible);
+    expect(b.length).toBeGreaterThan(0);
+    const total = b[0].aretes
+      .filter((e, i, t) => t.indexOf(e) === i)
+      .reduce((t, e) => t + (g.a[e][7] === 1 ? g.a[e][2] : 0), 0);
+    expect(b[0].marees).toBe(total);
+    // ⚠️ et le compositeur ne les a PAS fuies : sur une grille régulière où
+    //    une arête sur dix-sept est marquée, en éviter toutes serait le signe
+    //    d'un évitement, pas d'un hasard.
+    const touchees = b.filter((x) => x.marees > 0).length;
+    expect(touchees).toBeGreaterThan(0);
+  });
+
+  it("sans passage de marée, le compte est zéro — pas « inconnu »", () => {
+    const { g, cible } = grilleRare();
+    expect(composer(g, indexer(g), 0, cible)[0].marees).toBe(0);
+  });
+
+  it("⭐ la source des marées est OFFICIELLE, jamais une prédiction maison", () => {
+    // La doctrine du produit : « marées et météo, renvoi systématique vers
+    // les sources officielles, aucune donnée simulée ». Prédire une marée
+    // demanderait un modèle harmonique ; quelqu'un s'y fierait.
+    expect(SOURCE_MAREES).toContain("shom.fr");
+  });
+
   it("un mètre de montée coûte cinq mètres de plat", () => {
     expect(COUT_MONTEE).toBe(5);
     expect(distanceRessentie(1000, 100)).toBe(1500);
   });
 
+  it("⛔ le départ est toujours une JONCTION, jamais un point de dessin", () => {
+    // 🔴 LE DÉFAUT QUE CE TEST TIENT, mesuré le 28/10 depuis Morgat : le
+    //    graphe stocke 64 028 points mais seuls 10 601 portent une arête ;
+    //    les autres ne servent qu'à dessiner la courbe. Le point le plus
+    //    proche de Morgat était à 262 m, portait ZÉRO arête, et la
+    //    composition rendait zéro boucle — en silence, quatre durées durant.
+    //    ⭐ Le bourg de Crozon tombait sur une jonction PAR CHANCE.
+    const { g } = grilleRare();
+    // ⚠️ L'orphelin doit être STRICTEMENT le plus proche de la requête,
+    //    sinon le test ne déclenche rien — première version : il était à 1 m
+    //    de l'origine et la mutation passait au vert, parce que l'origine
+    //    elle-même restait la plus proche.
+    const orphelin: [number, number] = [g.n[0][0] - 0.0004, g.n[0][1] - 0.0004];
+    g.n = [...g.n, orphelin];
+    const iOrphelin = g.n.length - 1;
+    const ix = indexer(g);
+    // on interroge DEPUIS l'orphelin : il est à zéro mètre, aucune jonction
+    // ne peut être plus proche.
+    const depart = noeudLePlusProche(g, ix, orphelin[0], orphelin[1]);
+    expect(depart).not.toBe(iOrphelin);
+    expect(ix.adj.has(depart)).toBe(true);
+    expect(composer(g, ix, depart, 3200).length).toBeGreaterThan(0);
+  });
+
   it("le nœud le plus proche d'une position est bien le plus proche", () => {
     const g = grille();
-    expect(noeudLePlusProche(g, -4.49, 48.24)).toBe(0);
-    expect(noeudLePlusProche(g, -4.49 + 5 * 0.0027, 48.24 + 5 * 0.0018)).toBe(35);
+    expect(noeudLePlusProche(g, indexer(g), -4.49, 48.24)).toBe(0);
+    expect(noeudLePlusProche(g, indexer(g), -4.49 + 5 * 0.0027, 48.24 + 5 * 0.0018)).toBe(35);
   });
 });
 
