@@ -127,7 +127,16 @@ export function CarteReelle({
           <path id="trace-trait" />
         </svg>
         <ul className="carte-reperes">
-          <Repere point={depart} libelle="Départ" carte={carte} variante="depart" />
+          {/* ⚠️ SUR UNE BOUCLE, DÉPART ET ARRIVÉE SONT LE MÊME POINT : deux
+              repères superposés donnent deux étiquettes qui se recouvrent —
+              « Départ » passait sous « Arrivée », illisible. Un seul repère,
+              et il dit les deux. */}
+          <Repere
+            point={depart}
+            libelle={walk.boucle ? "Départ et arrivée" : "Départ"}
+            carte={carte}
+            variante="depart"
+          />
           {/* ⚠️ LES ÉTAPES SONT NUMÉROTÉES, PAS NOMMÉES, SUR LA CARTE.
               Les noms complets ont été essayés : sur un téléphone de 375 px,
               « Grotte de l'Anse des Sévignés n° 1 » déborde du cadre et
@@ -138,7 +147,9 @@ export function CarteReelle({
           {walk.etapes.map((e, i) => (
             <Repere key={e.nom} point={e} libelle={String(i + 1)} carte={carte} variante="etape" titre={e.nom} />
           ))}
-          <Repere point={arrivee} libelle="Arrivée" carte={carte} variante="arrivee" />
+          {!walk.boucle && (
+            <Repere point={arrivee} libelle="Arrivée" carte={carte} variante="arrivee" />
+          )}
           {moi && <Repere point={moi} libelle="Moi" carte={carte} variante="moi" />}
         </ul>
       </div>
