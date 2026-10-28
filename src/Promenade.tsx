@@ -1,6 +1,8 @@
 import { useEffect, useState, lazy, Suspense } from "react";
 import { baseUrl } from "./router";
 import { WALKS, distAuTrace, distM } from "./walks";
+import { chargerPromenade } from "./catalogue";
+import type { Walk } from "./walks";
 import type { WalkPoint } from "./walks";
 import { WalkMap } from "./WalkMap";
 // ⚠️ CHARGÉE À LA DEMANDE, et ce n'est pas une optimisation de confort :
@@ -52,6 +54,17 @@ function telecharger(nom: string, contenu: string, type: string) {
   URL.revokeObjectURL(url);
 }
 
+function PromenadeEnChemin() {
+  return (
+    <main className="page">
+      <div className="wrap">
+        <p className="hero-label">Promenade</p>
+        <h1 className="page-titre">Chargement…</h1>
+      </div>
+    </main>
+  );
+}
+
 function PromenadeInconnue({ slug }: { slug: string }) {
   const B = baseUrl();
   return (
@@ -83,8 +96,32 @@ export function Promenade({ slug }: { slug: string }) {
   //    Et il est devenu probable le 28/10 : les numéros de portion des tracés
   //    ont été renumérotés par la remoisson, donc tout lien figé pointe
   //    potentiellement ailleurs.
-  const walk = WALKS.find((w) => w.slug === slug);
-  if (!walk) return <PromenadeInconnue slug={slug} />;
+  // ⭐ DEUX SOURCES, DEUX RÔLES — ce n'est pas une duplication.
+  //    L'EMBARQUÉ (les quatre de Crozon) s'affiche instantanément et SANS
+  //    RÉSEAU : c'est la vitrine, et c'est ce qui tient la promesse hors ligne.
+  //    Le DISTANT est le catalogue de la France entière, trop lourd pour le
+  //    bundle (~26 600 tracés, plus de 100 Mo).
+  const embarquee = WALKS.find((w) => w.slug === slug);
+  const [distante, setDistante] = useState<Walk | null>(null);
+  const [cherche, setCherche] = useState(!embarquee);
+
+  useEffect(() => {
+    if (embarquee) return;
+    let vivant = true;
+    setCherche(true);
+    chargerPromenade(slug)
+      .then((w) => vivant && setDistante(w))
+      .catch(() => vivant && setDistante(null))
+      .finally(() => vivant && setCherche(false));
+    return () => { vivant = false; };
+  }, [slug, embarquee]);
+
+  const walk = embarquee ?? distante;
+  // ⛔ PAS DE RETOUR ANTICIPÉ ICI : des hooks le suivent, et React compte les
+  //    hooks d'un rendu à l'autre. Une première version sortait à cet endroit —
+  //    « Minified React error #310 », page ENTIÈREMENT BLANCHE, alors que la
+  //    donnée arrivait en 200. ⭐ Une page blanche accuse la donnée ; c'était
+  //    l'ordre des hooks. Le garde est descendu après TOUS les hooks.
 
   const [moi, setMoi] = useState<WalkPoint | null>(null);
   const [cap, setCap] = useState<number | null>(null);
@@ -93,11 +130,12 @@ export function Promenade({ slug }: { slug: string }) {
   const [horsLigne, setHorsLigne] = useState(!navigator.onLine);
 
   useEffect(() => {
+    if (!walk) return;
     document.title = `${walk.titre} — Promenades MANA.bzh`;
     return () => {
-      document.title = "MANA.bzh — La porte d'entrée de l'écosystème MANA en Bretagne";
+      document.title = "MANA.bzh — Promenades & découvertes en Bretagne";
     };
-  }, [walk.titre]);
+  }, [walk?.titre]);
 
   useEffect(() => {
     const on = () => setHorsLigne(false);
@@ -112,6 +150,9 @@ export function Promenade({ slug }: { slug: string }) {
 
   // GPS : watchPosition — continu, précision haute.
   useEffect(() => {
+    // ⚠️ `walk` peut être encore absent : la promenade distante n'est pas
+    //    arrivée. On ne surveille pas une position contre un tracé inexistant.
+    if (!walk) return;
     if (!("geolocation" in navigator)) {
       setGpsErreur("Géolocalisation non disponible sur cet appareil.");
       return;
@@ -151,6 +192,9 @@ export function Promenade({ slug }: { slug: string }) {
     return () => window.removeEventListener("deviceorientation", handler);
   }, []);
 
+  // Le garde, désormais APRÈS tous les hooks (voir plus haut).
+  if (!walk) return cherche ? <PromenadeEnChemin /> : <PromenadeInconnue slug={slug} />;
+
   const sosHref = moi
     ? `sms:112?&body=${encodeURIComponent(
         `Urgence — ma position GPS : ${moi.lat.toFixed(5)}, ${moi.lon.toFixed(5)} — parcours ${walk.titre} (mana.bzh).`
@@ -164,7 +208,7 @@ export function Promenade({ slug }: { slug: string }) {
         <h1 className="page-titre">{walk.titre}</h1>
 
         <section className="page-panel">
-          <p className="page-intro">{walk.resume}</p>
+          {walk.resume && <p className="page-intro">{walk.resume}</p>}
           <p className="page-note">
             {walk.distanceKm} km · ≈ {walk.dureeEstimeeH} h de marche ·{" "}
             {walk.boucle ? "boucle" : "aller simple"}. Durée estimée à 3,5 km/h.
