@@ -1,6 +1,6 @@
 import { readdirSync } from "node:fs";
 import { describe, it, expect } from "vitest";
-import { indexer, composer, noeudLePlusProche, traits, distanceRessentie, COUT_MONTEE } from "./composition";
+import { indexer, composer, noeudLePlusProche, traits, distanceRessentie, COUT_MONTEE, etalementDe, formeDeLaBoucle } from "./composition";
 import type { Graphe } from "./composition";
 
 // Une grille 6×6 à Crozon, maille ~200 m. Deux colonnes sont des « routes »
@@ -221,6 +221,48 @@ describe("composer une boucle", () => {
   //       une pente de 24 683 %.
   //    ⭐ Un test qui vise une garantie d'un autre étage ne la tient pas : il
   //       donne l'impression qu'elle est tenue.
+
+  it("⭐ l'étalement voit l'aller-retour que le compteur de répétition ne voit pas", () => {
+    // 🔴 LE DÉFAUT QUE CE TEST TIENT : deux chemins parallèles distants de
+    //    cinquante mètres ne partagent AUCUNE arête — la part répétée vaut
+    //    zéro — et pourtant on refait le trajet. Mesuré sur Crozon : deux
+    //    boucles de 8,9 km à 0 % de répétition, l'une étalée à 0,53, l'autre
+    //    aplatie à 0,14.
+    const k = 111320;
+    const carre: [number, number][] = [
+      [0, 48], [1000 / (k * Math.cos(48 * Math.PI / 180)), 48],
+      [1000 / (k * Math.cos(48 * Math.PI / 180)), 48 + 1000 / k], [0, 48 + 1000 / k],
+    ];
+    // un carré de 1 km de côté : périmètre 4 km, aire 1 km²
+    expect(etalementDe(carre, 4000)).toBeCloseTo(4 * Math.PI * 1e6 / 16e6, 2);
+    // un aller-retour : deux brins écartés de 20 m sur 1 km
+    const brin: [number, number][] = [
+      [0, 48], [1000 / (k * Math.cos(48 * Math.PI / 180)), 48],
+      [1000 / (k * Math.cos(48 * Math.PI / 180)), 48 + 20 / k], [0, 48 + 20 / k],
+    ];
+    const plat = etalementDe(brin, 2040);
+    expect(plat).toBeLessThan(0.1);
+    expect(plat).toBeLessThan(etalementDe(carre, 4000));
+  });
+
+  it("⭐ on NOMME l'aller-retour, on ne l'appelle pas « boucle »", () => {
+    // Ce qu'on affiche dit ce qu'on promet. Si le terrain n'offre qu'un
+    // aller-retour — une pointe, un cul-de-sac côtier — on le dit.
+    expect(formeDeLaBoucle(0.52)).toBe("ample");
+    expect(formeDeLaBoucle(0.21)).toBe("boucle");
+    expect(formeDeLaBoucle(0.09)).toBe("aller-retour");
+  });
+
+  it("chaque boucle porte son contour, dans l'ordre de marche", () => {
+    const { g, cible } = grilleRare();
+    const b = composer(g, indexer(g), 0, cible);
+    const x = b[0];
+    expect(x.contour.length).toBeGreaterThan(x.aretes.length);
+    // le contour commence au départ et y revient
+    expect(x.contour[0]).toEqual(g.n[0]);
+    expect(x.contour[x.contour.length - 1]).toEqual(g.n[0]);
+    expect(x.etalement).toBeCloseTo(etalementDe(x.contour, x.metres), 6);
+  });
 
   it("un mètre de montée coûte cinq mètres de plat", () => {
     expect(COUT_MONTEE).toBe(5);

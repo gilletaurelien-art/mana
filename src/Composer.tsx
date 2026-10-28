@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
-import { indexer, composer, noeudLePlusProche, traits } from "./composition";
+import { indexer, composer, noeudLePlusProche, traits, formeDeLaBoucle } from "./composition";
 import type { Graphe, Boucle } from "./composition";
 import type { Walk } from "./walks";
 
@@ -35,6 +35,21 @@ const ALLURE_KMH = 3;
  *    désagrément, c'est de l'effort. Le point de vue est en haut.
  */
 const budget = (heures: number) => heures * ALLURE_KMH * 1000;
+
+/**
+ * ⭐ ON NOMME LA FORME, ON NE LA CACHE PAS. Un parcours peut ne répéter aucune
+ *    arête et rester un aller-retour : deux chemins parallèles à cinquante
+ *    mètres l'un de l'autre. Mesuré sur Crozon — deux boucles de 8,9 km, 0 %
+ *    de répétition toutes les deux, étalement 0,53 contre 0,14.
+ *    Annoncer « boucle » pour la seconde est un mensonge qui se vérifie en
+ *    marchant. Quand le terrain n'offre qu'un aller-retour (une pointe, un
+ *    cul-de-sac côtier), on le dit, et c'est une information utile.
+ */
+const FORME: Record<string, string> = {
+  ample: "boucle ample",
+  boucle: "boucle",
+  "aller-retour": "aller-retour",
+};
 
 const LIBELLE: Record<string, string> = {
   megalithe: "Mégalithe", plage: "Plage", panorama: "Point de vue",
@@ -209,6 +224,7 @@ export function Composer() {
                   onClick={() => setChoisie(i)}
                 >
                   {(x.metres / 1000).toFixed(1)} km
+                  {` · ${FORME[formeDeLaBoucle(x.etalement)]}`}
                   {x.montee >= 40 && ` · +${Math.round(x.montee)} m`}
                   {x.bordDeMer > 300 && ` · ${(x.bordDeMer / 1000).toFixed(1)} km de mer`}
                   {x.lieux.length > 0 && ` · ${x.lieux.length} lieux`}
@@ -225,6 +241,10 @@ export function Composer() {
                 {walk.distanceKm} km · environ {walk.dureeEstimeeH} h
               </h2>
               <p className="page-note">
+                {FORME[formeDeLaBoucle(b.etalement)]}
+                {formeDeLaBoucle(b.etalement) === "aller-retour" &&
+                  " — on revient par un chemin voisin, pas par une autre boucle"}
+                {" · "}
                 {b.lieux.length > 0
                   ? `${b.lieux.length} lieu${b.lieux.length > 1 ? "x" : ""} sur le chemin`
                   : "Aucun lieu remarquable sur ce parcours — c'est la marche qui compte"}

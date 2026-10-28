@@ -61,6 +61,10 @@ export interface Boucle {
   montee: number;
   /** distance à plat équivalente, montée comprise (règle de Naismith) */
   ressentie: number;
+  /** quotient isopérimétrique : 1 = cercle, 0 = aller-retour aplati */
+  etalement: number;
+  /** les points du parcours, dans l'ordre de marche */
+  contour: [number, number][];
   lieux: LieuVu[];
   score: number;
 }
@@ -88,6 +92,50 @@ export const COUT_MONTEE = 5;
 /** Distance « à plat équivalente » : c'est elle qui tient le budget de temps. */
 export function distanceRessentie(metres: number, montee: number): number {
   return metres + COUT_MONTEE * montee;
+}
+
+/**
+ * 🔴 UNE BOUCLE PEUT NE RIEN RÉPÉTER ET RESTER UN ALLER-RETOUR. Mesuré sur
+ *    Crozon : deux boucles de 8,9 km, toutes deux à 0 % d'arêtes répétées,
+ *    l'une étalée à 0,53, l'autre aplatie à 0,14. Partir et revenir par deux
+ *    chemins parallèles distants de cinquante mètres ne répète aucune arête —
+ *    et donne pourtant l'impression de refaire le trajet.
+ *    ⭐ Le compteur de répétition ne voit pas ce défaut : il faut une mesure
+ *       de FORME, pas de recouvrement.
+ *
+ * Quotient isopérimétrique : `4πA / P²`. Vaut 1 pour un cercle et tend vers 0
+ * quand la boucle s'aplatit. Relevé réel sur 14 boucles de Crozon : de 0,083
+ * à 0,542 — il discrimine, et il est DÉCORRÉLÉ de la part répétée.
+ *
+ * ⚠️ Une boucle qui se croise (en huit) voit ses deux lobes se compenser
+ *    partiellement dans l'aire : elle paraît moins étalée qu'elle ne l'est.
+ *    C'est rare, et ça penche du bon côté — on ne promet jamais mieux que ce
+ *    qu'on a.
+ */
+export function etalementDe(contour: [number, number][], perimetre: number): number {
+  if (contour.length < 3 || perimetre <= 0) return 0;
+  // projection locale : à cette latitude et sur quelques kilomètres, l'erreur
+  // est négligeable devant ce que la mesure sert à distinguer.
+  const kx = Math.cos((contour[0][1] * Math.PI) / 180) * 111320;
+  const ky = 111320;
+  let deux = 0;
+  for (let i = 0; i < contour.length; i++) {
+    const p = contour[i], q = contour[(i + 1) % contour.length];
+    deux += p[0] * kx * (q[1] * ky) - q[0] * kx * (p[1] * ky);
+  }
+  return (4 * Math.PI * Math.abs(deux / 2)) / (perimetre * perimetre);
+}
+
+/**
+ * ⭐ ON NOMME LA FORME, ON NE CACHE PAS L'ALLER-RETOUR. Si le terrain n'offre
+ *    qu'un aller-retour — une pointe, un cul-de-sac côtier — on le dit. Ce
+ *    qu'on affiche dit ce qu'on promet : annoncer « boucle » pour un
+ *    aller-retour est un mensonge qui se vérifie en marchant.
+ */
+export function formeDeLaBoucle(etalement: number): "ample" | "boucle" | "aller-retour" {
+  if (etalement >= 0.35) return "ample";
+  if (etalement >= 0.15) return "boucle";
+  return "aller-retour";
 }
 
 export interface LieuVu {
@@ -348,14 +396,18 @@ export function composer(
     //    dénivelé d'une boucle, qui monte et redescend toujours autant.
     let montee = 0;
     let nMarche = depart;
+    const contour: [number, number][] = [];
     for (const e of total) {
       const ar = g.a[e];
       const aLEndroit = ar[0] === nMarche;
       const dz = ar[6];
       if (dz != null) montee += Math.max(0, aLEndroit ? dz : -dz);
+      const suite = aLEndroit ? ar[4] : [...ar[4]].reverse();
+      for (const pt of suite) contour.push(g.n[pt]);
       nMarche = aLEndroit ? ar[1] : ar[0];
     }
     const ressentie = distanceRessentie(m, montee);
+    const etalement = etalementDe(contour, m);
 
     // ⭐ ON SÉLECTIONNE PAR PRIORITÉ, ON AFFICHE DANS L'ORDRE DE MARCHE.
     //    Deux étapes, jamais confondues. Une liste intitulée « ce que vous
@@ -386,6 +438,7 @@ export function composer(
     vues.add(cle);
     boucles.push({
       aretes: total, metres: m, agrement, partRepetee, bordDeMer, montee, ressentie,
+      etalement, contour,
       lieux: [...vusLieux.values()].sort((x, y) => x.ordre - y.ordre),
       score: agrement + 14 * vusLieux.size
              - 220 * Math.abs(ressentie - cibleM) / cibleM
