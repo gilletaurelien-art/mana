@@ -10,6 +10,7 @@ import {
   GlyphSentier,
   GlyphTerritoire,
 } from "./Glyphs";
+import { WalkMap } from "./WalkMap";
 import { Promenades } from "./Promenades";
 import { Promenade } from "./Promenade";
 import { Territoire } from "./Territoire";
@@ -181,22 +182,17 @@ export default function App() {
                 </button>
               </div>
 
-              {/* Swipe des balades : scroll manuel, jamais auto */}
-              <div className="swipe-balades" role="region" aria-label="Les balades — glisser pour explorer">
-                {WALKS.map((w) => (
-                  <a
-                    key={w.slug}
-                    className="swipe-carte"
-                    href={`${B}/promenade/${w.slug}`}
-                  >
-                    <p className="swipe-lieu">{w.lieu}</p>
-                    <p className="swipe-titre">{w.titre}</p>
-                    <p className="swipe-meta">
-                      {w.distanceKm} km · {w.dureeH} h · {w.difficulte}
-                    </p>
-                  </a>
-                ))}
-              </div>
+              {/* La balade : une seule, avec sa carte */}
+              <a className="balade-unique" href={`${B}/promenade/${WALKS[0].slug}`}>
+                <div className="balade-carte">
+                  <WalkMap walk={WALKS[0]} width={280} height={180} />
+                </div>
+                <p className="swipe-lieu">{WALKS[0].lieu}</p>
+                <p className="swipe-titre">{WALKS[0].titre}</p>
+                <p className="swipe-meta">
+                  {WALKS[0].distanceKm} km · {WALKS[0].dureeH} h · {WALKS[0].difficulte}
+                </p>
+              </a>
             </div>
           </section>
 
