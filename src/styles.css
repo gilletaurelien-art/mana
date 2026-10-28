@@ -90,7 +90,7 @@ html {
   align-items: center;
   justify-content: center;
   gap: var(--sp-4);
-  background: rgb(250 248 243 / 92%);
+  background: var(--sand);
   border: 1px solid var(--or);
   border-radius: 999px;
   box-shadow:
@@ -202,7 +202,7 @@ html {
    reflet supérieur, ombre de lévitation — la signature MANA. */
 .bulle,
 .bulle-xl {
-  background: rgb(255 255 255 / 90%);
+  background: var(--blanc-chaud);
   border: 1px solid var(--or);
   border-radius: 44px 56px 40px 52px / 52px 42px 56px 46px;
   box-shadow:
@@ -487,7 +487,7 @@ html {
   margin: 0 0 var(--sp-2);
 }
 .page-panel {
-  background: rgb(255 255 255 / 92%);
+  background: var(--blanc-chaud);
   border: 1px solid var(--or);
   border-radius: 12px;
   padding: var(--sp-6);
