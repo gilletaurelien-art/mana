@@ -66,7 +66,7 @@ export function WalkMap({
         <g>
           <circle cx={moiX} cy={moiY} r={14} fill="rgb(43 91 108 / 18%)" />
           <circle cx={moiX} cy={moiY} r={6} fill="#2f6fdd" stroke="var(--blanc)" strokeWidth={2} />
-          {capDeg !== null && (
+          {capDeg != null && (
             <path
               d={`M${moiX},${moiY} l${(14 * Math.sin((capDeg * Math.PI) / 180)).toFixed(1)},${(-14 * Math.cos((capDeg * Math.PI) / 180)).toFixed(1)}`}
               stroke="#2f6fdd"
