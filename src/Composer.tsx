@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
-import { indexer, composer, noeudLePlusProche, traits, formeDeLaBoucle, SOURCE_MAREES } from "./composition";
-import type { Graphe, Boucle } from "./composition";
+import { indexer, composer, noeudLePlusProche, traits, formeDeLaBoucle, SOURCE_MAREES, cheminDeRetour } from "./composition";
+import type { Graphe, Boucle, Retour } from "./composition";
 import type { Walk } from "./walks";
 
 const CarteReelle = lazy(() =>
@@ -68,6 +68,8 @@ export function Composer() {
   const [boucles, setBoucles] = useState<Boucle[] | null>(null);
   const [choisie, setChoisie] = useState(0);
   const [duree, setDuree] = useState(0);
+  const [retour, setRetour] = useState<Retour | null>(null);
+  const [motRetour, setMotRetour] = useState("");
   const graine = useRef(1);
 
   useEffect(() => {
@@ -113,6 +115,31 @@ export function Composer() {
   };
 
   const autre = () => { graine.current = (graine.current * 7919 + 13) >>> 0; lancer(); };
+
+  /**
+   * ⭐ RENTRER. Le vent se lève, la pluie commence à tomber. Ce qu'on veut
+   *    alors, ce n'est pas savoir combien il reste : c'est le chemin le plus
+   *    court vers le point de départ. On ne retient personne.
+   * ⚠️ Et on ne demande RIEN au réseau pour ça : le graphe est déjà dans le
+   *    téléphone. C'est précisément dehors, sous la pluie, que le réseau
+   *    manque — une fonction de secours qui a besoin d'internet n'en est pas une.
+   */
+  const rentrer = () => {
+    if (!graphe || !ix) return;
+    setMotRetour("Recherche de votre position…");
+    navigator.geolocation?.getCurrentPosition(
+      (p) => {
+        const ici = noeudLePlusProche(graphe, ix, p.coords.longitude, p.coords.latitude);
+        const depart = noeudLePlusProche(graphe, ix, position[0], position[1]);
+        const r = cheminDeRetour(graphe, ix, ici, depart);
+        if (!r) { setMotRetour("Aucun chemin cartographié ne relie votre position au départ."); return; }
+        setRetour(r);
+        setMotRetour("");
+      },
+      () => setMotRetour("Position indisponible — impossible de calculer le retour."),
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  };
 
   const b = boucles?.[choisie] ?? null;
 
@@ -161,6 +188,23 @@ export function Composer() {
             </p>
           )}
         </section>
+
+        {graphe && (
+          <section className="page-panel">
+            <p className="apercu-label">Une proposition, pas un programme</p>
+            {/* ⭐ CE PARAGRAPHE EST UNE FONCTION, PAS UN ORNEMENT. Tout ce qui
+                précède calcule UN parcours ; sans ces quelques lignes, l'objet
+                rendu se lit comme un itinéraire à exécuter — et alors couper,
+                s'arrêter ou changer d'avis devient un échec. Ce n'en est pas
+                un : c'est le propre de la flânerie. */}
+            <p className="page-texte">
+              Prenez-en la moitié aujourd'hui et le reste un autre jour.
+              Coupez par où vous voulez. Faites demi-tour parce que la lumière
+              est plus belle derrière vous. Rien ici ne compte vos pas, ne
+              tient de série, ne vous dira que vous y êtes « presque ».
+            </p>
+          </section>
+        )}
 
         {graphe && (
           <section className="page-panel">
@@ -280,6 +324,31 @@ export function Composer() {
                 </div>
               </section>
             )}
+
+            <section className="page-panel">
+              <p className="apercu-label">Si le temps tourne</p>
+              <p className="page-texte">
+                Le vent se lève, la pluie commence : d'où que vous soyez, on
+                vous rend le plus court chemin vers le point de départ. Calculé
+                dans votre téléphone — c'est justement dehors que le réseau
+                manque.
+              </p>
+              <div className="est-actions" style={{ marginBottom: 0 }}>
+                <button className="btn btn-ghost" onClick={rentrer}>Rentrer</button>
+              </div>
+              {motRetour && <p className="page-note">{motRetour}</p>}
+              {retour && (
+                <p className="page-note">
+                  <strong>
+                    {retour.metres < 100
+                      ? "Vous y êtes."
+                      : `${(retour.metres / 1000).toFixed(1)} km pour rentrer.`}
+                  </strong>{" "}
+                  {retour.metres >= 100 &&
+                    "Par le plus court — pas par le plus joli, c'est voulu."}
+                </p>
+              )}
+            </section>
 
             <section className="page-panel" style={{ padding: 0, overflow: "hidden" }}>
               <Suspense fallback={<p className="page-note" style={{ padding: "var(--sp-3)" }}>Chargement de la carte…</p>}>

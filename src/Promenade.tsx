@@ -14,10 +14,25 @@ const CarteReelle = lazy(() =>
 );
 
 // Page promenade : GPS navigateur (position + boussole), alerte
-// hors-sentier à 50 m, export GPX, SOS.
+// export GPX, SOS, et un REPÈRE hors-sentier — plus une alerte.
+//
+// 🔴 LE TÉLÉPHONE VIBRAIT POUR VOUS RAPPELER À L'ORDRE, ET C'ÉTAIT UNE FAUTE
+//    DE FOND. Au-delà de 50 m du tracé, l'app affichait « Alerte
+//    hors-sentier — revenez vers le sentier » et déclenchait `vibrate(200)`.
+//    ⭐ Une vibration est une SOMMATION. Or on ne suit pas une promenade, on
+//       la prend : les gens coupent, changent d'avis, font une moitié un
+//       jour et l'autre un autre jour, prennent le chemin qu'ils veulent.
+//       Un parcours proposé n'est pas un itinéraire à exécuter, et sortir du
+//       tracé n'est pas une erreur — c'est le propre de la flânerie.
+//    ⚠️ Mais un FAIT reste utile près des falaises bretonnes : « vous n'êtes
+//       plus sur un chemin cartographié ». On le dit une fois, sans vibrer,
+//       sans « revenez », et sans `role="alert"` — ce n'en est pas une.
 // Tout client-side — zéro backend, zéro réseau en course.
 
-const HORS_SENTIER_M = 50;
+/** ⚠️ 50 m disait « vous déviez » ; 120 m dit « vous n'êtes plus sur un
+ *  chemin ». La première distance juge un écart, la seconde constate un
+ *  fait — et seule la seconde est une information. */
+const HORS_SENTIER_M = 120;
 
 /** Les erreurs de géolocalisation, dites en français et de façon utile. */
 function messageGps(err: GeolocationPositionError): string {
@@ -168,7 +183,8 @@ export function Promenade({ slug }: { slug: string }) {
 
         const d = distAuTrace(p, walk.points);
         setHorsSentier(d > HORS_SENTIER_M);
-        if (d > HORS_SENTIER_M && navigator.vibrate) navigator.vibrate(200);
+        // ⛔ PLUS DE VIBRATION. Elle rappelait à l'ordre quelqu'un qui n'avait
+        //    rien fait de mal.
 
       },
       // ⛔ NE PAS AFFICHER `err.message` : le navigateur le rend dans SA
@@ -246,11 +262,13 @@ export function Promenade({ slug }: { slug: string }) {
         )}
 
         {horsSentier && (
-          <section className="page-panel hors-sentier" role="alert">
-            <p className="apercu-label">Alerte hors-sentier</p>
+          <section className="page-panel hors-sentier">
+            <p className="apercu-label">Vous avez quitté le tracé</p>
             <p className="page-texte">
-              Vous êtes à plus de {HORS_SENTIER_M} m du tracé. Revenez
-              vers le sentier — sentiers fragiles, falaises proches.
+              C'est votre droit le plus strict — un parcours se prend, il ne
+              se suit pas. Sachez seulement que vous n'êtes plus sur un chemin
+              cartographié : par ici les falaises sont proches et les sentiers
+              fragiles.
             </p>
           </section>
         )}

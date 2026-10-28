@@ -489,6 +489,67 @@ export function composer(
   return boucles.sort((a, b) => b.score - a.score);
 }
 
+/**
+ * ⭐ RENTRER — ET C'EST LA FONCTION LA PLUS IMPORTANTE DE CE FICHIER.
+ *
+ * Le vent se lève, la pluie commence à tomber. Ce que quelqu'un veut à cet
+ * instant, ce n'est pas un décompte de ce qu'il lui reste à faire : c'est le
+ * chemin du retour. Une application qui tient les gens à leur plan n'est pas
+ * un compagnon, c'est un contremaître.
+ * ⭐ **Une app qui est cool, c'est une app qui rend l'abandon facile.** Pas de
+ *    série à ne pas rompre, pas de « vous y êtes presque », pas de parcours
+ *    « incomplet ». On propose, on accompagne, on raccompagne.
+ *
+ * 🔴 ET LA FONCTION DE COÛT S'INVERSE ICI, CE N'EST PAS UN DÉTAIL. Composer
+ *    une promenade minimise de la PEINE : la longueur divisée par l'agrément,
+ *    si bien qu'un sentier côtier de 300 m coûte moins qu'une départementale
+ *    de 200. Rentrer sous la pluie minimise la DISTANCE, et rien d'autre : on
+ *    ne fait pas flâner quelqu'un qui veut rentrer. Le même graphe, deux
+ *    coûts opposés, parce que ce sont deux intentions opposées.
+ */
+export interface Retour {
+  aretes: number[];
+  metres: number;
+  contour: [number, number][];
+}
+
+export function cheminDeRetour(
+  g: Graphe, ix: Index, depuis: number, vers: number
+): Retour | null {
+  if (depuis === vers) return { aretes: [], metres: 0, contour: [] };
+  const dist = new Map<number, number>([[depuis, 0]]);
+  const prec = new Map<number, [number, number]>();
+  const tas = new Tas();
+  tas.pousser(0, depuis);
+  for (;;) {
+    const t = tas.tirer();
+    if (!t) break;
+    const [d, n] = t;
+    if (n === vers) break;
+    if (d > (dist.get(n) ?? Infinity) + 1e-9) continue;
+    for (const [ei, suiv] of ix.adj.get(n) ?? []) {
+      // ⚠️ Le coût est la LONGUEUR NUE. Pas d'agrément, pas de bonus de
+      //    littoral, pas de lieux : le plus court, point.
+      const nd = d + g.a[ei][2];
+      if (nd < (dist.get(suiv) ?? Infinity)) {
+        dist.set(suiv, nd); prec.set(suiv, [ei, n]);
+        tas.pousser(nd, suiv);
+      }
+    }
+  }
+  const aretes = remonter(prec, depuis, vers);
+  if (!aretes) return null;
+  const contour: [number, number][] = [];
+  let n = depuis;
+  for (const e of aretes) {
+    const ar = g.a[e];
+    const aLEndroit = ar[0] === n;
+    for (const pt of aLEndroit ? ar[4] : [...ar[4]].reverse()) contour.push(g.n[pt]);
+    n = aLEndroit ? ar[1] : ar[0];
+  }
+  return { aretes, metres: dist.get(vers) ?? 0, contour };
+}
+
 /** La géométrie à dessiner : un trait par arête, jamais une ligne unique. */
 export function traits(g: Graphe, b: Boucle): [number, number][][] {
   return b.aretes.map((e) => g.a[e][4].map((p) => g.n[p]));

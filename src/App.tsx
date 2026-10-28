@@ -31,7 +31,7 @@ const MODULES = [
     titre: "Navigation & cartographie",
     accroche: "Le parcours dans la poche.",
     texte:
-      "Le tracé reste dans la poche sans réseau. GPS en temps réel avec boussole, alerte si vous vous éloignez de 50 m du sentier. Le fond de carte, lui, demande du réseau — hors ligne, le parcours s'affiche en schéma.",
+      "Le tracé reste dans la poche sans réseau. GPS en temps réel avec boussole — et aucun rappel à l'ordre si vous coupez ailleurs : un parcours se prend, il ne se suit pas. Le fond de carte, lui, demande du réseau — hors ligne, le parcours s'affiche en schéma.",
     cta: { label: "Voir les parcours", href: "/promenades" },
   },
   {

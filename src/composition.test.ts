@@ -1,6 +1,6 @@
 import { readdirSync } from "node:fs";
 import { describe, it, expect } from "vitest";
-import { indexer, composer, noeudLePlusProche, traits, distanceRessentie, COUT_MONTEE, etalementDe, formeDeLaBoucle, SOURCE_MAREES } from "./composition";
+import { indexer, composer, noeudLePlusProche, traits, distanceRessentie, COUT_MONTEE, etalementDe, formeDeLaBoucle, SOURCE_MAREES, cheminDeRetour } from "./composition";
 import type { Graphe } from "./composition";
 
 // Une grille 6×6 à Crozon, maille ~200 m. Deux colonnes sont des « routes »
@@ -325,6 +325,56 @@ describe("composer une boucle", () => {
     expect(depart).not.toBe(iOrphelin);
     expect(ix.adj.has(depart)).toBe(true);
     expect(composer(g, ix, depart, 3200).length).toBeGreaterThan(0);
+  });
+
+  it("⭐ rentrer minimise la DISTANCE, pas la peine — la fonction de coût s'inverse", () => {
+    // 🔴 LE DÉFAUT QUE CE TEST TIENT : composer une promenade divise la
+    //    longueur par l'agrément, si bien qu'un sentier détourné coûte moins
+    //    qu'une route directe. Appliquer ce coût au RETOUR ferait flâner
+    //    quelqu'un qui rentre sous la pluie.
+    //    ⭐ Même graphe, deux coûts opposés, parce que deux intentions
+    //       opposées. Ici : le plus court, point.
+    const { g } = grilleRare();
+    // on rend une traversée directe hideuse mais courte, et un détour superbe
+    const ix = indexer(g);
+    const depart = 0;
+    const loin = 14 * 3 + 3;                 // (3,3) : 6 pas de grille
+    const r = cheminDeRetour(g, ix, loin, depart);
+    expect(r).not.toBeNull();
+    // 6 arêtes de 200 m : aucun chemin plus court n'existe sur une grille
+    expect(r!.metres).toBeCloseTo(1200, 0);
+    expect(r!.aretes.length).toBe(6);
+    expect(r!.contour.length).toBeGreaterThan(0);
+  });
+
+  it("rentrer quand on y est déjà ne coûte rien", () => {
+    const { g } = grilleRare();
+    const r = cheminDeRetour(g, indexer(g), 0, 0);
+    expect(r).toEqual({ aretes: [], metres: 0, contour: [] });
+  });
+
+  it("⭐ rentrer ne coûte JAMAIS plus que finir — abandonner doit être facile", () => {
+    // C'est le propos : on ne retient personne. Si rentrer coûtait plus que
+    // terminer, la fonction n'aurait aucun sens.
+    //
+    // ⚠️ SA PREMIÈRE ÉCRITURE EXIGEAIT « strictement plus court que la
+    //    moitié » et échouait à 1800 contre 1800 : sur une grille régulière,
+    //    le retour depuis le milieu VAUT exactement la moitié restante. Ce
+    //    n'était pas un défaut, c'était une assertion trop forte.
+    //    ⭐ La garantie vraie est par construction : le reste de la boucle est
+    //       UN chemin de retour, donc le plus court ne peut pas être pire.
+    //       On la compare donc au reste RÉEL, pas à une moitié supposée.
+    const { g, cible } = grilleRare();
+    const ix = indexer(g);
+    const b = composer(g, ix, 0, cible)[0];
+    const moitie = Math.floor(b.aretes.length / 2);
+    let n = 0;
+    for (const e of b.aretes.slice(0, moitie))
+      n = g.a[e][0] === n ? g.a[e][1] : g.a[e][0];
+    const reste = b.aretes.slice(moitie).reduce((t, e) => t + g.a[e][2], 0);
+    const r = cheminDeRetour(g, ix, n, 0);
+    expect(r).not.toBeNull();
+    expect(r!.metres).toBeLessThanOrEqual(reste + 1e-6);
   });
 
   it("le nœud le plus proche d'une position est bien le plus proche", () => {
