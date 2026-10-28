@@ -110,19 +110,7 @@ export default function App() {
             <h1 className="page-titre">MANAradio</h1>
             <section className="page-panel">
               <p className="page-intro">
-                La radio du territoire : histoires de promenades,
-                légendes du littoral, voix de celles et ceux qui
-                font la Bretagne. Épisode après épisode, à écouter
-                en marchant.
-              </p>
-              <div className="est-actions" style={{ marginTop: "var(--sp-2)" }}>
-                <a className="btn btn-primary" href="mailto:radio@mana.bzh">
-                  Proposer une histoire
-                </a>
-              </div>
-              <p className="page-note">
-                Lecteur audio et épisodes en préparation — aucune
-                émission simulée en attendant les vraies.
+                À écouter en marchant — ou au coin du feu.
               </p>
             </section>
           </div>
