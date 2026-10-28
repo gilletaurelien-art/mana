@@ -280,11 +280,8 @@ export default function App() {
               MANA<em>.bzh</em>
             </p>
             <p className="footer-note">
-              Les promenades bretonnes : parcours hors ligne (PWA),
-              GPS et sécurité, découverte du patrimoine, export GPX.
-              Gratuit, sobre, sans traceur publicitaire ; aucune
-              donnée ni lead n'est revendu. MANAradio, au centre,
-              émettra bientôt.
+              Promenades bretonnes — hors ligne, GPS, GPX. Gratuit,
+              sobre, aucune donnée revendue.
             </p>
             <ContactForm />
           </div>

@@ -807,3 +807,32 @@ body { padding-bottom: 84px; }
   margin: 0 0 4px;
 }
 .radio-note { font-size: var(--t-xs); opacity: 0.6; margin: 0; }
+
+/* Footer élégant et compact : liens en liste verticale nue */
+.footer-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px !important;
+}
+.footer-nav a {
+  background: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 2px 0 !important;
+  font-size: var(--t-xs);
+  color: var(--sand) !important;
+  opacity: 0.85;
+  text-decoration: none;
+  transition: opacity 140ms ease;
+}
+.footer-nav a:hover {
+  background: none !important;
+  transform: none !important;
+  color: var(--or) !important;
+  opacity: 1;
+}
+@media (min-width: 721px) {
+  .footer-colonnes { gap: var(--sp-6); padding-bottom: var(--sp-2); }
+  .footer-colonnes > div:first-child { max-width: 60%; }
+}
+.footer-note { max-width: 44ch; }
