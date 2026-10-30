@@ -8,12 +8,30 @@ import { aretesTouchees, type Fermetures } from "./fermetures";
 const CHEMIN = "public/bretagne/g/crozon.json";
 const d = existsSync(CHEMIN);
 
+/**
+ * 🔴 LA LECTURE EST PARESSEUSE, ET CE N'EST PAS UN RAFFINEMENT. Première
+ *    version : les `readFileSync` étaient au corps du `describe.skipIf`.
+ *    Or `skipIf` SAUTE LES TESTS mais exécute quand même la fonction pour les
+ *    collecter — donc la lecture levait avant tout saut, et `npm run build`
+ *    échouait sur le runner GitHub, où le graphe n'est pas versionné.
+ *    Résultat : le déploiement de Pages serait tombé.
+ * ⭐ Un garde écrit POUR la CI et jamais essayé DANS la condition de la CI.
+ *    Éprouvé le 31/10 en retirant le fichier : le test échouait bien.
+ */
+let cache: { g: Graphe; f: Fermetures; t: ReturnType<typeof aretesTouchees> } | null = null;
+function reel() {
+  if (!cache) {
+    const g: Graphe = JSON.parse(readFileSync(CHEMIN, "utf8"));
+    const f: Fermetures = JSON.parse(readFileSync("public/fermetures.json", "utf8"));
+    cache = { g, f, t: aretesTouchees(g, f) };
+  }
+  return cache;
+}
+
 describe.skipIf(!d)("sur le graphe réel de la presqu'île", () => {
-  const g: Graphe = JSON.parse(readFileSync(CHEMIN, "utf8"));
-  const f: Fermetures = JSON.parse(readFileSync("public/fermetures.json", "utf8"));
-  const t = aretesTouchees(g, f);
 
   it("les arrêtés ferment une part mesurée et PROPORTIONNÉE du réseau", () => {
+    const { g, t } = reel();
     expect(t.interdites.size).toBeGreaterThan(0);          // ça mord
     expect(t.interdites.size / g.a.length).toBeLessThan(0.05);  // ça n'ampute pas
     expect(t.actives).toHaveLength(4);
@@ -21,6 +39,7 @@ describe.skipIf(!d)("sur le graphe réel de la presqu'île", () => {
   });
 
   it("MUTATION : au départ de Postolonnec, la boucle empruntait le tronçon fermé — et ne l'emprunte plus", () => {
+    const { g, t } = reel();
     const depart = noeudLePlusProche(g, indexer(g), -4.46515, 48.23854);
     expect(depart).toBeGreaterThanOrEqual(0);
 
@@ -35,6 +54,7 @@ describe.skipIf(!d)("sur le graphe réel de la presqu'île", () => {
   });
 
   it("🔴 fermer DÉTACHE l'accès à la plage : depuis Postolonnec, aucune boucle", () => {
+    const { g, t } = reel();
     // Ce n'est pas un défaut du garde, c'est la forme du terrain : l'accès à la
     // plage est un cul-de-sac greffé sur le GR34. Fermer le GR34 détache le
     // moignon — mesuré : composante de 2 nœuds sur 64 028.
@@ -46,6 +66,7 @@ describe.skipIf(!d)("sur le graphe réel de la presqu'île", () => {
   });
 
   it("mais le reste du réseau vit : depuis le bourg de Crozon, les boucles restent", () => {
+    const { g, t } = reel();
     const ixF = indexer(g, t.interdites);
     const depart = noeudLePlusProche(g, ixF, -4.4896, 48.2470);   // bourg de Crozon
     const avec = composer(g, ixF, depart, 6000);
@@ -60,25 +81,28 @@ describe.skipIf(!d)("sur le graphe réel de la presqu'île", () => {
  *  Tester le DEGRÉ laissait passer Postolonnec : la jonction y garde une arête.
  *  Seule la CONNEXITÉ voit le moignon détaché. */
 import { composanteAtteint } from "./composition";
-describe.skipIf(!existsSync("public/bretagne/g/crozon.json"))("détecter un départ coupé", () => {
-  const g: Graphe = JSON.parse(readFileSync("public/bretagne/g/crozon.json", "utf8"));
-  const f: Fermetures = JSON.parse(readFileSync("public/fermetures.json", "utf8"));
-  const t = aretesTouchees(g, f);
-  const ixTout = indexer(g), ixF = indexer(g, t.interdites);
+describe.skipIf(!d)("détecter un départ coupé", () => {
   const SEUIL = 50;
+  const prep = () => {
+    const { g, t } = reel();
+    return { g, ixTout: indexer(g), ixF: indexer(g, t.interdites) };
+  };
 
   it("à Postolonnec : le réseau vivait, l'arrêté l'a coupé", () => {
+    const { g, ixTout, ixF } = prep();
     const n = noeudLePlusProche(g, ixF, -4.46515, 48.23854);
     expect(composanteAtteint(ixTout, n, SEUIL)).toBe(true);    // avant : relié
     expect(composanteAtteint(ixF, n, SEUIL)).toBe(false);      // après : moignon
   });
 
   it("🔴 et le DEGRÉ ne l'aurait pas vu — c'est pour ça que ce test existe", () => {
+    const { g, ixF } = prep();
     const n = noeudLePlusProche(g, ixF, -4.46515, 48.23854);
     expect(ixF.adj.get(n)?.length).toBeGreaterThan(0);         // il a l'air sain
   });
 
   it("au bourg de Crozon : rien n'est coupé", () => {
+    const { g, ixF } = prep();
     const n = noeudLePlusProche(g, ixF, -4.4896, 48.247);
     expect(composanteAtteint(ixF, n, SEUIL)).toBe(true);
   });
