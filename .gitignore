@@ -5,3 +5,7 @@ site/
 *.pem
 .DS_Store
 tsconfig.tsbuildinfo
+
+# graphe local pour vérification — 2,36 Mo, servi en production par mana.bzh
+public/bretagne/
+.env.local

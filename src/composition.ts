@@ -175,13 +175,25 @@ export interface Index {
   lieuxParArete: Map<number, LieuAccroche[]>;
 }
 
-export function indexer(g: Graphe): Index {
+/**
+ * ⭐ `interdites` RETIRE L'ARÊTE DE LA CARTE D'ADJACENCE — elle ne la pénalise
+ *    pas. Le Dijkstra sait pénaliser (× 14 sur un passage déjà emprunté), mais
+ *    une pénalité est une PRÉFÉRENCE : elle se franchit dès que le reste coûte
+ *    plus cher. Une interdiction par arrêté municipal n'est pas une
+ *    préférence. Absente de l'adjacence, l'arête est hors d'atteinte du
+ *    calcul — il n'y a aucun réglage qui puisse la rouvrir par accident.
+ *    ⚠️ Conséquence assumée : si les fermetures coupent la presqu'île en deux,
+ *    la composition rendra moins de boucles, ou aucune. C'est le bon sens de
+ *    l'erreur — on préfère ne rien proposer que proposer une falaise fermée.
+ */
+export function indexer(g: Graphe, interdites?: ReadonlySet<number>): Index {
   const adj = new Map<number, [number, number][]>();
   const pousser = (n: number, v: [number, number]) => {
     const l = adj.get(n);
     if (l) l.push(v); else adj.set(n, [v]);
   };
   g.a.forEach(([a, b], i) => {
+    if (interdites?.has(i)) return;
     pousser(a, [i, b]);
     pousser(b, [i, a]);
   });
@@ -191,6 +203,34 @@ export function indexer(g: Graphe): Index {
     if (l) l.push(L); else lieuxParArete.set(L.a, [L]);
   }
   return { adj, lieuxParArete };
+}
+
+/**
+ * La composante connexe de `depart` atteint-elle `seuil` nœuds ?
+ *
+ * ⭐ ON MESURE LA CONNEXITÉ, PAS LE DEGRÉ — et c'est une distinction qui m'a
+ *    coûté une fausse conclusion le 30/10. À Postolonnec, après fermeture du
+ *    GR34, la jonction la plus proche garde UNE arête : par le degré, elle a
+ *    l'air saine. Sa composante tombe pourtant de 9 670 nœuds à 2. Un nœud de
+ *    degré 1 au bout d'un moignon détaché est indiscernable, par le degré
+ *    seul, d'un nœud de degré 1 au bord d'un réseau entier.
+ *
+ * ⚠️ Parcours BORNÉ : on s'arrête dès que le seuil est atteint. Sans borne, la
+ *    question « suis-je isolé ? » coûterait un parcours des 64 028 nœuds à
+ *    chaque composition.
+ */
+export function composanteAtteint(ix: Index, depart: number, seuil: number): boolean {
+  if (depart < 0) return false;
+  const vus = new Set<number>([depart]);
+  const pile = [depart];
+  while (pile.length) {
+    if (vus.size >= seuil) return true;
+    const n = pile.pop()!;
+    for (const [, v] of ix.adj.get(n) ?? []) {
+      if (!vus.has(v)) { vus.add(v); pile.push(v); }
+    }
+  }
+  return vus.size >= seuil;
 }
 
 const R = 6371000;

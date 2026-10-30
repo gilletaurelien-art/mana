@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
-import { indexer, composer, noeudLePlusProche, traits, formeDeLaBoucle, SOURCE_MAREES, cheminDeRetour } from "./composition";
+import { indexer, composer, noeudLePlusProche, traits, formeDeLaBoucle, SOURCE_MAREES, cheminDeRetour, composanteAtteint } from "./composition";
 import type { Graphe, Boucle, Retour } from "./composition";
 import type { Walk } from "./walks";
+import { chargerFermetures, aretesTouchees, type Fermetures } from "./fermetures";
 
 const CarteReelle = lazy(() =>
   import("./CarteReelle").then((m) => ({ default: m.CarteReelle }))
@@ -21,7 +22,19 @@ const CarteReelle = lazy(() =>
 //    autre boucle sans réseau.
 
 const CROZON: [number, number] = [-4.4895, 48.2472];
-const BASE = "https://mana.bzh/bretagne/g";
+// ⚠️ SURCHARGEABLE POUR POUVOIR VÉRIFIER. La liste blanche CORS de mana.bzh
+//    n'autorise que GitHub Pages : depuis `localhost`, le graphe est refusé et
+//    la page ne montre rien. Sans cette surcharge, aucune modification du
+//    compositeur n'est vérifiable autrement qu'en production.
+//    La valeur par défaut EST la production : une construction sans variable
+//    se comporte exactement comme avant.
+/** Au-delà de ce nombre de nœuds atteignables, on considère qu'on est sur le
+ *  réseau et non sur un moignon. 50 : assez pour écarter un cul-de-sac de
+ *  quelques points, assez peu pour que le parcours coûte moins d'une
+ *  milliseconde. */
+const SEUIL_RESEAU = 50;
+
+const BASE = import.meta.env.VITE_GRAPHE_BASE ?? "https://mana.bzh/bretagne/g";
 
 /** ⚠️ 3 km/h, pas 4. Une promenade s'arrête, regarde, revient sur ses pas. */
 const ALLURE_KMH = 3;
@@ -71,6 +84,10 @@ export function Composer() {
   const [retour, setRetour] = useState<Retour | null>(null);
   const [motRetour, setMotRetour] = useState("");
   const graine = useRef(1);
+  // ⚠️ `undefined` = pas encore chargé · `null` = fichier absent ou illisible.
+  //    Les deux ne se confondent pas : une application qui calcule sans
+  //    connaître les fermetures doit le DIRE, pas se taire.
+  const [fermetures, setFermetures] = useState<Fermetures | null | undefined>(undefined);
 
   useEffect(() => {
     document.title = "Composer une promenade — MANA.bzh";
@@ -86,7 +103,34 @@ export function Composer() {
       .catch(() => setErreur("Les chemins n'ont pas pu être chargés. Vérifiez votre connexion."));
   }, []);
 
-  const ix = useMemo(() => (graphe ? indexer(graphe) : null), [graphe]);
+  // ── LES FERMETURES OFFICIELLES ───────────────────────────────────────────
+  // Fichier SÉPARÉ du graphe, servi avec l'application : une fermeture se
+  // publie en une minute, un graphe se reconstruit par un pipeline. Et c'est
+  // l'office de tourisme qui doit pouvoir la publier, pas nous.
+  useEffect(() => { chargerFermetures(import.meta.env.BASE_URL.replace(/\/$/, "")).then(setFermetures); }, []);
+
+  const touchees = useMemo(
+    () => (graphe && fermetures !== undefined ? aretesTouchees(graphe, fermetures) : null),
+    [graphe, fermetures],
+  );
+
+  // 🔴 L'INDEX EXCLUT LES ARÊTES INTERDITES — il ne les pénalise pas. Une
+  //    arête absente de l'adjacence est hors d'atteinte du calcul ; une arête
+  //    pénalisée se franchit dès que le reste coûte plus cher.
+  //    ⚠️ Et on attend les fermetures avant d'indexer : composer d'abord et
+  //       corriger ensuite proposerait, l'espace d'un instant, un tronçon
+  //       fermé par arrêté.
+  const ix = useMemo(
+    () => (graphe && touchees ? indexer(graphe, touchees.interdites) : null),
+    [graphe, touchees],
+  );
+
+  // ⚠️ L'INDEX NON FILTRÉ NE SERT PAS À CALCULER — il sert à EXPLIQUER. Sans
+  //    lui, « aucune boucle » est indiscernable de « le chemin d'ici est fermé
+  //    par arrêté », et le message générique conseille alors de « se rapprocher
+  //    d'un chemin », c'est-à-dire d'aller vers la falaise interdite.
+  //    ⭐ Un message qui invente une cause est pire qu'un silence.
+  const ixTout = useMemo(() => (graphe ? indexer(graphe) : null), [graphe]);
 
   const localiser = () => {
     if (!navigator.geolocation) { setMotGps("Votre navigateur ne sait pas vous situer."); return; }
@@ -115,6 +159,24 @@ export function Composer() {
   };
 
   const autre = () => { graine.current = (graine.current * 7919 + 13) >>> 0; lancer(); };
+
+  /** Le point de départ est-il privé de chemin PAR UNE FERMETURE ? On le sait
+   *  en comparant les deux index : le nœud le plus proche du réseau complet
+   *  n'a plus aucune arête une fois les arrêtés appliqués. Mesuré à
+   *  Postolonnec : l'accès à la plage est un cul-de-sac greffé sur le GR34,
+   *  et sa composante tombe à 2 nœuds sur 64 028. */
+  const departCoupe = useMemo(() => {
+    if (!graphe || !ix || !ixTout || !touchees?.interdites.size) return false;
+    const n = noeudLePlusProche(graphe, ix, position[0], position[1]);
+    if (n < 0) return true;
+    // 🔴 LE DEGRÉ NE SUFFIT PAS. À Postolonnec la jonction garde une arête
+    //    après fermeture — elle a l'air saine — et sa composante tombe de
+    //    9 670 nœuds à 2. On compare donc la CONNEXITÉ des deux graphes :
+    //    coupé par l'arrêté, et non pas isolé de nature.
+    const vivantAvant = composanteAtteint(ixTout, n, SEUIL_RESEAU);
+    const vivantApres = composanteAtteint(ix, n, SEUIL_RESEAU);
+    return vivantAvant && !vivantApres;
+  }, [graphe, ix, ixTout, touchees, position]);
 
   /**
    * ⭐ RENTRER. Le vent se lève, la pluie commence à tomber. Ce qu'on veut
@@ -180,6 +242,58 @@ export function Composer() {
               : !graphe ? "Chargement des chemins de la presqu'île…"
               : `${graphe.a.length.toLocaleString("fr-FR")} tronçons de chemin · ${graphe.l.length} lieux remarquables`}
           </p>
+          {/* ── LES FERMETURES OFFICIELLES ────────────────────────────────
+              🔴 ÉVITER NE SUFFIT PAS, IL FAUT LE DIRE. Un calcul qui contourne
+              en silence laisse le marcheur libre d'y aller quand même, et sans
+              savoir. L'avertissement porte donc TOUJOURS trois choses : qui a
+              décidé, quand, et où la décision se lit. MANA ne ferme rien —
+              MANA transmet.
+              ⚠️ Et l'absence du fichier se dit aussi : une application qui
+              route sans connaître les fermetures ne doit pas en avoir l'air. */}
+          {fermetures === null && (
+            <p className="page-note" role="status">
+              <strong>Les fermetures officielles n'ont pas pu être chargées.</strong>{" "}
+              Les boucles proposées ne tiennent donc pas compte des arrêtés en
+              cours. Vérifiez auprès de l'
+              <a href="https://www.crozon-tourisme.bzh/trouver-son-activite/randonnee-velo-trail-2/"
+                 rel="noopener">office de tourisme</a> avant de partir.
+            </p>
+          )}
+
+          {touchees && touchees.actives.length > 0 && (
+            <div className="page-note" role="status">
+              <p>
+                <strong>
+                  {touchees.actives.length} secteur{touchees.actives.length > 1 ? "s" : ""} du
+                  sentier côtier {touchees.actives.length > 1 ? "sont fermés" : "est fermé"} par arrêté.
+                </strong>{" "}
+                Les boucles proposées ne les empruntent pas.
+              </p>
+              <ul>
+                {touchees.actives.map((f) => (
+                  <li key={f.id}>
+                    {f.libelle} — {f.autorite}, {new Date(f.publie_le).toLocaleDateString("fr-FR")}.{" "}
+                    <a href={f.source} rel="noopener">la décision</a>
+                    {f.portee_approximative && " · portée approximative"}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {touchees && touchees.nonSituees.length > 0 && (
+            <div className="page-note" role="status">
+              {touchees.nonSituees.map((f) => (
+                <p key={f.id}>
+                  <strong>{f.libelle}.</strong> {f.motif}{" "}
+                  <a href={f.source} rel="noopener">{f.autorite}</a>
+                  {f.effet === "interdit" &&
+                    " — ce secteur est signalé mais n'a pas pu être situé sur la carte : il n'est donc pas évité par le calcul."}
+                </p>
+              ))}
+            </div>
+          )}
+
           {/* ⭐ Dit une fois, la mesure est un argument ; répétée, c'est du décor. */}
           {graphe && (
             <p className="page-note">
@@ -239,11 +353,35 @@ export function Composer() {
 
         {boucles && boucles.length === 0 && (
           <section className="page-panel">
-            <p className="page-texte">
-              Aucune boucle de cette longueur ne part d'ici. Essayez une durée
-              différente — ou rapprochez-vous d'un chemin : la presqu'île est
-              bien maillée, mais pas partout.
-            </p>
+            {departCoupe ? (
+              <>
+                <p className="page-texte">
+                  <strong>
+                    Le sentier qui part d'ici est fermé par arrêté municipal.
+                  </strong>{" "}
+                  Aucune boucle ne peut donc être composée depuis ce point : le
+                  chemin d'accès ne rejoint plus le reste du réseau.
+                </p>
+                <p className="page-texte">
+                  Ce n'est pas un problème de durée, et il ne sert à rien de
+                  chercher un chemin plus proche — c'est précisément celui-là
+                  qui est interdit. Éloignez-vous du trait de côte, ou partez
+                  d'un autre point.
+                </p>
+                {touchees?.actives.map((f) => (
+                  <p className="page-note" key={f.id}>
+                    {f.libelle} — {f.autorite}.{" "}
+                    <a href={f.source} rel="noopener">la décision</a>
+                  </p>
+                ))}
+              </>
+            ) : (
+              <p className="page-texte">
+                Aucune boucle de cette longueur ne part d'ici. Essayez une durée
+                différente — ou rapprochez-vous d'un chemin : la presqu'île est
+                bien maillée, mais pas partout.
+              </p>
+            )}
           </section>
         )}
 
