@@ -5,6 +5,7 @@ import { chargerItineraire } from "./catalogue";
 import type { Walk } from "./walks";
 import type { WalkPoint } from "./walks";
 import { WalkMap } from "./WalkMap";
+import { CarteOuSchema } from "./CarteOuSchema";
 // ⚠️ CHARGÉE À LA DEMANDE, et ce n'est pas une optimisation de confort :
 //    maplibre pèse ~900 Ko. Importée normalement, elle partait dans le bundle
 //    d'ACCUEIL — 1,29 Mo au premier écran, pour une carte que l'accueil
@@ -287,9 +288,13 @@ export function Promenade({ slug }: { slug: string }) {
           {horsLigne ? (
             <WalkMap walk={walk} moi={moi} capDeg={cap} />
           ) : (
-            <Suspense fallback={<WalkMap walk={walk} moi={moi} capDeg={cap} />}>
+            // ⚠️ `horsLigne` ne suffit pas : `navigator.onLine` peut dire vrai
+            //    alors que le morceau de carte n'est pas en cache et que le
+            //    réseau est trop mauvais pour l'obtenir. Le repli doit tenir à
+            //    l'ÉCHEC, pas au seul drapeau.
+            <CarteOuSchema schema={<WalkMap walk={walk} moi={moi} capDeg={cap} />}>
               <CarteReelle walk={walk} moi={moi} />
-            </Suspense>
+            </CarteOuSchema>
           )}
           <p className="page-note">
             {moi

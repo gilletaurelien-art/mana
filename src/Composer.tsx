@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
 import { indexer, composer, noeudLePlusProche, traits, formeDeLaBoucle, SOURCE_MAREES, cheminDeRetour, composanteAtteint } from "./composition";
 import type { Graphe, Boucle, Retour } from "./composition";
 import type { Walk } from "./walks";
+import { WalkMap } from "./WalkMap";
+import { CarteOuSchema } from "./CarteOuSchema";
 import { chargerFermetures, aretesTouchees, type Fermetures } from "./fermetures";
 
 const CarteReelle = lazy(() =>
@@ -88,6 +90,24 @@ export function Composer() {
   //    Les deux ne se confondent pas : une application qui calcule sans
   //    connaître les fermetures doit le DIRE, pas se taire.
   const [fermetures, setFermetures] = useState<Fermetures | null | undefined>(undefined);
+  // 🔴 LE REPLI NE PEUT PAS DÉPENDRE DU CHARGEMENT DU CODE. Mesuré le 31/10 :
+  //    une fois le morceau `CarteReelle` tiédi et mis en cache, il se charge
+  //    très bien hors ligne — maplibre démarre, et rend un rectangle UNI,
+  //    parce que ses tuiles, elles, ne sont pas en cache. Le garde d'erreur ne
+  //    voyait rien à rattraper.
+  //    ⭐ En faisant RÉUSSIR le chargement, j'avais supprimé le seul signal qui
+  //       disait que la carte ne pouvait pas FONCTIONNER. Un repli doit se
+  //       déclencher sur la capacité, jamais sur l'arrivée du code.
+  //    ⚠️ `navigator.onLine` reste imparfait — il dit vrai sur un réseau
+  //       captif. Il est le signal le moins mauvais disponible ici, et le
+  //       garde d'erreur couvre l'autre moitié des cas.
+  const [horsLigne, setHorsLigne] = useState(!navigator.onLine);
+  useEffect(() => {
+    const on = () => setHorsLigne(false), off = () => setHorsLigne(true);
+    window.addEventListener("online", on);
+    window.addEventListener("offline", off);
+    return () => { window.removeEventListener("online", on); window.removeEventListener("offline", off); };
+  }, []);
 
   useEffect(() => {
     document.title = "Composer une promenade — MANA.bzh";
@@ -488,11 +508,28 @@ export function Composer() {
               )}
             </section>
 
-            <section className="page-panel" style={{ padding: 0, overflow: "hidden" }}>
-              <Suspense fallback={<p className="page-note" style={{ padding: "var(--sp-3)" }}>Chargement de la carte…</p>}>
-                <CarteReelle walk={walk} />
-              </Suspense>
-            </section>
+            {/* ⚠️ DEUX CONTENEURS, ET CE N'EST PAS DU STYLE. Le panneau sans
+                marge avec `overflow: hidden` existe pour que maplibre déborde
+                jusqu'aux bords ; le schéma SVG, lui, est en `width: 100%` et
+                ne résout rien dans ce conteneur-là — mesuré le 31/10 : rendu,
+                mais à 0 × 0 pixel, donc invisible. Un repli qui s'affiche en
+                taille nulle est un repli qui n'existe pas. */}
+            {horsLigne ? (
+              <section className="page-panel">
+                <p className="apercu-label">Carte</p>
+                <WalkMap walk={walk} />
+                <p className="page-note">
+                  Sans réseau, le fond de carte ne vient pas : voici le tracé
+                  seul. Il ne dépend que de ce qui est déjà dans l'appareil.
+                </p>
+              </section>
+            ) : (
+              <section className="page-panel" style={{ padding: 0, overflow: "hidden" }}>
+                <CarteOuSchema schema={<WalkMap walk={walk} />}>
+                  <CarteReelle walk={walk} />
+                </CarteOuSchema>
+              </section>
+            )}
 
             {b.lieux.length > 0 && (
               <section className="page-panel">
