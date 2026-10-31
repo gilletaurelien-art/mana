@@ -342,15 +342,20 @@ function Carte({
      va à fond perdu : sans ce chiffre, le tracé se centre DERRIÈRE la
      feuille. ⭐ La surface visible d'une carte n'est pas sa surface. */
   const feuille = useRef<HTMLDivElement>(null);
-  const [occulte, setOcculte] = useState(0);
+  const [occulte, setOcculte] = useState({ haut: 0, bas: 0 });
   useEffect(() => {
     const f = feuille.current;
     if (!f) return;
     const mesurer = () => {
       const c = f.parentElement;
       if (!c) return;
-      // du bas de la carte au HAUT de la feuille : c'est tout ce qui est caché
-      setOcculte(Math.round(c.getBoundingClientRect().bottom - f.getBoundingClientRect().top));
+      const b = c.getBoundingClientRect();
+      // du bas de la carte au HAUT de la feuille : tout ce qu'elle cache
+      const bas = Math.round(b.bottom - f.getBoundingClientRect().top);
+      // ⚠️ et la barre de recherche, qui flotte elle aussi SUR la carte
+      const barre = document.querySelector(".jeu-haut")?.getBoundingClientRect();
+      const haut = barre ? Math.round(barre.bottom - b.top) + 8 : 0;
+      setOcculte({ haut: Math.max(0, haut), bas: Math.max(0, bas) });
     };
     const ro = new ResizeObserver(mesurer);
     ro.observe(f);
@@ -397,12 +402,13 @@ function Carte({
       <div className="jeu-portrait">
         {fond && (
           <Suspense fallback={null}>
-            <CarteFondOT p={w.p} lieux={proches.map((x) => x.l)} basOcculte={occulte} />
+            <CarteFondOT p={w.p} lieux={proches.map((x) => x.l)} basOcculte={occulte.bas} hautOcculte={occulte.haut} />
           </Suspense>
         )}
         {/* ⚠️ La silhouette est repoussée au-dessus de la feuille par le même
             chiffre : sinon le repli se dessine, lui aussi, derrière elle. */}
-        <svg className="jeu-silhouette" style={{ paddingBottom: occulte }}
+        <svg className="jeu-silhouette"
+             style={{ paddingBottom: occulte.bas, paddingTop: occulte.haut }}
              viewBox={`0 0 ${L} ${H}`} role="img"
              aria-label={`Tracé de ${w.titre}, ${w.km} kilomètres`}>
           {p && (

@@ -29,7 +29,7 @@ import type { Lieu } from "./lieux";
  *    arrive devant. Les cartes plus profondes gardent leur silhouette.
  */
 export function CarteFondOT({
-  p, lieux = [], serre = 18, basOcculte = 0,
+  p, lieux = [], serre = 18, basOcculte = 0, hautOcculte = 0,
 }: {
   p: [number, number][];
   /**
@@ -55,6 +55,14 @@ export function CarteFondOT({
    *    ferait mentir au premier titre sur deux lignes.
    */
   basOcculte?: number;
+  /**
+   * ⚠️ ET LE HAUT AUSSI. La barre de recherche flotte sur la carte : sans ce
+   *    chiffre, le tracé passait DESSOUS et se trouvait coupé au bord haut —
+   *    vu en production, après avoir corrigé le bas et cru l'affaire close.
+   * ⭐ Une occultation corrigée d'un seul côté laisse exactement le même
+   *    défaut, à l'autre bout de l'écran.
+   */
+  hautOcculte?: number;
 }) {
   const plan = useRef<HTMLDivElement | null>(null);
   const svg = useRef<SVGSVGElement | null>(null);
@@ -125,7 +133,10 @@ export function CarteFondOT({
         if (l.g[1] < laMin) laMin = l.g[1]; if (l.g[1] > laMax) laMax = l.g[1];
       }
       m.fitBounds([[loMin, laMin], [loMax, laMax]], {
-        padding: { top: serre, left: serre, right: serre, bottom: serre + basOcculte },
+        padding: {
+          top: serre + hautOcculte, left: serre, right: serre,
+          bottom: serre + basOcculte,
+        },
         duration: 0,
       });
       redessiner();
@@ -174,7 +185,7 @@ export function CarteFondOT({
       //    cartes restent blanches.
       m.remove();
     };
-  }, [p, lieux, serre, basOcculte]);
+  }, [p, lieux, serre, basOcculte, hautOcculte]);
 
   return (
     <div className={prete ? "ot-fond ot-fond-prete" : "ot-fond"}>
