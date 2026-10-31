@@ -23,7 +23,7 @@ jobs:
           mkdir -p /tmp/parts/mana
           cp -r site/* /tmp/parts/mana/
           cp site/index.html /tmp/parts/404.html
-          cd /tmp/parts && (python3 -m http.server 8765 --bind 127.0.0.1 >/dev/null 2>&1 &) && sleep 2
+          (cd /tmp/parts && python3 -m http.server 8765 --bind 127.0.0.1 >/dev/null 2>&1 &) && sleep 2
           node - <<'NODE'
           const { chromium } = require('playwright-core');
           const pages = [
