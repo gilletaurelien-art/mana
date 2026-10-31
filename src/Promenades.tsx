@@ -1,127 +1,122 @@
 import { useEffect, useState } from "react";
 import { baseUrl } from "./router";
 import { WALKS } from "./walks";
+import { WalkMap } from "./WalkMap";
+import { IconHorloge, IconDistance, IconRelief, IconLoupe } from "./Icons";
 
-// Index des promenades — filtres concrets : durée, boucle,
-// poussette/PMR, chiens. Prototype : deux parcours.
+// Écran 2 — exploration cartographique.
+// La carte est le cœur ; les parcours en panneau contextuel.
 
 type FiltreBoucle = "tous" | "boucle" | "ar";
-type FiltreAcc = "tous" | "pmr";
-type FiltreChien = "tous" | "ok";
 
 export function Promenades() {
   const B = baseUrl();
-  const [dureeMax, setDureeMax] = useState(4);
-  const [boucle, setBoucle] = useState<FiltreBoucle>("tous");
-  const [acc, setAcc] = useState<FiltreAcc>("tous");
-  const [chien, setChien] = useState<FiltreChien>("tous");
   const [q, setQ] = useState("");
+  const [boucle, setBoucle] = useState<FiltreBoucle>("tous");
 
   useEffect(() => {
     setQ((new URLSearchParams(window.location.search).get("q") ?? "").toLowerCase());
   }, []);
 
   useEffect(() => {
-    document.title = "Promenades — MANA.bzh";
+    document.title = "Explorer — MANA";
     return () => {
-      document.title = "MANA.bzh — La porte d'entrée de l'écosystème MANA en Bretagne";
+      document.title = "MANA — La porte d'entrée de l'écosystème MANA en Bretagne";
     };
   }, []);
 
   const resultats = WALKS.filter(
     (w) =>
-      w.dureeH <= dureeMax &&
       (boucle === "tous" || (boucle === "boucle" ? w.boucle : !w.boucle)) &&
-      (acc === "tous" || w.poussettePmr) &&
-      (chien === "tous" || w.chiens !== "non") &&
-      (!q ||
-        w.lieu.toLowerCase().includes(q) ||
-        w.titre.toLowerCase().includes(q))
+      (!q || w.lieu.toLowerCase().includes(q) || w.titre.toLowerCase().includes(q))
   );
 
+  // Le parcours recommandé : le premier résultat (ou le premier tout court).
+  const recommande = resultats[0] ?? WALKS[0];
+
   return (
-    <main className="page">
+    <main className="exploration">
       <div className="wrap">
-        <p className="hero-label">Balades & découvertes</p>
-        <h1 className="page-titre">Promenades</h1>
-
-        <section className="page-panel">
-          <p className="page-intro">
-            Des parcours en Bretagne, avec ce qui compte sur le
-            terrain : durée, accès, relief, marées à vérifier. Chaque
-            parcours fonctionne hors ligne (PWA) : téléchargez-le
-            avant de partir, il restera dans votre poche même sans
-            réseau — falaises et rias comprises.
+        <div className="exploration-tete">
+          <h1 className="exploration-titre">Explorer</h1>
+          <p className="exploration-sous">
+            {WALKS.length} parcours réels sur la presqu'île — avec ce
+            qu'on croise en chemin.
           </p>
-        </section>
+        </div>
 
-        <section className="page-panel">
-          <p className="apercu-label">Filtres</p>
-          <div className="est-actions" style={{ marginBottom: "var(--sp-2)" }}>
-            <label className="filtre">
-              Durée ≤ {dureeMax} h
-              <input
-                type="range"
-                min={1}
-                max={4}
-                step={0.5}
-                value={dureeMax}
-                onChange={(e) => setDureeMax(Number(e.target.value))}
-              />
-            </label>
-            <select
-              value={boucle}
-              onChange={(e) => setBoucle(e.target.value as FiltreBoucle)}
-              className="filtre-select"
-              aria-label="Type de parcours"
-            >
-              <option value="tous">Boucle ou aller-retour</option>
-              <option value="boucle">Boucle</option>
-              <option value="ar">Aller-retour</option>
-            </select>
-            <select
-              value={acc}
-              onChange={(e) => setAcc(e.target.value as FiltreAcc)}
-              className="filtre-select"
-              aria-label="Accessibilité"
-            >
-              <option value="tous">Toute accessibilité</option>
-              <option value="pmr">Poussette / PMR</option>
-            </select>
-            <select
-              value={chien}
-              onChange={(e) => setChien(e.target.value as FiltreChien)}
-              className="filtre-select"
-              aria-label="Chiens"
-            >
-              <option value="tous">Avec ou sans chien</option>
-              <option value="ok">Adapté aux chiens</option>
-            </select>
+        {/* La grande carte vitrine */}
+        <div className="carte-vitrine fond-cartesque">
+          <WalkMap walk={recommande} width={860} height={420} />
+        </div>
+
+        {/* Panneau contextuel — la promenade recommandée */}
+        <div className="panier-contexte reveal">
+          <span className="panier-tag">Boucle recommandée</span>
+          <h2 className="panier-titre">{recommande.titre}</h2>
+          <p className="panier-lieu">{recommande.lieu}</p>
+          <div className="panier-meta">
+            <span><IconDistance size={14} /> <strong>{recommande.distanceKm} km</strong></span>
+            <span><IconHorloge size={14} /> <strong>{recommande.dureeH} h</strong></span>
+            <span><IconRelief size={14} /> <strong>{recommande.difficulte}</strong></span>
           </div>
-          <p className="page-note">
-            {q && <strong>Recherche « {q} » — </strong>}
-            {resultats.length} parcours — la pause crêperie arrive avec
-            les données réelles (aucun établissement inventé).
-          </p>
-        </section>
+          <div className="panier-actions">
+            <a className="btn btn-ocre" href={`${B}/promenade/${recommande.slug}`}>
+              Lancer la balade
+            </a>
+            <a className="btn btn-ligne" href={`${B}/promenade/${recommande.slug}`}>
+              Voir le détail
+            </a>
+          </div>
+        </div>
 
-        {resultats.map((w) => (
-          <section key={w.slug} className="page-panel">
-            <p className="apercu-label">{w.lieu}</p>
-            <h2 className="section-title" style={{ marginBottom: "var(--sp-2)" }}>{w.titre}</h2>
-            <p className="page-texte">{w.resume}</p>
-            <p className="page-note">
-              {w.distanceKm} km · {w.dureeH} h · {w.difficulte} ·{" "}
-              {w.boucle ? "boucle" : "aller-retour"}
-              {w.poussettePmr ? " · poussette/PMR ok" : ""}
-            </p>
-            <div className="est-actions" style={{ marginTop: "var(--sp-2)", marginBottom: 0 }}>
-              <a className="btn btn-primary" href={`${B}/promenade/${w.slug}`}>
-                Ouvrir le parcours
-              </a>
+        {/* Recherche + filtres */}
+        <div className="page-panneau" style={{ marginTop: "var(--sp-4)" }}>
+          <div className="filtres" style={{ marginBottom: "var(--sp-3)" }}>
+            <div className="depart-barre" style={{ background: "var(--surface-raised)", borderColor: "var(--border-strong)", maxWidth: 360, flex: 1 }}>
+              <IconLoupe size={15} style={{ marginLeft: 16, color: "var(--text-faint)" }} />
+              <input
+                type="search"
+                placeholder="Rechercher un lieu…"
+                value={q}
+                onChange={(e) => setQ(e.target.value.toLowerCase())}
+                aria-label="Rechercher"
+                style={{ color: "var(--text-primary)" }}
+              />
             </div>
-          </section>
-        ))}
+          </div>
+          <div className="filtres">
+            <button className={`filtre-chip ${boucle === "tous" ? "actif" : ""}`} onClick={() => setBoucle("tous")}>Tous</button>
+            <button className={`filtre-chip ${boucle === "boucle" ? "actif" : ""}`} onClick={() => setBoucle("boucle")}>Boucles</button>
+            <button className={`filtre-chip ${boucle === "ar" ? "actif" : ""}`} onClick={() => setBoucle("ar")}>Aller-retour</button>
+          </div>
+        </div>
+
+        {/* Les parcours — cartes éditoriales */}
+        <div className="promenade-ligne" style={{ marginTop: "var(--sp-4)" }}>
+          {resultats.map((w) => (
+            <a key={w.slug} className="promenade-carte" href={`${B}/promenade/${w.slug}`}>
+              <div className="promenade-carte-visuel">
+                <WalkMap walk={w} width={380} height={150} />
+              </div>
+              <div className="promenade-carte-corps">
+                <h3 className="promenade-carte-titre">{w.titre}</h3>
+                <p className="promenade-carte-lieu">{w.lieu}</p>
+                <div className="promenade-carte-meta">
+                  <span><strong>{w.distanceKm} km</strong></span>
+                  <span><strong>{w.dureeH} h</strong></span>
+                  <span>{w.boucle ? "boucle" : "aller-retour"}</span>
+                </div>
+              </div>
+            </a>
+          ))}
+        </div>
+
+        {resultats.length === 0 && (
+          <div className="page-panneau" style={{ marginTop: "var(--sp-4)" }}>
+            <p className="page-texte">Aucun parcours ne correspond — essayez un autre lieu.</p>
+          </div>
+        )}
       </div>
     </main>
   );

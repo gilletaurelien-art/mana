@@ -1,0 +1,88 @@
+/* ============================================================
+   MANA — SYSTÈME DE DESIGN « ATLAS VIVANT » 2030
+   Terre, Mer & Lumière — un seul fichier de vérité.
+   Chaque valeur vit ici ; aucun hexadécimal ailleurs.
+   ============================================================ */
+
+:root {
+  /* ---------- Palette officielle ---------- */
+  --kaki-sombre: #343f32;   /* identité, surfaces immersives */
+  --kaki-sauge: #92977c;    /* cartographie végétale, secondaire */
+  --bleu-nuit: #192b43;     /* structure, typographie, profondeur */
+  --ocre: #c69a48;          /* actions, repères, découvertes */
+  --craie-chaude: #eeebdd;  /* fonds, respiration éditoriale */
+  --terre-cuite: #a96f54;   /* accents patrimoniaux, ponctuel */
+
+  /* ---------- Dérivés fonctionnels ---------- */
+  --text-primary: var(--bleu-nuit);
+  --text-secondary: #5a6478;
+  --text-faint: #8a8f9b;
+  --text-on-dark: var(--craie-chaude);
+  --text-on-photo: #ffffff;
+
+  --surface-base: var(--craie-chaude);
+  --surface-raised: #f6f4ec;
+  --surface-card: #ffffff;
+  --surface-ink: var(--kaki-sombre);
+  --surface-overlay: rgba(25, 43, 67, 0.55);
+
+  --border-fine: rgba(25, 43, 67, 0.10);
+  --border-strong: rgba(25, 43, 67, 0.18);
+  --border-ocre: rgba(198, 154, 72, 0.45);
+
+  --state-hover: rgba(198, 154, 72, 0.08);
+  --state-active: rgba(198, 154, 72, 0.16);
+  --state-error: #b5503f;
+  --state-success: #4a7c59;
+
+  /* ---------- Typographie ---------- */
+  --font-serif: "Cormorant Garamond", Georgia, serif;
+  --font-sans: "Manrope", system-ui, -apple-system, sans-serif;
+
+  --text-xs: 0.72rem;
+  --text-s: 0.85rem;
+  --text-m: 0.95rem;
+  --text-l: 1.2rem;
+  --text-xl: 1.65rem;
+  --text-2xl: 2.3rem;
+  --text-hero: clamp(2.4rem, 8vw, 4.2rem);
+
+  --lh-tight: 1.15;
+  --lh-body: 1.65;
+  --lh-editorial: 1.55;
+
+  --ls-label: 0.16em;
+
+  /* ---------- Espacements ---------- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 14px;
+  --sp-4: 22px;
+  --sp-5: 34px;
+  --sp-6: 52px;
+  --sp-8: 78px;
+  --sp-12: 116px;
+
+  /* ---------- Rayons ---------- */
+  --radius-s: 8px;
+  --radius-m: 14px;
+  --radius-l: 22px;
+  --radius-xl: 30px;
+  --radius-pill: 999px;
+
+  /* ---------- Ombres (diffuses, jamais épaisses) ---------- */
+  --shadow-card: 0 1px 3px rgba(25, 43, 67, 0.05), 0 6px 20px rgba(25, 43, 67, 0.05);
+  --shadow-panel: 0 2px 6px rgba(25, 43, 67, 0.06), 0 14px 40px rgba(25, 43, 67, 0.07);
+  --shadow-lift: 0 4px 10px rgba(25, 43, 67, 0.08), 0 22px 60px rgba(25, 43, 67, 0.10);
+
+  /* ---------- Motion ---------- */
+  --motion-micro: 150ms;
+  --motion-panel: 260ms;
+  --motion-screen: 340ms;
+  --motion-reveal: 480ms;
+  --ease-natural: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-out: cubic-bezier(0.0, 0.0, 0.2, 1);
+
+  /* ---------- Largeur de lecture ---------- */
+  --largeur: 860px;
+}

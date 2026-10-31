@@ -4,10 +4,20 @@ import { WALKS, distAuTrace, distM } from "./walks";
 import type { WalkPoint } from "./walks";
 import { WalkMap } from "./WalkMap";
 import { AltitudeProfile } from "./Altitude";
+import {
+  IconHorloge,
+  IconDistance,
+  IconRelief,
+  IconTele,
+  IconSecours,
+  IconAlerte,
+  IconCoeur,
+  iconPourCategorie,
+} from "./Icons";
 
-// Page promenade : GPS navigateur (position + boussole), alerte
-// hors-sentier à 50 m, export GPX, SOS.
-// Tout client-side — zéro backend, zéro réseau en course.
+// Écran 3 (fiche éditoriale) + écran 4 (marche) + écran 5 (rencontres).
+// GPS navigateur : position + boussole, alerte hors-sentier 50 m,
+// export GPX, SOS préparé. Tout client-side — zéro backend.
 
 const HORS_SENTIER_M = 50;
 
@@ -44,9 +54,9 @@ export function Promenade({ slug }: { slug: string }) {
   const [horsLigne, setHorsLigne] = useState(!navigator.onLine);
 
   useEffect(() => {
-    document.title = `${walk.titre} — Promenades MANA.bzh`;
+    document.title = `${walk.titre} — MANA`;
     return () => {
-      document.title = "MANA.bzh — La porte d'entrée de l'écosystème MANA en Bretagne";
+      document.title = "MANA — La porte d'entrée de l'écosystème MANA en Bretagne";
     };
   }, [walk.titre]);
 
@@ -76,11 +86,9 @@ export function Promenade({ slug }: { slug: string }) {
         };
         setMoi(p);
         setCap(pos.coords.heading ?? null);
-
         const d = distAuTrace(p, walk.points);
         setHorsSentier(d > HORS_SENTIER_M);
         if (d > HORS_SENTIER_M && navigator.vibrate) navigator.vibrate(200);
-
       },
       (err) => setGpsErreur(err.message || "GPS indisponible."),
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
@@ -99,109 +107,170 @@ export function Promenade({ slug }: { slug: string }) {
   }, []);
 
   const sosHref = moi
-    ? `sms:112?&body=${encodeURIComponent(
+    ? `sms:?&body=${encodeURIComponent(
         `Urgence — ma position GPS : ${moi.lat.toFixed(5)}, ${moi.lon.toFixed(5)} — parcours ${walk.titre} (mana.bzh).`
       )}`
-    : "sms:112";
+    : "sms:?";
+
+  // Prochain point de rencontre (écran 4 : « à 800 m »)
+  const prochain = moi
+    ? walk.waypoints
+        .map((w) => ({ w, d: distM(moi, w.point) }))
+        .sort((a, b) => a.d - b.d)[0]
+    : null;
 
   return (
-    <main className="page">
-      <div className="wrap">
-        <p className="hero-label">Promenade — prototype client-side</p>
-        <h1 className="page-titre">{walk.titre}</h1>
+    <main className="fiche">
+      {/* ===== Couverture immersive ===== */}
+      <div className="fiche-couverture">
+        <div className="wrap">
+          <a className="fiche-retour" href={`${B}/promenades`}>
+            ← Explorer
+          </a>
+          <h1 className="fiche-titre">{walk.titre}</h1>
+          <p className="fiche-lieu">{walk.lieu}</p>
+          <div className="fiche-meta">
+            <div className="fiche-meta-item">
+              <span className="fiche-meta-val">{walk.distanceKm} km</span>
+              <span className="fiche-meta-lbl">Distance</span>
+            </div>
+            <div className="fiche-meta-item">
+              <span className="fiche-meta-val">{walk.dureeH} h</span>
+              <span className="fiche-meta-lbl">Durée</span>
+            </div>
+            <div className="fiche-meta-item">
+              <span className="fiche-meta-val">{walk.difficulte}</span>
+              <span className="fiche-meta-lbl">Difficulté</span>
+            </div>
+            <div className="fiche-meta-item">
+              <span className="fiche-meta-val">{walk.boucle ? "boucle" : "A/R"}</span>
+              <span className="fiche-meta-lbl">Forme</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        <section className="page-panel">
-          <p className="page-intro">{walk.resume}</p>
+      <div className="fiche-corps">
+        {/* ===== Corps éditorial ===== */}
+        <section className="fiche-section">
+          <p className="fiche-label">La promenade</p>
+          <p className="fiche-texte">{walk.resume}</p>
           <p className="page-note">
-            {walk.distanceKm} km · {walk.dureeH} h · {walk.difficulte} ·{" "}
-            {walk.boucle ? "boucle" : "aller-retour"} ·{" "}
-            {walk.poussettePmr ? "accessible poussette/PMR" : "non accessible PMR"} ·
+            {walk.poussettePmr ? "Accessible poussette/PMR" : "Non accessible PMR"} ·
             chiens {walk.chiens}. Tracé indicatif (prototype) : avant
             publication, le tracé officiel (IGN) sera sourcé.
           </p>
-          <div className="est-actions" style={{ marginTop: "var(--sp-2)" }}>
-            <button
-              type="button"
-              className="btn btn-ghost"
-              onClick={() => telecharger(`${walk.slug}.gpx`, enGpx(walk), "application/gpx+xml")}
-            >
-              Exporter en GPX
-            </button>
-            <a className="btn btn-primary" href={sosHref}>
-              SOS — partager ma position
-            </a>
+        </section>
+
+        {/* ===== Écran 4 : navigation en marche ===== */}
+        <section className="fiche-section">
+          <p className="fiche-label">En marche</p>
+          <div className="marche-grille">
+            <div className="marche-panneau">
+              <div className="marche-statut">
+                <span className={`statut-point ${horsLigne ? "hors-ligne" : ""} ${horsSentier ? "alerte" : ""}`} />
+                <span style={{ fontSize: "var(--text-s)", fontWeight: 600 }}>
+                  {horsSentier ? "Hors sentier — revenez vers le tracé" : horsLigne ? "Hors ligne — le parcours reste dans la poche" : "Signal GPS actif"}
+                </span>
+              </div>
+              <div className="marche-chiffres">
+                <div className="chiffre">
+                  <span className="chiffre-val">{moi ? `${moi.lat.toFixed(4)}, ${moi.lon.toFixed(4)}` : "—"}</span>
+                  <span className="chiffre-lbl">{gpsErreur ? gpsErreur : "Position"}</span>
+                </div>
+                <div className="chiffre">
+                  <span className="chiffre-val">{cap !== null ? `${Math.round(cap)}°` : "—"}</span>
+                  <span className="chiffre-lbl">Cap</span>
+                </div>
+              </div>
+              {prochain && moi && (
+                <p style={{ marginTop: "var(--sp-3)", fontWeight: 600, fontSize: "var(--text-m)" }}>
+                  {iconPourCategorie(prochain.w.nom, { size: 16 })}{" "}
+                  {prochain.w.nom}{" "}
+                  <span style={{ color: "var(--text-secondary)", fontWeight: 500 }}>
+                    à {Math.round(prochain.d)} m
+                  </span>
+                </p>
+              )}
+            </div>
+            <div className="marche-panneau">
+              <WalkMap walk={walk} moi={moi} capDeg={cap} />
+            </div>
           </div>
         </section>
 
-        {horsLigne && (
-          <section className="page-panel">
-            <p className="apercu-label">Hors ligne</p>
-            <p className="page-texte">
-              Vous êtes hors ligne. La carte et le parcours restent
-              disponibles : ils sont mis en cache par le service worker.
-            </p>
-          </section>
-        )}
+        {/* ===== Alerte fermeture (terre cuite, jamais neutre) ===== */}
+        <section className="fiche-section">
+          <div className="alerte-reglementaire" role="note">
+            <IconAlerte size={20} />
+            <div>
+              <p className="alerte-titre">Fermeture du GR34 — Aber / Postolonnec</p>
+              <p className="alerte-texte">
+                Effondrement de falaise : sentier côtier fermé par arrêté
+                municipal depuis février 2026. Consultez les informations
+                officielles avant de partir.
+              </p>
+              <span className="alerte-source">Source : arrêté municipal — commune de Crozon</span>
+            </div>
+          </div>
+        </section>
 
-        {horsSentier && (
-          <section className="page-panel hors-sentier" role="alert">
-            <p className="apercu-label">Alerte hors-sentier</p>
-            <p className="page-texte">
-              Vous êtes à plus de {HORS_SENTIER_M} m du tracé. Revenez
-              vers le sentier — sentiers fragiles, falaises proches.
-            </p>
-          </section>
-        )}
+        {/* ===== Altitude ===== */}
+        <section className="fiche-section">
+          <p className="fiche-label">Profil d'altitude</p>
+          <div className="fiche-altitude">
+            <AltitudeProfile points={walk.points} />
+          </div>
+        </section>
 
-        {gpsErreur && (
-          <section className="page-panel">
-            <p className="apercu-label">GPS</p>
-            <p className="page-texte">{gpsErreur}</p>
-          </section>
-        )}
-
-        <section className="page-panel">
-          <p className="apercu-label">Carte</p>
-          <WalkMap walk={walk} moi={moi} capDeg={cap} />
-          <p className="page-note">
-            {moi
-              ? `Position GPS : ${moi.lat.toFixed(5)}, ${moi.lon.toFixed(5)}` + (cap !== null ? ` · cap ${Math.round(cap)}°` : "")
-              : "En attente du signal GPS…"}
+        {/* ===== Écran 5 : ce qu'on rencontre ===== */}
+        <section className="fiche-section">
+          <p className="fiche-label">Sur votre chemin — {walk.waypoints.length} lieux</p>
+          <p className="page-note" style={{ marginBottom: "var(--sp-3)" }}>
+            Dans l'ordre réel de la marche. Pas de détour : si c'est listé,
+            on passe devant.
           </p>
+          <div className="rencontres">
+            {walk.waypoints.map((w, i) => (
+              <div key={w.nom} className="rencontre">
+                <span className="rencontre-pos">{String(i + 1).padStart(2, "0")}</span>
+                <div className="rencontre-infos">
+                  <p className="rencontre-nom">{w.nom}</p>
+                  <p className="rencontre-type">{w.audio}</p>
+                </div>
+                <span className="rencontre-cat">Rencontre</span>
+              </div>
+            ))}
+          </div>
         </section>
 
-        <section className="page-panel">
-          <p className="apercu-label">Profil d'altitude</p>
-          <AltitudeProfile points={walk.points} />
-        </section>
-
-        <section className="page-panel">
-          <p className="apercu-label">Points d'intérêt</p>
-          {walk.waypoints.map((w) => (
-            <p key={w.nom} className="page-texte">
-              <strong>{w.nom}</strong> — {w.audio}
-            </p>
-          ))}
-        </section>
-
-        <section className="page-panel">
-          <p className="apercu-label">Marées, météo, praticabilité</p>
-          <p className="page-texte">
+        {/* ===== Sources honnêtes ===== */}
+        <section className="fiche-section">
+          <p className="fiche-label">Marées, météo, praticabilité</p>
+          <p className="fiche-texte" style={{ fontSize: "var(--text-s)" }}>
             Les horaires de marée, la météo marine et l'état du sentier
             exigent des sources temps réel fiables (SHOM, Météo-France).
-            Ces modules sont en sommeil : aucune donnée simulée ne sera
-            affichée. Avant de partir, consultez les canaux officiels.
+            Aucune donnée simulée : consultez les canaux officiels avant
+            de partir.
           </p>
         </section>
+      </div>
 
-        <div className="est-actions">
-          <a className="btn btn-ghost" href={`${B}/promenades`}>
-            Toutes les promenades
-          </a>
-          <a className="btn btn-primary" href={`${B}/`}>
-            Retour à l'accueil
-          </a>
-        </div>
+      {/* ===== Barre d'action flottante ===== */}
+      <div className="fiche-barre">
+        <button
+          type="button"
+          className="btn btn-ligne"
+          onClick={() => telecharger(`${walk.slug}.gpx`, enGpx(walk), "application/gpx+xml")}
+        >
+          <IconTele size={15} /> GPX
+        </button>
+        <a className="btn btn-ocre" href={sosHref}>
+          <IconSecours size={15} /> SOS
+        </a>
+        <a className="btn btn-plein" href={`${B}/promenades`}>
+          <IconCoeur size={15} /> Explorer
+        </a>
       </div>
     </main>
   );

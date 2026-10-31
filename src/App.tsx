@@ -2,15 +2,15 @@ import { useState } from "react";
 import { usePath, baseUrl, routePromenade } from "./router";
 import { WALKS } from "./walks";
 import {
-  GlyphRecherche,
-  GlyphRadio,
-  GlyphNavigation,
-  GlyphSecurite,
-  GlyphDecouverte,
-  GlyphSentier,
-  GlyphTerritoire,
-} from "./Glyphs";
-import { WalkMap } from "./WalkMap";
+  IconPosition,
+  IconCarte,
+  IconSentier,
+  IconLoupe,
+  IconFleche,
+  IconProfil,
+  IconFavoris,
+  IconPlus,
+} from "./Icons";
 import { Promenades } from "./Promenades";
 import { Promenade } from "./Promenade";
 import { Territoire } from "./Territoire";
@@ -19,283 +19,244 @@ import { ContactForm } from "./ContactForm";
 
 const B = baseUrl();
 
-// MANAradio : au centre du hub — la radio de l'écosystème, en
-// sommeil comme le backend (aucun flux simulé), mais positionnée.
+/* ============================================================
+   MANA — « Atlas vivant » 2030
+   Six univers : accueil, exploration, fiche, marche,
+   rencontres, espace personnel.
+   ============================================================ */
 
-// Les 4 modules de la promenade, autour de la radio.
-const MODULES = [
-  {
-    glyphe: GlyphNavigation,
-    num: "01",
-    titre: "Navigation & cartographie",
-    accroche: "Le parcours dans la poche.",
-    texte:
-      "Hors ligne (PWA) : carte et parcours restent sans réseau. GPS en temps réel avec boussole, alerte si vous vous éloignez de 50 m du sentier, profil d'altitude lisible.",
-    cta: { label: "Voir les parcours", href: "/promenades" },
-  },
-  {
-    glyphe: GlyphSecurite,
-    num: "02",
-    titre: "Sécurité côte",
-    accroche: "Prudence honnête.",
-    texte:
-      "SOS en un geste : position GPS partagée par SMS aux secours ou aux proches. Marées et météo : renvoi systématique vers les sources officielles — aucune donnée simulée.",
-    cta: { label: "Découvrir", href: "/promenade/gr34-crozon" },
-  },
-  {
-    glyphe: GlyphDecouverte,
-    num: "03",
-    titre: "Découverte & patrimoine",
-    accroche: "La Bretagne racontée.",
-    texte:
-      "Anecdotes du littoral, faune et flore, filtres concrets : durée, poussette/PMR, chiens, boucle ou aller-retour.",
-    cta: { label: "Explorer", href: "/promenades" },
-  },
-  {
-    glyphe: GlyphSentier,
-    num: "04",
-    titre: "Carnet & export",
-    accroche: "Gardez la trace.",
-    texte:
-      "Export GPX en un clic, lisible par toutes les montres et applications. Fonctionne hors ligne, du cap à la grève — le réseau n'attendra pas, nous non plus.",
-    cta: { label: "Ouvrir un parcours", href: "/promenade/pointe-du-raz" },
-  },
-];
+function TabBar({ actif }: { actif: string }) {
+  return (
+    <nav className="tab-bar" aria-label="Navigation principale">
+      <a href={`${B}/`} className={actif === "accueil" ? "actif" : ""} aria-label="Accueil">
+        <IconPosition size={17} />
+        <span className="sr-only">Accueil</span>
+      </a>
+      <a href={`${B}/promenades`} className={actif === "explorer" ? "actif" : ""}>
+        <IconCarte size={17} />
+        <span>Explorer</span>
+      </a>
+      <a className="tab-brand" href={`${B}/`}>
+        MANA<em>.</em>
+      </a>
+      <a href={`${B}/favoris`} className={actif === "favoris" ? "actif" : ""}>
+        <IconFavoris size={17} />
+        <span>Favoris</span>
+      </a>
+      <a href={`${B}/espace`} className={actif === "espace" ? "actif" : ""}>
+        <IconPlus size={17} />
+        <span>Plus</span>
+      </a>
+    </nav>
+  );
+}
 
-export default function App() {
-  const path = usePath();
+/* ---------- Écran 1 : accueil immersif ---------- */
+function Accueil() {
   const [lieu, setLieu] = useState("");
-  const [walkIndex, setWalkIndex] = useState(0);
-
-  const walkSuivant = () => setWalkIndex((i) => (i + 1) % WALKS.length);
-  const walk = WALKS[walkIndex];
-
   const chercher = () => {
     const q = lieu.trim();
     window.location.assign(`${B}/promenades${q ? `?q=${encodeURIComponent(q)}` : ""}`);
   };
+  const walk = WALKS[0];
 
   return (
+    <div className="accueil">
+      <div className="accueil-fond" aria-hidden="true" />
+      <div className="accueil-contenu">
+        <header>
+          <p className="accueil-logo">MANA<em>.</em></p>
+          <p className="accueil-territoire">Terre, Mer & Lumière — Bretagne</p>
+        </header>
+        <div className="reveal">
+          <h1 className="accueil-accroche">Le monde commence ici.</h1>
+          <p className="accueil-sous">
+            Découvrez ce que vous croiserez en chemin — les lieux,
+            les paysages, le patrimoine, dans l'ordre réel de la marche.
+          </p>
+        </div>
+        <div className="depart-barre reveal-2" role="search" aria-label="Rechercher une localité">
+          <IconPosition size={17} className="depart-icone" style={{ marginLeft: 18, color: "var(--kaki-sauge)" }} />
+          <input
+            type="search"
+            autoComplete="off"
+            placeholder="Autour de moi — ou une commune…"
+            value={lieu}
+            onChange={(e) => setLieu(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && chercher()}
+            aria-label="Lieu de départ"
+          />
+          <button type="button" className="depart-btn" onClick={chercher}>
+            Explorer
+            <IconFleche size={15} />
+          </button>
+        </div>
+        <a className="accueil-secondaire reveal-3" href={`${B}/promenades`}>
+          <IconCarte size={15} />
+          Explorer la carte du territoire
+        </a>
+      </div>
+      <div aria-hidden="true" style={{ position: "absolute", bottom: 96, left: 0, right: 0, textAlign: "center", zIndex: 1 }}>
+        <span style={{ color: "rgba(238,235,221,0.4)", fontSize: "var(--text-xs)", letterSpacing: "0.1em" }}>
+          {walk.lieu} — {walk.distanceKm} km de sentiers réels
+        </span>
+      </div>
+      <TabBar actif="accueil" />
+    </div>
+  );
+}
+
+/* ---------- Écran 6 : espace personnel ---------- */
+function Espace() {
+  return (
     <>
-      <header className="site-header">
-        <div className="wrap">
-          <nav className="nav">
-            <a href={`${B}/`} aria-label="Rechercher — accueil" title="Rechercher">
-              <GlyphRecherche />
-              <span className="sr-only">Rechercher</span>
+      <main className="page">
+        <div className="wrap espace">
+          <p className="page-label">MANA</p>
+          <h1 className="espace-titre">Votre espace</h1>
+          <p className="espace-sous">
+            Une exploration responsable et partagée du territoire.
+            Tout ce qui compte, rien de plus.
+          </p>
+          <div className="espace-liste">
+            <a className="espace-item" href={`${B}/promenades`}>
+              <IconSentier size={20} />
+              <div>
+                <p className="espace-nom" style={{ margin: 0 }}>Mes promenades</p>
+                <p className="espace-desc">Les parcours du territoire, hors ligne dans la poche</p>
+              </div>
             </a>
-            <a href={`${B}/radio`}>
-              <GlyphRadio />
-              <span>Radio</span>
+            <a className="espace-item" href={`${B}/radio`}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round"><circle cx="12" cy="12" r="1.6" /><path d="M7.8 16.2a6 6 0 0 1 0-8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 19.1a10 10 0 0 1 0-14.2M19.1 4.9a10 10 0 0 1 0 14.2" /></svg>
+              <div>
+                <p className="espace-nom" style={{ margin: 0 }}>MANAradio</p>
+                <p className="espace-desc">La radio du territoire — hors antenne pour l'instant</p>
+              </div>
             </a>
-            <a className="brand" href={`${B}/`}>
-              MANA<em>.bzh</em>
+            <a className="espace-item" href={`${B}/territoire`}>
+              <IconCarte size={20} />
+              <div>
+                <p className="espace-nom" style={{ margin: 0 }}>Le territoire</p>
+                <p className="espace-desc">Terre & lumière — les données réelles derrière MANA</p>
+              </div>
             </a>
-            <a href={`${B}/promenades`}>
-              <GlyphSentier />
-              <span>Promenades</span>
+            <a className="espace-item" href={`${B}/contact`}>
+              <IconProfil size={20} />
+              <div>
+                <p className="espace-nom" style={{ margin: 0 }}>Nous contacter</p>
+                <p className="espace-desc">Une question, un partenariat — réponse rapide et honnête</p>
+              </div>
             </a>
-            <a href={`${B}/territoire`}>
-              <GlyphTerritoire />
-              <span>Territoire</span>
+            <a className="espace-item" href={`${B}/mentions-legales`}>
+              <IconPlus size={20} />
+              <div>
+                <p className="espace-nom" style={{ margin: 0 }}>À propos & mentions</p>
+                <p className="espace-desc">Gratuit, sobre, aucune donnée revendue</p>
+              </div>
             </a>
-          </nav>
+          </div>
         </div>
-      </header>
-
-      {path === "/radio" ? (
-        <main className="page">
-          <div className="wrap">
-            <p className="hero-label">Écouter</p>
-            <h1 className="page-titre">MANAradio</h1>
-
-            <section className="page-panel radio-player-panel">
-              <div className="radio-player">
-                <button
-                  type="button"
-                  className="radio-play"
-                  aria-label="Lecture"
-                  title="Hors antenne — bientôt"
-                >
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M8.5 5.5v13l10-6.5z" />
-                  </svg>
-                </button>
-                <div className="radio-infos">
-                  <p className="radio-etat">Hors antenne</p>
-                  <p className="radio-note">Le direct arrivera bientôt — aucun flux simulé.</p>
-                </div>
-              </div>
-            </section>
-
-            <section className="page-panel">
-              <p className="apercu-label">En cours</p>
-              <p className="page-texte">
-                Aucun titre à l'antenne pour l'instant. Les épisodes
-                et la programmation s'afficheront ici dès la première
-                émission réelle.
-              </p>
-            </section>
-          </div>
-        </main>
-      ) : path === "/promenades" ? (
-        <Promenades />
-      ) : routePromenade(path) ? (
-        <Promenade slug={routePromenade(path)!} />
-      ) : path === "/territoire" ? (
-        <Territoire />
-      ) : path === "/mentions-legales" ? (
-        <MentionsLegales />
-      ) : path === "/contact" ? (
-        <main className="page">
-          <div className="wrap">
-            <p className="hero-label">Nous joindre</p>
-            <h1 className="page-titre">Contact</h1>
-            <section className="page-panel">
-              <p className="page-intro">
-                Une question sur les promenades, le territoire, un
-                partenariat ? Écrivez-nous — nous répondons vite,
-                honnêtement, sans prospection forcée.
-              </p>
-              <ContactForm />
-            </section>
-          </div>
-        </main>
-      ) : (
-        <>
-          <section className="hero">
-            <div className="wrap bulle-xl hero-moteur">
-              <p className="hero-label">Terre, Mer & Lumière — Bretagne</p>
-              <h1 className="brand-grand">Promenades</h1>
-              <p className="hero-label">en Armor & Argoat</p>
-
-              {/* Moteur de saisie de localité */}
-              <div className="moteur-barre" role="search" aria-label="Rechercher une localité">
-                <svg className="moteur-loupe" viewBox="0 0 24 24" aria-hidden="true">
-                  <circle cx="10.5" cy="10.5" r="6.5" />
-                  <path d="m15.5 15.5 4.5 4.5" />
-                </svg>
-                <input
-                  id="moteur-lieu"
-                  type="search"
-                  autoComplete="off"
-                  placeholder="Au départ de…"
-                  value={lieu}
-                  onChange={(e) => setLieu(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && chercher()}
-                />
-                <button
-                  type="button"
-                  className="moteur-fleche"
-                  aria-label="Rechercher"
-                  onClick={chercher}
-                >
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M4 12h15" />
-                    <path d="m13 6 6 6-6 6" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* La balade : une seule, avec sa carte — croix/coeur */}
-              <div className="balade-unique">
-                <div className="balade-carte">
-                  <WalkMap walk={walk} width={280} height={180} />
-                </div>
-                <p className="swipe-lieu">{walk.lieu}</p>
-                <p className="swipe-titre">{walk.titre}</p>
-                <p className="swipe-meta">
-                  {walk.distanceKm} km · {walk.dureeH} h · {walk.difficulte}
-                </p>
-                <div className="balade-actions">
-                  <button
-                    type="button"
-                    className="balade-btn balade-x"
-                    aria-label="Parcours suivant"
-                    title="Parcours suivant"
-                    onClick={walkSuivant}
-                  >
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M6 6l12 12M18 6 6 18" />
-                    </svg>
-                  </button>
-                  <a
-                    className="balade-btn balade-coeur"
-                    href={`${B}/promenade/${walk.slug}`}
-                    aria-label="Ouvrir le parcours"
-                    title="Ouvrir le parcours"
-                  >
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M12 20s-6.5-4.1-6.5-9A4.2 4.2 0 0 1 12 8.4 4.2 4.2 0 0 1 18.5 11c0 4.9-6.5 9-6.5 9z" />
-                    </svg>
-                  </a>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <main className="wrap">
-            {MODULES.map((m) => {
-              const G = m.glyphe;
-              return (
-              <section key={m.num} className="landing-section bulle">
-                <p className="section-num">{m.num}</p>
-                <G size={36} />
-                <h2 className="section-title">{m.titre}</h2>
-                <p className="section-texte">{m.texte}</p>
-                <div className="est-actions">
-                  <a className="btn btn-primary" href={`${B}${m.cta.href}`}>
-                    {m.cta.label}
-                  </a>
-                </div>
-              </section>
-              );
-            })}
-
-            {/* 05 — MANAradio : en ligne */}
-            <section className="landing-section bulle">
-              <p className="section-num">05</p>
-              <GlyphRadio size={36} />
-              <h2 className="section-title">MANAradio</h2>
-              <div className="sous-bulle">
-                <p className="section-accroche">En ligne.</p>
-                <p className="section-texte">
-                  À écouter en marchant — ou au coin du feu.
-                </p>
-                <div className="est-actions">
-                  <a className="btn btn-clair" href={`${B}/radio`}>
-                    Écouter MANAradio
-                  </a>
-                </div>
-              </div>
-            </section>
-          </main>
-        </>
-      )}
-
-      <footer className="site-footer">
-        <div className="wrap footer-colonnes">
-          <div>
-            <p className="brand">
-              MANA<em>.bzh</em>
-            </p>
-            <p className="footer-note">
-              Promenades bretonnes — hors ligne, GPS, GPX. Gratuit,
-              sobre, aucune donnée revendue.
-            </p>
-            <ContactForm />
-          </div>
-          <nav className="footer-nav" aria-label="Pied de page">
-            <a href={`${B}/promenades`}>Promenades</a>
-            <a href={`${B}/promenade/gr34-crozon`}>GR34 — Crozon</a>
-            <a href={`${B}/promenade/pointe-du-raz`}>Pointe du Raz</a>
-            <a href={`${B}/radio`}>MANAradio</a>
-            <a href={`${B}/territoire`}>Le territoire</a>
-            <a href={`${B}/contact`}>Contact</a>
-            <a href={`${B}/mentions-legales`}>Mentions légales</a>
-          </nav>
-        </div>
-      </footer>
+      </main>
+      <TabBar actif="espace" />
     </>
   );
+}
+
+/* ---------- Favoris (écran léger — pas de compte, juste l'accès aux parcours) ---------- */
+function Favoris() {
+  return (
+    <>
+      <main className="page">
+        <div className="wrap espace">
+          <p className="page-label">Vos découvertes</p>
+          <h1 className="espace-titre">Favoris</h1>
+          <p className="espace-sous">
+            Sans compte, MANA ne stocke rien sur vous — c'est la doctrine.
+            Vos parcours restent dans votre navigateur : ajoutez-les à
+            l'écran d'accueil de votre téléphone (PWA), ou téléchargez
+            leurs traces GPX avant de partir.
+          </p>
+          <div className="espace-liste">
+            {WALKS.map((w) => (
+              <a key={w.slug} className="espace-item" href={`${B}/promenade/${w.slug}`}>
+                <IconSentier size={20} />
+                <div>
+                  <p className="espace-nom" style={{ margin: 0 }}>{w.titre}</p>
+                  <p className="espace-desc">{w.lieu} · {w.distanceKm} km</p>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      </main>
+      <TabBar actif="favoris" />
+    </>
+  );
+}
+
+/* ---------- Pages éditoriales génériques ---------- */
+function PageSimple({ label, titre, children }: { label: string; titre: string; children: React.ReactNode }) {
+  return (
+    <>
+      <main className="page">
+        <div className="wrap">
+          <p className="page-label">{label}</p>
+          <h1 className="page-titre">{titre}</h1>
+          {children}
+        </div>
+      </main>
+      <TabBar actif="" />
+    </>
+  );
+}
+
+export default function App() {
+  const path = usePath();
+
+  if (path === "/radio") {
+    return (
+      <PageSimple label="Écouter" titre="MANAradio">
+        <section className="page-panneau">
+          <div className="radio-joueur">
+            <button type="button" className="radio-bouton" aria-label="Lecture" title="Hors antenne — bientôt">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 5.5v13l10-6.5z" /></svg>
+            </button>
+            <div>
+              <p className="radio-etat">Hors antenne</p>
+              <p className="radio-note">Le direct arrivera bientôt — aucun flux simulé.</p>
+            </div>
+          </div>
+        </section>
+        <section className="page-panneau">
+          <p className="page-label" style={{ fontSize: "var(--text-xs)" }}>En cours</p>
+          <p className="page-texte">
+            Aucun titre à l'antenne pour l'instant. Les épisodes s'afficheront
+            dès la première émission réelle.
+          </p>
+        </section>
+      </PageSimple>
+    );
+  }
+
+  if (path === "/promenades") return <><Promenades /><TabBar actif="explorer" /></>;
+  if (routePromenade(path)) return <><Promenade slug={routePromenade(path)!} /><TabBar actif="explorer" /></>;
+  if (path === "/territoire") return <><Territoire /><TabBar actif="" /></>;
+  if (path === "/mentions-legales") return <PageSimple label="Informations légales" titre="Mentions légales"><MentionsLegales /></PageSimple>;
+  if (path === "/contact") {
+    return (
+      <PageSimple label="Nous joindre" titre="Contact">
+        <section className="page-panneau">
+          <p className="page-texte" style={{ marginBottom: "var(--sp-3)" }}>
+            Une question sur les promenades, le territoire, un partenariat ?
+            Écrivez-nous — nous répondons vite, honnêtement.
+          </p>
+          <ContactForm />
+        </section>
+      </PageSimple>
+    );
+  }
+  if (path === "/favoris") return <Favoris />;
+  if (path === "/espace") return <Espace />;
+
+  return <Accueil />;
 }
