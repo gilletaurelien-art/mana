@@ -216,10 +216,31 @@ export function CarteFondOT({
     };
     m.on("error", () => { echoue = true; setPrete(false); });
     m.once("idle", peutMontrer);
+    /* ⚠️ On expose le cadrage sur le nœud : c'est le seul moyen de savoir,
+       DEPUIS LA PAGE EN LIGNE, à quel zoom la carte s'est posée. Sans lui,
+       une carte sans tuiles et une carte au mauvais zoom se ressemblent. */
+    const noter = () => {
+      if (plan.current) {
+        plan.current.dataset.zoom = m.getZoom().toFixed(2);
+        plan.current.dataset.tuiles = String(tuiles);
+      }
+    };
+    m.on("moveend", noter);
+    m.on("idle", noter);
+
     const minuteries = [120, 600, 1600].map((t) =>
-      window.setTimeout(() => { cadrer(); peutMontrer(); }, t));
+      window.setTimeout(() => { cadrer(); peutMontrer(); noter(); }, t));
     const ro = new ResizeObserver(cadrer);
     ro.observe(plan.current);
+
+    /* 🔴 CES DEUX LIGNES ÉTAIENT ÉCRITES APRÈS LE `return` — donc jamais
+       exécutées. `carte.current` restait nul et `recadrer.current` un
+       no-op : le second effet ne recadrait jamais rien, en silence.
+       ⭐ Du code mort après un `return` ne se signale pas : ni le
+          compilateur, ni les tests, ni l'écran. Seule la relecture le voit. */
+    carte.current = m;
+    recadrer.current = cadrer;
+
 
     return () => {
       minuteries.forEach(window.clearTimeout);
@@ -230,8 +251,6 @@ export function CarteFondOT({
       m.remove();
       carte.current = null;
     };
-    carte.current = m;
-    recadrer.current = cadrer;
   /* ⚠️ `p` et `fond` SEULEMENT. Tout le reste passe par `vues` — voir la note
      au-dessus : une dépendance qui change à chaque rendu reconstruit la carte
      au lieu de la régler. */
