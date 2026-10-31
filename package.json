@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "npm run test && tsc -b && vite build",
     "test": "vitest run",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "carte:style": "node scripts/carte-style.mjs",
+    "carte:verifier": "node scripts/carte-style.mjs --verifier"
   },
   "dependencies": {
     "maplibre-gl": "^4.7.1",
