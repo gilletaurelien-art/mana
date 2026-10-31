@@ -3,12 +3,16 @@
    pas dans les effets visuels. Budget < 20 Ko, zéro dépendance UI. */
 
 :root {
-  --ink: #1b2a4a;
+  /* ⚠️ `--ink` ET `--texte` DISAIENT LA MÊME CHOSE SOUS DEUX NOMS, à trois
+     unités près — le vestige de la feuille d'avant les tokens. Il suit
+     désormais le rôle au lieu de porter sa propre valeur : deux noms, une
+     seule décision. (Son unique emploi non-textuel est le cerclage d'une
+     pastille de carte, ligne ~1283, qui s'en accommode.) */
+  --ink: var(--texte);
   --primary: #b08a2e;
   --primary-deep: #8f6d1f;
   --sand: #faf8f3;
   --blanc-chaud: #ffffff;
-  --ecume: #e5e0d6;
   --or: #c9a227;
 
   --t-xs: 0.875rem;
@@ -25,7 +29,37 @@
   --sp-6: 48px;
   --sp-12: 96px;
 
-  --serif: "Marelle Baton 2", Georgia, serif;
+  /* ⚠️ La pile de repli n'est pas décorative : « Iowan Old Style » existe sur
+     macOS et iOS, et tient la ligne de base d'Instrument Serif bien mieux que
+     Georgia. Un repli mal choisi fait SAUTER la mise en page au moment précis
+     où la vraie police arrive. */
+  /* ⚠️ ALIAS de `--titre` (tokens.css). Deux noms pour une même police, c'est
+     deux occasions de diverger — et elles ont divergé pendant une soirée
+     entière. Le nom qui fait foi est `--titre` ; celui-ci survit le temps que
+     les trente écrans historiques soient repris. */
+  --serif: var(--titre);
+
+  /* 🔴 LE 31/10 AU SOIR : LE SOL PASSE DU BLEU NUIT AU SABLE, ET LE CHROME AU
+     KAKI. Décision du fondateur, et elle achève le basculement vers la charte
+     2030 — le bleu nuit n'est plus le sol ni le chrome, il redevient ce que la
+     charte lui assigne : la profondeur, la mer, la typographie.
+     ⭐ ET C'EST POURQUOI ON NE REMPLACE PAS `--ink`. Ce token faisait DEUX
+        métiers : la couleur du TEXTE et celle des SURFACES sombres. Le teindre
+        en kaki aurait aussi teint tout le texte du site — et fait perdre au
+        bleu nuit le seul rôle que la charte lui garde. Deux métiers, deux
+        tokens : `--ink` reste l'encre, `--surface-sombre` devient le chrome.
+     ⚠️ Un token qui sert à deux choses se découvre toujours au moment où l'on
+        veut changer UNE des deux. */
+  --sable: #eeebdd;            /* le sol de toutes les pages */
+  /* ⚠️ `--primary` SOUFFRE DU MÊME DÉFAUT QUE `--ink` : deux métiers. Il
+     remplit des surfaces (où son contraste n'importe pas) ET il écrit du
+     texte (où il donne 3,22 sur blanc, 2,69 sur le sable). Relevé sur cinq
+     pages : les numéros de section, les étiquettes, le lien du footer.
+     ⛔ Défaut PRÉEXISTANT — il ne vient pas du changement de sol — mais le
+        balayage l'a sorti, et le laisser serait choisir de le laisser. */
+  --primary-texte: #856329;    /* l'or LISIBLE : 5,51 sur blanc, 4,60 sur sable */
+  --surface-sombre: #343f32;   /* footer, boutons, pastilles — le kaki */
+  --surface-sombre-survol: #43503f;
   --sans: "Rubik", system-ui, sans-serif;
   /* Largeur commune : header, bulles, panneaux, footer */
   --largeur: 860px;
@@ -33,9 +67,46 @@
 
 * { box-sizing: border-box; }
 
+/* 🔴 INSTRUMENT SERIF REMPLACE MARELLE BATON — 31/10/2026, et c'est un GAIN.
+   La direction 2030 demande « une serif contemporaine, élégante, avec du
+   caractère » : Marelle Baton est une police de titrage expressive, mais sa
+   personnalité est celle d'une affiche, pas celle d'un beau livre de voyage.
+   ⭐ ET LE REMPLACEMENT ALLÈGE : Marelle pesait 41,0 Ko sous-ensemblée — le
+      fichier le plus lourd du site — contre 23,9 Ko pour Instrument Serif.
+      Le total des polices passe de 85,3 à 68,2 Ko : l'identité éditoriale
+      n'est pas payée, elle est GAGNÉE.
+   ⚠️ UNE SEULE GRAISSE, délibérément : le brief refuse qu'on les multiplie, et
+      les sept règles qui emploient cette police sont déjà toutes en 400. Aucune
+      ne peut donc déclencher de gras SYNTHÉTIQUE — ce faux gras que le
+      navigateur fabrique en épaississant les contours, et qui défigure
+      précisément les serifs à fort contraste.
+   ⛔ Auto-hébergée, comme les deux Rubik. Aucune police distante : un CDN de
+      polices casserait le hors-ligne, qui est le seul argument que le terrain
+      nous reconnaisse. Licence : INSTRUMENT-SERIF-OFL-LICENSE.txt.
+   Recette rejouable : `node scripts/polices.mjs <source.ttf> <sortie.woff2>`. */
+/* 🔴 LE REPLI EST AJUSTÉ EN MÉTRIQUE — mesuré, pas estimé. « Le monde commence
+   ici » à 80 px : Instrument Serif rend 670 px de large, Iowan Old Style 862,
+   Georgia 855. Avec `font-display: swap`, le titre s'affiche donc d'abord 22 %
+   TROP LARGE, puis saute quand la vraie police arrive — sur une accroche en
+   `clamp()` qui occupe deux lignes, ce saut change le nombre de lignes et
+   déplace tout ce qui suit.
+   ⭐ `size-adjust` corrige ça pour ZÉRO octet : on déclare une famille de repli
+      qui PUISE DANS LES POLICES LOCALES et les rétrécit au bon rapport —
+      670 / 862 = 77,7 %. Le lecteur ne voit plus qu'un changement de dessin,
+      jamais un changement de mise en page.
+   ⚠️ Le rapport est RELEVÉ sur cette chaîne-là, à cette taille-là. Il vaut pour
+      un titre ; il ne prétend rien pour un paragraphe entier, qu'aucun écran
+      ne compose dans cette police. Le re-mesurer si la serif change :
+         document.fonts.ready → mesurer un <span> en nowrap, hors flux. */
 @font-face {
-  font-family: "Marelle Baton 2";
-  src: url("./fonts/MarelleBaton2-Regular.woff2") format("woff2");
+  font-family: "Instrument repli";
+  src: local("Iowan Old Style"), local("Georgia"), local("Times New Roman");
+  size-adjust: 77.7%;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Instrument Serif";
+  src: url("./fonts/InstrumentSerif-Regular.woff2") format("woff2");
   font-weight: 400;
   font-display: swap;
 }
@@ -66,15 +137,52 @@ body {
   color: var(--ink);
   hyphens: auto;
 }
-/* Bleu nuit en fond de tout le site : les bulles blanches
-   flottent dessus, comme le footer. Motif torsades dorées
-   (esprit pull ARMOR lux) posé en filigrane discret. */
-html {
-  background:
-    url("/mana/motif.svg") repeat fixed,
-    var(--ink);
-  background-attachment: fixed;
-}
+/* 🔴 LA MARINIÈRE EST RETIRÉE — 31/10/2026, décision du fondateur.
+   ⚠️ Et le commentaire qui vivait ici décrivait des « torsades dorées » :
+      `motif.svg` ne contenait qu'UNE BANDE BLANCHE PLEINE. J'ai moi-même
+      qualifié ces bandes de « rendu cassé » deux fois dans la même soirée, en
+      me fiant à cette note plutôt qu'au fichier. ⭐ Une note qui survit à sa
+      cause ne se périme pas bruyamment : elle devient un témoin qu'on cite.
+   ⚠️ `background-attachment: fixed` part avec elle. Il n'avait de sens que
+      pour tenir le motif immobile au défilement ; sur un aplat il ne fait
+      rien — sauf, sur certains navigateurs mobiles, forcer une couche de
+      composition qui coûte à chaque image. Un réglage qui n'a plus d'objet
+      n'est pas neutre : il est juste invisible.
+   Le sol est un aplat de sable, et rien d'autre. */
+/* 🔴 LE HTML N'A PLUS DE FOND, ET C'EST LA CONDITION DU FOND TOURNANT.
+   Le fond de l'élément racine est propagé au CANEVAS, et le canevas est peint
+   sous TOUT — y compris sous un élément en `z-index: -1`. Le fond tournant
+   était donc parfaitement chargé, parfaitement positionné, et parfaitement
+   invisible : forcé à `z-index: 5` il s'affichait, remis à −1 il disparaissait.
+   ⭐ Le piège classique des fonds en index négatif, et il ne se voit nulle
+      part dans le DOM : tout y est juste. Il se trouve par MUTATION, en
+      changeant une valeur pour voir ce qui bouge.
+   ⚠️ ET LE REPLI NE PEUT PAS VIVRE SUR `#root` NON PLUS — j'ai essayé. Dans
+      l'ordre de peinture CSS, le fond d'un bloc en flux (étape 3) passe
+      APRÈS les descendants à index négatif (étape 2) : un `#root` opaque
+      recouvrait le fond exactement comme le canevas. Le même piège, un cran
+      plus bas.
+   ⭐ La règle qui en sort : AUCUN ancêtre d'un élément en `z-index: -1` ne
+      peut porter un fond opaque. Le repli sable vit donc DANS `.fond`
+      lui-même, et sur la colonne de l'application — ni l'un ni l'autre n'est
+      un ancêtre du fond tournant. */
+
+/* 🔴 CETTE FEUILLE N'AVAIT AUCUNE RÈGLE DE BASE POUR `a` — découvert le 31/10
+   en mesurant. Sur `/promenade/…/complet`, l'attribution « Tracé réel issu
+   d'OpenStreetMap » rendait en #1115af : le BLEU PAR DÉFAUT DU NAVIGATEUR,
+   à 1,06 de contraste sur la bulle. Illisible.
+   ⭐ Le défaut n'est pas ce lien-là, c'est qu'il n'y avait rien en dessous de
+      lui. Chaque lien de l'app portait une classe ; celui qui n'en portait pas
+      tombait hors de la charte, et personne ne le voyait tant que le sol était
+      clair — le bleu du navigateur passe l'AA sur de la craie (6,9). Changer
+      le sol a révélé un trou qui existait depuis le début.
+   ⛔ Et ce lien-là, précisément, est l'ATTRIBUTION ODbL. Elle doit voyager avec
+      la donnée ; la rendre illisible, c'est ne plus l'attribuer.
+   ⭐ On ne corrige donc pas la ligne 261 de `Promenade.tsx` : on pose le SOL.
+      Un lien qui oublie sa classe doit tomber dans la charte, pas chez le
+      navigateur — y compris celui qui sera écrit demain. Spécificité 0-0-1 :
+      toutes les classes existantes continuent de gagner. */
+a { color: var(--texte-action); text-underline-offset: 3px; }
 
 .wrap { max-width: var(--largeur); margin: 0 auto; padding: 0 var(--sp-4); }
 /* PWA/mobile : jamais plus large que l'écran réel */
@@ -98,20 +206,36 @@ html {
   align-items: center;
   justify-content: center;
   gap: var(--sp-4);
-  background: var(--sand);
-  border: 1px solid var(--or);
-  border-radius: 999px;
-  box-shadow:
-    inset 0 2px 6px rgb(255 255 255 / 85%),
-    0 4px 12px rgb(27 42 74 / 10%),
-    0 0 0 4px rgb(201 162 39 / 14%),
-    0 36px 80px rgb(27 42 74 / 26%);
+  /* 🔴 LA BARRE DU BAS ÉTAIT LA DERNIÈRE SURFACE BLANCHE, et c'est celle
+     qu'on voit sur TOUS les écrans — la seule qui ne disparaît jamais au
+     défilement. Une pastille de craie qui flotte en permanence au-dessus
+     d'un objet de nuit : c'est là que l'incohérence se voyait le plus, et
+     c'est la raison pour laquelle le fondateur l'a nommée. Même matière que
+     les bulles : l'application devient un seul objet du titre au pied. */
+  background: var(--bulle);
+  color: var(--bulle-texte);
+  /* le verre : le flou de l'arrière-plan + le liseré. ⚠️ `-webkit-` d'abord,
+     Safari ne lit que lui sur les versions encore en service. */
+  -webkit-backdrop-filter: var(--bulle-flou);
+  backdrop-filter: var(--bulle-flou);
+  border: 1px solid var(--bulle-trait);
+  border-radius: var(--r-rond);
+  box-shadow: var(--ombre-levee), var(--bulle-eclat);
   padding: var(--sp-1) var(--sp-4);
   max-width: var(--largeur);
   width: fit-content;
 }
+/* ⭐ « AUSSI HAUT QUE LES ICÔNES » SE MESURE SUR L'ENCRE, PAS SUR LES BOÎTES.
+   Un SVG de 48 px ne dessine pas sur 48 px — son `getBBox()` rend 16,2 unités
+   sur la grille 24, soit **32,4 px** peints. Et une capitale n'occupe pas sa
+   ligne : la hauteur de capitale d'Instrument Serif, relevée au pixel sur un
+   canvas, vaut **0,75 em**. D'où 32,4 / 0,75 = **43,2 px**, et les capitales
+   de MANA font alors exactement la hauteur du dessin des icônes.
+   ⚠️ Égaliser les deux `font-size`/`height` aurait donné une marque VISUELLEMENT
+      plus petite d'un tiers, tout en étant « au même nombre » — la mesure juste
+      rapportée au mauvais objet. */
 .brand {
-  font-family: "Marelle Baton 2", var(--serif);
+  font-family: var(--serif);
   font-size: var(--t-m);
   font-weight: 400;
   color: var(--ink);
@@ -131,30 +255,24 @@ html {
   font-size: var(--t-xs);
   white-space: nowrap;
   padding: 8px 16px;
-  border-radius: 999px;
+  border-radius: var(--r-rond);
   border: 1px solid transparent;
   transition: box-shadow 160ms ease, transform 160ms ease, border-color 160ms ease;
 }
 .nav a:hover {
   color: var(--primary);
-  border-color: var(--ecume);
-  box-shadow:
-    inset 0 1px 2px rgb(255 255 255 / 90%),
-    0 3px 8px rgb(27 42 74 / 12%);
+  border-color: var(--bulle-trait);
+  box-shadow: var(--ombre-carte);
   transform: translateY(-1px);
 }
 .nav .nav-cta {
   color: var(--primary);
-  background: rgb(255 255 255 / 70%);
-  border-color: var(--ecume);
-  box-shadow:
-    inset 0 1px 2px rgb(255 255 255 / 90%),
-    0 3px 10px rgb(27 42 74 / 14%);
+  background: var(--bulle-creux);
+  border-color: var(--bulle-trait);
+  box-shadow: var(--ombre-carte);
 }
 .nav .nav-cta:hover {
-  box-shadow:
-    inset 0 1px 2px rgb(255 255 255 / 90%),
-    0 6px 16px rgb(27 42 74 / 20%);
+  box-shadow: var(--ombre-carte);
   transform: translateY(-1px);
 }
 /* Mobile : icônes seules — le libellé passe en sr-only */
@@ -185,11 +303,11 @@ html {
   font-size: var(--t-xs);
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--primary);
+  color: var(--primary-texte);
   margin: 0 0 var(--sp-2);
 }
 .hero h1.brand-grand {
-  font-family: "Marelle Baton 2", var(--serif);
+  font-family: var(--serif);
   font-size: clamp(2.4rem, 7vw, 4.5rem);
   white-space: nowrap;
   line-height: 1.1;
@@ -208,16 +326,67 @@ html {
 /* ===== Système bulle : UNE seule bulle, identique partout =====
    Forme synapse : blob organique (rayons mixtes), anneau or,
    reflet supérieur, ombre de lévitation — la signature MANA. */
+/* 🔴 LES BULLES PASSENT À LA CHARTE 2030 — 31/10/2026.
+   Ce qui change, et pourquoi chaque point :
+   · LE FOND. Blanc pur → craie pure (#f7f5ec). Sur un sol de sable, un blanc
+     pur ne se lit pas comme une surface posée : il se lit comme un trou. La
+     craie appartient à la même famille que le sol, d'un cran plus clair.
+   · L'ANNEAU D'OR. Supprimé. Il cerclait chaque bulle d'un trait doré pour
+     la détacher du bleu nuit ; sur le sable il devient un liseré qui ne
+     sépare plus rien. ⭐ Un contour existe pour résoudre un manque de
+     contraste entre deux surfaces — quand le contraste change, le contour
+     n'est plus un style, c'est un vestige.
+   · LA FORME. Rayons organiques mixtes (44/56/40/52…) → un rayon unique.
+     Le blob « synapse » datait d'une charte précédente ; la 2030 demande des
+     « rayons généreux mais maîtrisés ». Une forme irrégulière attire l'œil
+     sur le contenant, pas sur le contenu.
+   · L'OMBRE. Quatre couches, dont un reflet intérieur blanc à 85 % et une
+     ombre de lévitation de 80 px → une ombre diffuse, teintée en nuit. Le
+     §8.3 refuse « les grosses ombres de cartes standard ».
+   ⚠️ Ce qu'on perd, assumé : la signature « synapse ». Elle était
+      reconnaissable ; elle appartenait au bleu nuit. */
+/* ═══ LE CONTEXTE DE BULLE — 31/10/2026 ══════════════════════════════════
+   ⭐ UNE BULLE N'EST PAS UNE COULEUR, C'EST UN FOND. Trente-six règles de
+      cette feuille nommaient `--ink` ou `--primary` : des valeurs calculées
+      POUR LA CRAIE, posées sur une bulle devenue sombre. Les corriger une par
+      une, c'était trente-six occasions d'en oublier une — et la trente-septième
+      serait écrite demain par quelqu'un qui ne sait pas.
+   ⭐ Les trois rôles de TEXTE sont donc REDÉFINIS À LA PORTÉE DE LA BULLE :
+      tout descendant suit, présent et futur, sans être nommé.
+   ⚠️ Les rôles de TEXTE seulement. `--craie-pure` reste intouché : c'est une
+      MATIÈRE (§1), et `photo[data-cadrage="entier"]` s'en sert pour le papier
+      d'un plan de 1695. Un document n'a pas de thème — assombrir son fond
+      n'est pas une variante, c'est une falsification. Les surfaces posées sur
+      la bulle sont donc retournées UNE PAR UNE, plus bas : elles se comptent. */
+.bulle,
+.bulle-xl,
+.page-panel,
+.site-header .wrap,
+.site-footer > .wrap,
+.swipe-carte,
+.balade-unique,
+.moteur-barre,
+.moteur-categorie-btn,
+.balade-btn {
+  --ink:           var(--bulle-texte);
+  --primary:       var(--bulle-action);
+  --primary-texte: var(--bulle-action);
+  --or:            var(--bulle-action);
+  --texte-action:  var(--bulle-action);
+  --texte-doux:    var(--bulle-texte-doux);
+}
+
 .bulle,
 .bulle-xl {
-  background: var(--blanc-chaud);
-  border: 1px solid var(--or);
-  border-radius: 44px 56px 40px 52px / 52px 42px 56px 46px;
-  box-shadow:
-    inset 0 2px 6px rgb(255 255 255 / 85%),
-    0 4px 12px rgb(27 42 74 / 10%),
-    0 0 0 4px rgb(201 162 39 / 14%),
-    0 36px 80px rgb(27 42 74 / 26%);
+  background: var(--bulle);
+  color: var(--bulle-texte);
+  /* le verre : le flou de l'arrière-plan + le liseré. ⚠️ `-webkit-` d'abord,
+     Safari ne lit que lui sur les versions encore en service. */
+  -webkit-backdrop-filter: var(--bulle-flou);
+  backdrop-filter: var(--bulle-flou);
+  border: 1px solid var(--bulle-trait);
+  border-radius: var(--r-xl);
+  box-shadow: var(--ombre-carte), var(--bulle-eclat);
   padding: var(--sp-2) var(--sp-4) var(--sp-2);
   text-align: center;
   max-width: var(--largeur);
@@ -227,7 +396,7 @@ html {
 .bulle-xl { padding: var(--sp-4) var(--sp-6) var(--sp-6); }
 @media (max-width: 720px) {
   .bulle, .bulle-xl {
-    border-radius: 28px 36px 24px 32px / 32px 26px 36px 30px;
+    border-radius: var(--r-l);
     padding: var(--sp-4);
   }
   .site-header .wrap {
@@ -263,7 +432,7 @@ html {
   font-size: var(--t-xs);
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--primary);
+  color: var(--primary-texte);
   margin: 0 0 var(--sp-2);
 }
 .section-title {
@@ -280,17 +449,30 @@ html {
   font-size: var(--t-m);
   margin: 0 0 var(--sp-2);
 }
-.section-texte { margin: 0 0 var(--sp-2); opacity: 0.85; }
+.section-texte { margin: 0 0 var(--sp-2); color: var(--bulle-texte-doux); opacity: var(--attenuation); }
 
 /* Sous-bulle : l'accroche et le texte vivent dans une bulle
    intérieure encre, posée dans la bulle de section */
 .sous-bulle {
-  background: rgb(27 42 74 / 82%);
-  border: 1px solid rgb(27 42 74 / 55%);
-  border-radius: 20px 26px 18px 24px;
-  box-shadow:
-    inset 0 1px 3px rgb(255 255 255 / 12%),
-    0 3px 10px rgb(27 42 74 / 14%);
+  /* 🔴 LA BULLE SOMBRE NE DÉCLARAIT AUCUNE COULEUR DE TEXTE. `.section-accroche`
+     en posait une explicitement (8,01), mais `.section-texte` héritait de
+     `--ink` — du bleu nuit sur une bulle bleu nuit. Sur l'ancien sol, la
+     composition donnait EXACTEMENT la couleur du texte : 1,00. Invisible,
+     depuis toujours, sur la page d'accueil.
+     ⭐ Un conteneur qui change le fond doit changer la couleur du texte dans
+        la même règle. Les séparer, c'est parier que chaque enfant pensera à
+        se redéclarer — et il y en a toujours un qui n'y pense pas. */
+  /* 🔴 ET ELLE EST RESTÉE BLEU NUIT quand tout le reste est passé au doré —
+     dernière surface de l'app à porter l'ancienne charte, et la plus visible
+     puisqu'elle est au centre de l'accueil et de la page radio.
+     ⭐ Elle a un rôle qui existait déjà : un CREUX dans la bulle. Elle prend
+        donc `--bulle-creux`, comme les champs de saisie — même matière, même
+        famille, et elle suivra le dégradé si on le change encore. */
+  color: var(--bulle-texte);
+  background: var(--bulle-creux);
+  border: 1px solid var(--bulle-trait);
+  border-radius: var(--r-l);
+  box-shadow: var(--ombre-carte);
   padding: var(--sp-4);
   margin: 0 auto;
   max-width: 46ch;
@@ -301,68 +483,110 @@ html {
     width: 100%;
     margin-left: 0;
     margin-right: 0;
-    border-radius: 16px 16px 24px 24px;
+    border-radius: var(--r-l);
   }
   .bulle.landing-section { padding-bottom: var(--sp-2); }
 }
-.sous-bulle .section-accroche { font-size: var(--t-l); color: var(--sand); }
-.sous-bulle .section-texte { font-size: var(--t-s); color: #fff; opacity: 0.92; }
+.sous-bulle .section-accroche { font-size: var(--t-l); color: var(--bulle-texte); }
+.sous-bulle .section-texte { font-size: var(--t-s); color: var(--bulle-texte-doux); opacity: var(--attenuation); }
 .sous-bulle .est-actions { margin-bottom: 0; }
 
 /* ===== Boutons ===== */
+/* ⭐ LES BOUTONS PRENNENT LA SERIF DU TITRE — Instrument Serif, celle de
+   « Le monde commence ici. ». Ils étaient en Rubik gras : la sans n'existait
+   plus que pour le corps de texte et les étiquettes, et l'action parlait donc
+   dans une langue que plus rien d'autre ne parlait.
+   ⚠️ Une serif de titre en petit corps gras se referme : la graisse tombe à
+      500 et le suivi s'ouvre un peu, sinon les contreformes se bouchent. */
 .btn {
   display: inline-block;
-  font-family: var(--sans);
-  font-weight: 700;
+  font-family: var(--titre);
+  font-weight: 500;
+  letter-spacing: 0.01em;
   font-size: var(--t-s);
   padding: 12px 26px;
-  border-radius: 999px;
+  border-radius: var(--r-rond);
   border: 1px solid var(--primary);
   text-decoration: none;
   cursor: pointer;
-  box-shadow: inset 0 1px 2px rgb(255 255 255 / 25%);
+  box-shadow: var(--ombre-carte);
   transition: all 170ms ease;
 }
 .btn:hover { transform: translateY(-1px); }
+/* ═══ L'ACTION EST DORÉE — 31/10/2026, demandé en cours de passe ══════════
+   Elle était kaki depuis le 30/10 (« tous les boutons bleus deviennent kaki »).
+   ⭐ Et c'est la charte qui tranche la couleur du texte, pas moi : `--action`
+      et `--action-texte` existent au §3 des tokens, mesurés à 7,2 — le rôle
+      « bouton » était défini depuis le début, c'est le composant qui nommait
+      une matière à sa place. On revient au rôle ; le kaki s'en va des actions
+      et reste ce qu'il est, la matière des surfaces immersives.
+   ⚠️ Le commentaire qui vivait ici expliquait pourquoi le survol n'était PAS
+      l'or : il décrivait un bouton kaki, et ce bouton n'existe plus. Il part
+      avec sa cause — une note qui survit à la sienne devient un faux témoin. */
 .btn-primary {
-  background: var(--ink);
-  color: var(--sand);
-  border-color: var(--ink);
-  box-shadow:
-    inset 0 1px 2px rgb(255 255 255 / 18%),
-    0 6px 18px rgb(27 42 74 / 22%);
+  background: var(--action);
+  color: var(--action-texte);
+  border-color: var(--action);
+  box-shadow: var(--ombre-carte);
 }
 .btn-primary:hover {
-  background: var(--primary);
-  border-color: var(--primary);
+  background: var(--action-survol);
+  border-color: var(--action-survol);
 }
 .btn-ghost {
-  background: rgb(255 255 255 / 75%);
-  color: var(--primary);
-  border-color: var(--ecume);
-  box-shadow: inset 0 1px 2px rgb(255 255 255 / 85%);
+  /* 🔴 OPAQUE DEPUIS LE 31/10. Ce bouton était à 75 % de blanc : il
+     empruntait sa couleur au fond, ce qui marchait tant que le fond était un
+     aplat. Depuis que le fond tourne, il emprunte celle d'une image qui
+     change toutes les six secondes — son texte est tombé à 2,99.
+     ⭐ Une surface semi-transparente n'a pas de couleur : elle a celle de ce
+        qu'elle recouvre. Sur un fond fixe c'est une élégance ; sur un fond
+        qui change, c'est un contraste qu'on ne peut plus garantir. */
+  /* 🔴 ET IL EST REDEVENU SOMBRE LE MÊME SOIR, pour la raison inverse : la
+     surface opaque qui le sauvait était BLANCHE, et le blanc est précisément
+     ce que la bulle vient de retirer de la charte. L'opacité reste — c'est
+     elle qui garantit le contraste sur un fond qui tourne — mais dans la
+     matière de la bulle. ⭐ Deux corrections du même soir peuvent viser le
+     même défaut par deux bouts : celle-ci garde la LEÇON (opaque) et jette
+     la VALEUR (le blanc). */
+  background: var(--bulle-unie);
+  /* ⚠️ `--primary` donnait 3,09 sur ce fond — 75 % de blanc par-dessus le
+     sable, soit rgb(251,250,247). Il tenait quand le sol était bleu nuit
+     (4,42) parce que la transparence laissait passer du sombre : changer le
+     SOL a changé la couleur du BOUTON, sans toucher au bouton.
+     ⭐ Une surface semi-transparente n'a pas de couleur : elle a celle de ce
+        qu'elle recouvre. C'est la première à casser quand le fond bouge, et
+        la dernière à laquelle on pense. */
+  color: var(--bulle-action);
+  border-color: var(--bulle-trait);
+  box-shadow: var(--ombre-carte);
 }
 .btn-ghost:hover {
-  background: var(--or);
-  color: #fff;
-  border-color: var(--or);
-  box-shadow:
-    inset 0 1px 2px rgb(255 255 255 / 25%),
-    0 6px 18px rgb(201 162 39 / 35%);
+  background: var(--bulle-survol);
+  color: var(--craie);
+  border-color: var(--bulle-trait);
+  box-shadow: var(--ombre-carte);
 }
-/* Boutons dans la sous-bulle encre : blanc plein et blanc contour */
+/* Boutons dans la sous-bulle encre : blanc plein et blanc contour.
+   🔴 MESURÉ À 1,09 LE 31/10 — et c'est le contexte de bulle qui l'avait cassé.
+      Ce bouton est VOLONTAIREMENT blanc ; il nommait `--ink`, un RÔLE, et le
+      rôle a été redéfini sous lui pour un fond sombre. Sa surface, elle, n'a
+      pas changé.
+   ⭐ UN CONTEXTE QUI REDÉFINIT UN RÔLE ATTRAPE L'ENFANT QUI AVAIT CHOISI
+      L'AUTRE CAMP EN TOUTE LÉGITIMITÉ. La règle du §3 — « un composant nomme
+      un rôle, jamais une matière » — a donc une exception, et elle est
+      nommable : un composant qui porte SA PROPRE surface doit porter SA PROPRE
+      couleur de texte, car il ne descend plus du fond de son parent. C'est le
+      seul endroit de la feuille où une matière se nomme à dessein. */
 .btn-clair {
-  background: var(--blanc-chaud);
-  color: var(--ink);
-  border-color: var(--blanc-chaud);
-  box-shadow:
-    inset 0 1px 2px rgb(255 255 255 / 90%),
-    0 6px 18px rgb(27 42 74 / 25%);
+  background: var(--craie-pure);
+  color: var(--texte);
+  border-color: var(--craie);
+  box-shadow: var(--ombre-carte);
 }
-.btn-clair:hover { background: var(--sand); color: var(--primary); border-color: var(--sand); }
+.btn-clair:hover { background: var(--fond-surelevé); color: var(--texte-action); border-color: var(--craie); }
 .btn-clair-ghost {
   background: transparent;
-  color: var(--sand);
+  color: var(--craie);
   border-color: rgb(255 255 255 / 45%);
 }
 .btn-clair-ghost:hover {
@@ -390,32 +614,38 @@ html {
 .moteur-categorie-btn {
   font: inherit;
   font-size: var(--t-xs);
-  color: var(--ink);
-  background: rgb(255 255 255 / 55%);
-  border: 1px solid var(--ecume);
-  border-radius: 999px;
+  /* 🔴 55 % DE BLANC SUR UN FOND QUI TOURNE — le défaut exact que le bouton
+     fantôme vient de corriger, dix lignes plus haut, et qui vivait encore ici.
+     ⭐ Corriger un composant ne corrige pas un MOTIF : il faut compter les
+        porteurs. Trois sur cette feuille, pas un. */
+  color: var(--bulle-texte);
+  background: var(--bulle-unie);
+  border: 1px solid var(--bulle-trait);
+  border-radius: var(--r-rond);
   padding: 6px 16px;
   cursor: pointer;
   transition: all 160ms ease;
 }
-.moteur-categorie-btn:hover { border-color: var(--or); }
+.moteur-categorie-btn:hover { border-color: var(--bulle-trait); }
 .moteur-categorie-btn.on {
-  background: var(--ink);
-  color: var(--sand);
-  border-color: var(--ink);
+  background: var(--action);
+  color: var(--action-texte);
+  border-color: var(--action);
 }
 .moteur-barre {
   display: flex;
   align-items: center;
   gap: var(--sp-1);
-  background: var(--blanc-chaud);
-  border: 1px solid var(--ecume);
-  border-radius: 999px;
+  background: var(--bulle);
+  color: var(--bulle-texte);
+  /* le verre : le flou de l'arrière-plan + le liseré. ⚠️ `-webkit-` d'abord,
+     Safari ne lit que lui sur les versions encore en service. */
+  -webkit-backdrop-filter: var(--bulle-flou);
+  backdrop-filter: var(--bulle-flou);
+  border: 1px solid var(--bulle-trait);
+  border-radius: var(--r-rond);
   padding: 6px 6px 6px 18px;
-  box-shadow:
-    inset 0 2px 6px rgb(255 255 255 / 85%),
-    0 4px 12px rgb(27 42 74 / 8%),
-    0 0 0 4px rgb(201 162 39 / 10%);
+  box-shadow: var(--ombre-carte), var(--bulle-eclat);
 }
 .moteur-loupe {
   width: 18px;
@@ -438,14 +668,11 @@ html {
 }
 .moteur-barre input:focus { outline: none; }
 .moteur-barre:focus-within {
-  box-shadow:
-    inset 0 2px 6px rgb(255 255 255 / 85%),
-    0 4px 12px rgb(27 42 74 / 8%),
-    0 0 0 4px rgb(201 162 39 / 28%);
+  box-shadow: var(--ombre-carte);
 }
-.moteur-note { font-size: var(--t-xs); opacity: 0.6; margin: var(--sp-2) 0 0; }
+.moteur-note { font-size: var(--t-xs); color: var(--bulle-texte-doux); opacity: var(--attenuation); margin: var(--sp-2) 0 0; }
 @media (max-width: 720px) {
-  .moteur-barre { flex-wrap: nowrap; border-radius: 999px; padding: 6px; }
+  .moteur-barre { flex-wrap: nowrap; border-radius: var(--r-rond); padding: 6px; }
   .moteur-loupe { display: none; }
   .moteur-barre input { flex: 1 1 auto; min-width: 0; font-size: var(--t-s); padding: 10px 10px; border: none; }
 }
@@ -483,7 +710,10 @@ html {
 }
 .moteur-fleche:hover {
   transform: translateX(2px);
-  box-shadow: 0 4px 14px rgb(201 162 39 / 45%);
+  /* ⚠️ Une ombre TEINTÉE EN OR sous un bouton or : elle simulait un halo de
+     la charte bleu nuit. Sur la craie, elle salit le pourtour au lieu de le
+     détacher. L'ombre de la charte est teintée en NUIT, toujours. */
+  box-shadow: var(--ombre-carte);
 }
 /* ⚠️ 44 px : la cible tactile minimale, et APRÈS la base pour qu'elle gagne. */
 @media (max-width: 720px) {
@@ -504,13 +734,22 @@ html {
   font-size: var(--t-xs);
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--primary);
+  color: var(--primary-texte);
   margin: 0 0 var(--sp-2);
 }
 .page-panel {
-  background: var(--blanc-chaud);
-  border: 1px solid var(--or);
-  border-radius: 12px;
+  /* ⭐ MÊME MATIÈRE QUE LES BULLES. Un panneau et une bulle ne sont pas deux
+     objets différents : ce sont deux tailles du même. Leur donner deux
+     surfaces, c'était inventer une distinction que rien ne portait. */
+  background: var(--bulle);
+  color: var(--bulle-texte);
+  /* le verre : le flou de l'arrière-plan + le liseré. ⚠️ `-webkit-` d'abord,
+     Safari ne lit que lui sur les versions encore en service. */
+  -webkit-backdrop-filter: var(--bulle-flou);
+  backdrop-filter: var(--bulle-flou);
+  border: 1px solid var(--bulle-trait);
+  border-radius: var(--r-l);
+  box-shadow: var(--ombre-carte), var(--bulle-eclat);
   padding: var(--sp-6);
   max-width: var(--largeur);
   margin: 0 auto var(--sp-4);
@@ -524,7 +763,26 @@ html {
   color: var(--ink);
 }
 .page-texte { margin: 0; line-height: 1.7; }
-.page-note { font-size: var(--t-xs); opacity: 0.6; margin-top: var(--sp-4); max-width: 60ch; }
+/* ⚠️ 0,6 donnait 4,02 pour un texte de 14 px, qui en exige 4,5. Défaut
+   PRÉEXISTANT — il ne vient pas du changement de sol, cette note vit sur un
+   panneau blanc — mais relevé par le balayage, donc corrigé : 0,66 donne
+   4,81. ⭐ Une opacité est une couleur qu'on n'a pas nommée ; elle échappe à
+   toute relecture de palette et ne se mesure qu'à l'écran. */
+.page-note { font-size: var(--t-xs); color: var(--bulle-texte-doux); opacity: var(--attenuation); margin-top: var(--sp-4); max-width: 60ch; }
+/* 🔴 L'ATTRIBUTION ODbL VIT DANS UNE NOTE À 0,66 D'OPACITÉ, et c'est là que
+   le lien s'est perdu une seconde fois : la règle de base l'a sorti du bleu
+   du navigateur (1,06 → 3,55), mais l'opacité du parent s'applique AUSSI à
+   lui — l'ocre clair rendait en (162,142,90) au lieu de (220,184,110).
+   ⭐ SUR UNE SURFACE ATTÉNUÉE, LA COULEUR NE PEUT PLUS PORTER L'AFFORDANCE
+      DU LIEN ; le soulignement, oui. C'est la même leçon que le fond tournant
+      — une couleur qu'on ne contrôle plus ne porte plus d'information — et le
+      remède est le même : passer la charge à ce qui ne dépend pas du fond.
+   ⛔ Et ce n'est pas un détail d'esthétique : atténuer une attribution jusqu'à
+      l'illisible, c'est ne plus attribuer. La licence voyage DANS l'artefact. */
+.page-note a,
+.contact-note a,
+.footer-note a,
+.moteur-note a { color: inherit; text-decoration: underline; }
 
 /* ===== Footer bulle encre ===== */
 .site-footer {
@@ -533,19 +791,21 @@ html {
   font-size: var(--t-xs);
 }
 .site-footer > .wrap {
-  background: var(--ink);
-  border: 1px solid var(--ecume);
-  border-radius: 44px 56px 40px 52px / 52px 42px 56px 46px;
-  box-shadow:
-    inset 0 2px 6px rgb(255 255 255 / 85%),
-    0 4px 12px rgb(27 42 74 / 10%),
-    0 0 0 4px rgb(201 162 39 / 14%),
-    0 36px 80px rgb(27 42 74 / 26%);
+  /* ⭐ LE PIED PREND LA MÊME MATIÈRE QUE TOUT LE RESTE. Il était le dernier
+     aplat de la page — un kaki plein, posé sous des bulles de verre. Le kaki
+     n'est pas perdu : il est l'arrêt BAS du dégradé de la bulle, donc le pied
+     garde sa couleur et gagne la matière. Du titre au pied, un seul objet. */
+  background: var(--bulle);
+  -webkit-backdrop-filter: var(--bulle-flou);
+  backdrop-filter: var(--bulle-flou);
+  border: 1px solid var(--bulle-trait);
+  border-radius: var(--r-xl);
+  box-shadow: var(--ombre-levee), var(--bulle-eclat);
   padding: var(--sp-3) var(--sp-4);
   max-width: var(--largeur);
 }
 @media (max-width: 720px) {
-  .site-footer > .wrap { padding: var(--sp-4); border-radius: 20px 28px 18px 26px; }
+  .site-footer > .wrap { padding: var(--sp-4); border-radius: var(--r-l); }
 }
 /* Sur desktop le wrap du footer garde son padding interne : le
    panneau reprend ces 32px pour s'aligner sur le header */
@@ -572,7 +832,7 @@ html {
   gap: var(--sp-4);
   flex-wrap: wrap;
   padding-bottom: var(--sp-2);
-  color: var(--sand);
+  color: var(--craie);
   align-items: flex-start;
 }
 .footer-colonnes > div,
@@ -582,30 +842,42 @@ html {
   padding: 0;
 }
 .footer-colonnes .brand { font-size: var(--t-m); margin: 0 0 var(--sp-1); }
-.site-footer .brand { color: #fff; }
-.footer-note { font-size: var(--t-xs); opacity: 0.8; margin-top: var(--sp-1); max-width: 55ch; }
+.site-footer .brand { color: var(--bulle-texte); }
+/* ⚠️ L'OR DU FOOTER CHANGE PARCE QUE SON FOND A CHANGÉ. #b08a2e donnait 4,42
+   sur le bleu nuit — déjà limite — et 3,43 sur le kaki. ⭐ Un accent n'a pas
+   de contraste en soi : il en a un PAR RAPPORT à ce qu'il y a dessous. Déplacer
+   la surface sans remesurer l'accent, c'est déplacer le problème sans le voir.
+   `--ocre-clair` est l'ocre de la charte éclairci : 5,85 sur le kaki. */
+.site-footer .apercu-label,
+.site-footer .footer-nav a:hover { color: var(--bulle-action); }
+.footer-note { font-size: var(--t-xs); color: var(--bulle-texte-doux); opacity: var(--attenuation); margin-top: var(--sp-1); max-width: 55ch; }
 .footer-nav { display: flex; flex-direction: column; gap: 6px; }
-.footer-nav a {
-  color: var(--sand);
-  text-decoration: none;
-  display: inline-block;
-  background: rgb(255 255 255 / 8%);
-  border: 1px solid rgb(255 255 255 / 25%);
-  border-radius: 14px 18px 12px 16px;
-  padding: 6px 14px;
-  font-size: var(--t-xs);
-  transition: all 160ms ease;
-}
+/* 🔴 LA RÈGLE QUI VIVAIT ICI ÉTAIT MORTE depuis longtemps — une pastille de
+   blanc à 8 % avec un contour à 25 %, annulée ligne pour ligne par une
+   seconde `.footer-nav a` plus bas, qui porte `!important` sur le fond, le
+   contour, le rayon, la marge et la couleur. Je suis venu la corriger en
+   croyant tenir le défaut : elle ne rendait rien depuis le début.
+   ⭐ VÉRIFIER LA RÈGLE QUI GAGNE, PAS UNE RÈGLE QUI PORTE LE NOM. Le sélecteur
+      juste au mauvais endroit du fichier est le plus coûteux des faux amis :
+      il se lit comme la cause et se corrige sans effet. */
 .footer-nav a:hover {
-  background: var(--sand);
+  background: var(--fond-surelevé);
   color: var(--ink);
-  border-color: var(--sand);
+  border-color: var(--craie);
   transform: translateY(-1px);
 }
 
 /* ===== Formulaire de contact ===== */
 .contact-form { margin-top: var(--sp-2); text-align: left; }
-.contact-form .apercu-label { color: var(--primary); }
+/* ⛔ RETIRÉE LE 31/10. Elle ne faisait que REDIRE la couleur de base de
+   `.apercu-label` — mais avec la même spécificité (0,2,0) et plus bas dans le
+   fichier, elle gagnait contre `.site-footer .apercu-label`. Résultat : le
+   libellé du footer restait en #b08a2e, 3,43 sur le kaki, alors que DEUX
+   corrections le visaient.
+   ⭐ Une règle qui répète la valeur par défaut ne fait rien — jusqu'au jour
+      où quelqu'un change la valeur par défaut. Alors elle fige l'ancienne,
+      silencieusement, et on relit son propre correctif sans comprendre.
+      C'est la règle QUI GAGNE qu'il faut lire, jamais celle qu'on a écrite. */
 .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2); }
 @media (max-width: 720px) { .contact-grid { grid-template-columns: 1fr; } }
 .contact-form .champ { margin-bottom: var(--sp-2); }
@@ -613,7 +885,7 @@ html {
   display: block;
   font-size: var(--t-xs);
   font-weight: 700;
-  color: var(--sand);
+  color: var(--craie);
   margin-bottom: 4px;
 }
 .contact-form .champ input,
@@ -622,9 +894,10 @@ html {
   font: inherit;
   font-size: var(--t-s);
   padding: 10px 14px;
-  border: 1px solid var(--ecume);
-  border-radius: 12px 16px 10px 14px;
-  background: var(--blanc-chaud);
+  border: 1px solid var(--bulle-trait);
+  border-radius: var(--r-m);
+  background: var(--bulle-creux);
+  color: var(--bulle-texte);
 }
 .contact-form .champ input:focus,
 .contact-form .champ textarea:focus {
@@ -635,11 +908,14 @@ html {
   font-size: var(--t-s);
   color: var(--ink);
   background: rgb(201 162 39 / 12%);
-  border: 1px solid var(--or);
-  border-radius: 14px 18px 12px 16px;
+  border: 1px solid var(--bulle-trait);
+  border-radius: var(--r-m);
   padding: var(--sp-2) var(--sp-4);
 }
-.contact-note { font-size: var(--t-xs); opacity: 0.6; margin-top: var(--sp-2); }
+/* ⚠️ Même défaut que `.page-note` : 0,6 donne 4,02 pour un texte de 14 px.
+   0,66 donne 4,81. Deux notes, deux opacités identiques, deux échecs —
+   et aucune des deux n'avait jamais été mesurée. */
+.contact-note { font-size: var(--t-xs); color: var(--bulle-texte-doux); opacity: var(--attenuation); margin-top: var(--sp-2); }
 
 /* ═══ LES ICÔNES VIVANTES DE LA BARRE ════════════════════════════════════
    ⚠️ LENTES À DESSEIN. Une barre de navigation est présente sur CHAQUE page :
@@ -647,9 +923,6 @@ html {
    secondes pour un tour d'aiguille, deux secondes et demie pour un cycle
    d'onde — on la remarque si on la regarde, jamais si on lit. */
 
-@keyframes boussole-tourne {
-  to { transform: rotate(360deg); }
-}
 .g-aiguille {
   /* ⚠️ `transform-box: view-box` est OBLIGATOIRE : sans lui, l'origine d'une
      transformation sur un élément SVG se calcule sur sa boîte englobante
@@ -657,15 +930,15 @@ html {
      cercle à côté de la rose. */
   transform-box: view-box;
   transform-origin: 12px 12px;
-  animation: boussole-tourne 9s linear infinite;
 }
 
-@keyframes onde-pulse {
-  0%, 100% { opacity: 0.3; }
-  45%      { opacity: 1; }
-}
-.g-onde { animation: onde-pulse 2.5s ease-in-out infinite; }
-.g-onde-2 { animation-delay: 0.45s; }
+/* ⛔ LES ICÔNES NE S'ANIMENT PLUS — 31/10/2026, demandé. Deux animations
+   vivaient ici : les ondes de la radio qui pulsaient, et la boussole qui
+   tournait en continu. ⭐ Une icône qui bouge dit « il se passe quelque
+   chose » ; dans une barre de navigation, il ne se passe rien — elle
+   réclamait l'attention pour une information qui n'existait pas. Les règles
+   partent entièrement plutôt que d'être neutralisées : une animation mise à
+   `none` se rallume au premier qui la croit désactivée par erreur. */
 
 /* ═══ LA FONCTION ACTIVE PASSE EN OR ═════════════════════════════════════
    ⭐ `aria-current="page"` porte les DEUX : il dit à un lecteur d'écran où
@@ -686,7 +959,7 @@ html {
   /* ⛔ Et l'animation aussi. Une icône qui tourne sans fin est exactement ce
      que ce réglage existe pour éteindre — l'or, lui, reste : c'est une
      information, pas un mouvement. */
-  .g-aiguille, .g-onde { animation: none !important; }
+  /* les icônes ne s'animent plus du tout : plus rien à neutraliser ici. */
 }
 
 /* ===== Hub : MANAradio au centre, dans le hero ===== */
@@ -695,7 +968,7 @@ html {
 
 /* ===== Fond bleu nuit : labels et titres de page en clair ===== */
 .page .hero-label { color: var(--or); }
-.page .page-titre { color: var(--sand); }
+.page .page-titre { color: var(--craie); }
 
 /* ===== Swipe des balades : scroll manuel, jamais auto ===== */
 .swipe-balades {
@@ -718,11 +991,15 @@ html {
   gap: 4px;
   text-decoration: none;
   text-align: left;
-  color: var(--ink);
-  background: var(--blanc-chaud);
-  border: 1px solid var(--or);
-  border-radius: 18px 24px 16px 22px;
-  box-shadow: inset 0 1px 2px rgb(255 255 255 / 85%), 0 4px 12px rgb(27 42 74 / 12%);
+  color: var(--bulle-texte);
+  background: var(--bulle);
+  /* le verre : le flou de l'arrière-plan + le liseré. ⚠️ `-webkit-` d'abord,
+     Safari ne lit que lui sur les versions encore en service. */
+  -webkit-backdrop-filter: var(--bulle-flou);
+  backdrop-filter: var(--bulle-flou);
+  border: 1px solid var(--bulle-trait);
+  border-radius: var(--r-l);
+  box-shadow: var(--ombre-carte), var(--bulle-eclat);
   padding: var(--sp-2);
   min-height: 120px;
   transition: transform 160ms ease;
@@ -736,7 +1013,7 @@ html {
   margin: 0;
 }
 .swipe-titre { font-weight: 700; font-size: var(--t-s); margin: 0; line-height: 1.3; }
-.swipe-meta { font-size: var(--t-xs); opacity: 0.65; margin: 0; }
+.swipe-meta { font-size: var(--t-xs); color: var(--bulle-texte-doux); opacity: var(--attenuation); margin: 0; }
 
 /* Moteur de localité dans le hero : la barre dans la bulle */
 .hero-moteur .moteur-barre { max-width: 520px; margin: 0 auto var(--sp-2); }
@@ -751,10 +1028,24 @@ html {
   clip-path: inset(50%);
 }
 
-/* Brand dans la nav : garde son style Marelle, pas de pilule */
+/* Brand dans la nav : la serif de titrage, pas de pilule */
+/* ⭐ « AUSSI HAUT QUE LES ICÔNES » SE MESURE SUR L'ENCRE, PAS SUR LES BOÎTES.
+   Un SVG de 48 px ne dessine pas sur 48 px : son `getBBox()` rend 16,2 unités
+   sur la grille 24, soit **32,4 px** peints. Et une capitale n'occupe pas sa
+   ligne : la hauteur de capitale d'Instrument Serif, relevée au pixel sur un
+   canvas, vaut **0,75 em**. D'où 32,4 / 0,75 = **43,2 px** — les capitales de
+   MANA font alors exactement la hauteur du dessin des icônes.
+   🔴 ET LA TAILLE EST POSÉE ICI, PAS SUR `.site-header .brand`, où je l'avais
+      écrite d'abord : elle n'a jamais rien fait. `.nav a.brand` compte (0,2,1)
+      contre (0,2,0). ⭐ Une règle au bon NOM, au mauvais endroit du fichier,
+      est le plus coûteux des faux amis — elle se lit comme la cause et se
+      corrige sans effet. J'ai soupçonné un service worker périmé (il y en
+      avait bien un, innocent de celle-ci) avant de chercher la règle qui
+      GAGNE. */
 .nav a.brand {
   font-family: var(--serif);
-  font-size: var(--t-l);
+  font-size: 43.2px;
+  line-height: 0.78;
   font-weight: 400;
   color: var(--ink);
   border: none;
@@ -775,11 +1066,15 @@ html {
   gap: 6px;
   text-decoration: none;
   text-align: left;
-  color: var(--ink);
-  background: var(--blanc-chaud);
-  border: 1px solid var(--or);
-  border-radius: 18px 26px 16px 24px;
-  box-shadow: inset 0 1px 2px rgb(255 255 255 / 85%), 0 4px 12px rgb(27 42 74 / 12%);
+  color: var(--bulle-texte);
+  background: var(--bulle);
+  /* le verre : le flou de l'arrière-plan + le liseré. ⚠️ `-webkit-` d'abord,
+     Safari ne lit que lui sur les versions encore en service. */
+  -webkit-backdrop-filter: var(--bulle-flou);
+  backdrop-filter: var(--bulle-flou);
+  border: 1px solid var(--bulle-trait);
+  border-radius: var(--r-l);
+  box-shadow: var(--ombre-carte), var(--bulle-eclat);
   padding: var(--sp-2);
   max-width: 320px;
   margin: 0 auto var(--sp-2);
@@ -787,9 +1082,9 @@ html {
 }
 .balade-unique:hover { transform: translateY(-2px); }
 .balade-carte {
-  border-radius: 12px 18px 10px 16px;
+  border-radius: var(--r-m);
   overflow: hidden;
-  background: var(--sand);
+  background: var(--fond-surelevé);
 }
 
 /* Nav fixe en bas : réserve l'espace pour ne pas masquer le footer */
@@ -817,8 +1112,9 @@ body {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  border: 1px solid var(--ecume);
-  background: var(--blanc-chaud);
+  border: 1px solid var(--bulle-trait);
+  background: var(--bulle-unie);
+  color: var(--bulle-texte);
   cursor: pointer;
   transition: all 160ms ease;
 }
@@ -833,14 +1129,14 @@ body {
 }
 .balade-x { color: var(--ink); }
 .balade-x:hover {
-  background: var(--ecume);
+  background: var(--bulle-survol);
   color: var(--ink);
   transform: translateY(-1px);
 }
 .balade-coeur { color: var(--primary); }
 .balade-coeur:hover {
   background: rgb(201 162 39 / 14%);
-  border-color: var(--or);
+  border-color: var(--bulle-trait);
   color: var(--primary);
   transform: translateY(-1px);
 }
@@ -859,17 +1155,20 @@ body {
   height: 64px;
   flex: 0 0 auto;
   border-radius: 50%;
-  border: 1px solid var(--or);
-  background: var(--ink);
+  border: 1px solid var(--action);
+  background: var(--action);
+  color: var(--action-texte);
   cursor: pointer;
-  box-shadow: 0 0 0 4px rgb(201 162 39 / 14%);
+  /* ⚠️ Un anneau d'or à 14 % — le dernier vestige du cerclage des bulles,
+     déjà retiré ailleurs ce soir. Il ne cerclait plus rien. */
+  box-shadow: var(--ombre-carte);
   transition: transform 160ms ease;
 }
 .radio-play:hover { transform: translateY(-1px); }
 .radio-play svg {
   width: 26px;
   height: 26px;
-  fill: var(--sand);
+  fill: var(--craie);
   stroke: none;
 }
 .radio-etat {
@@ -878,7 +1177,48 @@ body {
   font-size: var(--t-l);
   margin: 0 0 4px;
 }
-.radio-note { font-size: var(--t-xs); opacity: 0.6; margin: 0; }
+/* ⚠️ 0,6 donnait 3,9 pour un texte de 14 px. Troisième note du site à porter
+   cette opacité, troisième échec — `.page-note` et `.contact-note` avaient
+   déjà été relevées. ⭐ Une opacité est une couleur qu'on n'a pas nommée :
+   elle se recopie d'une règle à l'autre et échappe à toute relecture de
+   palette. */
+.radio-note { font-size: var(--t-xs); color: var(--bulle-texte-doux); opacity: var(--attenuation); margin: 0; }
+
+/* ── Le direct, branché le 31/10/2026 ─────────────────────────────────── */
+.radio-infos { min-width: 0; }
+/* ⚠️ `min-width: 0` sur l'enfant d'un flex : sans lui, un titre long refuse
+   de se couper et pousse le bouton hors de la bulle. */
+.radio-piste {
+  display: grid; grid-template-columns: auto 1fr;
+  gap: 2px var(--sp-2); margin: 0; align-items: baseline;
+}
+.radio-piste dt { margin: 0; }
+.radio-piste dd {
+  margin: 0; font-family: var(--titre); font-size: var(--t-m);
+  line-height: 1.25; overflow-wrap: anywhere;
+}
+.radio-horloge { margin-top: 4px; font-variant-numeric: tabular-nums; }
+.radio-jauge {
+  position: relative; height: 4px; margin-top: var(--sp-2);
+  border-radius: var(--r-rond); overflow: hidden;
+  background: var(--bulle-creux);
+}
+.radio-jauge-fait {
+  position: absolute; inset-block: 0; inset-inline-start: 0;
+  background: var(--action); border-radius: var(--r-rond);
+  /* ⚠️ La transition dure UNE SECONDE, la durée du tic : plus courte, la
+     jauge saccade ; plus longue, elle retarde sur l'horloge affichée à côté
+     — et deux mesures du même instant qui se contredisent se remarquent. */
+  transition: width 1s linear;
+}
+/* ⛔ Un bouton coupé ne doit pas AVOIR L'AIR cliquable : l'or part avec la
+   fonction. Sinon on clique, rien ne se passe, et on conclut que c'est
+   cassé plutôt qu'éteint. */
+.radio-play:disabled {
+  background: var(--bulle-creux); border-color: var(--bulle-trait);
+  cursor: not-allowed; transform: none;
+}
+.radio-play:disabled svg { fill: var(--bulle-texte-doux); }
 
 /* Footer élégant et compact : liens en liste verticale nue */
 .footer-nav {
@@ -892,15 +1232,19 @@ body {
   border-radius: 0 !important;
   padding: 2px 0 !important;
   font-size: var(--t-xs);
-  color: var(--sand) !important;
-  opacity: 0.85;
+  /* ⚠️ 0,85 d'opacité donnait 4,27 sur le verre doré — le dernier porteur de
+     l'atténuation-par-opacité, et celui que j'avais manqué parce que la règle
+     morte ci-dessus occupait sa place dans ma lecture. Ton mesuré, comme les
+     six autres. */
+  color: var(--bulle-texte-doux) !important;
+  opacity: var(--attenuation);
   text-decoration: none;
-  transition: opacity 140ms ease;
+  transition: color 140ms ease;
 }
 .footer-nav a:hover {
   background: none !important;
   transform: none !important;
-  color: var(--or) !important;
+  color: var(--bulle-action) !important;
   opacity: 1;
 }
 @media (min-width: 721px) {
@@ -913,10 +1257,10 @@ body {
 .carte-reelle { margin: 0; }
 .carte-plan {
   position: relative;
-  border-radius: 14px 18px 12px 16px;
+  border-radius: var(--r-m);
   overflow: hidden;
-  border: 1px solid var(--ecume);
-  background: var(--sand);
+  border: 1px solid var(--bulle-trait);
+  background: var(--fond-surelevé);
 }
 /* ⚠️ Le calque et les repères sont PAR-DESSUS la carte, jamais dedans :
    ajouter une source au style empêche les tuiles de se peindre. */
@@ -927,9 +1271,9 @@ body {
   pointer-events: none;
 }
 .carte-calque { width: 100%; height: 100%; }
-#trace-sous { fill: none; stroke: var(--blanc-chaud); stroke-width: 7; stroke-opacity: .85;
+#trace-sous { fill: none; stroke: var(--craie); stroke-width: 7; stroke-opacity: .85;
               stroke-linecap: round; stroke-linejoin: round; }
-#trace-trait { fill: none; stroke: #c0392b; stroke-width: 3;
+#trace-trait { fill: none; stroke: var(--ocre); stroke-width: 3;
                stroke-linecap: round; stroke-linejoin: round; }
 
 .carte-reperes { list-style: none; margin: 0; padding: 0; }
@@ -941,27 +1285,29 @@ body {
 }
 .carte-pastille {
   width: 14px; height: 14px; border-radius: 50%; flex: none;
-  background: var(--blanc-chaud); border: 3px solid var(--ink);
-  box-shadow: 0 1px 4px rgb(0 0 0 / 35%);
+  background: var(--craie-pure); border: 3px solid var(--ink);
+  /* ⛔ Une ombre NOIRE : sur un sol de sable chaud, le noir vire au gris
+     sale. La couleur du fond doit se lire DANS l'ombre. */
+  box-shadow: var(--ombre-carte);
 }
-.carte-repere-depart .carte-pastille { background: #2a9d4a; border-color: var(--blanc-chaud); }
-.carte-repere-arrivee .carte-pastille { background: #c0392b; border-color: var(--blanc-chaud); }
-.carte-repere-etape .carte-pastille { width: 11px; height: 11px; border-width: 2px; border-color: #c0392b; }
-.carte-repere-moi .carte-pastille { background: #2f6fdd; border-color: var(--blanc-chaud); }
+.carte-repere-depart .carte-pastille { background: var(--kaki); border-color: var(--craie); }
+.carte-repere-arrivee .carte-pastille { background: var(--ocre); border-color: var(--craie); }
+.carte-repere-etape .carte-pastille { width: 11px; height: 11px; border-width: 2px; border-color: var(--ocre); }
+.carte-repere-moi .carte-pastille { background: var(--nuit); border-color: var(--craie); }
 
 .carte-etiquette {
   font: 600 11px/1.2 var(--sans);
   color: var(--ink);
   background: rgb(255 255 255 / 88%);
-  padding: 2px 6px; border-radius: 5px;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 18%);
+  padding: 2px 6px; border-radius: var(--r-s);
+  box-shadow: var(--ombre-pose);
 }
 .carte-repere-depart .carte-etiquette,
 .carte-repere-arrivee .carte-etiquette { font-weight: 700; }
 
 .carte-credit {
   font: 400 var(--t-xs)/1.5 var(--sans);
-  color: #6b6558;
+  color: var(--texte-doux);
   margin-top: var(--sp-1);
 }
 .carte-credit a { color: inherit; }
@@ -982,56 +1328,47 @@ body {
    porte l'encre et épouse le texte.
    ⚠️ Cette note a décrit pendant une heure un bandeau EN LIGNE répété ligne
       à ligne. C'est faux depuis le 31/10 — la raison est juste en dessous. */
+/* ═══ LE HERO — SUR TOUTES LES PAGES ══════════════════════════════════════
+   🔴 LA BULLE DE TITRE EST SUPPRIMÉE. Elle enfermait le titre dans un ovale
+      kaki posé sur le fond ; le dégradé global fait désormais ce travail,
+      mieux et partout. ⭐ Deux dispositifs pour une même fonction — rendre un
+      titre lisible sur ce qu'il y a derrière — et l'un des deux devait partir.
+   ⚠️ Ce qu'on perd, assumé : le titre ne se détache plus par une forme, il se
+      détache par le dégradé. Sur une image très claire, c'est le dégradé qui
+      répond — et il est calibré contre du blanc pur, pas contre la moyenne.
+   ⛔ Le texte n'est PAS centré verticalement dans le dégradé : il est posé en
+      haut, là où le plateau d'opacité est maximal. Le centrer le ferait
+      glisser vers la zone d'extinction. */
+.page .hero-label {
+  color: var(--texte-immersif-doux);
+  text-align: center;
+  letter-spacing: 0.18em;
+  margin: 0 0 var(--sp-1);
+}
 .page .page-titre {
   display: block;
   text-align: center;
+  color: var(--craie);
+  font-family: var(--titre);
+  /* ⚠️ Plus de CAPITALES. Elles servaient la bulle — un bandeau court et
+     dense. Dans le dégradé, le titre a de la place : la serif éditoriale s'y
+     lit en bas-de-casse, et c'est ce que la charte 2030 demande. */
+  text-transform: none;
+  font-size: clamp(2rem, 9vw, 2.8rem);
+  line-height: 1.1;
+  letter-spacing: var(--suivi-titre);
+  text-wrap: balance;
+  margin: 0 0 var(--sp-4);
 }
-.page .page-titre > span {
-  /* 🔴 `inline` + `box-decoration-break: clone` DONNE UN BANDEAU PAR LIGNE, et
-     dès qu'un titre passe à la ligne les deux fragments se touchent : les
-     coins arrondis y creusent des encoches blanches, parce que la ligne du
-     dessous est plus courte. Vu le 31/10 sur « COMPOSER UNE / PROMENADE ».
-     ⭐ Une bulle n'est pas une pile de fragments, c'est UNE forme. En
-        `inline-block`, la boîte épouse la ligne la plus longue, contient les
-        deux lignes, et ne porte qu'un seul contour arrondi.
-     ⚠️ Ce qu'on perd, assumé : le fond ne colle plus au mot près sur une
-        ligne courte. C'est le prix d'un contour propre, et c'est le dessin
-        des bulles de la charte. */
-  display: inline-block;
-  background: var(--ink);
-  /* ⚠️ LE `box-shadow` A DISPARU, ET C'EST LUI QU'IL FALLAIT RETIRER. Il
-     étirait le fond de 0,3em de chaque côté — d'où les petits ergots carrés
-     qui dépassaient. Un `border-radius` ne les aurait pas arrondis : une ombre
-     portée décalée reste une COPIE décalée de la boîte, donc deux blobs
-     débordant de part et d'autre. On rend donc la même largeur par de la
-     marge intérieure, qui, elle, est bien arrondie par le rayon.
-     0,3em de marge + 0,3em d'ombre = 0,6em : le texte garde son écart. */
-  padding: 0.16em 0.6em;
-  /* la forme synapse de la charte, à l'échelle d'un bandeau de titre —
-     même famille de rayons mixtes que `.sous-bulle`, la bulle encre */
-  border-radius: 20px 26px 18px 24px;
-}
-/* ⚠️ DEUX PIÈGES DE `display: inline`, rencontrés l'un après l'autre :
-   1. les lignes d'un texte qui passe à la ligne se CHEVAUCHENT — l'interligne
-      doit être rendu à la main, sinon le bandeau de la deuxième ligne recouvre
-      la première ;
-   2. un élément de bloc passé en `inline` FUSIONNE avec son voisin : le
-      « PROMENADE » de l'étiquette est venu se coller sur la même ligne que le
-      titre. D'où `display: table` pour elle — une boîte de BLOC qui se
-      rétrécit au contenu, donc un bandeau qui épouse le texte sans quitter sa
-      propre ligne. */
-.page .page-titre { line-height: 1.5; }
-/* `display: table` épouse le contenu ; `margin-inline: auto` le centre.
-   ⚠️ On garde `margin-bottom` : l'écrire en raccourci l'effacerait. */
-.page .hero-label {
-  display: table;
-  background: var(--ink);
-  padding: 0.3em 0.9em;
-  margin-bottom: var(--sp-1);
-  margin-inline: auto;
-  /* le même geste, à l'échelle de l'accroche : rayons mixtes, plus serrés */
-  border-radius: 12px 16px 11px 14px;
-}
+.page .page-titre > span { display: inline; background: none; padding: 0; }
+/* ⚠️ Le bloc qui vivait ici décrivait les deux pièges du bandeau `inline`
+   (chevauchement des lignes, fusion avec l'étiquette). Il part avec le
+   bandeau : une note qui survit à sa cause devient un faux témoin — et
+   celle-ci a d'abord survécu à MA découpe, laissant sa moitié basse en
+   plein milieu de la feuille. Le serveur de dev l'a refusée en 500, et
+   c'est lui qui tranche : `tsc` ne lit pas le CSS. */
+.page .page-titre { line-height: 1.1; }
+
 .page .wrap > .page-titre { margin-bottom: 0; }
 .page .wrap > .page-titre + * { margin-top: var(--sp-4); }
 
@@ -1039,7 +1376,7 @@ body {
 .etapes { list-style: none; margin: 0; padding: 0; counter-reset: etape; }
 .etapes li {
   display: flex; align-items: baseline; gap: var(--sp-1);
-  padding: 10px 0; border-bottom: 1px solid var(--ecume);
+  padding: 10px 0; border-bottom: 1px solid var(--bulle-trait);
   counter-increment: etape;
 }
 .etapes li:last-child { border-bottom: 0; }
@@ -1050,7 +1387,7 @@ body {
 }
 .etape-cat {
   margin-left: auto; font: 400 var(--t-xs)/1 var(--sans);
-  color: #6b6558; text-transform: lowercase;
+  color: var(--texte-doux); text-transform: lowercase;
 }
 
 /* 🔴 LE CALQUE DOIT PASSER AU-DESSUS DU CANEVAS DE MAPLIBRE.
@@ -1067,8 +1404,19 @@ body {
 .carte-numero {
   display: grid; place-items: center;
   width: 18px; height: 18px; margin: -2px;
-  background: #c0392b; border-color: var(--blanc-chaud); border-width: 2px;
-  color: var(--blanc-chaud);
+  /* 🔴 ET CE DÉFAUT EST REVENU LE 31/10, PAR MA FAUTE. Le commentaire qui
+     vivait ici disait « `--action-texte` vaut nuit, 7,2 sur l'ocre » — vrai
+     le jour de son écriture. En passant les boutons au blanc, j'ai changé ce
+     RÔLE pour tout le monde : le chiffre est repassé à **2,59**, mesuré.
+     ⭐ CHANGER UN RÔLE, C'EST CHANGER TOUS SES PORTEURS — et la note qui
+        justifiait l'ancien choix est devenue le faux témoin qui m'a fait
+        croire que ce point était tenu. Deux SOLS différents (l'ocre vif de la
+        carte, l'or sombre des boutons) ne peuvent pas partager un seul rôle
+        « texte d'action ».
+     Résolu sans rouvrir le bleu : la pastille prend l'or sombre des actions,
+     un cran plus bas encore pour un corps de 10 px — blanc **5,83**. */
+  background: var(--or-profond); border-color: var(--craie); border-width: 2px;
+  color: #ffffff;
   font: 700 10px/1 var(--sans);
 }
 
@@ -1137,12 +1485,12 @@ body {
   gap: 6px;
   min-height: 44px;           /* la cible tactile minimale, au pouce */
   padding: 0 var(--sp-3);
-  border-radius: 999px;
+  border-radius: var(--r-rond);
   font-size: var(--t-xs);
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
-  border: 1px solid var(--or);
+  border: 1px solid var(--bulle-trait);
   transition: transform 160ms ease, box-shadow 160ms ease;
 }
 .balade-action svg {
@@ -1151,8 +1499,8 @@ body {
   stroke-linecap: round; stroke-linejoin: round;
 }
 .balade-action-second { background: transparent; color: var(--primary); }
-.balade-action-premier { background: var(--ink); color: var(--sand); border-color: var(--ink); }
-.balade-action:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgb(27 42 74 / 14%); }
+.balade-action-premier { background: var(--action); color: var(--action-texte); border-color: var(--action); }
+.balade-action:hover { transform: translateY(-1px); box-shadow: var(--ombre-carte); }
 .balade-action:focus-visible { outline: 2px solid var(--or); outline-offset: 2px; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -1294,7 +1642,7 @@ body {
 .invitation-primaire {
   min-height: 56px;
   border: none;
-  border-radius: 999px;
+  border-radius: var(--r-rond);
   background: var(--ocre);
   /* le bleu nuit sur l'ocre, et non le kaki : 7,4 contre 4,4 */
   color: var(--nuit);
@@ -1306,7 +1654,11 @@ body {
 }
 .invitation-primaire:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgb(198 154 72 / 32%);
+  /* ⚠️ Dernière ombre teintée en OCRE. Même raison que les autres : sur la
+     craie, une ombre colorée salit le pourtour. Le §8.3 veut des ombres
+     « diffuses et réalistes » — donc de la couleur de l'ombre, pas de
+     l'objet qui la porte. */
+  box-shadow: var(--ombre-levee);
 }
 .invitation-primaire:disabled { opacity: 0.7; cursor: progress; }
 .invitation-primaire:focus-visible { outline: 2px solid var(--pierre); outline-offset: 3px; }
@@ -1331,7 +1683,7 @@ body {
   align-items: center;
   gap: 4px;
   padding: 4px 4px 4px var(--sp-3);
-  border-radius: 999px;
+  border-radius: var(--r-rond);
   /* ⚠️ Un contour, pas un fond translucide : le verre dépoli rend le texte
      illisible dès que le tracé passe derrière, et c'est exactement ce que le
      brief refuse. */
@@ -1407,29 +1759,75 @@ body {
    ⚠️ La carte occupe le haut, le panneau le bas : au pouce, ce qu'on TOUCHE
    doit être près de la main, ce qu'on REGARDE peut être loin. L'inverse —
    carte en bas — oblige à traverser l'écran pour agir. */
+/* ═══ L'ÉCRAN DU TERRITOIRE EST KAKI, PAS BLEU — 31/10/2026 ══════════════
+   🔴 TOUT LE BLEU DE CET ÉCRAN ÉTAIT UNE SEULE VALEUR : rgb(25,43,67), le
+      `--nuit`, posé en `color` sur le panneau et hérité par le titre, la
+      mesure, le champ de recherche, les noms de balades, les deux boutons
+      ronds et leurs icônes. Relevé au navigateur : 20 porteurs, une couleur.
+   ⭐ On ne corrige donc pas 20 règles, on redéfinit LE RÔLE à la portée de
+      l'écran — comme pour les bulles. `--texte` devient le kaki ; tout suit,
+      y compris ce qui sera écrit demain.
+   ⚠️ La carte, elle, n'avait aucun bleu à l'écran : son eau n'est pas peinte
+      sur la presqu'île. Vérifié en échantillonnant le canvas, pas supposé.
+   Mesuré : kaki sur craie **9,23** (la nuit donnait 11,96 — on perd de la
+   marge, on reste très au-dessus des 4,5), 8,19 sur craie-ombre. */
 .terr {
+  --texte: var(--kaki);
+  --ink: var(--kaki);
+  --trait: color-mix(in oklab, var(--kaki) 16%, transparent);
+  --trait-fort: color-mix(in oklab, var(--kaki) 28%, transparent);
   min-height: 100svh;
   display: grid;
   grid-template-rows: minmax(38svh, 46svh) 1fr;
   background: var(--kaki);
   color: var(--craie);
-  padding-bottom: calc(var(--barre-espace, 108px) + env(safe-area-inset-bottom, 0px));
+  /* 🔴 LE RECTANGLE KAKI AU BAS DE LA PAGE, c'était ça : 100 px mesurés, la
+     réserve de la barre flottante, posée SUR `.terr` et donc peinte de son
+     fond. Le panneau s'arrêtait à 1 289 px, `.terr` continuait jusqu'à 1 389.
+     ⭐ Une réserve d'espace doit être prise par l'élément qui porte la
+        SURFACE, jamais par celui qui porte la COULEUR — sinon elle se voit.
+     ⚠️ Et elle faisait double emploi : `body` réserve déjà la même hauteur
+        (voir « Nav fixe en bas »). Deux réserves pour une barre, dont une
+        visible. Celle-ci part ; le panneau remplit sa rangée, et plus rien de
+        kaki ne dépasse. */
 }
-.terr-carte { position: relative; overflow: hidden; }
+/* ⚠️ `touch-action: none` : sans lui, le navigateur s'approprie le glissement
+   pour faire défiler la page, et `pointermove` ne reçoit qu'UN événement avant
+   d'être annulé. C'est la cause n°1 d'une carte « qui ne se déplace pas »
+   alors que le code est juste.
+   ⚠️ Et c'est posé ICI, pas sur la règle jumelle de `systeme.css` : celle-ci
+      est chargée après, c'est elle qui gagne. Même piège que `.nav a.brand`
+      une heure plus tôt. */
+.terr-carte {
+  position: relative; overflow: hidden;
+  touch-action: none; cursor: grab;
+}
+.terr-carte:active { cursor: grabbing; }
 .terr-carte canvas { display: block; }
 .terr-attente {
   position: absolute; inset: 0;
   display: grid; place-items: center;
   margin: 0; padding: var(--sp-4);
-  font-size: var(--t-xs); color: var(--sauge); text-align: center;
+  /* ⚠️ `--sauge` sur le kaki donne 3,65 : c'est exactement le défaut pour
+     lequel `--sauge-sur-sombre` a été calculée (4,57). Deux rôles, deux
+     valeurs — et celui-ci avait gardé la couleur du VÉGÉTAL. */
+  font-size: var(--t-xs); color: var(--texte-inverse-doux); text-align: center;
 }
 .terr-erreur { color: var(--ocre); }
 
 .terr-panneau {
   padding: var(--sp-4);
   background: var(--craie);
-  color: var(--nuit);
-  border-radius: 22px 26px 0 0;
+  /* 🔴 CETTE LIGNE DISAIT `var(--nuit)` — une MATIÈRE, pas un rôle, et c'est
+     elle qui gagnait contre le `--texte` redéfini sur `.terr`. Le §3 des
+     tokens le dit : un composant qui nomme une matière décide d'une
+     esthétique, un composant qui nomme un rôle décrit un besoin. Une seule
+     ligne hors-rôle a suffi à tenir tout l'écran en bleu. */
+  color: var(--texte);
+  /* ⚠️ Deux coins en haut, zéro en bas : une feuille qui monte depuis le
+     bas. Le rayon dit la direction — on garde la FORME, on remplace les
+     valeurs inventées par le token. */
+  border-radius: var(--r-l) var(--r-l) 0 0;
   margin-top: -18px;
   position: relative;
   z-index: 1;
@@ -1442,7 +1840,7 @@ body {
   font-size: clamp(1.9rem, 7vw, 2.6rem);
   line-height: 1.05;
 }
-.terr-mesure { margin: 6px 0 0; font-size: var(--t-xs); color: #4a5564; }
+.terr-mesure { margin: 6px 0 0; font-size: var(--t-xs); color: var(--texte-doux); }
 
 .terr-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .terr-item {
@@ -1452,8 +1850,9 @@ body {
   gap: 2px;
   text-align: left;
   padding: 10px var(--sp-3);
-  border: 1px solid rgb(25 43 67 / 16%);
-  border-radius: 14px 18px 12px 16px;
+  /* le trait suit le rôle : plus de nuit codée en dur dans cet écran */
+  border: 1px solid var(--trait);
+  border-radius: var(--r-m);
   background: transparent;
   color: inherit;
   font: inherit;
@@ -1465,8 +1864,18 @@ body {
 /* ⭐ L'actif se dit par l'OCRE et par `aria-pressed`, jamais par la couleur
    seule : qui ne distingue pas les teintes a besoin de l'état annoncé. */
 .terr-item-active { border-color: var(--ocre); background: rgb(198 154 72 / 12%); }
-.terr-item-titre { font-weight: 600; font-size: var(--t-s); }
-.terr-item-meta { font-size: var(--t-xs); color: #4a5564; }
+/* ⭐ MÊME POLICE ET MÊME TAILLE QUE « Le territoire » — demandé le 31/10.
+   Les noms étaient en sans, 600, 14 px : la liste se lisait comme un menu de
+   réglages sous un titre de livre. Ce sont des noms de lieux, pas des
+   options. Les valeurs sont REPRISES de `.terr-titre`, pas réécrites à
+   l'identique — si le titre change, la liste suit. */
+.terr-item-titre {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(1.9rem, 7vw, 2.6rem);
+  line-height: 1.05;
+}
+.terr-item-meta { font-size: var(--t-xs); color: var(--texte-doux); }
 
 .terr-fiche { margin-top: var(--sp-4); }
 .terr-fiche-label {
@@ -1483,16 +1892,16 @@ body {
   border-left: 2px solid var(--ocre);
 }
 .terr-lieu-nom { font-size: var(--t-s); }
-.terr-lieu-cat { font-size: var(--t-xs); color: #4a5564; }
+.terr-lieu-cat { font-size: var(--t-xs); color: var(--texte-doux); }
 
 .terr-action {
   display: inline-flex; align-items: center; justify-content: center;
   min-height: 48px; padding: 0 var(--sp-4);
-  border-radius: 999px;
+  border-radius: var(--r-rond);
   background: var(--ocre); color: var(--nuit);
   font-weight: 600; font-size: var(--t-s); text-decoration: none;
 }
-.terr-source { margin: var(--sp-4) 0 0; font-size: var(--t-xs); color: #4a5564; line-height: 1.5; }
+.terr-source { margin: var(--sp-4) 0 0; font-size: var(--t-xs); color: var(--texte-doux); line-height: 1.5; }
 
 .invitation-carte { margin: var(--sp-3) 0 0; font-size: var(--t-xs); }
 .invitation-carte a {

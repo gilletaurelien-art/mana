@@ -41,16 +41,26 @@ export function GlyphRecherche({ size = 24 }: GlyphProps) {
 }
 
 export function GlyphRadio({ size = 24 }: GlyphProps) {
+  /* ⭐ UN POSTE, PAS UNE ONDE — 31/10/2026. L'ancien glyphe dessinait des
+     ondes concentriques : le symbole de la DIFFUSION, pas de la radio. Il se
+     confondait avec le wifi, le partage, la géolocalisation — tout ce qui
+     émet. Un poste de radio ne se confond avec rien : caisson, haut-parleur,
+     cadran, antenne. Et il porte l'objet que MANAradio est vraiment, posé au
+     coin du feu plutôt qu'un signal dans l'air.
+     Géométrie sur la grille 24, trait 1,4, antenne oblique pour casser la
+     symétrie — un objet parfaitement symétrique se lit comme un pictogramme
+     abstrait, pas comme une chose. */
   return (
     <svg {...base} width={size} height={size} aria-hidden="true">
-      <circle cx={12} cy={12} r={2.2} />
-      {/* ⚠️ L'ORDRE DES ONDES PORTE LE SENS : l'intérieure pulse d'abord,
-          l'extérieure après. Une onde part du centre ; les inverser ferait une
-          onde qui rentre, ce que personne ne sait nommer mais que tout le
-          monde trouve bizarre. */}
-      <path className="g-onde g-onde-1" d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 16.2a6 6 0 0 0 0-8.4" />
-      <path className="g-onde g-onde-2" d="M5 5a9.9 9.9 0 0 0 0 14M19 19a9.9 9.9 0 0 0 0-14" />
-      <Accent cx={12} cy={12} r={1} />
+      {/* l'antenne, avant le caisson : elle part de derrière */}
+      <path d="M16 9.5 20.5 4" />
+      {/* le caisson */}
+      <rect x="2.8" y="9.5" width="18.4" height="10.7" rx="2.2" />
+      {/* le haut-parleur */}
+      <circle cx="8.3" cy="14.85" r="2.9" />
+      {/* le cadran et son bouton */}
+      <path d="M14.4 12.6h3.9" />
+      <Accent cx={16.35} cy={16.9} r={1.5} />
     </svg>
   );
 }
@@ -122,6 +132,19 @@ export function GlyphBoussole({ size = 24 }: GlyphProps) {
         <path d="M15.4 8.6 13.3 13.3 8.6 15.4 10.7 10.7Z" />
         <Accent cx={15.4} cy={8.6} r={1.6} />
       </g>
+    </svg>
+  );
+}
+
+/* La carte pliée. ⭐ Elle vient de la landing, où elle était dessinée en
+   ligne dans `Invitation.tsx` : deux endroits, un seul dessin — et c'est
+   toujours l'un des deux qui vieillit. Elle vit ici maintenant. */
+export function GlyphCarte({ size = 24 }: GlyphProps) {
+  return (
+    <svg {...base} width={size} height={size} aria-hidden="true">
+      <path d="m3 7 6-3 6 3 6-3v13l-6 3-6-3-6 3z" />
+      <path d="M9 4v13M15 7v13" />
+      <Accent cx={12} cy={12.2} r={1.3} />
     </svg>
   );
 }

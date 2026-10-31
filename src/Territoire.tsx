@@ -8,22 +8,22 @@ const FACETTES = [
   {
     titre: "Une péninsule ouverte sur la mer",
     texte:
-      "2 800 km de côtes : la Bretagne est la région maritime française par excellence. Du Finistère au golfe du Morbihan, la mer structure les paysages, les métiers et les rythmes.",
+      "2 800 km de côtes. Du Finistère au golfe du Morbihan, la mer structure les paysages, les métiers et les rythmes.",
   },
   {
     titre: "Des villes qui vivent, des campagnes qui habitent",
     texte:
-      "Rennes, Brest, Nantes aux portes, Vannes, Lorient, Quimper : des pôles dynamiques reliés par un réseau de communes où l'on vit encore à taille humaine.",
+      "Rennes, Brest, Vannes, Lorient, Quimper, Nantes aux portes : 6 pôles reliés par un réseau de communes à taille humaine.",
   },
   {
     titre: "Une langue et une culture vivantes",
     texte:
-      "Le breton et le gallo, la fest-noz, les festivals, les sonneurs : la culture bretonne n'est pas un décor, elle se pratique — et elle accueille.",
+      "Breton et gallo, fest-noz, sonneurs : une culture qui se pratique, pas un décor.",
   },
   {
     titre: "Un territoire qui se réinvente",
     texte:
-      "Marine, agroalimentaire, numérique, énergies marines : la Bretagne investit l'avenir sans renier ce qui la fait tenir — la terre, la lumière, la communauté.",
+      "Marine, agroalimentaire, numérique, énergies marines : 4 filières qui engagent l'avenir sans renier la terre.",
   },
 ];
 
@@ -45,10 +45,8 @@ export function Territoire() {
 
         <section className="page-panel">
           <p className="page-intro">
-            La Bretagne, par ceux qui y vivent et par ceux qui veulent y
-            venir. Une présentation honnête : ni carte postale figée, ni
-            compteur de vanité — des paysages, des villes, une culture, et
-            des services pour s'y installer durablement.
+            Des paysages, des villes, une culture. Ni carte postale, ni
+            compteur de vanité.
           </p>
         </section>
 

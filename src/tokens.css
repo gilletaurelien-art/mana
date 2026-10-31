@@ -1,0 +1,511 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   MANA — TERRE, MER & LUMIÈRE
+   Le système de design. UN SEUL endroit où une valeur est décidée.
+
+   ⭐ POURQUOI UN FICHIER SÉPARÉ, ET PAS UN BLOC DE PLUS DANS `styles.css`.
+      Une valeur dispersée ne se révise pas : elle se recopie. Ce dépôt en a
+      déjà payé le prix — `padding-bottom: 84px` recopié dans une feuille
+      pendant que les icônes doublaient de taille, et la note est devenue un
+      faux témoin. Ici, une valeur n'existe QU'ICI. Un composant qui écrit
+      `#c69a48` plutôt que `var(--ocre)` est un défaut, pas un raccourci.
+
+   ⚠️ CE FICHIER S'AJOUTE, IL N'ÉCRASE RIEN. Une trentaine d'écrans vivent
+      encore sur `--ink`, `--sand`, `--or`. Les remplacer d'un coup casserait
+      ce qu'on ne peut pas relire ce soir. La palette gagne écran par écran ;
+      les anciens noms sont en bas, en PONTS, et chaque pont porte sa date de
+      péremption au lieu d'être oublié.
+
+   ⛔ CHAQUE COULEUR A UNE FONCTION, et c'est la règle qui tient la charte.
+      « Elle est jolie » n'ouvre pas une variable. Si une nouvelle couleur est
+      nécessaire, c'est qu'un RÔLE manque — on nomme le rôle, pas la teinte.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 1 · LES CINQ MATIÈRES ───────────────────────────────────────────────
+     Les seules teintes de marque. Tout le reste en dérive. */
+  --kaki:        #343f32;   /* identité · surfaces immersives · navigation   */
+  --sauge:       #92977c;   /* végétal · cartographie · second plan          */
+  --nuit:        #192b43;   /* profondeur · structure · mer · typographie    */
+  --ocre:        #c69a48;   /* ACTION · repère · progression — rien d'autre  */
+  --craie:       #eeebdd;   /* fond de lecture · fiches · panneaux           */
+  /* et la sixième, qui ne doit jamais le devenir */
+  --terre:       #a96f54;   /* patrimoine · roche · accent éditorial RARE    */
+
+  /* ── 2 · LES DÉRIVÉES ────────────────────────────────────────────────────
+     ⚠️ Produites par décalage de CLARTÉ à teinte et saturation CONSTANTES.
+        Une variante « éclaircie à l'œil » dérive en teinte sans qu'on le voie,
+        et la famille cesse d'être une famille au troisième cran. */
+  --kaki-clair:  #43503f;   /* élévation d'un cran sur fond kaki             */
+  --kaki-sombre: #262e24;   /* enfoncement · fond de barre                   */
+  --sauge-clair: #b0b49e;   /* trait de carte secondaire                     */
+  /* 🔴 DEUXIÈME CHIFFRE FAUX DE CE FICHIER, MÊME SOIR, MÊME MAIN. Annoncé
+     « 4,54 sur craie » ; mesuré #6f7460 sur #eeebdd → 4,04. Ce token porte
+     TOUTES les métadonnées des écrans 2030 : les catégories, les pourcentages
+     du parcours, les légendes, les crédits. Vingt-trois textes sous le seuil
+     sur la seule fiche de promenade.
+     ⭐ Trois valeurs « mesurées » écrites ici le 31/10, trois fausses. La
+        méthode décrite à côté était juste ; je ne l'avais simplement pas
+        appliquée — j'avais écrit le résultat qu'elle aurait dû donner. Un
+        commentaire qui DÉCRIT un calcul n'est pas le calcul. C'est le faux
+        témoin le plus coûteux : il a l'air d'une preuve.
+     Recalculé : clarté 41 % → 38 %, teinte (69,4°) et saturation (9,4 %)
+     tenues — 4,65 sur la craie, 5,56 sur le blanc. */
+  /* ⚠️ ET 38 % NE SUFFISAIT PAS NON PLUS. 4,65 sur la craie — mais ce token
+     se pose AUSSI sur `--craie-ombre` (#e2ded0), le fond des surfaces
+     enfoncées : pastilles de l'écran 5, compteurs, champs. Là, 4,13.
+     ⭐ Troisième fois ce soir : une valeur mesurée sur UNE surface et posée
+        sur une AUTRE. Un token de texte doit être mesuré contre la surface la
+        plus SOMBRE sur laquelle il est admis, jamais contre la plus claire —
+        sinon il passe là où on l'a testé et échoue là où on l'a mis.
+     🔴 ET LA VALEUR ANNONCÉE ICI ÉTAIT « 4,50 » — mesurée 4,4974 le 31/10.
+        Elle ÉCHOUE. Elle n'a jamais passé le seuil : c'est l'arrondi à deux
+        décimales qui l'a fait passer, dans le commentaire que j'ai écrit
+        moi-même à côté de la bonne méthode.
+     ⭐ UN CHIFFRE ARRONDI AU SEUIL N'EST PAS UNE MESURE, C'EST UN VOTE. Quatre
+        des cinq valeurs de ce fichier avaient déjà été reprises pour la même
+        raison ; celle-ci est la première à avoir échoué non par erreur de
+        calcul mais par présentation du résultat. Les seuils se comparent sur
+        la valeur, jamais sur son affichage.
+     Reprise : clarté 36,0 % → 35,4 %, teinte et saturation tenues.
+     Clarté 35,4 % : 4,57 sur craie-ombre · 5,15 sur craie · 6,16 sur blanc. */
+  --sauge-sombre:#616352;
+  /* 🔴 LA SAUGE N'EST PAS LISIBLE SUR LE KAKI EN PETIT CORPS. Mesuré le
+     31/10 sur la devise de l'accueil (« TERRE, MER & LUMIÈRE », 12 px) :
+     #92977c sur #343f32 donne 3,38 — il en faut 4,5.
+     ⭐ Calculée, pas ajustée : clarté montée par pas de 2 %, teinte (69,6°) et
+        saturation (11 %) tenues, arrêt au PREMIER palier qui passe — 62 %,
+        soit 4,57. Choisir à l'œil « ça se lit bien » tient exactement jusqu'au
+        jour où quelqu'un mesure, et jusqu'au premier marcheur en plein soleil.
+     ⚠️ Elle ne remplace pas `--sauge` : celle-ci reste la couleur du VÉGÉTAL
+        et des traits de carte, où aucun contraste de texte n'est en jeu. Deux
+        rôles, deux valeurs. */
+  --sauge-sur-sombre: #a5a993;
+  --nuit-clair:  #2a4166;   /* eau peu profonde · survol sur nuit            */
+  --ocre-clair:  #dcb86e;   /* survol d'une action sur fond sombre           */
+  /* L'or POUSSÉ AU FOND — la seule valeur de la famille où du blanc de 10 px
+     tient encore (5,83). Elle sert deux fois : le survol d'un bouton doré, et
+     la pastille numérotée de la carte. ⭐ Deux emplois, un seul nom : c'est la
+     différence entre une valeur partagée et une valeur recopiée. */
+  --or-profond:  #7f6027;
+  /* 🔴 CETTE VALEUR ÉTAIT FAUSSE, ET C'EST MOI QUI L'AI ÉCRITE. Elle
+     annonçait « 4,53 sur craie » ; mesuré le 31/10 au soir, #9a742f sur
+     #eeebdd donne 3,57. `--texte-action` en dérive : tous les liens et
+     actions des écrans 2030 échouaient à l'AA sans que rien ne le dise.
+     ⭐ Le pire genre de faux témoin : un chiffre PLAUSIBLE, écrit à côté de
+        la bonne méthode, dans un commentaire qui décrit un calcul qu'on n'a
+        pas fait. Il a survécu à trois écrans parce qu'il avait l'air mesuré.
+     Recalculé pour de bon : clarté descendue par pas de 1 %, teinte (38,3°) et
+     saturation (53 %) de l'ocre tenues, arrêt au premier palier qui passe —
+     34 %, soit 4,60 sur la craie et 5,51 sur le blanc. */
+  --ocre-sombre: #856329;
+  --craie-ombre: #e2ded0;   /* séparation sur craie, sans trait              */
+  --craie-pure:  #f7f5ec;   /* surface surélevée sur craie                   */
+  /* 🔴 LA TERRE CUITE N'EST PAS LISIBLE EN TEXTE, et ce n'est pas un détail.
+     #a96f54 sur craie donne 3,45 ; il en faut 4,5. La variante est CALCULÉE :
+     clarté descendue par pas, teinte et saturation tenues, arrêt au premier
+     palier qui passe — 84 %, soit 4,61. ⭐ Une couleur choisie à l'œil « a
+     l'air lisible » exactement jusqu'au jour où quelqu'un la mesure. */
+  --terre-texte: #8e5d47;
+  /* 🔴 ET IL FAUT LE PENDANT EN SURFACE — mesuré le 31/10 sur le bouton 112.
+     `--terre` portant de la craie donne 3,45 ; il en faut 4,5. C'est le
+     bouton d'APPEL DES SECOURS : le seul de l'app dont l'illisibilité a un
+     coût qui n'est pas esthétique, et il était le dernier à n'avoir jamais
+     été mesuré.
+     ⭐ Même méthode, sens inverse de `--terre-texte` : teinte (19,1°) et
+        saturation (34 %) tenues, clarté descendue par pas de 1 %, arrêt au
+        premier palier qui passe — 42 %, soit 4,62.
+     ⚠️ La valeur est à un point de `--terre-texte`, et ce n'est pas une
+        redondance à fusionner : l'une est une ENCRE sur fond clair, l'autre
+        une SURFACE sous de la craie. Elles coïncident aujourd'hui ; un
+        changement de la craie en déplacerait une seule. */
+  --terre-sombre: #8e5d46;
+
+  /* ── 3 · LES RÔLES ───────────────────────────────────────────────────────
+     ⭐ C'EST ICI QUE LES COMPOSANTS PUISENT, JAMAIS DANS LE §1. Un composant
+        qui nomme une matière décide d'une esthétique ; un composant qui nomme
+        un rôle décrit un besoin — et le thème peut alors répondre autrement.
+        C'est ce qui rend le second thème possible sans réécrire un écran. */
+  --fond:            var(--craie);        /* le sol de toute page de lecture */
+  /* ═══ LA MATIÈRE DES BULLES — 31/10/2026 ═════════════════════════════
+     🔴 ELLES ÉTAIENT BLANCHES SUR UNE IMAGE VIVANTE, et c'était deux mondes
+        posés l'un sur l'autre : un hero en dégradé de nuit, puis des cartes
+        blanches lâchées dessus. Le fondateur l'a dit plus simplement — « une
+        cohérence graphique absente ».
+     ⭐ LA RÉPONSE N'EST PAS DE TEINTER LE BLANC, C'EST DE CHANGER DE MATIÈRE.
+        Passer #ffffff à #f7f5ec, c'est 3 % d'écart : un token modifié, aucun
+        dessin changé. La bulle prend donc la MÊME matière que le dégradé du
+        hero — la page descend du titre jusqu'au pied en un seul objet, et
+        l'image vit autour, pas dessous des cartes.
+     ⚠️ Conséquence assumée : tout le texte de corps passe en clair. La charte
+        2030 réservait la craie aux surfaces de lecture ; cette décision la
+        remplace. Revenir en arrière se fait ici, sur deux lignes. */
+  /* ═══ LIQUID GLASS — 31/10/2026, demandé en cours de passe ══════════════
+     ⚠️ CETTE DEMANDE CONTREDIT LA RAISON POUR LAQUELLE LA BULLE ÉTAIT OPAQUE,
+        trois heures plus tôt, dans ce même fichier : « une surface
+        semi-transparente n'a pas de couleur, elle a celle de ce qu'elle
+        recouvre » — et ce qu'elle recouvre change toutes les dix secondes.
+        La sortie n'est pas de refuser le verre : c'est de MESURER CE QU'IL
+        COÛTE, et de placer le plancher d'opacité là où les images le mettent,
+        pas là où l'œil le trouve joli.
+     ⭐ CE QU'ON MESURE N'EST PAS LA MOYENNE DE L'IMAGE. Un flou de 28 px rend
+        la moyenne LOCALE : le pire fond sous une bulle est donc la ZONE la
+        plus claire de l'image la plus claire. Relevé sur les 22 fichiers de
+        `public/fonds/` par blocs de 64 px — fond-03 culmine à (254,247,210),
+        presque du blanc. Les 22 ont toutes un ciel au-delà de 240.
+     Planchers calculés contre cette zone (et non contre une moyenne) :
+        teinte nuit  → 75 % pour que le ton secondaire garde 5,0
+        teinte kaki  → 81 % (le kaki est plus clair, il couvre moins)
+     Posés avec marge — 82 / 80 / 86 % — ce qui donne, dans le pire cas des
+     22 images : craie 6,45 · 5,93 · 6,31 et ton doux 6,20 · 5,71 · 6,06.
+     ⭐ ET LE PLANCHER EST MESURÉ SUR L'IMAGE NON FLOUTÉE, ce qui rend le repli
+        sûr par construction : un navigateur sans `backdrop-filter` affiche un
+        fond plus contrasté que celui qu'on a validé, jamais moins. Aucune
+        règle `@supports` n'est donc nécessaire — et c'est le seul cas où ne
+        rien écrire est une garantie plutôt qu'un oubli.
+     ⚠️ CE QUE LE VERRE A COÛTÉ, et il faut le dire : l'ocre clair #dcb86e
+        tombait à 3,76 sur la zone claire. Le corps de texte survit parce
+        qu'il est presque blanc ; une couleur, non. Voir `--bulle-action`. */
+  /* ═══ LE DÉGRADÉ PASSE DE « NUIT → KAKI » À « KAKI → OCRE DORÉ » ════════
+     31/10/2026, demandé en cours de passe. La nuit quitte les bulles ; la
+     page descend du végétal vers le métal.
+     🔴 ET L'OR FRANC EST IMPOSSIBLE SUR UNE SURFACE DE LECTURE : `--ocre`
+        (#c69a48) porte la craie à 2,16, et aucune opacité n'y change rien —
+        ce n'est pas un problème de verre, c'est que l'ocre doré EST clair.
+        Sur un sol doré, du texte clair n'a nulle part où aller.
+     ⭐ La sortie n'est pas de renoncer à l'ocre, c'est de le DESCENDRE : même
+        teinte (39,0°), même saturation (52 %), clarté 53 % → 25,4 %. Il reste
+        l'ocre doré de la charte — c'est la même couleur, vue dans l'ombre.
+        ⚠️ Ce que ça coûte, et il faut le dire : l'arrêt bas lit « bronze »
+        plutôt que « or ». L'or franc reste disponible, mais pour les ACTIONS
+        — c'est-à-dire là où il porte du nuit, pas de la craie.
+     Mesuré sur la zone la plus claire des 22 images (254,247,210) :
+        haut   kaki        α 86 % → craie 6,14 · doux 5,91
+        milieu             α 87 % → craie 5,60 · doux 5,38
+        bas    ocre sombre α 88 % → craie 5,05 · doux 4,86                   */
+  --bulle:           linear-gradient(170deg,
+                       rgb(52 63 50 / 86%) 0%,
+                       rgb(76 69 40 / 87%) 55%,
+                       rgb(99 75 31 / 88%) 100%);
+  --bulle-flou:      blur(28px) saturate(130%);
+  /* le liseré du verre : de la craie à 12 %, pas du blanc. Le §8.3 refuse le
+     « reflet intérieur blanc à 85 % » des cartes standard — un filet d'un
+     pixel dans la matière de la charte n'est pas cette ombre-là. */
+  --bulle-eclat:     inset 0 1px 0 rgb(238 235 221 / 12%);
+  /* 🔴 L'ATTÉNUATION PAR OPACITÉ EST MORTE — 31/10/2026, deux fois de suite.
+     Les opacités de la feuille (0,60 · 0,66 · 0,72 · 0,80 · 0,85) avaient été
+     réglées une par une contre des fonds OPAQUES. Le verre a relevé leur
+     plancher à 85 % ; le dégradé doré, plus clair que la nuit, l'a relevé à
+     **96 %**.
+     ⭐ ET 96 %, CE N'EST PLUS UNE ATTÉNUATION — c'est un faux-semblant qui
+        coûte un calcul à chaque changement de fond. Le mécanisme lui-même
+        était la faute : une opacité est un contraste déguisé, et elle se
+        recalcule à chaque fois que le sol bouge. Le second rang prend donc un
+        TON MESURÉ (`--bulle-texte-doux`, 5,91 · 5,38 · 4,86 sur les trois
+        arrêts), et la hiérarchie repose sur la taille et la graisse — ce que
+        ce fichier dit déjà trois paragraphes plus haut à propos du fond
+        tournant, sans l'avoir appliqué ici.
+     ⚠️ Le token reste, à 1, pour que les six règles qui le nomment aient un
+        endroit unique où revenir si l'on rouvre la question. */
+  --attenuation:     1;
+  /* ⭐ DÉRIVÉ, PAS CHOISI : c'est l'arrêt MILIEU du dégradé rendu opaque.
+     Une valeur prise à l'œil « dans le même esprit » aurait divergé au
+     premier changement de dégradé — celui-ci suit par construction.
+     craie 8,02 · ton doux 7,71 · action 7,63. */
+  --bulle-unie:      #4c4528;   /* le même ton, pour ce qui est trop petit
+                                   pour qu'un dégradé se lise */
+  --bulle-texte:     var(--craie);
+  --bulle-texte-doux: var(--texte-immersif-doux);
+  --bulle-trait:     color-mix(in srgb, var(--craie) 16%, transparent);
+  --bulle-trait-fort:color-mix(in srgb, var(--craie) 30%, transparent);
+  /* ⭐ UN CREUX, PAS UN AUTOCOLLANT. Un champ de saisie ou une barre de
+     recherche posés sur la bulle étaient blancs : une surface PLUS CLAIRE
+     que son support se lit comme un objet COLLÉ DESSUS, pas comme un endroit
+     où l'on écrit. Un cran plus sombre que la bulle, et la même matière :
+     le champ devient un creux dans l'objet. C'est la seule façon d'avoir une
+     surface de saisie sans rouvrir le blanc.
+     Mesuré : la craie (#eeebdd) sur #14223a donne 13,6 ; l'ocre clair 7,9. */
+  --bulle-creux:     #35301c;   /* l'uni à 70 % — craie 11,04 */
+  --bulle-survol:    var(--nuit-clair);   /* eau peu profonde — déjà le survol
+                                             sur nuit ailleurs dans la charte */
+  /* ⚠️ L'ACTION SUR LA BULLE N'EST PAS `--texte-action`. Celui-ci (#856329)
+     est l'ocre DESCENDU pour tenir sur la craie ; sur la bulle il donne 2,9.
+     Le même rôle, l'autre sens : l'ocre MONTÉ — 7,9 sur #14223a, 7,1 sur le
+     haut du dégradé. ⭐ Un rôle « action » a besoin d'une valeur PAR FOND,
+     pas d'une couleur. */
+  /* 🔴 ET IL A FALLU LE MONTER DEUX FOIS. #dcb86e donnait 7,1 sur la bulle
+     opaque, 3,76 quand elle est passée au verre, puis 4,09 quand le dégradé
+     est passé à l'ocre doré — car un sol doré retire à l'or son contraste.
+     ⭐ SUR UN SOL DORÉ, L'OR NE PEUT PLUS MARQUER L'ACTION. Ce n'est pas un
+        réglage, c'est une propriété : deux fois la même teinte, l'une sur
+        l'autre. La monter la rapproche de la craie — l'action garde une
+        chaleur, plus une couleur. Ce qui la distingue désormais, c'est la
+        graisse et le soulignement, pas la teinte.
+     Même méthode : teinte (40,4°) et saturation (61 %) tenues, clarté 65 %
+     → 86,7 %, arrêt au premier palier qui tient 4,8 sur les TROIS arrêts du
+     dégradé — 5,84 · 5,32 · 4,81, et 10,63 sur l'uni.
+     ⚠️ Seuil visé 4,8 et non 4,5 : une valeur posée au seuil exact a déjà
+        échoué dans ce fichier cette nuit (`--sauge-sombre`, 4,4974). */
+  --bulle-action:    #f2e4c8;
+  --fond-surelevé:   var(--craie-pure);
+  --fond-enfoncé:    var(--craie-ombre);
+  --fond-immersif:   var(--kaki);         /* photographie, carte, accueil    */
+  --fond-profond:    var(--nuit);         /* la mer, le pied des écrans      */
+
+  /* 🔴 L'ENCRE PASSE DU BLEU NUIT AU KAKI — 31/10/2026, demandé deux fois.
+     Relevé au navigateur sur deux écrans : TOUT le bleu visible de l'app
+     était ce rôle et son jumeau `--ink` — 83 porteurs sur la seule fiche de
+     promenade, zéro couleur bleue déclarée ailleurs. Le dégradé, les boutons,
+     le pied, la barre et la carte étaient déjà kaki/or ; seul le texte
+     restait d'une charte que plus rien d'autre ne portait.
+     ⭐ Un seul rôle à changer, parce que les composants nomment des rôles.
+        C'est exactement ce que le §3 promettait, et c'est la première fois
+        qu'on en touche le bénéfice.
+     Mesuré : kaki sur craie **9,23** · sur blanc 11,2 (la nuit donnait 11,96
+     et 14,5 — on perd de la marge, on reste trois fois au-dessus du seuil).
+     ⚠️ `--nuit` ne disparaît pas : elle reste la MER de la carte, le fond
+        profond et la teinte des ombres. Elle cesse d'être une encre. */
+  --texte:           var(--kaki);         /* corps sur fond clair — 9,23     */
+  --texte-doux:      var(--sauge-sombre); /* métadonnée, légende — 4,54      */
+  --texte-inverse:   var(--craie);        /* sur fond immersif — 9,8         */
+  --texte-inverse-doux: var(--sauge-sur-sombre); /* métadonnée sur immersif — 4,57 */
+  /* 🔴 ET UN TROISIÈME TON, POUR LE FOND TOURNANT — 31/10/2026.
+     `--sauge-sur-sombre` vaut 4,57 sur un kaki FIXE. Derrière un voile à 75 %
+     posé sur vingt-deux images dont certaines ont un ciel de couchant à 228
+     de luminance, le fond effectif monte à (96,104,95) — et la sauge y tombe
+     à 2,39. Elle ne repasse jamais le seuil : même un voile à 95 % ne lui
+     donne que 4,02.
+     ⭐ SUR UN FOND VARIABLE, LA COULEUR NE PEUT PLUS PORTER LA HIÉRARCHIE.
+        Seules la taille et la graisse le peuvent. Le ton secondaire devient
+        donc une craie à peine teintée — 5 % de sauge, pas un de plus :
+        à 10 % il donne 4,46 et échoue. C'est le prix du fond tournant, et il
+        se mesure au lieu de se deviner. */
+  --texte-immersif-doux: #e9e7d8;
+  --texte-action:    var(--ocre-sombre);  /* lien ou action sur fond clair   */
+  --texte-patrimoine:var(--terre-texte);
+
+  --trait:           color-mix(in oklab, var(--nuit) 14%, transparent);
+  --trait-fort:      color-mix(in oklab, var(--nuit) 28%, transparent);
+  --trait-inverse:   color-mix(in oklab, var(--craie) 20%, transparent);
+
+  /* ═══ LE BOUTON EST DORÉ, SON TEXTE EST BLANC — 31/10/2026 ══════════════
+     🔴 ET LES DEUX NE TIENNENT PAS ENSEMBLE À L'OCRE DE LA CHARTE. Blanc sur
+        #c69a48 donne **2,59** ; il en faut 4,5. Ce n'est pas un réglage
+        possible : l'ocre doré EST clair, et rien de clair ne se pose dessus.
+     ⭐ Alors c'est le FOND qui descend, pas le texte qui renonce. Même teinte
+        (39,0°), même saturation (52 %), clarté 53 % → 37,9 % : le premier
+        palier où le blanc passe (4,55). Il reste le même or, vu dans l'ombre
+        — c'est exactement ce qu'on a fait pour l'arrêt bas du dégradé des
+        bulles, le même soir, pour la même raison.
+     ⚠️ CE QUE ÇA COÛTE, ET IL FAUT LE DIRE : le bouton est plus sombre que
+        l'or des captures. Si l'or vif compte plus que le texte blanc, la
+        marche arrière est sur CES DEUX LIGNES — `--action: var(--ocre)` et
+        `--action-texte: var(--nuit)` redonnent l'or vif à 7,2, avec du nuit
+        dessus. C'est un arbitrage, pas une contrainte technique. */
+  --action:          #94702e;             /* l'ocre doré descendu pour le blanc */
+  --action-texte:    #ffffff;             /* dessus — 4,55                   */
+  /* ⚠️ ET LE SURVOL DESCEND, IL NE MONTE PAS. Partout ailleurs dans cette
+     charte un survol éclaircit ; ici éclaircir ramènerait le blanc sous
+     le seuil (2,59 sur l'or vif). Un état n'a pas de direction propre —
+     il a celle que le contraste autorise. */
+  --action-survol:   var(--or-profond);   /* blanc 5,83 */
+  --focus:           var(--ocre);
+
+  /* ⚠️ LES ÉTATS SONT DES RÔLES, PAS DES COULEURS NEUVES. L'alerte emprunte
+     l'ocre parce que l'ocre EST déjà « regardez ici » ; inventer un rouge
+     ajouterait une sixième teinte à une charte qui en compte cinq. */
+  --etat-attention:  var(--ocre);
+  --etat-empeche:    var(--terre);        /* fermeture, interdiction         */
+  --etat-calme:      var(--sauge);
+  --inactif-texte:   color-mix(in oklab, var(--nuit) 42%, var(--craie));
+  --inactif-fond:    color-mix(in oklab, var(--sauge) 22%, var(--craie));
+
+  /* ── 4 · LA CARTOGRAPHIE ─────────────────────────────────────────────────
+     ⭐ Ce bloc est la SIGNATURE. Il ne décrit pas « une carte beige » : il
+        décrit ce que MANA sait du terrain et que les tuiles ignorent —
+        l'agrément d'un chemin et sa distance à la mer. */
+  --carte-fond:      var(--craie);
+  --carte-vegetal:   var(--sauge);
+  --carte-foret:     color-mix(in oklab, var(--kaki) 62%, var(--craie));
+  --carte-eau:       var(--nuit);
+  --carte-eau-douce: var(--nuit-clair);
+  --carte-estran:    color-mix(in oklab, var(--nuit) 22%, var(--craie));
+  --carte-chemin:    var(--sauge-sombre); /* le marchable ordinaire          */
+  --carte-chemin-beau: var(--kaki);       /* agrément ≥ 120 : il se voit     */
+  --carte-route:     color-mix(in oklab, var(--sauge) 40%, var(--craie));
+  --carte-trace:     var(--ocre);         /* LA promenade choisie            */
+  --carte-depart:    var(--nuit);
+  --carte-lieu:      var(--ocre);
+  --carte-releve:    color-mix(in oklab, var(--kaki) 12%, transparent);
+
+  /* ── 5 · TYPOGRAPHIE ─────────────────────────────────────────────────────
+     ⚠️ AUCUNE POLICE DISTANTE. Ni Google Fonts ni aucun CDN : la chaîne
+        d'exécution reste souveraine, et une police qui dépend d'un tiers
+        casse le hors-ligne — qui est le seul argument que le terrain nous
+        reconnaisse. Tout est auto-hébergé, sous-ensemblé, en WOFF2. */
+  /* 🔴 CE TOKEN NOMMAIT ENCORE « Marelle Baton 2 » — SUPPRIMÉE DU DÉPÔT LE
+     MÊME SOIR. Un de mes remplacements n'a pas trouvé sa chaîne et n'a rien
+     écrit, sans rien dire. Conséquence mesurée au navigateur : les dix-sept
+     règles qui emploient `--titre` rendaient en « Iowan Old Style » — une
+     police système de macOS, donc en Georgia sur Windows et Android.
+     ⭐ Le site affichait TROIS serifs différents selon l'élément et le
+        système, et je lui ai montré des captures de tout ça sans le voir.
+        Un `replace` qui ne trouve pas sa chaîne écrit zéro et ne lève pas :
+        c'est l'édition qui échoue le plus silencieusement.
+     ⚠️ `--titre` et `--serif` désignaient la même intention sous deux noms.
+        Un seul reste vrai : `--serif` est désormais un alias. */
+  --titre: "Instrument Serif", "Instrument repli", Georgia, serif;
+  --texte-famille: "Rubik", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --chiffres: var(--texte-famille);
+
+  /* échelle majeure tierce (1,25), ancrée sur 16 px et ARRÊTÉE :
+     une échelle à laquelle on ajoute un cran « juste pour ce titre » n'est
+     plus une échelle. */
+  --t-2xs: 0.75rem;  --t-xs: 0.8125rem; --t-s: 1rem;
+  --t-m: 1.25rem;    --t-l: 1.5625rem;  --t-xl: 1.953rem;
+  --t-2xl: 2.441rem; --t-3xl: 3.052rem;
+  --lh-serre: 1.12;  --lh-titre: 1.2;   --lh-texte: 1.62;
+  --suivi-titre: -0.015em;              /* une serif de titrage se resserre */
+  --suivi-label: 0.08em;                /* une capitale d'étiquette respire */
+  --mesure: 62ch;                        /* la ligne de lecture confortable */
+
+  /* ── 6 · ESPACE ET FORME ─────────────────────────────────────────────────  */
+  --sp-0: 4px;  --sp-1: 8px;  --sp-2: 16px; --sp-3: 24px;
+  --sp-4: 32px; --sp-6: 48px; --sp-8: 64px; --sp-12: 96px;
+  --r-s: 6px; --r-m: 12px; --r-l: 20px; --r-xl: 28px; --r-rond: 999px;
+
+  /* ⚠️ LES OMBRES SONT TEINTÉES EN NUIT, JAMAIS EN NOIR. Une ombre noire sur
+     une craie chaude vire au gris sale : la couleur du fond se lit DANS
+     l'ombre. Et elles restent diffuses — §8.3 refuse l'ombre épaisse. */
+  --ombre-pose:  0 1px 2px rgb(25 43 67 / 6%);
+  --ombre-carte: 0 2px 10px rgb(25 43 67 / 7%), 0 1px 2px rgb(25 43 67 / 5%);
+  --ombre-panneau: 0 -8px 28px rgb(25 43 67 / 12%);
+  --ombre-levee: 0 8px 30px rgb(25 43 67 / 14%);
+
+  /* ── 7 · MATIÈRE ─────────────────────────────────────────────────────────
+     ⚠️ « Presque imperceptible » est une VALEUR, pas une intention : au-delà
+        de 4 %, un grain devient un motif, et un motif devient une mode. */
+  --grain: 0.035;
+  --voile-photo: linear-gradient(to top,
+      rgb(25 43 67 / 78%) 0%, rgb(25 43 67 / 38%) 34%, rgb(25 43 67 / 0%) 68%);
+  --voile-photo-haut: linear-gradient(to bottom,
+      rgb(25 43 67 / 46%) 0%, rgb(25 43 67 / 0%) 46%);
+
+  /* ── 8 · MOUVEMENT ───────────────────────────────────────────────────────  */
+  --d-micro: 150ms;   /* survol, bascule d'état        */
+  --d-panneau: 280ms; /* une feuille qui monte         */
+  --d-ecran: 360ms;   /* un écran qui remplace l'autre */
+  --d-photo: 480ms;   /* une image qui se révèle       */
+  --d-trace: 900ms;   /* un tracé qui se dessine       */
+  /* ⚠️ Des courbes NOMMÉES par ce qu'elles font, pas par leurs quatre
+     nombres : `--e-sortie` se relit, `cubic-bezier(.32,.72,0,1)` non. */
+  --e-sortie:  cubic-bezier(0.32, 0.72, 0, 1);   /* ce qui arrive            */
+  --e-entree:  cubic-bezier(0.4, 0, 0.9, 0.3);   /* ce qui s'en va           */
+  --e-doux:    cubic-bezier(0.4, 0, 0.2, 1);     /* ce qui se déplace        */
+
+  /* ── 9 · SUPERPOSITION ───────────────────────────────────────────────────
+     Nommée, parce qu'un `z-index: 9999` est l'aveu qu'on ne sait plus. */
+  --z-carte: 0; --z-releve: 10; --z-panneau: 20;
+  --z-barre: 30; --z-voile: 40; --z-modale: 50;
+
+  --largeur: 860px;
+  --largeur-etroite: 620px;
+}
+
+/* ── 10 · LES DEUX THÈMES ──────────────────────────────────────────────────
+   🔴 TROIS ÉTATS, PAS DEUX. Un choix explicite pose `data-theme` sur la
+      racine ; le réglage « système », qui est le DÉFAUT, n'en pose aucun —
+      seul `prefers-color-scheme` distingue alors clair et sombre. Une couleur
+      dont l'unique définition vit dans un bloc `[data-theme]` ne s'applique
+      donc JAMAIS dans l'état le plus courant.
+   ⭐ D'où la discipline : le §1 au §9 ci-dessus définit la palette COMPLÈTE
+      sur `:root` nu ; les blocs ci-dessous ne redéfinissent que des TOKENS,
+      jamais un composant.
+   ⚠️ Et le sombre n'est pas une inversion. MANA sombre, c'est la nuit sur le
+      territoire : le kaki devient le sol, la craie devient la lumière qu'on
+      porte. L'ocre, lui, ne bouge pas — c'est le seul repère constant entre
+      les deux thèmes, et c'est ce qui rend la marque reconnaissable de nuit. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fond:            var(--kaki-sombre);
+    --fond-surelevé:   var(--kaki);
+    --fond-enfoncé:    #1d2419;
+    --fond-immersif:   var(--kaki-sombre);
+    --fond-profond:    #101c2c;
+    --texte:           var(--craie);
+    --texte-doux:      var(--sauge);
+    --texte-inverse:   var(--craie);
+    --texte-inverse-doux: var(--sauge);
+    --texte-action:    var(--ocre-clair);
+    --texte-patrimoine:#c4866a;
+    --trait:           color-mix(in oklab, var(--craie) 14%, transparent);
+    --trait-fort:      color-mix(in oklab, var(--craie) 26%, transparent);
+    --action-texte:    #1a1f18;
+    --inactif-texte:   color-mix(in oklab, var(--craie) 40%, var(--kaki));
+    --inactif-fond:    var(--kaki-clair);
+    --carte-fond:      var(--kaki-sombre);
+    --carte-vegetal:   color-mix(in oklab, var(--sauge) 40%, var(--kaki-sombre));
+    --carte-foret:     #202a1d;
+    --carte-eau:       #101c2c;
+    --carte-eau-douce: var(--nuit);
+    --carte-estran:    color-mix(in oklab, var(--nuit) 60%, var(--kaki-sombre));
+    --carte-chemin:    color-mix(in oklab, var(--sauge) 58%, var(--kaki-sombre));
+    --carte-chemin-beau: var(--sauge-clair);
+    --carte-route:     color-mix(in oklab, var(--sauge) 28%, var(--kaki-sombre));
+    --carte-depart:    var(--craie);
+    --ombre-carte:     0 2px 10px rgb(0 0 0 / 34%);
+    --ombre-levee:     0 8px 30px rgb(0 0 0 / 46%);
+  }
+}
+:root[data-theme="dark"] {
+  --fond: var(--kaki-sombre);        --fond-surelevé: var(--kaki);
+  --fond-enfoncé: #1d2419;           --fond-immersif: var(--kaki-sombre);
+  --fond-profond: #101c2c;           --texte: var(--craie);
+  --texte-doux: var(--sauge);        --texte-inverse: var(--craie);
+  --texte-inverse-doux: var(--sauge);--texte-action: var(--ocre-clair);
+  --texte-patrimoine: #c4866a;
+  --trait: color-mix(in oklab, var(--craie) 14%, transparent);
+  --trait-fort: color-mix(in oklab, var(--craie) 26%, transparent);
+  --action-texte: #1a1f18;
+  --inactif-texte: color-mix(in oklab, var(--craie) 40%, var(--kaki));
+  --inactif-fond: var(--kaki-clair);
+  --carte-fond: var(--kaki-sombre);
+  --carte-vegetal: color-mix(in oklab, var(--sauge) 40%, var(--kaki-sombre));
+  --carte-foret: #202a1d;            --carte-eau: #101c2c;
+  --carte-eau-douce: var(--nuit);
+  --carte-estran: color-mix(in oklab, var(--nuit) 60%, var(--kaki-sombre));
+  --carte-chemin: color-mix(in oklab, var(--sauge) 58%, var(--kaki-sombre));
+  --carte-chemin-beau: var(--sauge-clair);
+  --carte-route: color-mix(in oklab, var(--sauge) 28%, var(--kaki-sombre));
+  --carte-depart: var(--craie);
+  --ombre-carte: 0 2px 10px rgb(0 0 0 / 34%);
+  --ombre-levee: 0 8px 30px rgb(0 0 0 / 46%);
+}
+
+/* ── 11 · LE MOUVEMENT SE RETIRE QUAND ON LE DEMANDE ───────────────────────
+   ⚠️ On neutralise par les TOKENS avant de neutraliser par `*`. Mettre toutes
+      les durées à zéro ici suffit à tout ce qui respecte le système ; la
+      règle balai qui suit ne rattrape que ce qui ne le respecte pas, et son
+      existence est donc un indicateur de dette, pas une fonctionnalité. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --d-micro: 0ms; --d-panneau: 0ms; --d-ecran: 0ms;
+    --d-photo: 0ms; --d-trace: 0ms;
+  }
+  *, *::before, *::after {
+    animation-duration: 1ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important; scroll-behavior: auto !important;
+  }
+}
+
+/* ── 12 · LES PONTS VERS L'ANCIENNE CHARTE ─────────────────────────────────
+   ⛔ NE PAS AJOUTER DE PONT. Chacun est une dette datée : il existe pour
+      qu'un écran non repris continue de s'afficher, et il DOIT disparaître
+      quand cet écran passe au système. Un pont qu'on ajoute au lieu de
+      reprendre l'écran transforme la migration en couche permanente.
+   Écrits le 31/10/2026 ; à relire quand les six écrans 2030 seront livrés. */
+:root {
+  --encre:  var(--kaki);
+  --pierre: var(--craie);
+  --verre:  var(--sauge);
+  --lumiere:var(--ocre);
+}

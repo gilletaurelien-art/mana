@@ -15,6 +15,20 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      /* ⚠️ AVANT REACT. `useLayoutEffect` supprime le flash entre deux rendus,
+         mais pas celui du tout premier cadre : entre le HTML servi et le
+         montage de React, la racine n'a aucun attribut et la colonne se peint
+         en sable. Trois lignes ici valent mieux qu'un écran blanc au
+         lancement — c'est le premier regard de quelqu'un sur l'application.
+         ⭐ La règle est la MÊME que dans App.tsx. Deux copies, donc : à
+            changer ensemble. Un test les compare. */
+      (function () {
+        var p = location.pathname.replace(/^\/mana/, "") || "/";
+        document.documentElement.dataset.fond =
+          (p === "/" || /\/en-chemin\/?$/.test(p)) ? "immersif" : "lecture";
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

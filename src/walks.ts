@@ -49,9 +49,14 @@ export interface Etape {
  *    défaut a été vu d'abord sur la liste, corrigé là, puis retrouvé identique
  *    sur la fiche. Une règle d'affichage recopiée se corrige une fois sur deux.
  */
+/** ⚠️ VIRGULE DÉCIMALE, PAS POINT. `${3.5}` rend « 3.5 » : la notation
+ *  anglaise, sur un site en français qui nomme des lieux bretons. Le défaut
+ *  est invisible à la relecture du code et saute aux yeux à l'écran. */
+const fr = (n: number) => n.toLocaleString("fr-FR", { maximumFractionDigits: 1 });
+
 export function effortLisible(km: number): string {
   const h = km / 3.5;
-  if (h <= 8) return `≈ ${Math.round(h * 2) / 2} h de marche`;
+  if (h <= 8) return `≈ ${fr(Math.round(h * 2) / 2)} h de marche`;
   return `≈ ${Math.ceil(h / 6)} jours de marche (6 h/jour)`;
 }
 

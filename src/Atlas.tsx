@@ -31,19 +31,37 @@ type Props = {
   walks: Walk[];
   /** la promenade mise en avant, s'il y en a une */
   focus?: string | null;
+  /**
+   * 🔴 CADRER SUR LA PROMENADE MISE EN AVANT, au lieu du territoire entier.
+   *    Vu le 31/10 sur la fiche de Saint-Fiacre : une boucle de 6,4 km dans
+   *    une emprise de 30 km devient une tache de douze pixels. L'atlas était
+   *    juste et la couverture ne montrait pas son sujet.
+   *    ⭐ L'emprise d'une carte est une DÉCISION ÉDITORIALE, pas une propriété
+   *       des données : « tout montrer » est le réglage par défaut de celui
+   *       qui n'a pas choisi. Ici on cadre sur le parcours et on laisse les
+   *       voisins déborder — ils donnent l'échelle sans voler la vedette.
+   */
+  cadrerSurFocus?: boolean;
   className?: string;
 };
 
 const R_LAT = 111_320; // mètres par degré de latitude
 
-export function Atlas({ walks, focus = null, className }: Props) {
+export function Atlas({ walks, focus = null, cadrerSurFocus = false, className }: Props) {
   const id = useId();
   const pts = walks.flatMap((w) => w.points);
   if (pts.length === 0) return null;
 
-  // ── emprise commune à TOUTES les promenades : elles partagent un territoire
+  /* ⚠️ L'emprise se calcule sur le parcours cadré quand on en a un, sur tous
+     sinon. Le repli vers `pts` n'est pas décoratif : un slug qui ne
+     correspond à rien donnerait une emprise infinie, donc un `viewBox`
+     « NaN NaN » — et un SVG au viewBox invalide ne lève pas, il disparaît. */
+  const cadre = cadrerSurFocus
+    ? (walks.find((w) => w.slug === focus)?.points ?? pts)
+    : pts;
+
   let laMin = Infinity, laMax = -Infinity, loMin = Infinity, loMax = -Infinity;
-  for (const p of pts) {
+  for (const p of cadre) {
     if (p.lat < laMin) laMin = p.lat;
     if (p.lat > laMax) laMax = p.lat;
     if (p.lon < loMin) loMin = p.lon;
@@ -55,7 +73,10 @@ export function Atlas({ walks, focus = null, className }: Props) {
   // mètres au sol, pour une boîte aux proportions VRAIES
   const largeurM = (loMax - loMin) * R_LAT * kLon;
   const hauteurM = (laMax - laMin) * R_LAT;
-  const marge = Math.max(largeurM, hauteurM) * 0.08;
+  /* ⚠️ La marge est plus généreuse quand on cadre serré : un parcours collé
+     aux bords de sa boîte paraît coupé, et les voisins n'ont alors aucune
+     place pour apparaître en contexte. */
+  const marge = Math.max(largeurM, hauteurM) * (cadrerSurFocus ? 0.35 : 0.08);
   const W = largeurM + 2 * marge;
   const H = hauteurM + 2 * marge;
 

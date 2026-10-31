@@ -55,7 +55,17 @@ const IMMUABLES = [
   /\/assets\//,
   /\/bretagne\/g\/.*\.json$/,   // le graphe d'un territoire
   /\/carte\/style\.json$/,
-  /\.(woff2?|ttf|svg|png|webp)$/,
+  /* 🔴 `avif` AJOUTÉ LE 31/10/2026 — et son absence était une panne muette.
+     La bibliothèque photographique sert de l'AVIF en premier choix (`<source
+     type="image/avif">`) : sans cette extension, le navigateur recevait bien
+     l'image en ligne, mais le service worker ne la gardait pas. Hors ligne,
+     les fiches se seraient ouvertes avec leur texte, leur tracé, leurs
+     fermetures — et un trou à la place de la photographie.
+     ⭐ Un motif d'extensions est une liste blanche : il dit non à tout format
+        qu'on n'a pas pensé à y inscrire, et il ne se plaint jamais. Le défaut
+        n'apparaît que dans le régime qu'on ne regarde pas — ici, hors ligne,
+        c'est-à-dire exactement le régime qui fait notre argument. */
+  /\.(woff2?|ttf|svg|png|webp|avif|jpe?g)$/,
 ];
 
 const correspond = (motifs, url) => motifs.some((m) => m.test(url.pathname));

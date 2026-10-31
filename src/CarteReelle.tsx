@@ -46,10 +46,22 @@ export function CarteReelle({
   walk,
   moi,
   hauteur = 420,
+  marge = 0,
 }: {
   walk: Walk;
   moi?: WalkPoint | null;
   hauteur?: number;
+  /**
+   * ⭐ DE COMBIEN ON ÉLARGIT LE CADRE AUTOUR DU PARCOURS, en multiples de son
+   *    étendue. 0 = serré sur le tracé, ce qu'il faut quand on marche. 1,1 =
+   *    l'emprise plus 110 %, ce qu'il faut sur la fiche : la côte entre dans
+   *    l'image, et on voit OÙ le chemin se trouve au lieu de voir seulement
+   *    sa forme.
+   * ⚠️ Et c'est une marge en DEGRÉS, pas un niveau de zoom fixe : une boucle
+   *    de 3 km et un sentier de 95 km n'ont pas besoin du même recul, et un
+   *    zoom choisi une fois serait juste pour l'un et faux pour l'autre.
+   */
+  marge?: number;
 }) {
   const plan = useRef<HTMLDivElement | null>(null);
   const svg = useRef<SVGSVGElement | null>(null);
@@ -70,7 +82,14 @@ export function CarteReelle({
       attributionControl: false,
     });
     setCarte(m);
-    m.addControl(new NavigationControl({ showCompass: false }), "top-right");
+    /* ⚠️ EN BAS À DROITE, et par le paramètre de maplibre plutôt que par une
+       surcharge CSS : en haut à droite les commandes tombaient sous le
+       marque-page de la fiche — deux cibles de 44 px au même endroit, dont
+       l'une ferme ce que l'autre vient d'ouvrir.
+       ⭐ Repositionner un contrôle par `top: auto; bottom: …` marche jusqu'à
+          la prochaine version de la bibliothèque ; lui dire où se mettre
+          marche toujours. */
+    m.addControl(new NavigationControl({ showCompass: false }), "bottom-right");
 
     const sous = svg.current?.querySelector<SVGPathElement>("#trace-sous");
     const trait = svg.current?.querySelector<SVGPathElement>("#trace-trait");
@@ -105,10 +124,12 @@ export function CarteReelle({
     const cadrer = () => {
       m.resize();
       const b = bbox(walk.points);
+      const dLon = (b.lonMax - b.lonMin) * marge;
+      const dLat = (b.latMax - b.latMin) * marge;
       m.fitBounds(
         [
-          [b.lonMin, b.latMin],
-          [b.lonMax, b.latMax],
+          [b.lonMin - dLon, b.latMin - dLat],
+          [b.lonMax + dLon, b.latMax + dLat],
         ],
         { padding: 36, duration: 0 }
       );
@@ -127,7 +148,7 @@ export function CarteReelle({
       m.remove();
       setCarte(null);
     };
-  }, [walk]);
+  }, [walk, marge]);
 
   const depart = walk.points[0];
   const arrivee = walk.points[walk.points.length - 1];

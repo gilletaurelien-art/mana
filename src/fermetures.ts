@@ -173,3 +173,33 @@ export async function chargerFermetures(base: string): Promise<Fermetures | null
     return null;
   }
 }
+
+/**
+ * ── CE QUI TOUCHE UN PARCOURS DONNÉ ──────────────────────────────────────
+ * ⭐ `aretesTouchees` répond pour le GRAPHE, c'est-à-dire pour la composition
+ *    d'un itinéraire. Une fiche de promenade pose une autre question : « cette
+ *    promenade-ci est-elle concernée ? ». La réponse ne se déduit pas de la
+ *    première — un parcours peut longer un secteur fermé sans qu'aucune arête
+ *    composée ne le traverse.
+ *
+ * ⚠️ ET LA PORTÉE EST APPROXIMATIVE, DÉLIBÉRÉMENT. Les arrêtés nomment des
+ *    lieux-dits, pas des tronçons : on applique un rayon autour des points
+ *    résolus, et `portee_approximative` le dit. Afficher un périmètre net à
+ *    partir d'une donnée floue serait une précision inventée.
+ * ⛔ Une fermeture sans géométrie (`geometrie: null`) ne touche RIEN et ne
+ *    doit pas être affichée comme concernant ce parcours : on ne sait pas où
+ *    elle est. Elle reste lisible ailleurs, à l'échelle du territoire.
+ */
+export function fermeturesSurLeParcours(
+  points: { lat: number; lon: number }[],
+  f: Fermetures | null,
+): Fermeture[] {
+  if (!f) return [];
+  return f.fermetures.filter((x) => {
+    if (!x.geometrie || x.geometrie.length === 0) return false;
+    const rayon = x.rayon_m ?? 300;
+    return x.geometrie.some((g) =>
+      points.some((p) => metres(g.g, [p.lon, p.lat]) <= rayon),
+    );
+  });
+}

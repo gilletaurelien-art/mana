@@ -1,0 +1,1746 @@
+{
+  "_": "GÉNÉRÉ par `node scripts/moisson-images.mjs retenir`. ⛔ Ne pas éditer à la main : une image ajoutée ici sans passer par la moisson n'a pas de licence vérifiée, et le crédit affiché serait une affirmation sans preuve.",
+  "genere": "2026-10-31T12:29:33.296Z",
+  "images": [
+    {
+      "id": "brume-aube-1",
+      "famille": "coastal",
+      "role": "couverture",
+      "lieu": "Mer de nuages au lever du soleil, mer d'Iroise",
+      "documentaire": true,
+      "pourquoi": "la lumière rasante et la brume que la direction demande, à 8256 px — et aucun ciel publicitaire",
+      "cadrage": "recadrable",
+      "focale": null,
+      "largeur": 8256,
+      "hauteur": 5504,
+      "ratio": 1.5,
+      "source": "Wikimedia Commons",
+      "page": "https://commons.wikimedia.org/wiki/File:Mer_de_nuages_au_lever_du_soleil_(Ifremer_00620-73177_-_29140).jpg",
+      "fichierSource": "File:Mer de nuages au lever du soleil (Ifremer 00620-73177 - 29140).jpg",
+      "auteur": "Stephane Lesbats",
+      "licence": "CC BY 4.0",
+      "attributionRequise": true,
+      "conditions": "Creative Commons Attribution 4.0",
+      "dateOeuvre": "22 October 2019 (upload date)",
+      "collecte": "2026-10-31",
+      "variantes": [
+        {
+          "fichier": "brume-aube-1-480.avif",
+          "largeur": 480,
+          "format": "avif",
+          "octets": 8893
+        },
+        {
+          "fichier": "brume-aube-1-480.webp",
+          "largeur": 480,
+          "format": "webp",
+          "octets": 13950
+        },
+        {
+          "fichier": "brume-aube-1-960.avif",
+          "largeur": 960,
+          "format": "avif",
+          "octets": 30827
+        },
+        {
+          "fichier": "brume-aube-1-960.webp",
+          "largeur": 960,
+          "format": "webp",
+          "octets": 49770
+        },
+        {
+          "fichier": "brume-aube-1-1600.avif",
+          "largeur": 1600,
+          "format": "avif",
+          "octets": 65935
+        },
+        {
+          "fichier": "brume-aube-1-1600.webp",
+          "largeur": 1600,
+          "format": "webp",
+          "octets": 112764
+        }
+      ]
+    },
+    {
+      "id": "brume-aube-2",
+      "famille": "coastal",
+      "role": "banniere",
+      "lieu": "Mer de nuages au lever du soleil, mer d'Iroise",
+      "documentaire": true,
+      "pourquoi": null,
+      "cadrage": "recadrable",
+      "focale": null,
+      "largeur": 8256,
+      "hauteur": 5504,
+      "ratio": 1.5,
+      "source": "Wikimedia Commons",
+      "page": "https://commons.wikimedia.org/wiki/File:Mer_de_nuages_au_lever_du_soleil_(Ifremer_00620-73177_-_29141).jpg",
+      "fichierSource": "File:Mer de nuages au lever du soleil (Ifremer 00620-73177 - 29141).jpg",
+      "auteur": "Stephane Lesbats",
+      "licence": "CC BY 4.0",
+      "attributionRequise": true,
+      "conditions": "Creative Commons Attribution 4.0",
+      "dateOeuvre": "22 October 2019 (upload date)",
+      "collecte": "2026-10-31",
+      "variantes": [
+        {
+          "fichier": "brume-aube-2-480.avif",
+          "largeur": 480,
+          "format": "avif",
+          "octets": 9381
+        },
+        {
+          "fichier": "brume-aube-2-480.webp",
+          "largeur": 480,
+          "format": "webp",
+          "octets": 15020
+        },
+        {
+          "fichier": "brume-aube-2-960.avif",
+          "largeur": 960,
+          "format": "avif",
+          "octets": 33734
+        },
+        {
+          "fichier": "brume-aube-2-960.webp",
+          "largeur": 960,
+          "format": "webp",
+          "octets": 56270
+        },
+        {
+          "fichier": "brume-aube-2-1600.avif",
+          "largeur": 1600,
+          "format": "avif",
+          "octets": 72178
+        },
+        {
+          "fichier": "brume-aube-2-1600.webp",
+          "largeur": 1600,
+          "format": "webp",
+          "octets": 127030
+        }
+      ]
+    },
+    {
+      "id": "menez-hom",
+      "famille": "trails",
+      "role": "chemin",
+      "lieu": "Petit Ménez-Hom, Dinéault",
+      "documentaire": true,
+      "pourquoi": "un sentier qui s'enfonce dans la lande — le sujet que Category:GR 34 n'avait pas",
+      "cadrage": "recadrable",
+      "focale": null,
+      "largeur": 4320,
+      "hauteur": 2019,
+      "ratio": 2.14,
+      "source": "Wikimedia Commons",
+      "page": "https://commons.wikimedia.org/wiki/File:9382_Petit_M%C3%A9nez-Hom.jpg",
+      "fichierSource": "File:9382 Petit Ménez-Hom.jpg",
+      "auteur": "Moreau.henri",
+      "licence": "CC BY-SA 4.0",
+      "attributionRequise": true,
+      "conditions": "Creative Commons Attribution-Share Alike 4.0",
+      "dateOeuvre": "2020-05-25 13:56:15",
+      "collecte": "2026-10-31",
+      "variantes": [
+        {
+          "fichier": "menez-hom-480.avif",
+          "largeur": 480,
+          "format": "avif",
+          "octets": 9075
+        },
+        {
+          "fichier": "menez-hom-480.webp",
+          "largeur": 480,
+          "format": "webp",
+          "octets": 15022
+        },
+        {
+          "fichier": "menez-hom-960.avif",
+          "largeur": 960,
+          "format": "avif",
+          "octets": 35233
+        },
+        {
+          "fichier": "menez-hom-960.webp",
+          "largeur": 960,
+          "format": "webp",
+          "octets": 61184
+        },
+        {
+          "fichier": "menez-hom-1600.avif",
+          "largeur": 1600,
+          "format": "avif",
+          "octets": 93864
+        },
+        {
+          "fichier": "menez-hom-1600.webp",
+          "largeur": 1600,
+          "format": "webp",
+          "octets": 161524
+        }
+      ]
+    },
+    {
+      "id": "guern",
+      "famille": "coastal",
+      "role": "carte-decouverte",
+      "lieu": "Pointe de Guern, Crozon",
+      "documentaire": true,
+      "pourquoi": null,
+      "cadrage": "recadrable",
+      "focale": null,
+      "largeur": 4233,
+      "hauteur": 2812,
+      "ratio": 1.505,
+      "source": "Wikimedia Commons",
+      "page": "https://commons.wikimedia.org/wiki/File:Pointe_de_Guern-CROZON.jpg",
+      "fichierSource": "File:Pointe de Guern-CROZON.jpg",
+      "auteur": "Louboutinj",
+      "licence": "CC BY-SA 3.0",
+      "attributionRequise": true,
+      "conditions": "Creative Commons Attribution-Share Alike 3.0",
+      "dateOeuvre": "2010-04-23",
+      "collecte": "2026-10-31",
+      "variantes": [
+        {
+          "fichier": "guern-480.avif",
+          "largeur": 480,
+          "format": "avif",
+          "octets": 14855
+        },
+        {
+          "fichier": "guern-480.webp",
+          "largeur": 480,
+          "format": "webp",
+          "octets": 24368
+        },
+        {
+          "fichier": "guern-960.avif",
+          "largeur": 960,
+          "format": "avif",
+          "octets": 58074
+        },
+        {
+          "fichier": "guern-960.webp",
+          "largeur": 960,
+          "format": "webp",
+          "octets": 96540
+        },
+        {
+          "fichier": "guern-1600.avif",
+          "largeur": 1600,
+          "format": "avif",
+          "octets": 153231
+        },
+        {
+          "fichier": "guern-1600.webp",
+          "largeur": 1600,
+          "format": "webp",
+          "octets": 248870
+        }
+      ]
+    },
+    {
+      "id": "tempete-1",
+      "famille": "details",
+      "role": "respiration",
+      "lieu": "Presqu'île de Crozon, un jour de tempête",
+      "documentaire": true,
+      "pourquoi": "embrun, contraste doux, presque monochrome : la matière sans le spectaculaire",
+      "cadrage": "recadrable",
+      "focale": null,
+      "largeur": 2816,
+      "hauteur": 1652,
+      "ratio": 1.705,
+      "source": "Wikimedia Commons",
+      "page": "https://commons.wikimedia.org/wiki/File:Temp%C3%AAte_en_presqu%27%C3%AEle_de_Crozon_(11328899955).jpg",
+      "fichierSource": "File:Tempête en presqu'île de Crozon (11328899955).jpg",
+      "auteur": "Richard Tanguy",
+      "licence": "CC BY 2.0",
+      "attributionRequise": true,
+      "conditions": "Creative Commons Attribution 2.0",
+      "dateOeuvre": "2007-12-09 13:17",
+      "collecte": "2026-10-31",
+      "variantes": [
+        {
+          "fichier": "tempete-1-480.avif",
+          "largeur": 480,
+          "format": "avif",
+          "octets": 5327
+        },
+        {
+          "fichier": "tempete-1-480.webp",
+          "largeur": 480,
+          "format": "webp",
+          "octets": 6300
+        },
+        {
+          "fichier": "tempete-1-960.avif",
+          "largeur": 960,
+          "format": "avif",
+          "octets": 16979
+        },
+        {
+          "fichier": "tempete-1-960.webp",
+          "largeur": 960,
+          "format": "webp",
+          "octets": 19944
+        },
+        {
+          "fichier": "tempete-1-1600.avif",
+          "largeur": 1600,
+          "format": "avif",
+          "octets": 46805
+        },
+        {
+          "fichier": "tempete-1-1600.webp",
+          "largeur": 1600,
+          "format": "webp",
+          "octets": 49490
+        }
+      ]
+    },
+    {
+      "id": "tempete-2",
+      "famille": "details",
+      "role": "respiration",
+      "lieu": "Presqu'île de Crozon, un jour de tempête",
+      "documentaire": true,
+      "pourquoi": null,
+      "cadrage": "recadrable",
+      "focale": null,
+      "largeur": 2802,
+      "hauteur": 1186,
+      "ratio": 2.363,
+      "source": "Wikimedia Commons",
+      "page": "https://commons.wikimedia.org/wiki/File:Temp%C3%AAte_en_presqu%27%C3%AEle_de_Crozon_(11329049393).jpg",
+      "fichierSource": "File:Tempête en presqu'île de Crozon (11329049393).jpg",
+      "auteur": "Richard Tanguy",
+      "licence": "CC BY 2.0",
+      "attributionRequise": true,
+      "conditions": "Creative Commons Attribution 2.0",
+      "dateOeuvre": "2007-12-09 10:45",
+      "collecte": "2026-10-31",
+      "variantes": [
+        {
+          "fichier": "tempete-2-480.avif",
+          "largeur": 480,
+          "format": "avif",
+          "octets": 6031
+        },
+        {
+          "fichier": "tempete-2-480.webp",
+          "largeur": 480,
+          "format": "webp",
+          "octets": 8628
+        },
+        {
+          "fichier": "tempete-2-960.avif",
+          "largeur": 960,
+          "format": "avif",
+          "octets": 21218
+        },
+        {
+          "fichier": "tempete-2-960.webp",
+          "largeur": 960,
+          "format": "webp",
+          "octets": 30282
+        },
+        {
+          "fichier": "tempete-2-1600.avif",
+          "largeur": 1600,
+          "format": "avif",
+          "octets": 51352
+        },
+        {
+          "fichier": "tempete-2-1600.webp",
+          "largeur": 1600,
+          "format": "webp",
+          "octets": 66266
+        }
+      ]
+    },
+    {
+      "id": "crozon-cote",
+      "famille": "coastal",
+      "role": "carte-decouverte",
+      "lieu": "Presqu'île de Crozon",
+      "documentaire": true,
+      "pourquoi": null,
+      "cadrage": "recadrable",
+      "focale": null,
+      "largeur": 5472,
+      "hauteur": 3648,
+      "ratio": 1.5,
+      "source": "Wikimedia Commons",
+      "page": "https://commons.wikimedia.org/wiki/File:Le_Bresto%C3%A2_-_Presqu%27%C3%AEle_de_Crozon_-_20210719-_073.jpg",
+      "fichierSource": "File:Le Brestoâ - Presqu'île de Crozon - 20210719- 073.jpg",
+      "auteur": "Thesupermat",
+      "licence": "CC BY-SA 4.0",
+      "attributionRequise": true,
+      "conditions": "Creative Commons Attribution-Share Alike 4.0",
+      "dateOeuvre": "2021-07-20 14:27:45",
+      "collecte": "2026-10-31",
+      "variantes": [
+        {
+          "fichier": "crozon-cote-480.avif",
+          "largeur": 480,
+          "format": "avif",
+          "octets": 20052
+        },
+        {
+          "fichier": "crozon-cote-480.webp",
+          "largeur": 480,
+          "format": "webp",
+          "octets": 35992
+        },
+        {
+          "fichier": "crozon-cote-960.avif",
+          "largeur": 960,
+          "format": "avif",
+          "octets": 77226
+        },
+        {
+          "fichier": "crozon-cote-960.webp",
+          "largeur": 960,
+          "format": "webp",
+          "octets": 141058
+        },
+        {
+          "fichier": "crozon-cote-1600.avif",
+          "largeur": 1600,
+          "format": "avif",
+          "octets": 210144
+        },
+        {
+          "fichier": "crozon-cote-1600.webp",
+          "largeur": 1600,
+          "format": "webp",
+          "octets": 388970
+        }
+      ]
+    },
+    {
+      "id": "camaret",
+      "famille": "coastal",
+      "role": "couverture",
+      "lieu": "Camaret-sur-Mer",
+      "documentaire": true,
+      "pourquoi": null,
+      "cadrage": "recadrable",
+      "focale": null,
+      "largeur": 5026,
+      "hauteur": 2528,
+      "ratio": 1.988,
+      "source": "Wikimedia Commons",
+      "page": "https://commons.wikimedia.org/wiki/File:Mobeye-%C3%89t%C3%A9DesVilles-Camaret-sur-Mer-237.jpg",
+      "fichierSource": "File:Mobeye-ÉtéDesVilles-Camaret-sur-Mer-237.jpg",
+      "auteur": "Cédric PINEAU",
+      "licence": "CC BY 4.0",
+      "attributionRequise": true,
+      "conditions": "Creative Commons Attribution 4.0",
+      "dateOeuvre": "2015-09-16",
+      "collecte": "2026-10-31",
+      "variantes": [
+        {
+          "fichier": "camaret-480.avif",
+          "largeur": 480,
+          "format": "avif",
+          "octets": 12347
+        },
+        {
+          "fichier": "camaret-480.webp",
+          "largeur": 480,
+          "format": "webp",
+          "octets": 20056
+        },
+        {
+          "fichier": "camaret-960.avif",
+          "largeur": 960,
+          "format": "avif",
+          "octets": 45256
+        },
+        {
+          "fichier": "camaret-960.webp",
+          "largeur": 960,
+          "format": "webp",
+          "octets": 75568
+        },
+        {
+          "fichier": "camaret-1600.avif",
+          "largeur": 1600,
+          "format": "avif",
+          "octets": 122232
+        },
+        {
+          "fichier": "camaret-1600.webp",
+          "largeur": 1600,
+          "format": "webp",
+          "octets": 211418
+        }
+      ]
+    },
+    {
+      "id": "pen-hir",
+      "famille": "coastal",
+      "role": "fiche",
+      "lieu": "Pointe de Pen-Hir, Camaret-sur-Mer",
+      "documentaire": true,
+      "pourquoi": null,
+      "cadrage": "recadrable",
+      "focale": null,
+      "largeur": 3008,
+      "hauteur": 2000,
+      "ratio": 1.504,
+      "source": "Wikimedia Commons",
+      "page": "https://commons.wikimedia.org/wiki/File:France_Bretagne_29_POINTE_DE_PENHIR_01.jpg",
+      "fichierSource": "File:France Bretagne 29 POINTE DE PENHIR 01.jpg",
+      "auteur": "Calips",
+      "licence": "CC BY-SA 3.0",
+      "attributionRequise": true,
+      "conditions": "Creative Commons Attribution-Share Alike 3.0",
+      "dateOeuvre": "2012-05-02 14:05:40",
+      "collecte": "2026-10-31",
+      "variantes": [
+        {
+          "fichier": "pen-hir-480.avif",
+          "largeur": 480,
+          "format": "avif",
+          "octets": 12679
+        },
+        {
+          "fichier": "pen-hir-480.webp",
+          "largeur": 480,
+          "format": "webp",
+          "octets": 19472
+        },
+        {
+          "fichier": "pen-hir-960.avif",
+          "largeur": 960,
+          "format": "avif",
+          "octets": 47980
+        },
+        {
+          "fichier": "pen-hir-960.webp",
+          "largeur": 960,
+          "format": "webp",
+          "octets": 75902
+        },
+        {
+          "fichier": "pen-hir-1600.avif",
+          "largeur": 1600,
+          "format": "avif",
+          "octets": 126210
+        },
+        {
+          "fichier": "pen-hir-1600.webp",
+          "largeur": 1600,
+          "format": "webp",
+          "octets": 204922
+        }
+      ]
+    },
+    {
+      "id": "dinan-sud",
+      "famille": "coastal",
+      "role": "banniere",
+      "lieu": "Pointe de Dinan, Crozon",
+      "documentaire": true,
+      "pourquoi": "CC0 : la seule de la sélection qui n'exige aucune attribution",
+      "cadrage": "recadrable",
+      "focale": null,
+      "largeur": 4128,
+      "hauteur": 2322,
+      "ratio": 1.778,
+      "source": "Wikimedia Commons",
+      "page": "https://commons.wikimedia.org/wiki/File:Crozon_-_Pointe_de_Dinan_-_C%C3%B4te_vers_le_sud.jpeg",
+      "fichierSource": "File:Crozon - Pointe de Dinan - Côte vers le sud.jpeg",
+      "auteur": "Romainbehar",
+      "licence": "CC0",
+      "attributionRequise": false,
+      "conditions": "Creative Commons Zero, Public Domain Dedication",
+      "dateOeuvre": "2021-07-16 15:37:42",
+      "collecte": "2026-10-31",
+      "variantes": [
+        {
+          "fichier": "dinan-sud-480.avif",
+          "largeur": 480,
+          "format": "avif",
+          "octets": 9411
+        },
+        {
+          "fichier": "dinan-sud-480.webp",
+          "largeur": 480,
+          "format": "webp",
+          "octets": 14084
+        },
+        {
+          "fichier": "dinan-sud-960.avif",
+          "largeur": 960,
+          "format": "avif",
+          "octets": 39444
+        },
+        {
+          "fichier": "dinan-sud-960.webp",
+          "largeur": 960,
+          "format": "webp",
+          "octets": 64932
+        },
+        {
+          "fichier": "dinan-sud-1600.avif",
+          "largeur": 1600,
+          "format": "avif",
+          "octets": 117745
+        },
+        {
+          "fichier": "dinan-sud-1600.webp",
+          "largeur": 1600,
+          "format": "webp",
+          "octets": 199334
+        }
+      ]
+    },
+    {
+      "id": "dinan-brume",
+      "famille": "coastal",
+      "role": "couverture",
+      "lieu": "Pointe de Dinan, Crozon",
+      "documentaire": true,
+      "pourquoi": "brume, teintes rabattues, aucune saturation — l'image la plus proche de la direction. ⚠️ Son sujet (la falaise) est à droite et son tiers supérieur est du ciel plat : sans focale, un cadre portrait plein écran ne montre que le brouillard.",
+      "cadrage": "recadrable",
+      "focale": "72% 46%",
+      "largeur": 3072,
+      "hauteur": 2304,
+      "ratio": 1.333,
+      "source": "Wikimedia Commons",
+      "page": "https://commons.wikimedia.org/wiki/File:056_La_Pointe_de_Dinan.JPG",
+      "fichierSource": "File:056 La Pointe de Dinan.JPG",
+      "auteur": "Moreau.henri",
+      "licence": "CC BY-SA 3.0",
+      "attributionRequise": true,
+      "conditions": "Creative Commons Attribution-Share Alike 3.0",
+      "dateOeuvre": "2012-10-14 15:11:32",
+      "collecte": "2026-10-31",
+      "variantes": [
+        {
+          "fichier": "dinan-brume-480.avif",
+          "largeur": 480,
+          "format": "avif",
+          "octets": 11680
+        },
+        {
+          "fichier": "dinan-brume-480.webp",
+          "largeur": 480,
+          "format": "webp",
+          "octets": 16650
+        },
+        {
+          "fichier": "dinan-brume-960.avif",
+          "largeur": 960,
+          "format": "avif",
+          "octets": 42917
+        },
+        {
+          "fichier": "dinan-brume-960.webp",
+          "largeur": 960,
+          "format": "webp",
+          "octets": 60614
+        },
+        {
+          "fichier": "dinan-brume-1600.avif",
+          "largeur": 1600,
+          "format": "avif",
+          "octets": 105004
+        },
+        {
+          "fichier": "dinan-brume-1600.webp",
+          "largeur": 1600,
+          "format": "webp",
+          "octets": 151642
+        }
+      ]
+    },
+    {
+      "id": "dinan-lostmarch",
+      "famille": "trails",
+      "role": "chemin",
+      "lieu": "Entre la Pointe de Dinan et Lostmarc'h, Crozon",
+      "documentaire": true,
+      "pourquoi": "⚠️ Mon premier relevé écrivait « Lostmarc'h » avec l'apostrophe du toponyme breton ; le fichier Commons porte « Lostmarch ». Le script l'a déclaré INTROUVABLE au lieu de lui substituer une voisine — c'est exactement ce qu'on lui demande : ne rien inventer, et le dire.",
+      "cadrage": "recadrable",
+      "focale": null,
+      "largeur": 3072,
+      "hauteur": 2304,
+      "ratio": 1.333,
+      "source": "Wikimedia Commons",
+      "page": "https://commons.wikimedia.org/wiki/File:001_Entre_Pointe_de_Dinan_et_Lostmarch.jpg",
+      "fichierSource": "File:001 Entre Pointe de Dinan et Lostmarch.jpg",
+      "auteur": "Moreau.henri",
+      "licence": "CC BY-SA 4.0",
+      "attributionRequise": true,
+      "conditions": "Creative Commons Attribution-Share Alike 4.0",
+      "dateOeuvre": "2017-05-21 15:17:50",
+      "collecte": "2026-10-31",
+      "variantes": [
+        {
+          "fichier": "dinan-lostmarch-480.avif",
+          "largeur": 480,
+          "format": "avif",
+          "octets": 17028
+        },
+        {
+          "fichier": "dinan-lostmarch-480.webp",
+          "largeur": 480,
+          "format": "webp",
+          "octets": 29330
+        },
+        {
+          "fichier": "dinan-lostmarch-960.avif",
+          "largeur": 960,
+          "format": "avif",
+          "octets": 70073
+        },
+        {
+          "fichier": "dinan-lostmarch-960.webp",
+          "largeur": 960,
+          "format": "webp",
+          "octets": 123048
+        },
+        {
+          "fichier": "dinan-lostmarch-1600.avif",
+          "largeur": 1600,
+          "format": "avif",
+          "octets": 184819
+        },
+        {
+          "fichier": "dinan-lostmarch-1600.webp",
+          "largeur": 1600,
+          "format": "webp",
+          "octets": 324286
+        }
+      ]
+    },
+    {
+      "id": "chevre-lande",
+      "famille": "trails",
+      "role": "respiration",
+      "lieu": "Cap de la Chèvre, Crozon",
+      "documentaire": true,
+      "pourquoi": null,
+      "cadrage": "recadrable",
+      "focale": null,
+      "largeur": 19499,
+      "hauteur": 5378,
+      "ratio": 3.626,
+      "source": "Wikimedia Commons",
+      "page": "https://commons.wikimedia.org/wiki/File:Bretagne_-_Finist%C3%A8re_-_cap_de_la_ch%C3%A8vre_-_20180726_-_045.jpg",
+      "fichierSource": "File:Bretagne - Finistère - cap de la chèvre - 20180726 - 045.jpg",
+      "auteur": "Thesupermat",
+      "licence": "CC BY-SA 4.0",
+      "attributionRequise": true,
+      "conditions": "Creative Commons Attribution-Share Alike 4.0",
+      "dateOeuvre": "2018-07-26 17:10:03",
+      "collecte": "2026-10-31",
+      "variantes": [
+        {
+          "fichier": "chevre-lande-480.avif",
+          "largeur": 480,
+          "format": "avif",
+          "octets": 6567
+        },
+        {
+          "fichier": "chevre-lande-480.webp",
+          "largeur": 480,
+          "format": "webp",
+          "octets": 9424
+        },
+        {
+          "fichier": "chevre-lande-960.avif",
+          "largeur": 960,
+          "format": "avif",
+          "octets": 23530
+        },
+        {
+          "fichier": "chevre-lande-960.webp",
+          "largeur": 960,
+          "format": "webp",
+          "octets": 38992
+        },
+        {
+          "fichier": "chevre-lande-1600.avif",
+          "largeur": 1600,
+          "format": "avif",
+          "octets": 63702
+        },
+        {
+          "fichier": "chevre-lande-1600.webp",
+          "largeur": 1600,
+          "format": "webp",
+          "octets": 109536
+        }
+      ]
+    },
+    {
+      "id": "chevre-sentier",
+      "famille": "trails",
+      "role": "chemin",
+      "lieu": "Cap de la Chèvre, Crozon",
+      "documentaire": true,
+      "pourquoi": null,
+      "cadrage": "recadrable",
+      "focale": null,
+      "largeur": 5472,
+      "hauteur": 3648,
+      "ratio": 1.5,
+      "source": "Wikimedia Commons",
+      "page": "https://commons.wikimedia.org/wiki/File:Bretagne_-_Finist%C3%A8re_-_cap_de_la_ch%C3%A8vre_-_20180726_-_002.jpg",
+      "fichierSource": "File:Bretagne - Finistère - cap de la chèvre - 20180726 - 002.jpg",
+      "auteur": "Thesupermat",
+      "licence": "CC BY-SA 4.0",
+      "attributionRequise": true,
+      "conditions": "Creative Commons Attribution-Share Alike 4.0",
+      "dateOeuvre": "2018-07-26 14:23:03",
+      "collecte": "2026-10-31",
+      "variantes": [
+        {
+          "fichier": "chevre-sentier-480.avif",
+          "largeur": 480,
+          "format": "avif",
+          "octets": 14174
+        },
+        {
+          "fichier": "chevre-sentier-480.webp",
+          "largeur": 480,
+          "format": "webp",
+          "octets": 24310
+        },
+        {
+          "fichier": "chevre-sentier-960.avif",
+          "largeur": 960,
+          "format": "avif",
+          "octets": 51000
+        },
+        {
+          "fichier": "chevre-sentier-960.webp",
+          "largeur": 960,
+          "format": "webp",
+          "octets": 89994
+        },
+        {
+          "fichier": "chevre-sentier-1600.avif",
+          "largeur": 1600,
+          "format": "avif",
+          "octets": 132102
+        },
+        {
+          "fichier": "chevre-sentier-1600.webp",
+          "largeur": 1600,
+          "format": "webp",
+          "octets": 233976
+        }
+      ]
+    },
+    {
+      "id": "tas-de-pois-sentier",
+      "famille": "trails",
+      "role": "chemin",
+      "lieu": "Les Tas de Pois, vus de la Pointe de Dinan",
+      "documentaire": true,
+      "pourquoi": "⚠️ le lieu du PHOTOGRAPHE n'est pas le lieu du SUJET : la légende le dit",
+      "cadrage": "recadrable",
+      "focale": null,
+      "largeur": 3072,
+      "hauteur": 2304,
+      "ratio": 1.333,
+      "source": "Wikimedia Commons",
+      "page": "https://commons.wikimedia.org/wiki/File:049_Les_Tas_de_Pois_vus_de_la_Pointe_de_Dinan.JPG",
+      "fichierSource": "File:049 Les Tas de Pois vus de la Pointe de Dinan.JPG",
+      "auteur": "Moreau.henri",
+      "licence": "CC BY-SA 3.0",
+      "attributionRequise": true,
+      "conditions": "Creative Commons Attribution-Share Alike 3.0",
+      "dateOeuvre": "2012-10-14 14:55:02",
+      "collecte": "2026-10-31",
+      "variantes": [
+        {
+          "fichier": "tas-de-pois-sentier-480.avif",
+          "largeur": 480,
+          "format": "avif",
+          "octets": 17755
+        },
+        {
+          "fichier": "tas-de-pois-sentier-480.webp",
+          "largeur": 480,
+          "format": "webp",
+          "octets": 29634
+        },
+        {
+          "fichier": "tas-de-pois-sentier-960.avif",
+          "largeur": 960,
+          "format": "avif",
+          "octets": 68873
+        },
+        {
+          "fichier": "tas-de-pois-sentier-960.webp",
+          "largeur": 960,
+          "format": "webp",
+          "octets": 115692
+        },
+        {
+          "fichier": "tas-de-pois-sentier-1600.avif",
+          "largeur": 1600,
+          "format": "avif",
+          "octets": 183918
+        },
+        {
+          "fichier": "tas-de-pois-sentier-1600.webp",
+          "largeur": 1600,
+          "format": "webp",
+          "octets": 312952
+        }
+      ]
+    },
+    {
+      "id": "tas-de-pois",
+      "famille": "coastal",
+      "role": "fiche",
+      "lieu": "Les Tas de Pois, Camaret-sur-Mer",
+      "documentaire": true,
+      "pourquoi": null,
+      "cadrage": "recadrable",
+      "focale": null,
+      "largeur": 3008,
+      "hauteur": 2000,
+      "ratio": 1.504,
+      "source": "Wikimedia Commons",
+      "page": "https://commons.wikimedia.org/wiki/File:France_Bretagne_29_POINTE_DE_PENHIR_03.jpg",
+      "fichierSource": "File:France Bretagne 29 POINTE DE PENHIR 03.jpg",
+      "auteur": "Calips",
+      "licence": "CC BY-SA 3.0",
+      "attributionRequise": true,
+      "conditions": "Creative Commons Attribution-Share Alike 3.0",
+      "dateOeuvre": "2012-05-02 13:55:31",
+      "collecte": "2026-10-31",
+      "variantes": [
+        {
+          "fichier": "tas-de-pois-480.avif",
+          "largeur": 480,
+          "format": "avif",
+          "octets": 11418
+        },
+        {
+          "fichier": "tas-de-pois-480.webp",
+          "largeur": 480,
+          "format": "webp",
+          "octets": 17774
+        },
+        {
+          "fichier": "tas-de-pois-960.avif",
+          "largeur": 960,
+          "format": "avif",
+          "octets": 44818
+        },
+        {
+          "fichier": "tas-de-pois-960.webp",
+          "largeur": 960,
+          "format": "webp",
+          "octets": 73494
+        },
+        {
+          "fichier": "tas-de-pois-1600.avif",
+          "largeur": 1600,
+          "format": "avif",
+          "octets": 122758
+        },
+        {
+          "fichier": "tas-de-pois-1600.webp",
+          "largeur": 1600,
+          "format": "webp",
+          "octets": 205292
+        }
+      ]
+    },
+    {
+      "id": "lagatjar-soir",
+      "famille": "heritage",
+      "role": "fiche",
+      "lieu": "Alignement de Lagatjar, Camaret-sur-Mer",
+      "documentaire": true,
+      "pourquoi": "fin de journée, herbe sèche, aucun ciel bleu — le patrimoine sans la carte postale",
+      "cadrage": "recadrable",
+      "focale": null,
+      "largeur": 3888,
+      "hauteur": 2592,
+      "ratio": 1.5,
+      "source": "Wikimedia Commons",
+      "page": "https://commons.wikimedia.org/wiki/File:20100705_Alignements_de_Lagatjar_1.jpg",
+      "fichierSource": "File:20100705 Alignements de Lagatjar 1.jpg",
+      "auteur": "Michael Rapp",
+      "licence": "CC BY-SA 3.0",
+      "attributionRequise": true,
+      "conditions": "Creative Commons Attribution-Share Alike 3.0",
+      "dateOeuvre": "2010-07-05",
+      "collecte": "2026-10-31",
+      "variantes": [
+        {
+          "fichier": "lagatjar-soir-480.avif",
+          "largeur": 480,
+          "format": "avif",
+          "octets": 9113
+        },
+        {
+          "fichier": "lagatjar-soir-480.webp",
+          "largeur": 480,
+          "format": "webp",
+          "octets": 11628
+        },
+        {
+          "fichier": "lagatjar-soir-960.avif",
+          "largeur": 960,
+          "format": "avif",
+          "octets": 33508
+        },
+        {
+          "fichier": "lagatjar-soir-960.webp",
+          "largeur": 960,
+          "format": "webp",
+          "octets": 44590
+        },
+        {
+          "fichier": "lagatjar-soir-1600.avif",
+          "largeur": 1600,
+          "format": "avif",
+          "octets": 83820
+        },
+        {
+          "fichier": "lagatjar-soir-1600.webp",
+          "largeur": 1600,
+          "format": "webp",
+          "octets": 104424
+        }
+      ]
+    },
+    {
+      "id": "lagatjar-allee",
+      "famille": "heritage",
+      "role": "chemin",
+      "lieu": "Alignement de Lagatjar, Camaret-sur-Mer",
+      "documentaire": true,
+      "pourquoi": null,
+      "cadrage": "recadrable",
+      "focale": null,
+      "largeur": 3648,
+      "hauteur": 2736,
+      "ratio": 1.333,
+      "source": "Wikimedia Commons",
+      "page": "https://commons.wikimedia.org/wiki/File:Alignement_de_Lagatjar_,_Menhir_,_M%C3%A9galith_,_Hinkelstein_-_panoramio.jpg",
+      "fichierSource": "File:Alignement de Lagatjar , Menhir , Mégalith , Hinkelstein - panoramio.jpg",
+      "auteur": "Besenbinder",
+      "licence": "CC BY-SA 3.0",
+      "attributionRequise": true,
+      "conditions": "Creative Commons Attribution-Share Alike 3.0",
+      "dateOeuvre": "Taken on 24 June 2011",
+      "collecte": "2026-10-31",
+      "variantes": [
+        {
+          "fichier": "lagatjar-allee-480.avif",
+          "largeur": 480,
+          "format": "avif",
+          "octets": 13211
+        },
+        {
+          "fichier": "lagatjar-allee-480.webp",
+          "largeur": 480,
+          "format": "webp",
+          "octets": 20782
+        },
+        {
+          "fichier": "lagatjar-allee-960.avif",
+          "largeur": 960,
+          "format": "avif",
+          "octets": 56841
+        },
+        {
+          "fichier": "lagatjar-allee-960.webp",
+          "largeur": 960,
+          "format": "webp",
+          "octets": 88902
+        },
+        {
+          "fichier": "lagatjar-allee-1600.avif",
+          "largeur": 1600,
+          "format": "avif",
+          "octets": 160870
+        },
+        {
+          "fichier": "lagatjar-allee-1600.webp",
+          "largeur": 1600,
+          "format": "webp",
+          "octets": 251648
+        }
+      ]
+    },
+    {
+      "id": "kermorvan-1",
+      "famille": "aerial",
+      "role": "couverture",
+      "lieu": "Phare de Kermorvan, Le Conquet",
+      "documentaire": true,
+      "pourquoi": null,
+      "cadrage": "recadrable",
+      "focale": null,
+      "largeur": 7937,
+      "hauteur": 4465,
+      "ratio": 1.778,
+      "source": "Wikimedia Commons",
+      "page": "https://commons.wikimedia.org/wiki/File:2025-07-22-Kermorvan_lighthouse-DJI_20250722214614_0008_D.jpg",
+      "fichierSource": "File:2025-07-22-Kermorvan lighthouse-DJI 20250722214614 0008 D.jpg",
+      "auteur": "Superbass",
+      "licence": "CC BY-SA 4.0",
+      "attributionRequise": true,
+      "conditions": "Creative Commons Attribution-Share Alike 4.0",
+      "dateOeuvre": "2025-07-22 21:46:14",
+      "collecte": "2026-10-31",
+      "variantes": [
+        {
+          "fichier": "kermorvan-1-480.avif",
+          "largeur": 480,
+          "format": "avif",
+          "octets": 15098
+        },
+        {
+          "fichier": "kermorvan-1-480.webp",
+          "largeur": 480,
+          "format": "webp",
+          "octets": 24272
+        },
+        {
+          "fichier": "kermorvan-1-960.avif",
+          "largeur": 960,
+          "format": "avif",
+          "octets": 52262
+        },
+        {
+          "fichier": "kermorvan-1-960.webp",
+          "largeur": 960,
+          "format": "webp",
+          "octets": 85728
+        },
+        {
+          "fichier": "kermorvan-1-1600.avif",
+          "largeur": 1600,
+          "format": "avif",
+          "octets": 129886
+        },
+        {
+          "fichier": "kermorvan-1-1600.webp",
+          "largeur": 1600,
+          "format": "webp",
+          "octets": 217268
+        }
+      ]
+    },
+    {
+      "id": "kermorvan-2",
+      "famille": "aerial",
+      "role": "banniere",
+      "lieu": "Phare de Kermorvan, Le Conquet",
+      "documentaire": true,
+      "pourquoi": null,
+      "cadrage": "recadrable",
+      "focale": null,
+      "largeur": 6701,
+      "hauteur": 3769,
+      "ratio": 1.778,
+      "source": "Wikimedia Commons",
+      "page": "https://commons.wikimedia.org/wiki/File:2025-07-22-Kermorvan_lighthouse-DJI_20250722214245_0004_D.jpg",
+      "fichierSource": "File:2025-07-22-Kermorvan lighthouse-DJI 20250722214245 0004 D.jpg",
+      "auteur": "Superbass",
+      "licence": "CC BY-SA 4.0",
+      "attributionRequise": true,
+      "conditions": "Creative Commons Attribution-Share Alike 4.0",
+      "dateOeuvre": "2025-07-22 21:42:45",
+      "collecte": "2026-10-31",
+      "variantes": [
+        {
+          "fichier": "kermorvan-2-480.avif",
+          "largeur": 480,
+          "format": "avif",
+          "octets": 11271
+        },
+        {
+          "fichier": "kermorvan-2-480.webp",
+          "largeur": 480,
+          "format": "webp",
+          "octets": 17318
+        },
+        {
+          "fichier": "kermorvan-2-960.avif",
+          "largeur": 960,
+          "format": "avif",
+          "octets": 38891
+        },
+        {
+          "fichier": "kermorvan-2-960.webp",
+          "largeur": 960,
+          "format": "webp",
+          "octets": 61484
+        },
+        {
+          "fichier": "kermorvan-2-1600.avif",
+          "largeur": 1600,
+          "format": "avif",
+          "octets": 97637
+        },
+        {
+          "fichier": "kermorvan-2-1600.webp",
+          "largeur": 1600,
+          "format": "webp",
+          "octets": 156678
+        }
+      ]
+    },
+    {
+      "id": "pointe-du-raz",
+      "famille": "aerial",
+      "role": "reseau-chemins",
+      "lieu": "Pointe du Raz, Plogoff",
+      "documentaire": true,
+      "pourquoi": "le réseau de sentiers se LIT du ciel : c'est l'univers cartographique, pas une vue de Crozon",
+      "cadrage": "recadrable",
+      "focale": null,
+      "largeur": 5500,
+      "hauteur": 3400,
+      "ratio": 1.618,
+      "source": "Wikimedia Commons",
+      "page": "https://commons.wikimedia.org/wiki/File:Aerial_image_of_Pointe_du_Raz_(view_from_the_southeast).jpg",
+      "fichierSource": "File:Aerial image of Pointe du Raz (view from the southeast).jpg",
+      "auteur": "Carsten Steger",
+      "licence": "CC BY-SA 4.0",
+      "attributionRequise": true,
+      "conditions": "Creative Commons Attribution-Share Alike 4.0",
+      "dateOeuvre": "2026-08-11 11:21:16",
+      "collecte": "2026-10-31",
+      "variantes": [
+        {
+          "fichier": "pointe-du-raz-480.avif",
+          "largeur": 480,
+          "format": "avif",
+          "octets": 7940
+        },
+        {
+          "fichier": "pointe-du-raz-480.webp",
+          "largeur": 480,
+          "format": "webp",
+          "octets": 10088
+        },
+        {
+          "fichier": "pointe-du-raz-960.avif",
+          "largeur": 960,
+          "format": "avif",
+          "octets": 27693
+        },
+        {
+          "fichier": "pointe-du-raz-960.webp",
+          "largeur": 960,
+          "format": "webp",
+          "octets": 36766
+        },
+        {
+          "fichier": "pointe-du-raz-1600.avif",
+          "largeur": 1600,
+          "format": "avif",
+          "octets": 76144
+        },
+        {
+          "fichier": "pointe-du-raz-1600.webp",
+          "largeur": 1600,
+          "format": "webp",
+          "octets": 108432
+        }
+      ]
+    },
+    {
+      "id": "ile-de-sein",
+      "famille": "aerial",
+      "role": "reseau-chemins",
+      "lieu": "Île-de-Sein",
+      "documentaire": true,
+      "pourquoi": null,
+      "cadrage": "recadrable",
+      "focale": null,
+      "largeur": 5000,
+      "hauteur": 2900,
+      "ratio": 1.724,
+      "source": "Wikimedia Commons",
+      "page": "https://commons.wikimedia.org/wiki/File:Aerial_image_of_%C3%8Ele-de-Sein_(view_from_the_southeast).jpg",
+      "fichierSource": "File:Aerial image of Île-de-Sein (view from the southeast).jpg",
+      "auteur": "Carsten Steger",
+      "licence": "CC BY-SA 4.0",
+      "attributionRequise": true,
+      "conditions": "Creative Commons Attribution-Share Alike 4.0",
+      "dateOeuvre": "2026-08-11 11:17:55",
+      "collecte": "2026-10-31",
+      "variantes": [
+        {
+          "fichier": "ile-de-sein-480.avif",
+          "largeur": 480,
+          "format": "avif",
+          "octets": 5813
+        },
+        {
+          "fichier": "ile-de-sein-480.webp",
+          "largeur": 480,
+          "format": "webp",
+          "octets": 6486
+        },
+        {
+          "fichier": "ile-de-sein-960.avif",
+          "largeur": 960,
+          "format": "avif",
+          "octets": 18976
+        },
+        {
+          "fichier": "ile-de-sein-960.webp",
+          "largeur": 960,
+          "format": "webp",
+          "octets": 22880
+        },
+        {
+          "fichier": "ile-de-sein-1600.avif",
+          "largeur": 1600,
+          "format": "avif",
+          "octets": 49778
+        },
+        {
+          "fichier": "ile-de-sein-1600.webp",
+          "largeur": 1600,
+          "format": "webp",
+          "octets": 65164
+        }
+      ]
+    },
+    {
+      "id": "bruyere-granit",
+      "famille": "details",
+      "role": "respiration",
+      "lieu": null,
+      "documentaire": false,
+      "pourquoi": null,
+      "cadrage": "recadrable",
+      "focale": null,
+      "largeur": 4477,
+      "hauteur": 2905,
+      "ratio": 1.541,
+      "source": "Wikimedia Commons",
+      "page": "https://commons.wikimedia.org/wiki/File:Blooming_heather_-_panoramio.jpg",
+      "fichierSource": "File:Blooming heather - panoramio.jpg",
+      "auteur": "Jens Cederskjold",
+      "licence": "CC BY 3.0",
+      "attributionRequise": true,
+      "conditions": "Creative Commons Attribution 3.0",
+      "dateOeuvre": "Taken on 13 September 2009",
+      "collecte": "2026-10-31",
+      "variantes": [
+        {
+          "fichier": "bruyere-granit-480.avif",
+          "largeur": 480,
+          "format": "avif",
+          "octets": 21716
+        },
+        {
+          "fichier": "bruyere-granit-480.webp",
+          "largeur": 480,
+          "format": "webp",
+          "octets": 39426
+        },
+        {
+          "fichier": "bruyere-granit-960.avif",
+          "largeur": 960,
+          "format": "avif",
+          "octets": 79989
+        },
+        {
+          "fichier": "bruyere-granit-960.webp",
+          "largeur": 960,
+          "format": "webp",
+          "octets": 141054
+        },
+        {
+          "fichier": "bruyere-granit-1600.avif",
+          "largeur": 1600,
+          "format": "avif",
+          "octets": 176352
+        },
+        {
+          "fichier": "bruyere-granit-1600.webp",
+          "largeur": 1600,
+          "format": "webp",
+          "octets": 311242
+        }
+      ]
+    },
+    {
+      "id": "bruyere-soir",
+      "famille": "details",
+      "role": "respiration",
+      "lieu": null,
+      "documentaire": false,
+      "pourquoi": "contre-jour au crépuscule — ambiance pure, et la légende ne prétend rien",
+      "cadrage": "recadrable",
+      "focale": null,
+      "largeur": 4268,
+      "hauteur": 2160,
+      "ratio": 1.976,
+      "source": "Wikimedia Commons",
+      "page": "https://commons.wikimedia.org/wiki/File:Calluna_vulgaris_6_(51380640878).jpg",
+      "fichierSource": "File:Calluna vulgaris 6 (51380640878).jpg",
+      "auteur": "Tero Karppinen from Finland",
+      "licence": "CC BY 2.0",
+      "attributionRequise": true,
+      "conditions": "Creative Commons Attribution 2.0",
+      "dateOeuvre": "2021-08-15 20:03",
+      "collecte": "2026-10-31",
+      "variantes": [
+        {
+          "fichier": "bruyere-soir-480.avif",
+          "largeur": 480,
+          "format": "avif",
+          "octets": 8849
+        },
+        {
+          "fichier": "bruyere-soir-480.webp",
+          "largeur": 480,
+          "format": "webp",
+          "octets": 11256
+        },
+        {
+          "fichier": "bruyere-soir-960.avif",
+          "largeur": 960,
+          "format": "avif",
+          "octets": 23569
+        },
+        {
+          "fichier": "bruyere-soir-960.webp",
+          "largeur": 960,
+          "format": "webp",
+          "octets": 28918
+        },
+        {
+          "fichier": "bruyere-soir-1600.avif",
+          "largeur": 1600,
+          "format": "avif",
+          "octets": 46876
+        },
+        {
+          "fichier": "bruyere-soir-1600.webp",
+          "largeur": 1600,
+          "format": "webp",
+          "octets": 58098
+        }
+      ]
+    },
+    {
+      "id": "espagnols-brume",
+      "famille": "coastal",
+      "role": "couverture",
+      "lieu": "Pointe des Espagnols, Roscanvel",
+      "documentaire": true,
+      "pourquoi": "la promenade des forts du goulet passe ici — c'est la seule image de la bibliothèque qui montre un lieu RÉELLEMENT traversé par un de nos quatre parcours",
+      "cadrage": "recadrable",
+      "focale": null,
+      "largeur": 4523,
+      "hauteur": 3185,
+      "ratio": 1.42,
+      "source": "Wikimedia Commons",
+      "page": "https://commons.wikimedia.org/wiki/File:Presqu%27%C3%AEle_de_Crozon_Pointe_des_Espagnols_1.jpg",
+      "fichierSource": "File:Presqu'île de Crozon Pointe des Espagnols 1.jpg",
+      "auteur": "Zairon",
+      "licence": "CC BY-SA 4.0",
+      "attributionRequise": true,
+      "conditions": "Creative Commons Attribution-Share Alike 4.0",
+      "dateOeuvre": "2021-07-07 14:32:07",
+      "collecte": "2026-10-31",
+      "variantes": [
+        {
+          "fichier": "espagnols-brume-480.avif",
+          "largeur": 480,
+          "format": "avif",
+          "octets": 10951
+        },
+        {
+          "fichier": "espagnols-brume-480.webp",
+          "largeur": 480,
+          "format": "webp",
+          "octets": 15438
+        },
+        {
+          "fichier": "espagnols-brume-960.avif",
+          "largeur": 960,
+          "format": "avif",
+          "octets": 32361
+        },
+        {
+          "fichier": "espagnols-brume-960.webp",
+          "largeur": 960,
+          "format": "webp",
+          "octets": 46148
+        },
+        {
+          "fichier": "espagnols-brume-1600.avif",
+          "largeur": 1600,
+          "format": "avif",
+          "octets": 67390
+        },
+        {
+          "fichier": "espagnols-brume-1600.webp",
+          "largeur": 1600,
+          "format": "webp",
+          "octets": 94686
+        }
+      ]
+    },
+    {
+      "id": "espagnols-sentier",
+      "famille": "trails",
+      "role": "chemin",
+      "lieu": "Pointe des Espagnols, Roscanvel",
+      "documentaire": true,
+      "pourquoi": "CC0, et le sentier y descend vers la pointe",
+      "cadrage": "recadrable",
+      "focale": null,
+      "largeur": 7200,
+      "hauteur": 1920,
+      "ratio": 3.75,
+      "source": "Wikimedia Commons",
+      "page": "https://commons.wikimedia.org/wiki/File:Roscanvel_-_Pointe_des_Espagnols_-_Panorama.jpeg",
+      "fichierSource": "File:Roscanvel - Pointe des Espagnols - Panorama.jpeg",
+      "auteur": "Romainbehar",
+      "licence": "CC0",
+      "attributionRequise": false,
+      "conditions": "Creative Commons Zero, Public Domain Dedication",
+      "dateOeuvre": "2021-07-16 12:17:43",
+      "collecte": "2026-10-31",
+      "variantes": [
+        {
+          "fichier": "espagnols-sentier-480.avif",
+          "largeur": 480,
+          "format": "avif",
+          "octets": 5825
+        },
+        {
+          "fichier": "espagnols-sentier-480.webp",
+          "largeur": 480,
+          "format": "webp",
+          "octets": 8308
+        },
+        {
+          "fichier": "espagnols-sentier-960.avif",
+          "largeur": 960,
+          "format": "avif",
+          "octets": 20394
+        },
+        {
+          "fichier": "espagnols-sentier-960.webp",
+          "largeur": 960,
+          "format": "webp",
+          "octets": 32162
+        },
+        {
+          "fichier": "espagnols-sentier-1600.avif",
+          "largeur": 1600,
+          "format": "avif",
+          "octets": 55170
+        },
+        {
+          "fichier": "espagnols-sentier-1600.webp",
+          "largeur": 1600,
+          "format": "webp",
+          "octets": 88900
+        }
+      ]
+    },
+    {
+      "id": "espagnols-1695",
+      "famille": "heritage",
+      "role": "fiche",
+      "lieu": "Pointe des Espagnols, Roscanvel",
+      "documentaire": true,
+      "pourquoi": "⭐ plan manuscrit de 1695, Bibliothèque nationale de France, domaine public. La promenade longe sept batteries : ce document EST le sujet, pas une illustration de celui-ci.",
+      "cadrage": "entier",
+      "focale": null,
+      "largeur": 8201,
+      "hauteur": 6308,
+      "ratio": 1.3,
+      "source": "Wikimedia Commons",
+      "page": "https://commons.wikimedia.org/wiki/File:Brest._-_Plan_des_batteries_haute_et_basse_de_la_pointe_des_Espagnols._Fait_%C3%A0_Brest_le_12e_ao%C3%BBt_1695_-_btv1b8442148z.jpg",
+      "fichierSource": "File:Brest. - Plan des batteries haute et basse de la pointe des Espagnols. Fait à Brest le 12e août 1695 - btv1b8442148z.jpg",
+      "auteur": "Bibliothèque nationale de France",
+      "licence": "Domaine public",
+      "attributionRequise": false,
+      "conditions": "Public domain",
+      "dateOeuvre": "1695date QS:P571,+1695-00-00T00:00:00Z/9",
+      "collecte": "2026-10-31",
+      "variantes": [
+        {
+          "fichier": "espagnols-1695-480.avif",
+          "largeur": 480,
+          "format": "avif",
+          "octets": 11222
+        },
+        {
+          "fichier": "espagnols-1695-480.webp",
+          "largeur": 480,
+          "format": "webp",
+          "octets": 14500
+        },
+        {
+          "fichier": "espagnols-1695-960.avif",
+          "largeur": 960,
+          "format": "avif",
+          "octets": 42038
+        },
+        {
+          "fichier": "espagnols-1695-960.webp",
+          "largeur": 960,
+          "format": "webp",
+          "octets": 56972
+        },
+        {
+          "fichier": "espagnols-1695-1600.avif",
+          "largeur": 1600,
+          "format": "avif",
+          "octets": 114055
+        },
+        {
+          "fichier": "espagnols-1695-1600.webp",
+          "largeur": 1600,
+          "format": "webp",
+          "octets": 155816
+        }
+      ]
+    },
+    {
+      "id": "ile-vierge",
+      "famille": "coastal",
+      "role": "couverture",
+      "lieu": "Plage de l'Île Vierge, Cap de la Chèvre, Crozon",
+      "documentaire": true,
+      "pourquoi": "⚠️ titrée « cap de la chèvre » par son auteur, trouvée dans la catégorie de la plage : les deux sont vraies, la plage EST au cap. La légende dit les deux.",
+      "cadrage": "recadrable",
+      "focale": null,
+      "largeur": 5472,
+      "hauteur": 3648,
+      "ratio": 1.5,
+      "source": "Wikimedia Commons",
+      "page": "https://commons.wikimedia.org/wiki/File:Bretagne_-_Finist%C3%A8re_-_cap_de_la_ch%C3%A8vre_-_20180726_-_035.jpg",
+      "fichierSource": "File:Bretagne - Finistère - cap de la chèvre - 20180726 - 035.jpg",
+      "auteur": "Thesupermat",
+      "licence": "CC BY-SA 4.0",
+      "attributionRequise": true,
+      "conditions": "Creative Commons Attribution-Share Alike 4.0",
+      "dateOeuvre": "2018-07-26 16:15:34",
+      "collecte": "2026-10-31",
+      "variantes": [
+        {
+          "fichier": "ile-vierge-480.avif",
+          "largeur": 480,
+          "format": "avif",
+          "octets": 23519
+        },
+        {
+          "fichier": "ile-vierge-480.webp",
+          "largeur": 480,
+          "format": "webp",
+          "octets": 40084
+        },
+        {
+          "fichier": "ile-vierge-960.avif",
+          "largeur": 960,
+          "format": "avif",
+          "octets": 87453
+        },
+        {
+          "fichier": "ile-vierge-960.webp",
+          "largeur": 960,
+          "format": "webp",
+          "octets": 151898
+        },
+        {
+          "fichier": "ile-vierge-1600.avif",
+          "largeur": 1600,
+          "format": "avif",
+          "octets": 231919
+        },
+        {
+          "fichier": "ile-vierge-1600.webp",
+          "largeur": 1600,
+          "format": "webp",
+          "octets": 405092
+        }
+      ]
+    },
+    {
+      "id": "ile-vierge-lande",
+      "famille": "trails",
+      "role": "chemin",
+      "lieu": "Plage de l'Île Vierge, Cap de la Chèvre, Crozon",
+      "documentaire": true,
+      "pourquoi": null,
+      "cadrage": "recadrable",
+      "focale": null,
+      "largeur": 5472,
+      "hauteur": 3648,
+      "ratio": 1.5,
+      "source": "Wikimedia Commons",
+      "page": "https://commons.wikimedia.org/wiki/File:Cap_de_la_ch%C3%A8vre_-_GR34_-_20200719_-_064.jpg",
+      "fichierSource": "File:Cap de la chèvre - GR34 - 20200719 - 064.jpg",
+      "auteur": "Thesupermat",
+      "licence": "CC BY-SA 4.0",
+      "attributionRequise": true,
+      "conditions": "Creative Commons Attribution-Share Alike 4.0",
+      "dateOeuvre": "2020-07-19 13:58:29",
+      "collecte": "2026-10-31",
+      "variantes": [
+        {
+          "fichier": "ile-vierge-lande-480.avif",
+          "largeur": 480,
+          "format": "avif",
+          "octets": 17042
+        },
+        {
+          "fichier": "ile-vierge-lande-480.webp",
+          "largeur": 480,
+          "format": "webp",
+          "octets": 26702
+        },
+        {
+          "fichier": "ile-vierge-lande-960.avif",
+          "largeur": 960,
+          "format": "avif",
+          "octets": 63085
+        },
+        {
+          "fichier": "ile-vierge-lande-960.webp",
+          "largeur": 960,
+          "format": "webp",
+          "octets": 106742
+        },
+        {
+          "fichier": "ile-vierge-lande-1600.avif",
+          "largeur": 1600,
+          "format": "avif",
+          "octets": 177930
+        },
+        {
+          "fichier": "ile-vierge-lande-1600.webp",
+          "largeur": 1600,
+          "format": "webp",
+          "octets": 306556
+        }
+      ]
+    }
+  ]
+}

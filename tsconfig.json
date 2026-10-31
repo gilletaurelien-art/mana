@@ -7,7 +7,15 @@
     "jsx": "react-jsx",
     "strict": true,
     "noEmit": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    // ⚠️ Nécessaire depuis que la bibliothèque photographique importe son
+    //    manifeste. Sans lui, `import biblio from "./bibliotheque.json"` ne
+    //    typecheck pas — et l'erreur accuse le FICHIER MANQUANT, pas l'option
+    //    absente : on cherche alors du mauvais côté.
+    // ⭐ Et un commentaire ici DOIT être un vrai `//` : une fausse clé
+    //    "// nom" est refusée par tsc (TS5025), parce qu'il valide les clés
+    //    inconnues. JSON n'a pas de commentaires ; tsconfig, si.
+    "resolveJsonModule": true
   },
   "include": ["src"]
 }

@@ -1,0 +1,710 @@
+{
+  "_": "GÉNÉRÉ par `node scripts/fonds.mjs`. ⛔ Ce sont des ILLUSTRATIONS : aucune n'est la photographie d'un lieu réel, et aucune ne doit être légendée comme telle.",
+  "genere": "2026-10-31T12:38:19.384Z",
+  "fonds": [
+    {
+      "id": "fond-01",
+      "source": "TEst13.jpeg",
+      "largeur": 1024,
+      "hauteur": 572,
+      "variantes": [
+        {
+          "fichier": "fond-01-768.avif",
+          "largeur": 768,
+          "format": "avif",
+          "octets": 32788
+        },
+        {
+          "fichier": "fond-01-768.webp",
+          "largeur": 768,
+          "format": "webp",
+          "octets": 66724
+        },
+        {
+          "fichier": "fond-01-1280.avif",
+          "largeur": 1280,
+          "format": "avif",
+          "octets": 55232
+        },
+        {
+          "fichier": "fond-01-1280.webp",
+          "largeur": 1280,
+          "format": "webp",
+          "octets": 112962
+        }
+      ]
+    },
+    {
+      "id": "fond-02",
+      "source": "TEst21.jpeg",
+      "largeur": 1024,
+      "hauteur": 572,
+      "variantes": [
+        {
+          "fichier": "fond-02-768.avif",
+          "largeur": 768,
+          "format": "avif",
+          "octets": 29535
+        },
+        {
+          "fichier": "fond-02-768.webp",
+          "largeur": 768,
+          "format": "webp",
+          "octets": 62910
+        },
+        {
+          "fichier": "fond-02-1280.avif",
+          "largeur": 1280,
+          "format": "avif",
+          "octets": 49389
+        },
+        {
+          "fichier": "fond-02-1280.webp",
+          "largeur": 1280,
+          "format": "webp",
+          "octets": 105548
+        }
+      ]
+    },
+    {
+      "id": "fond-03",
+      "source": "Test11.jpeg",
+      "largeur": 1024,
+      "hauteur": 572,
+      "variantes": [
+        {
+          "fichier": "fond-03-768.avif",
+          "largeur": 768,
+          "format": "avif",
+          "octets": 34410
+        },
+        {
+          "fichier": "fond-03-768.webp",
+          "largeur": 768,
+          "format": "webp",
+          "octets": 74514
+        },
+        {
+          "fichier": "fond-03-1280.avif",
+          "largeur": 1280,
+          "format": "avif",
+          "octets": 59954
+        },
+        {
+          "fichier": "fond-03-1280.webp",
+          "largeur": 1280,
+          "format": "webp",
+          "octets": 126248
+        }
+      ]
+    },
+    {
+      "id": "fond-04",
+      "source": "Test12.jpeg",
+      "largeur": 1024,
+      "hauteur": 572,
+      "variantes": [
+        {
+          "fichier": "fond-04-768.avif",
+          "largeur": 768,
+          "format": "avif",
+          "octets": 36329
+        },
+        {
+          "fichier": "fond-04-768.webp",
+          "largeur": 768,
+          "format": "webp",
+          "octets": 71306
+        },
+        {
+          "fichier": "fond-04-1280.avif",
+          "largeur": 1280,
+          "format": "avif",
+          "octets": 60909
+        },
+        {
+          "fichier": "fond-04-1280.webp",
+          "largeur": 1280,
+          "format": "webp",
+          "octets": 117568
+        }
+      ]
+    },
+    {
+      "id": "fond-05",
+      "source": "Test15.jpeg",
+      "largeur": 1024,
+      "hauteur": 572,
+      "variantes": [
+        {
+          "fichier": "fond-05-768.avif",
+          "largeur": 768,
+          "format": "avif",
+          "octets": 36530
+        },
+        {
+          "fichier": "fond-05-768.webp",
+          "largeur": 768,
+          "format": "webp",
+          "octets": 73692
+        },
+        {
+          "fichier": "fond-05-1280.avif",
+          "largeur": 1280,
+          "format": "avif",
+          "octets": 61003
+        },
+        {
+          "fichier": "fond-05-1280.webp",
+          "largeur": 1280,
+          "format": "webp",
+          "octets": 122238
+        }
+      ]
+    },
+    {
+      "id": "fond-06",
+      "source": "Test16.jpeg",
+      "largeur": 1024,
+      "hauteur": 572,
+      "variantes": [
+        {
+          "fichier": "fond-06-768.avif",
+          "largeur": 768,
+          "format": "avif",
+          "octets": 31253
+        },
+        {
+          "fichier": "fond-06-768.webp",
+          "largeur": 768,
+          "format": "webp",
+          "octets": 64098
+        },
+        {
+          "fichier": "fond-06-1280.avif",
+          "largeur": 1280,
+          "format": "avif",
+          "octets": 53494
+        },
+        {
+          "fichier": "fond-06-1280.webp",
+          "largeur": 1280,
+          "format": "webp",
+          "octets": 108432
+        }
+      ]
+    },
+    {
+      "id": "fond-07",
+      "source": "Test17.jpeg",
+      "largeur": 1024,
+      "hauteur": 572,
+      "variantes": [
+        {
+          "fichier": "fond-07-768.avif",
+          "largeur": 768,
+          "format": "avif",
+          "octets": 31132
+        },
+        {
+          "fichier": "fond-07-768.webp",
+          "largeur": 768,
+          "format": "webp",
+          "octets": 60216
+        },
+        {
+          "fichier": "fond-07-1280.avif",
+          "largeur": 1280,
+          "format": "avif",
+          "octets": 50521
+        },
+        {
+          "fichier": "fond-07-1280.webp",
+          "largeur": 1280,
+          "format": "webp",
+          "octets": 99568
+        }
+      ]
+    },
+    {
+      "id": "fond-08",
+      "source": "Test18.jpeg",
+      "largeur": 1024,
+      "hauteur": 572,
+      "variantes": [
+        {
+          "fichier": "fond-08-768.avif",
+          "largeur": 768,
+          "format": "avif",
+          "octets": 32557
+        },
+        {
+          "fichier": "fond-08-768.webp",
+          "largeur": 768,
+          "format": "webp",
+          "octets": 67102
+        },
+        {
+          "fichier": "fond-08-1280.avif",
+          "largeur": 1280,
+          "format": "avif",
+          "octets": 54829
+        },
+        {
+          "fichier": "fond-08-1280.webp",
+          "largeur": 1280,
+          "format": "webp",
+          "octets": 111220
+        }
+      ]
+    },
+    {
+      "id": "fond-09",
+      "source": "Test19.jpeg",
+      "largeur": 1024,
+      "hauteur": 572,
+      "variantes": [
+        {
+          "fichier": "fond-09-768.avif",
+          "largeur": 768,
+          "format": "avif",
+          "octets": 32507
+        },
+        {
+          "fichier": "fond-09-768.webp",
+          "largeur": 768,
+          "format": "webp",
+          "octets": 70538
+        },
+        {
+          "fichier": "fond-09-1280.avif",
+          "largeur": 1280,
+          "format": "avif",
+          "octets": 56843
+        },
+        {
+          "fichier": "fond-09-1280.webp",
+          "largeur": 1280,
+          "format": "webp",
+          "octets": 119288
+        }
+      ]
+    },
+    {
+      "id": "fond-10",
+      "source": "Test20.jpeg",
+      "largeur": 1024,
+      "hauteur": 572,
+      "variantes": [
+        {
+          "fichier": "fond-10-768.avif",
+          "largeur": 768,
+          "format": "avif",
+          "octets": 37355
+        },
+        {
+          "fichier": "fond-10-768.webp",
+          "largeur": 768,
+          "format": "webp",
+          "octets": 84686
+        },
+        {
+          "fichier": "fond-10-1280.avif",
+          "largeur": 1280,
+          "format": "avif",
+          "octets": 63285
+        },
+        {
+          "fichier": "fond-10-1280.webp",
+          "largeur": 1280,
+          "format": "webp",
+          "octets": 143074
+        }
+      ]
+    },
+    {
+      "id": "fond-11",
+      "source": "test.jpeg",
+      "largeur": 1024,
+      "hauteur": 572,
+      "variantes": [
+        {
+          "fichier": "fond-11-768.avif",
+          "largeur": 768,
+          "format": "avif",
+          "octets": 39175
+        },
+        {
+          "fichier": "fond-11-768.webp",
+          "largeur": 768,
+          "format": "webp",
+          "octets": 84628
+        },
+        {
+          "fichier": "fond-11-1280.avif",
+          "largeur": 1280,
+          "format": "avif",
+          "octets": 68274
+        },
+        {
+          "fichier": "fond-11-1280.webp",
+          "largeur": 1280,
+          "format": "webp",
+          "octets": 146026
+        }
+      ]
+    },
+    {
+      "id": "fond-12",
+      "source": "test0.jpeg",
+      "largeur": 1024,
+      "hauteur": 572,
+      "variantes": [
+        {
+          "fichier": "fond-12-768.avif",
+          "largeur": 768,
+          "format": "avif",
+          "octets": 39610
+        },
+        {
+          "fichier": "fond-12-768.webp",
+          "largeur": 768,
+          "format": "webp",
+          "octets": 83682
+        },
+        {
+          "fichier": "fond-12-1280.avif",
+          "largeur": 1280,
+          "format": "avif",
+          "octets": 64162
+        },
+        {
+          "fichier": "fond-12-1280.webp",
+          "largeur": 1280,
+          "format": "webp",
+          "octets": 138232
+        }
+      ]
+    },
+    {
+      "id": "fond-13",
+      "source": "test10.jpeg",
+      "largeur": 1024,
+      "hauteur": 572,
+      "variantes": [
+        {
+          "fichier": "fond-13-768.avif",
+          "largeur": 768,
+          "format": "avif",
+          "octets": 41333
+        },
+        {
+          "fichier": "fond-13-768.webp",
+          "largeur": 768,
+          "format": "webp",
+          "octets": 91244
+        },
+        {
+          "fichier": "fond-13-1280.avif",
+          "largeur": 1280,
+          "format": "avif",
+          "octets": 69813
+        },
+        {
+          "fichier": "fond-13-1280.webp",
+          "largeur": 1280,
+          "format": "webp",
+          "octets": 152476
+        }
+      ]
+    },
+    {
+      "id": "fond-14",
+      "source": "test14.jpeg",
+      "largeur": 1024,
+      "hauteur": 572,
+      "variantes": [
+        {
+          "fichier": "fond-14-768.avif",
+          "largeur": 768,
+          "format": "avif",
+          "octets": 30575
+        },
+        {
+          "fichier": "fond-14-768.webp",
+          "largeur": 768,
+          "format": "webp",
+          "octets": 62968
+        },
+        {
+          "fichier": "fond-14-1280.avif",
+          "largeur": 1280,
+          "format": "avif",
+          "octets": 52886
+        },
+        {
+          "fichier": "fond-14-1280.webp",
+          "largeur": 1280,
+          "format": "webp",
+          "octets": 108014
+        }
+      ]
+    },
+    {
+      "id": "fond-15",
+      "source": "test2.jpeg",
+      "largeur": 1024,
+      "hauteur": 572,
+      "variantes": [
+        {
+          "fichier": "fond-15-768.avif",
+          "largeur": 768,
+          "format": "avif",
+          "octets": 33768
+        },
+        {
+          "fichier": "fond-15-768.webp",
+          "largeur": 768,
+          "format": "webp",
+          "octets": 73464
+        },
+        {
+          "fichier": "fond-15-1280.avif",
+          "largeur": 1280,
+          "format": "avif",
+          "octets": 58747
+        },
+        {
+          "fichier": "fond-15-1280.webp",
+          "largeur": 1280,
+          "format": "webp",
+          "octets": 122874
+        }
+      ]
+    },
+    {
+      "id": "fond-16",
+      "source": "test3.jpeg",
+      "largeur": 1024,
+      "hauteur": 572,
+      "variantes": [
+        {
+          "fichier": "fond-16-768.avif",
+          "largeur": 768,
+          "format": "avif",
+          "octets": 31237
+        },
+        {
+          "fichier": "fond-16-768.webp",
+          "largeur": 768,
+          "format": "webp",
+          "octets": 67040
+        },
+        {
+          "fichier": "fond-16-1280.avif",
+          "largeur": 1280,
+          "format": "avif",
+          "octets": 54136
+        },
+        {
+          "fichier": "fond-16-1280.webp",
+          "largeur": 1280,
+          "format": "webp",
+          "octets": 113904
+        }
+      ]
+    },
+    {
+      "id": "fond-17",
+      "source": "test4.jpeg",
+      "largeur": 1024,
+      "hauteur": 572,
+      "variantes": [
+        {
+          "fichier": "fond-17-768.avif",
+          "largeur": 768,
+          "format": "avif",
+          "octets": 40577
+        },
+        {
+          "fichier": "fond-17-768.webp",
+          "largeur": 768,
+          "format": "webp",
+          "octets": 91646
+        },
+        {
+          "fichier": "fond-17-1280.avif",
+          "largeur": 1280,
+          "format": "avif",
+          "octets": 69096
+        },
+        {
+          "fichier": "fond-17-1280.webp",
+          "largeur": 1280,
+          "format": "webp",
+          "octets": 155910
+        }
+      ]
+    },
+    {
+      "id": "fond-18",
+      "source": "test5.jpeg",
+      "largeur": 1024,
+      "hauteur": 572,
+      "variantes": [
+        {
+          "fichier": "fond-18-768.avif",
+          "largeur": 768,
+          "format": "avif",
+          "octets": 35977
+        },
+        {
+          "fichier": "fond-18-768.webp",
+          "largeur": 768,
+          "format": "webp",
+          "octets": 75364
+        },
+        {
+          "fichier": "fond-18-1280.avif",
+          "largeur": 1280,
+          "format": "avif",
+          "octets": 61563
+        },
+        {
+          "fichier": "fond-18-1280.webp",
+          "largeur": 1280,
+          "format": "webp",
+          "octets": 126674
+        }
+      ]
+    },
+    {
+      "id": "fond-19",
+      "source": "test6.jpeg",
+      "largeur": 1024,
+      "hauteur": 572,
+      "variantes": [
+        {
+          "fichier": "fond-19-768.avif",
+          "largeur": 768,
+          "format": "avif",
+          "octets": 30211
+        },
+        {
+          "fichier": "fond-19-768.webp",
+          "largeur": 768,
+          "format": "webp",
+          "octets": 60490
+        },
+        {
+          "fichier": "fond-19-1280.avif",
+          "largeur": 1280,
+          "format": "avif",
+          "octets": 46895
+        },
+        {
+          "fichier": "fond-19-1280.webp",
+          "largeur": 1280,
+          "format": "webp",
+          "octets": 95018
+        }
+      ]
+    },
+    {
+      "id": "fond-20",
+      "source": "test7.jpeg",
+      "largeur": 1024,
+      "hauteur": 572,
+      "variantes": [
+        {
+          "fichier": "fond-20-768.avif",
+          "largeur": 768,
+          "format": "avif",
+          "octets": 26296
+        },
+        {
+          "fichier": "fond-20-768.webp",
+          "largeur": 768,
+          "format": "webp",
+          "octets": 53198
+        },
+        {
+          "fichier": "fond-20-1280.avif",
+          "largeur": 1280,
+          "format": "avif",
+          "octets": 43684
+        },
+        {
+          "fichier": "fond-20-1280.webp",
+          "largeur": 1280,
+          "format": "webp",
+          "octets": 86740
+        }
+      ]
+    },
+    {
+      "id": "fond-21",
+      "source": "test8.jpeg",
+      "largeur": 1024,
+      "hauteur": 572,
+      "variantes": [
+        {
+          "fichier": "fond-21-768.avif",
+          "largeur": 768,
+          "format": "avif",
+          "octets": 28918
+        },
+        {
+          "fichier": "fond-21-768.webp",
+          "largeur": 768,
+          "format": "webp",
+          "octets": 60620
+        },
+        {
+          "fichier": "fond-21-1280.avif",
+          "largeur": 1280,
+          "format": "avif",
+          "octets": 49434
+        },
+        {
+          "fichier": "fond-21-1280.webp",
+          "largeur": 1280,
+          "format": "webp",
+          "octets": 101782
+        }
+      ]
+    },
+    {
+      "id": "fond-22",
+      "source": "test9.jpeg",
+      "largeur": 1024,
+      "hauteur": 572,
+      "variantes": [
+        {
+          "fichier": "fond-22-768.avif",
+          "largeur": 768,
+          "format": "avif",
+          "octets": 26661
+        },
+        {
+          "fichier": "fond-22-768.webp",
+          "largeur": 768,
+          "format": "webp",
+          "octets": 54656
+        },
+        {
+          "fichier": "fond-22-1280.avif",
+          "largeur": 1280,
+          "format": "avif",
+          "octets": 46671
+        },
+        {
+          "fichier": "fond-22-1280.webp",
+          "largeur": 1280,
+          "format": "webp",
+          "octets": 94278
+        }
+      ]
+    }
+  ]
+}

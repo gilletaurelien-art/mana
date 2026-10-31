@@ -18,6 +18,34 @@ import type { Fiche, Commune } from "./catalogue";
 //    ne paraît pas cassé, il paraît PERMISSIF — et quelqu'un part avec une
 //    poussette.
 
+/**
+ * 🔴 LA PAGE NE MONTRE PLUS QUE LA PRESQU'ÎLE — 31/10/2026.
+ *
+ * ⛔ ET LE FILTRE EST PAR COMMUNE, PAS PAR EMPRISE RECTANGULAIRE. Mesuré :
+ *    une bbox (-4,78 / 48,14 / -4,17 / 48,36) rend **13** itinéraires, dont
+ *    Daoulas, Plougonvelin, Logonna-Daoulas et le Menez-Hom — la rade de
+ *    Brest, pas la presqu'île. Publier ça sous le titre « Presqu'île de
+ *    Crozon » serait annoncer un lieu que le fichier ne dit pas.
+ *    ⭐ Un rectangle n'est pas une presqu'île, et la géométrie d'un territoire
+ *       ne s'approxime pas par ses extrêmes.
+ *
+ * ⚠️ L'index ne porte QUE la commune de départ et celle d'arrivée (`c` compte
+ *    les communes traversées sans les nommer) : un itinéraire qui traverse la
+ *    presqu'île sans y commencer ni finir échappe donc au filtre. C'est un
+ *    manque assumé — il vaut mieux qu'une liste trop large.
+ *
+ * Relevé sur l'index réel le 31/10/2026 : **7 itinéraires, 181 km.**
+ * Camaret-sur-Mer, Roscanvel, Telgruc-sur-Mer et Landévennec n'apparaissent
+ * ni en départ ni en arrivée — c'est l'état de la moisson, pas une omission.
+ */
+export const PRESQUILE = new Set([
+  "Crozon", "Camaret-sur-Mer", "Roscanvel", "Lanvéoc",
+  "Telgruc-sur-Mer", "Argol", "Landévennec",
+]);
+
+export const surLaPresquile = (f: Fiche): boolean =>
+  (f.d !== null && PRESQUILE.has(f.d)) || (f.a !== null && PRESQUILE.has(f.a));
+
 type FiltreForme = "tous" | "boucle" | "aller";
 const MAX_AFFICHES = 40;
 
@@ -49,7 +77,7 @@ export function Promenades() {
   }, []);
 
   useEffect(() => {
-    document.title = "Les sentiers de Bretagne — MANA.bzh";
+    document.title = "Les sentiers de la presqu'île de Crozon — MANA.bzh";
     return () => {
       document.title = "MANA.bzh — Promenades & découvertes en Bretagne";
     };
@@ -66,7 +94,7 @@ export function Promenades() {
       //    qu'il n'existe aucun sentier.
       .catch(() =>
         setErreur(
-          "Les sentiers n'ont pas pu être chargés. Vérifiez votre connexion."
+          "Sentiers indisponibles. Vérifiez votre connexion."
         )
       );
   }, []);
@@ -75,7 +103,8 @@ export function Promenades() {
     if (!fiches) return [];
     // Sans recherche, on montre TOUT, du plus long au plus court : l'index est
     // déjà trié ainsi, et les grands itinéraires sont ceux qu'on reconnaît.
-    const base = q.trim() ? chercher(fiches, q, lieux) : fiches;
+    const ici = fiches.filter(surLaPresquile);
+    const base = q.trim() ? chercher(ici, q, lieux) : ici;
     return base
       .filter((f) => dureeMax >= DUREE_SANS_LIMITE || f.k / 3.5 <= dureeMax)
       .filter((f) => forme === "tous" || (forme === "boucle" ? f.o : !f.o));
@@ -84,14 +113,12 @@ export function Promenades() {
   return (
     <main className="page">
       <div className="wrap">
-        <p className="hero-label">Où marcher en Bretagne</p>
+        <p className="hero-label">Presqu'île de Crozon</p>
         <h1 className="page-titre"><span>Les sentiers</span></h1>
 
         <section className="page-panel">
           <p className="page-intro">
-            Mille trente-deux itinéraires, quatorze mille cinq cents
-            kilomètres, tracés d'après OpenStreetMap — de la Rance au Pays de
-            Retz. Parcourez la liste, ou cherchez une commune.
+            7 itinéraires, 181 km, tracés d'après OpenStreetMap.
           </p>
           <div className="moteur-barre" role="search">
             <svg className="moteur-loupe" viewBox="0 0 24 24" aria-hidden="true">
@@ -196,33 +223,9 @@ export function Promenades() {
           </section>
         )}
 
-        {/* La vitrine, toujours accessible : elle est embarquée, donc elle
-            s'affiche même sans réseau. */}
-        {/* ⭐ La composition est l'autre moitié du produit : les 1 032
-            itinéraires sont les promenades des AUTRES ; celle-ci est la
-            vôtre, depuis là où vous êtes. */}
         <section className="page-panel">
-          <p className="apercu-label">Ou bien</p>
-          <h2 className="section-title" style={{ marginBottom: "var(--sp-2)" }}>
-            Composer votre propre promenade
-          </h2>
-          <p className="page-texte">
-            Une boucle fabriquée depuis l'endroit où vous êtes, par les chemins
-            plutôt que par les routes, qui passe devant ce qu'il y a à voir.
-            Pour l'instant sur la presqu'île de Crozon.
-          </p>
-          <div className="est-actions" style={{ marginBottom: 0 }}>
-            <a className="btn btn-primary" href={`${B}/composer`}>
-              Composer une promenade
-            </a>
-          </div>
-        </section>
-
-        <section className="page-panel">
-          <p className="apercu-label">La presqu'île de Crozon</p>
-          <p className="page-texte">
-            Quatre promenades choisies et vérifiées, disponibles hors ligne.
-          </p>
+          <p className="apercu-label">Vérifiées</p>
+          <p className="page-texte">4 promenades vérifiées, hors ligne.</p>
           <div className="est-actions" style={{ marginBottom: 0 }}>
             {WALKS.map((w) => (
               <a
@@ -235,6 +238,32 @@ export function Promenades() {
             ))}
           </div>
         </section>
+
+        {/* ⭐ APRÈS LA LISTE, PAS AVANT — 31/10/2026. Elle s'ouvrait sur
+            « composez la vôtre », c'est-à-dire sur du travail, avant d'avoir
+            montré ce qui existe déjà. On propose de fabriquer une promenade à
+            qui n'en a pas trouvé une, pas à qui vient d'arriver.
+            La vitrine, toujours accessible : elle est embarquée, donc elle
+            s'affiche même sans réseau. */}
+        {/* ⭐ La composition est l'autre moitié du produit : les 1 032
+            itinéraires sont les promenades des AUTRES ; celle-ci est la
+            vôtre, depuis là où vous êtes. */}
+        <section className="page-panel">
+          <p className="apercu-label">Ou bien</p>
+          <h2 className="section-title" style={{ marginBottom: "var(--sp-2)" }}>
+            Composer votre propre promenade
+          </h2>
+          <p className="page-texte">
+            Une boucle depuis où vous êtes, par les chemins, devant ce qu'il y
+            a à voir.
+          </p>
+          <div className="est-actions" style={{ marginBottom: 0 }}>
+            <a className="btn btn-primary" href={`${B}/composer`}>
+              Composer une promenade
+            </a>
+          </div>
+        </section>
+
       </div>
     </main>
   );

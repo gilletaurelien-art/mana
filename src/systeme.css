@@ -1,0 +1,1249 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   MANA — LE SYSTÈME. Les primitives réutilisables, bâties UNIQUEMENT sur les
+   tokens. Aucune valeur littérale ici : si une valeur manque, elle naît dans
+   `tokens.css`, jamais au milieu d'une règle.
+   ⚠️ Toutes les règles sont préfixées `m-` : la feuille historique porte des
+      noms génériques (`.photo`, `.carte`, `.titre`) et une collision de
+      cascade ne se signale pas — elle se constate trois écrans plus loin.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── TYPOGRAPHIE ÉDITORIALE ────────────────────────────────────────────────
+   ⭐ L'ACCROCHE EST FLUIDE, mais BORNÉE aux deux bouts. Un `clamp()` sans
+      plancher réduit un titre à l'illisible sur un vieil écran étroit ; sans
+      plafond, il dévore la page sur un grand écran. Les deux bornes viennent
+      de l'échelle, pas d'un nombre trouvé à l'œil. */
+.m-accroche {
+  font-family: var(--titre);
+  font-size: clamp(var(--t-2xl), 7.5vw, var(--t-3xl));
+  line-height: var(--lh-serre);
+  letter-spacing: var(--suivi-titre);
+  text-wrap: balance;
+  margin: 0;
+  color: var(--texte);
+}
+.m-titre   { font-family: var(--titre); font-size: var(--t-xl); line-height: var(--lh-titre);
+             letter-spacing: var(--suivi-titre); text-wrap: balance; margin: 0; color: var(--texte); }
+.m-sous    { font-family: var(--titre); font-size: var(--t-l); line-height: var(--lh-titre);
+             margin: 0; color: var(--texte); }
+.m-texte   { font-size: var(--t-s); line-height: var(--lh-texte); max-width: var(--mesure); color: var(--texte); }
+.m-chapeau { font-size: var(--t-m); line-height: 1.45; max-width: var(--mesure); color: var(--texte); }
+.m-meta    { font-size: var(--t-xs); line-height: 1.45; color: var(--texte-doux); }
+/* ⚠️ L'ÉTIQUETTE EST LE SEUL ENDROIT OÙ LA CAPITALE EST ADMISE, et seulement
+   sur deux ou trois mots. Le brief refuse « les capitales systématiques » :
+   au-delà d'une ligne, une capitale se lit lettre à lettre, pas en mot. */
+.m-etiquette {
+  font-size: var(--t-2xs); text-transform: uppercase;
+  letter-spacing: var(--suivi-label); color: var(--texte-doux);
+}
+/* ⭐ LES CHIFFRES QUE LE MARCHEUR LIT EN MARCHANT. Distance, durée, dénivelé :
+   `tabular-nums` pour qu'ils ne dansent pas d'une fiche à l'autre, et un cran
+   au-dessus du corps — c'est l'information qu'on cherche du regard. */
+.m-chiffre {
+  font-family: var(--chiffres); font-variant-numeric: tabular-nums;
+  font-size: var(--t-m); font-weight: 700; color: var(--texte);
+}
+
+/* ── PHOTOGRAPHIE ──────────────────────────────────────────────────────────  */
+.m-photo, .photo { position: relative; margin: 0; overflow: hidden; background: var(--fond-enfoncé); }
+.photo picture, .photo img { display: block; width: 100%; height: 100%; }
+.photo img {
+  object-fit: cover;
+  /* ⚠️ `object-position` par défaut au CENTRE couperait les têtes de falaise
+     et les horizons hauts. Le point focal se pose par composant, et le
+     défaut est légèrement HAUT : sur un paysage, le sujet est au ciel ou à
+     la ligne d'horizon, presque jamais au milieu géométrique. */
+  object-position: 50% 42%;
+  /* la révélation : §8.1, « transition douce au chargement » */
+  animation: m-revele var(--d-photo) var(--e-sortie) both;
+}
+@keyframes m-revele { from { opacity: 0; transform: scale(1.012); } to { opacity: 1; transform: none; } }
+
+/* le voile — UNIQUEMENT là où du texte se pose. §8.1 */
+.photo[data-voile="bas"]::after,
+.photo[data-voile="haut"]::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+}
+.photo[data-voile="bas"]::after  { background: var(--voile-photo); }
+.photo[data-voile="haut"]::after { background: var(--voile-photo-haut); }
+
+/* ⭐ LE CRÉDIT EST DISCRET, PAS CACHÉ. Il reste lisible (4,6 sur le voile) et
+   cliquable vers la page source : c'est la condition de la licence CC BY. Le
+   réduire à 8 px gris sur gris serait une attribution de façade. */
+.photo-credit {
+  position: absolute; right: var(--sp-2); bottom: var(--sp-1);
+  z-index: 1; display: flex; gap: var(--sp-1); align-items: baseline;
+  /* 🔴 BORNÉ, ET ALIGNÉ À DROITE. Sans largeur maximale, un crédit long
+     s'étend sur toute la largeur de l'image et passe PAR-DESSUS le texte de
+     la page — vu le 31/10 sur l'accueil, où « Mer de nuages au lever du
+     soleil, mer d'Iroise » recouvrait le compte des promenades. Un élément
+     absolu n'a pas de largeur propre : il prend celle qu'on lui laisse. */
+  max-width: min(60%, 34ch); text-align: right; flex-wrap: wrap;
+  justify-content: flex-end;
+  font-size: var(--t-2xs); color: var(--craie);
+  /* 🔴 UNE PASTILLE, PAS UNE OMBRE PORTÉE. Mesuré : craie sur l'eau claire du
+     bas de l'accueil donne 3,40 — un petit texte exige 4,5. Une ombre portée
+     fait « paraître » lisible sans rien ajouter au rapport de contraste, que
+     les outils comme les yeux fatigués mesurent sur la couleur de FOND.
+     Avec un fond nuit à 72 %, le rapport ne dépend plus de l'image : 9,1
+     quelle que soit la photographie, aujourd'hui et dans six mois. */
+  background: color-mix(in srgb, #192b43 72%, transparent);
+  padding: 3px var(--sp-1); border-radius: var(--r-s);
+  backdrop-filter: blur(3px);
+}
+.photo-credit a { color: inherit; opacity: 0.78; text-decoration: none; }
+.photo-credit a:hover, .photo-credit a:focus-visible { opacity: 1; text-decoration: underline; }
+.photo-lieu { font-family: var(--titre); font-size: var(--t-xs); opacity: 0.95; }
+
+/* le zoom de survol — desktop et souris SEULEMENT. §8.1 refuse le zoom permanent */
+@media (hover: hover) and (pointer: fine) {
+  .m-photo-vivante img { transition: transform 600ms var(--e-doux); }
+  .m-photo-vivante:hover img { transform: scale(1.03); }
+}
+
+/* les cinq cadrages de la charte — §4.5 */
+.m-r-immersif  { aspect-ratio: 16 / 9; }
+.m-r-editorial { aspect-ratio: 4 / 5; }
+.m-r-decouverte{ aspect-ratio: 4 / 3; }
+.m-r-vignette  { aspect-ratio: 1 / 1; }
+.m-r-banniere  { aspect-ratio: 5 / 2; }
+
+/* ── SURFACES ──────────────────────────────────────────────────────────────
+   🔴 « TOUT N'EST PAS UNE CARTE. » Trois surfaces, trois intentions, et c'est
+      délibérément peu : un rayon et une ombre posés sur chaque bloc aplatissent
+      la hiérarchie au lieu de la créer. `m-pose` ne porte AUCUNE ombre — elle
+      se distingue par le fond seul, et c'est le cas le plus fréquent. */
+.m-pose    { background: var(--fond-surelevé); border-radius: var(--r-m); padding: var(--sp-2); }
+.m-panneau { background: var(--fond-surelevé); border-radius: var(--r-l) var(--r-l) 0 0;
+             box-shadow: var(--ombre-panneau); padding: var(--sp-3); }
+.m-levee   { background: var(--fond-surelevé); border-radius: var(--r-l);
+             box-shadow: var(--ombre-levee); padding: var(--sp-3); }
+.m-filet   { border: 0; border-top: 1px solid var(--trait); margin: var(--sp-3) 0; }
+
+/* ── ACTIONS ───────────────────────────────────────────────────────────────  */
+.m-action, .m-action-fine {
+  font: inherit; cursor: pointer; border-radius: var(--r-rond);
+  padding: var(--sp-1) var(--sp-3); min-height: 44px;
+  transition: background var(--d-micro) var(--e-doux), color var(--d-micro) var(--e-doux),
+              border-color var(--d-micro) var(--e-doux);
+}
+.m-action      { background: var(--action); color: var(--action-texte); border: 0; font-weight: 700; }
+.m-action:hover{ background: var(--action-survol); }
+.m-action-fine { background: transparent; color: var(--texte); border: 1px solid var(--trait-fort); }
+.m-action-fine:hover { border-color: var(--action); color: var(--texte-action); }
+.m-action[disabled], .m-action-fine[disabled] {
+  background: var(--inactif-fond); color: var(--inactif-texte); border-color: transparent; cursor: not-allowed;
+}
+/* ⚠️ Le focus est visible sur les DEUX fonds. Un contour ocre sur fond ocre
+   disparaît : on double d'un liseré de la couleur du fond. */
+:where(.m-action, .m-action-fine, .m-lien):focus-visible {
+  outline: 2px solid var(--focus); outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--fond);
+}
+/* ⭐ UN SOL IMMERSIF EST UN CONTEXTE, COMME LA BULLE. `--texte-action` vaut
+   #856329 : l'ocre DESCENDU pour tenir sur la craie. Posé sur le kaki il
+   donne **2,00** — mesuré le 31/10 sur « ouvrez la carte », page Espace.
+   Le même rôle, l'autre sens : on le redéfinit à la portée des surfaces
+   sombres, une fois, plutôt que de corriger chaque lien.
+   ⚠️ C'est la TROISIÈME fois ce soir qu'un rôle calculé pour un fond clair se
+      retrouve sur un fond sombre (les liens du pied, l'attribution ODbL,
+      celui-ci). Le défaut n'est pas la valeur : c'est qu'un rôle nommé
+      « action » sans dire SUR QUOI se croit universel. */
+.espace,
+.terr,
+.fiche-couverture,
+.inv { --texte-action: var(--bulle-action); }
+
+.m-lien { color: var(--texte-action); text-underline-offset: 3px; text-decoration-thickness: 1px; }
+
+/* ── ICONOGRAPHIE ──────────────────────────────────────────────────────────
+   ⭐ UNE SEULE LOGIQUE DE DESSIN, ET ELLE EST IMPOSÉE PAR LA FEUILLE, pas par
+      la discipline de qui dessine. Trait de 1,5 unité sur une grille de 24,
+      bouts et jonctions ronds, aucun remplissage. Un pictogramme plein glissé
+      au milieu se voit immédiatement — c'est le but. */
+.m-icone {
+  width: 1.5em; height: 1.5em; flex: none;
+  fill: none; stroke: currentColor; stroke-width: 1.5;
+  stroke-linecap: round; stroke-linejoin: round;
+  /* ⚠️ Obligatoire pour qu'une rotation tourne autour du centre du dessin et
+     non du coin de la boîte — le défaut SVG surprend à chaque fois. */
+  transform-box: view-box; transform-origin: 50% 50%;
+  vector-effect: non-scaling-stroke;
+}
+.m-icone-active { color: var(--action); }
+
+/* ── MOUVEMENT ─────────────────────────────────────────────────────────────
+   §9 : un langage commun, quatre gestes, pas un de plus. */
+.m-monte   { animation: m-monte var(--d-panneau) var(--e-sortie) both; }
+.m-apparait{ animation: m-apparait var(--d-ecran) var(--e-sortie) both; }
+@keyframes m-monte    { from { transform: translateY(14px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes m-apparait { from { opacity: 0; } to { opacity: 1; } }
+
+/* ⭐ LE TRACÉ QUI SE DESSINE — le geste signature, et le seul qui dise
+   quelque chose de VRAI : il parcourt le chemin dans le sens de la marche.
+   ⚠️ `pathLength="1"` est posé sur le `<path>` en JSX : sans lui il faudrait
+      mesurer la longueur réelle en JavaScript, et l'animation ne partirait
+      qu'après le premier rendu. */
+.m-trace-anime {
+  stroke-dasharray: 1; stroke-dashoffset: 1;
+  animation: m-tracer var(--d-trace) var(--e-doux) forwards;
+}
+@keyframes m-tracer { to { stroke-dashoffset: 0; } }
+
+/* ── MATIÈRE ───────────────────────────────────────────────────────────────
+   ⚠️ LE GRAIN EST EN SVG INLINE, PAS EN IMAGE. Une texture en PNG répétée
+      coûte un fichier, une requête, et se voit se répéter ; `feTurbulence`
+      coûte ~200 octets dans la feuille et ne se répète jamais.
+   ⛔ `pointer-events: none` est vital : sans lui, le voile mange tous les
+      clics de la page — et le défaut se lit « le bouton ne marche pas ». */
+.m-grain::before {
+  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  opacity: var(--grain); mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.86' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+
+/* ── DÉBORDEMENT ───────────────────────────────────────────────────────────
+   ⚠️ Un tableau large fait défiler le CORPS de la page latéralement, et sur
+      mobile c'est la mise en page entière qui part de travers. Le défilement
+      appartient au contenu, jamais au document. */
+.m-large { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* ═══ ÉCRAN 3 — LA FICHE PROMENADE ════════════════════════════════════════
+   ⭐ LA COMPOSITION N'EST PAS CELLE DE LA CARTE, ET C'EST VOULU. Le brief
+      demande que « la composition ne soit pas identique sur tous les écrans »
+      et refuse « les cartes empilées systématiquement ». Ici : une couverture
+      pleine largeur, puis une colonne de lecture ÉTROITE — parce qu'on lit —,
+      et deux respirations photographiques qui débordent cette colonne. Le
+      rythme vient de cette alternance, pas d'un effet.                       */
+
+.fiche { background: var(--fond); color: var(--texte); padding-bottom: var(--sp-8); }
+
+/* ── la couverture ─────────────────────────────────────────────────────── */
+.fiche-couverture { position: relative; isolation: isolate; }
+.fiche-couverture .photo { width: 100%; }
+/* ⚠️ `aspect-ratio` plafonné en hauteur : un 16/9 sur un écran large devient
+   une bande de 800 px qui chasse le titre hors du premier regard. */
+/* 🔴 LA COUVERTURE A UNE HAUTEUR MINIMALE, pas seulement un ratio. Le 16/9
+   donnait 211 px sur un téléphone de 375 : un titre de trois lignes débordait
+   sur la photo et le crédit traversait le titre. ⭐ Un `aspect-ratio` dit une
+   PROPORTION ; il ne garantit aucune place. Sur un écran étroit, la place
+   doit être exigée. */
+.fiche-couverture .photo {
+  min-height: 52svh; max-height: 70svh; aspect-ratio: auto;
+}
+.fiche-couverture .photo img { height: 100%; object-fit: cover; }
+@media (min-width: 760px) {
+  .fiche-couverture .photo { min-height: 46svh; }
+}
+
+.fiche-couverture-texte {
+  position: absolute; inset: auto 0 0 0; z-index: 2;
+  /* ⚠️ La marge basse DÉGAGE LE CRÉDIT, qui vit dans le même coin. Sans elle,
+     les deux se superposent — et c'est l'attribution qui devient illisible,
+     c'est-à-dire la seule des deux qui soit une obligation légale. */
+  padding: var(--sp-3) var(--sp-3) calc(var(--sp-4) + 1.4rem);
+  display: flex; flex-direction: column; gap: var(--sp-0);
+}
+/* ⚠️ Le rôle mesuré, pas la matière : `--sauge` donne 3,38 en petit corps
+   sur fond immersif, et ce bandeau est en 12 px capitales. Même correction
+   qu'à la devise de l'accueil — et c'est bien le signe que le défaut était
+   dans le TOKEN, pas dans l'écran : deux écrans l'avaient hérité. */
+.fiche-sur-titre { color: var(--texte-inverse-doux); }
+.fiche-titre { color: var(--craie); }
+/* ⚠️ L'ombre portée n'est pas un effet : c'est le filet de sécurité du
+   contraste. Le voile donne 4,8 sur la plupart des images, mais une
+   photographie claire en haut de cadre peut descendre sous AA — l'ombre tient
+   la lisibilité quelle que soit l'image, et aucune ne sera vérifiée une par
+   une dans six mois. */
+.fiche-couverture-texte > * { text-shadow: 0 2px 12px rgb(25 43 67 / 55%); }
+
+/* la variante sans photographie : le tracé, et le titre SOUS lui */
+.fiche-couverture-tracee { background: var(--fond-immersif); padding-bottom: var(--sp-2); }
+.fiche-atlas { padding: var(--sp-4) var(--sp-3) 0; }
+.fiche-atlas-svg { display: block; width: 100%; height: auto; max-height: 42svh; }
+.fiche-couverture-texte-bas {
+  position: static; padding-top: var(--sp-2);
+}
+.fiche-couverture-texte-bas > * { text-shadow: none; }
+.fiche-sans-photo { color: var(--texte-inverse-doux); max-width: 46ch; }
+
+/* ── la colonne de lecture ─────────────────────────────────────────────── */
+.fiche-corps {
+  max-width: var(--largeur-etroite);
+  margin: 0 auto; padding: var(--sp-4) var(--sp-3) 0;
+  display: flex; flex-direction: column; gap: var(--sp-4);
+}
+.fiche-resume { color: var(--texte); }
+
+/* ── les trois chiffres ────────────────────────────────────────────────── */
+.fiche-chiffres {
+  margin: 0; display: grid; gap: var(--sp-2);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid var(--trait); border-bottom: 1px solid var(--trait);
+  padding: var(--sp-2) 0;
+}
+.fiche-chiffres > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fiche-chiffres dd { margin: 0; }
+/* ⚠️ Sous 360 px, trois colonnes donnent « Aller » / « simple » sur deux
+   lignes de quatre caractères. On passe à deux colonnes AVANT que ça arrive,
+   et la troisième prend toute la largeur. */
+@media (max-width: 400px) {
+  .fiche-chiffres { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fiche-chiffres > div:last-child { grid-column: 1 / -1; }
+}
+
+/* ── ce que dit l'autorité ─────────────────────────────────────────────── */
+.fiche-fermeture {
+  background: var(--fond-enfoncé); border-radius: var(--r-m);
+  padding: var(--sp-2); display: flex; flex-direction: column; gap: var(--sp-1);
+  /* ⭐ le liseré porte le sens : ocre = « à savoir », terre = « interdit ».
+     Aucune autre couleur n'entre dans la charte pour ça. */
+  border-left: 3px solid var(--etat-attention);
+}
+.fiche-fermeture-interdit { border-left-color: var(--etat-empeche); }
+.fiche-fermeture h2 { margin: 0; }
+.fiche-fermeture p { margin: 0; }
+
+/* ── sur le chemin ─────────────────────────────────────────────────────── */
+/* ── LA COUVERTURE EST UNE CARTE ──────────────────────────────────────────
+   Pleine largeur, à fleur de colonne — comme l'était la photographie qu'elle
+   remplace : une couverture qui s'arrête avant les bords n'est plus une
+   couverture, c'est une vignette.
+   ⚠️ Hauteur en `svh` et non en `vh` : sur mobile, `vh` compte la barre
+      d'adresse rétractée, et la carte dépasse de l'écran au premier chargement
+      — le même piège que l'écran du territoire. */
+.fiche-couverture-carte { background: var(--fond); }
+.fiche-carte { height: 46svh; min-height: 300px; position: relative; overflow: hidden; }
+.fiche-carte > * { display: block; width: 100%; height: 100%; }
+/* 🔴 LE TITRE AVAIT DISPARU. `.fiche-titre` vaut `--craie` et `.fiche-sur-titre`
+   le ton immersif doux : des valeurs calculées pour du texte posé SUR une
+   photographie sous voile. La couverture n'est plus sombre — elle est une
+   carte claire — et les deux sont devenus invisibles, 1,0 de contraste.
+   ⭐ Et ma sonde ne l'a pas vu : `.fiche-couverture` figure dans ses
+      EXCLUSIONS, posées du temps où ce bandeau était un hero photographique
+      mesuré à part. L'exclusion a survécu à sa cause et a transformé
+      l'instrument en complice. Un garde qui exclut par nom d'élément doit
+      être relu chaque fois que l'élément change de nature. */
+.fiche-couverture-carte .fiche-couverture-texte-bas {
+  position: static; padding: var(--sp-4) var(--sp-4) var(--sp-2);
+}
+.fiche-couverture-carte .fiche-titre { color: var(--texte); }
+.fiche-couverture-carte .fiche-sur-titre { color: var(--texte-doux); }
+
+
+.fiche-rencontres { display: flex; flex-direction: column; gap: var(--sp-2); }
+.fiche-etapes { list-style: none; margin: 0; padding: 0;
+                display: flex; flex-direction: column; }
+.fiche-etape {
+  display: grid; grid-template-columns: 4.2rem 1fr; gap: var(--sp-2);
+  align-items: baseline; padding: var(--sp-2) 0;
+  border-top: 1px solid var(--trait);
+}
+.fiche-etape:first-child { border-top: 0; }
+/* ⭐ Le pourcentage est À GAUCHE, aligné sur ses chiffres : la colonne se lit
+   verticalement, et on voit d'un coup d'œil comment les lieux se répartissent
+   le long du parcours — groupés au début, ou étalés. Mis à droite ou collé au
+   nom, il redevient une métadonnée parmi d'autres. */
+.fiche-etape-pos { color: var(--texte-action); text-align: right; font-variant-numeric: tabular-nums; }
+/* ⚠️ `opacity: 0.7` ramenait le « % » à 2,7. Une opacité est une couleur
+   qu'on n'a pas nommée : elle échappe à la relecture de palette et ne se
+   mesure qu'à l'écran. On nomme la couleur. */
+/* Le dièse est plus discret que le nombre : il annonce un rang, il n'est pas
+   le rang. (Il remplace .fiche-pourcent, retiré avec le pourcentage qu'il
+   suffixait — une règle sans porteur est un nom de surface mort.) */
+.fiche-diese { font-size: var(--t-2xs); color: var(--texte-doux); margin-right: 1px; }
+.fiche-etape-corps { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fiche-etape-nom { font-family: var(--titre); font-size: var(--t-m); line-height: 1.25; }
+
+/* ── les respirations photographiques ──────────────────────────────────── */
+/* ⚠️ Elles DÉBORDENT la colonne de lecture, des deux côtés, en restant dans
+   la page. `calc(100% + 2 × marge)` et non `100vw` : `100vw` inclut la barre
+   de défilement sur bureau et fait déborder le document de quelques pixels —
+   un défilement horizontal que personne ne comprend. */
+.fiche-illustration {
+  margin: var(--sp-2) calc(-1 * var(--sp-3));
+  display: flex; flex-direction: column; gap: var(--sp-1);
+}
+.fiche-illustration .photo { border-radius: var(--r-m); overflow: hidden; }
+.fiche-legende { padding: 0 var(--sp-3); max-width: var(--mesure); }
+
+/* ── partir ────────────────────────────────────────────────────────────── */
+.fiche-actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; }
+.fiche-partir { text-decoration: none; display: inline-flex; align-items: center; }
+.fiche-actions .m-action-fine { text-decoration: none; display: inline-flex; align-items: center; }
+
+.fiche-pied { display: flex; flex-direction: column; gap: var(--sp-1);
+              border-top: 1px solid var(--trait); padding-top: var(--sp-2); }
+.fiche-vide { max-width: var(--largeur-etroite); margin: 0 auto; padding: var(--sp-8) var(--sp-3); }
+
+/* ── bureau : la couverture respire, la lecture reste étroite ──────────── */
+@media (min-width: 760px) {
+  .fiche-corps { padding-top: var(--sp-6); gap: var(--sp-6); }
+  .fiche-couverture-texte { padding: var(--sp-6); }
+  .fiche-illustration { margin-inline: calc(-1 * var(--sp-6)); }
+  .fiche-legende { padding-inline: var(--sp-6); }
+}
+
+/* ═══ ÉCRAN 5 — SUR VOTRE CHEMIN ══════════════════════════════════════════ */
+.renc {
+  background: var(--fond); color: var(--texte);
+  max-width: var(--largeur-etroite); margin: 0 auto;
+  padding: var(--sp-4) var(--sp-3) var(--sp-8);
+  display: flex; flex-direction: column; gap: var(--sp-3);
+}
+.renc-entete { display: flex; flex-direction: column; gap: var(--sp-0); }
+.renc-compte {
+  align-self: flex-start; background: var(--fond-enfoncé);
+  border-radius: var(--r-rond); padding: 4px var(--sp-1);
+}
+.renc-gps { color: var(--texte-doux); }
+.renc-liste { list-style: none; margin: 0; padding: 0;
+              display: flex; flex-direction: column; gap: var(--sp-1); }
+.renc-item {
+  display: grid; grid-template-columns: 56px 1fr; gap: var(--sp-2);
+  align-items: center;
+  background: var(--fond-surelevé); border-radius: var(--r-m);
+  overflow: hidden; box-shadow: var(--ombre-pose);
+}
+/* ── le bandeau d'images ──────────────────────────────────────────────── */
+.renc-bandeau { display: flex; flex-direction: column; gap: var(--sp-1); }
+/* ⚠️ Un rang qui DÉFILE, et le débordement est confié au rang, jamais au
+   document : sur un téléphone, deux images de 70 vw côte à côte feraient
+   partir la page entière de travers. */
+.renc-bandeau-rang {
+  display: flex; gap: var(--sp-2); overflow-x: auto;
+  scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
+  padding-bottom: var(--sp-0);
+}
+.renc-image {
+  flex: 0 0 min(70%, 300px); scroll-snap-align: start;
+  display: flex; flex-direction: column; gap: 4px;
+  background: transparent;
+}
+.renc-image img {
+  aspect-ratio: 4 / 3; border-radius: var(--r-m);
+}
+/* 🔴 LE CRÉDIT PASSE SOUS L'IMAGE, et ce n'est pas un détail de goût. En
+   surimpression sur un cadre de 300 px, « Bibliothèque nationale de France ·
+   Domaine public » occupait la photographie ENTIÈRE. ⭐ Une attribution qui
+   masque l'œuvre n'attribue plus rien ; et la tronquer pour qu'elle tienne
+   reviendrait à amputer le nom de l'auteur, c'est-à-dire la seule chose que
+   la licence exige. Quand la place manque, l'information change de PLACE,
+   elle ne rétrécit pas. */
+.renc-image .photo-credit {
+  position: static; max-width: 100%; text-align: left;
+  justify-content: flex-start; background: none; backdrop-filter: none;
+  padding: 0; color: var(--texte-doux); flex-direction: column; gap: 0;
+}
+.renc-image .photo-credit a { color: var(--texte-doux); opacity: 1; }
+.renc-image .photo-lieu { color: var(--texte); }
+/* ⭐ L'ABSENCE D'IMAGE EST DESSINÉE, PAS LAISSÉE EN BLANC. Une initiale dans
+   la serif, sur le fond enfoncé : ça tient la grille, ça ne simule pas une
+   photographie en attente, et ça reste lisible. Un rectangle gris promet une
+   image qui ne viendra jamais. */
+.renc-pastille {
+  display: grid; place-items: center; aspect-ratio: 1 / 1; height: 100%;
+  background: var(--fond-enfoncé); color: var(--texte-doux);
+  font-family: var(--titre); font-size: var(--t-l);
+}
+.renc-corps { display: flex; flex-direction: column; gap: 2px;
+              padding: var(--sp-2) var(--sp-2) var(--sp-2) 0; min-width: 0; }
+.renc-nom { font-family: var(--titre); font-size: var(--t-m); line-height: 1.2; }
+.renc-note { color: var(--texte-doux); }
+.renc-fermeture {
+  background: var(--fond-enfoncé); border-left: 3px solid var(--etat-attention);
+  border-radius: var(--r-m); padding: var(--sp-2);
+  display: flex; flex-direction: column; gap: var(--sp-0);
+}
+.renc-fermeture-interdit { border-left-color: var(--etat-empeche); }
+.renc-fermeture p { margin: 0; }
+.renc-retour { margin: 0; }
+
+/* 🔴 AUCUN TEXTE EN `--sauge` SUR FOND IMMERSIF. #92977c sur #343f32 donne
+   3,38 ; un texte normal exige 4,5. Sept règles l'avaient hérité — l'accueil,
+   la fiche, et cinq de l'espace personnel. ⭐ Quand le même défaut apparaît
+   dans sept règles, il n'est dans aucune des sept : il est dans le token
+   qu'elles partagent. On corrige le token (`--texte-inverse-doux`), pas les
+   sept. Un test tient la règle, parce qu'elle se reperd en une distraction.
+   ⚠️ `--sauge` reste légitime pour un TRAIT ou un GRAPHIQUE — le filigrane
+      topographique l'emploie encore, à 10 % d'opacité, et aucun contraste de
+      texte n'y est en jeu.
+
+   ═══ ÉCRAN 6 — L'ESPACE PERSONNEL ════════════════════════════════════════
+   ⚠️ Fond IMMERSIF, pas craie : c'est le seul écran qui ne se lit pas en
+      marchant, et le kaki le sépare nettement du reste — on sait qu'on a
+      quitté le territoire pour entrer dans ses propres affaires.            */
+.espace {
+  background: var(--fond-immersif); color: var(--texte-inverse);
+  min-height: 100svh;
+  padding: var(--sp-6) var(--sp-3) var(--sp-12);
+  display: flex; flex-direction: column; gap: var(--sp-6);
+}
+.espace > * { max-width: var(--largeur-etroite); width: 100%; margin-inline: auto; }
+.espace-entete { display: flex; flex-direction: column; gap: var(--sp-1); }
+.espace-entete .m-etiquette { color: var(--texte-inverse-doux); letter-spacing: 0.22em; }
+.espace-titre { color: var(--craie); max-width: 20ch; }
+.espace-bloc { display: flex; flex-direction: column; gap: var(--sp-2); }
+.espace-bloc .m-etiquette { color: var(--texte-inverse-doux); }
+.espace-bloc .m-texte, .espace-bloc .m-meta { color: var(--craie); }
+.espace-bloc .m-meta { color: var(--texte-inverse-doux); }
+.espace-vide { color: var(--texte-inverse-doux); }
+.espace-liste { list-style: none; margin: 0; padding: 0;
+                display: flex; flex-direction: column; gap: var(--sp-1); }
+.espace-item {
+  display: flex; flex-direction: column; gap: 2px; text-decoration: none;
+  background: var(--kaki-clair); border-radius: var(--r-m); padding: var(--sp-2);
+  color: var(--craie);
+}
+.espace-item:hover { background: color-mix(in oklab, var(--kaki-clair) 80%, var(--craie)); }
+.espace-item-nom { font-family: var(--titre); font-size: var(--t-m); }
+.espace-vider {
+  font: inherit; background: none; border: 0; padding: 0; cursor: pointer;
+  color: var(--ocre-clair); text-decoration: underline; text-underline-offset: 3px;
+}
+
+.espace-etat { display: flex; gap: var(--sp-2); align-items: flex-start; }
+/* ⭐ Une pastille, pas un interrupteur : elle RAPPORTE un état, elle n'en
+   propose pas le changement. La forme dit la fonction — un rond ne se
+   bascule pas. */
+.espace-pastille {
+  flex: none; width: 10px; height: 10px; margin-top: 7px; border-radius: 50%;
+  background: var(--sauge-sombre); box-shadow: 0 0 0 3px rgb(146 151 124 / 20%);
+}
+.espace-pastille-prete { background: var(--ocre); box-shadow: 0 0 0 3px rgb(198 154 72 / 22%); }
+
+.espace-renoncements { list-style: none; margin: 0; padding: 0;
+                       display: flex; flex-direction: column; gap: var(--sp-2); }
+.espace-renoncements li {
+  display: grid; grid-template-columns: 24px 1fr; gap: var(--sp-2);
+  align-items: start; color: var(--craie); font-size: var(--t-xs); line-height: 1.5;
+}
+.espace-renoncements svg { color: var(--ocre); }
+.espace-pied { border-top: 1px solid var(--trait-inverse); padding-top: var(--sp-3);
+               display: flex; flex-direction: column; gap: var(--sp-2); }
+.espace-pied .m-meta { color: var(--texte-inverse-doux); }
+.espace-liens { display: flex; gap: var(--sp-3); margin: 0; }
+.espace-liens a { color: var(--ocre-clair); }
+
+/* le marque-page et les pastilles de la fiche */
+.fiche-marque {
+  position: absolute; top: var(--sp-2); right: var(--sp-2); z-index: var(--z-panneau);
+  width: 44px; height: 44px; display: grid; place-items: center;
+  border: 0; border-radius: var(--r-rond); cursor: pointer;
+  background: color-mix(in oklab, var(--nuit) 55%, transparent);
+  color: var(--craie);
+  /* ⚠️ `backdrop-filter` seulement en SUPPLÉMENT d'un fond déjà opaque à
+     moitié : là où il n'est pas supporté, le bouton reste lisible. Un effet
+     dont dépend la lisibilité est un défaut qui ne se voit que sur l'appareil
+     des autres. */
+  backdrop-filter: blur(8px);
+  transition: background var(--d-micro) var(--e-doux), color var(--d-micro) var(--e-doux);
+}
+.fiche-marque:hover { background: color-mix(in oklab, var(--nuit) 72%, transparent); }
+.fiche-marque-prise { color: var(--ocre); }
+.fiche-marque:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.fiche { position: relative; }
+
+.fiche-pastilles { display: flex; gap: var(--sp-1); margin: 0 0 var(--sp-1); }
+.fiche-pastille {
+  background: var(--ocre); color: var(--nuit);
+  font-size: var(--t-2xs); font-weight: 700;
+  text-transform: uppercase; letter-spacing: var(--suivi-label);
+  border-radius: var(--r-rond); padding: 4px var(--sp-1);
+}
+.fiche-osm { align-self: center; }
+
+/* ═══ ÉCRAN 1 — LA PHOTOGRAPHIE D'ACCUEIL ════════════════════════════════
+   ⚠️ Elle occupe tout le fond, derrière le contenu. `inset: 0` + `z-index`
+      négatif plutôt qu'un `background-image` : on garde `<picture>`, donc
+      l'AVIF, le `srcset` et le crédit — trois choses qu'un fond CSS perd. */
+.invitation-fond { position: absolute; inset: 0; z-index: 0; }
+.invitation-fond .photo { width: 100%; height: 100%; }
+.invitation-fond .photo img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 45%; }
+/* le voile du bas doit couvrir plus haut ici : le texte occupe la moitié */
+.invitation-fond .photo[data-voile="bas"]::after {
+  background: linear-gradient(to top,
+    rgb(25 43 67 / 88%) 0%, rgb(25 43 67 / 70%) 38%, rgb(25 43 67 / 18%) 72%, rgb(25 43 67 / 5%) 100%);
+}
+/* ⚠️ Le crédit remonte au-dessus de la barre flottante du bas, sinon elle le
+   recouvre — et une attribution recouverte n'est pas une attribution. */
+.invitation-fond .photo-credit { bottom: calc(var(--barre-espace, 108px) + var(--sp-1)); }
+.invitation-contenu { position: relative; z-index: 1; }
+
+/* ═══ ÉCRAN 4 — EN CHEMIN ═════════════════════════════════════════════════ */
+.chemin {
+  background: var(--fond-surelevé); color: var(--texte);
+  border-radius: var(--r-l); padding: var(--sp-2) var(--sp-3) var(--sp-3);
+  margin-bottom: var(--sp-3); box-shadow: var(--ombre-carte);
+  display: flex; flex-direction: column; gap: var(--sp-2);
+}
+.chemin-haut { display: flex; flex-direction: column; gap: 2px; }
+.chemin-label { color: var(--texte-action); }
+.chemin-nom { font-family: var(--titre); font-size: var(--t-l); line-height: 1.15; margin: 0; }
+.chemin .m-meta { margin: 0; }
+
+/* ⚠️ `position: relative` sur la piste, `absolute` sur les jalons : sans
+   quoi les jalons se positionnent par rapport à la page et atterrissent
+   n'importe où — un défaut qui n'apparaît qu'une fois la page défilée. */
+.chemin-barre {
+  position: relative; height: 6px; border-radius: var(--r-rond);
+  background: var(--fond-enfoncé); overflow: visible;
+}
+.chemin-barre-fait {
+  position: absolute; inset-block: 0; inset-inline-start: 0;
+  border-radius: var(--r-rond); background: var(--ocre);
+  transition: inline-size var(--d-panneau) var(--e-doux);
+}
+/* les lieux, posés sur la piste : on voit d'un coup ce qui est passé */
+.chemin-jalon {
+  position: absolute; top: 50%; width: 9px; height: 9px; border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--fond-surelevé); border: 2px solid var(--sauge);
+}
+.chemin-jalon-passe { border-color: var(--ocre); background: var(--ocre); }
+.chemin-chiffres { font-variant-numeric: tabular-nums; }
+.chemin-chiffres strong { color: var(--texte); }
+
+/* ═══ ÉCRAN 1 — L'INVITATION, disposition de la maquette ══════════════════
+   ⭐ TROIS BLOCS, ET UN SEUL RESPIRE. La marque en haut, le dire au tiers
+      supérieur, les gestes en bas : entre le dire et les gestes, un espace
+      extensible qui laisse voir la photographie. C'est lui qui donne à
+      l'écran son calme — si les trois blocs se partageaient la place à parts
+      égales, on obtiendrait un formulaire.                                   */
+.inv {
+  position: relative;
+  min-height: 100svh;
+  display: flex; flex-direction: column;
+  color: var(--craie);
+  /* 🔴 PLUS DE FOND ICI — ET SURTOUT PLUS D'`isolation: isolate`. L'accueil
+     laisse voir le fond tournant, qui vit en `z-index: -1` sur la racine.
+     ⚠️ `isolation: isolate` créait un contexte d'empilement : à l'intérieur,
+        `z-index: -1` ne descend plus sous le document mais sous ce
+        contexte-là — le fond aurait été masqué par l'accueil, et par lui
+        seul. ⭐ Un défaut qui n'apparaît que sur un écran, et c'est celui
+        qu'on voit en premier. */
+  background: transparent;
+}
+
+/* ⚠️ `.inv-sol` a disparu avec la photographie d'accueil. Le dégradé qui
+   tenait la lisibilité du titre est repris ci-dessous, sur l'accueil
+   lui-même : sans lui, le texte clair se poserait sur vingt-deux images
+   différentes, dont des ciels de couchant à 230 de luminance. */
+/* 🔴 UN FOND LOCAL SOUS LE TEXTE, ET RIEN D'AUTRE — 31/10/2026.
+   Le voile global est supprimé : les images se voient telles quelles. Mais
+   mesuré sur un cadre réel (`fond-19`), le titrage posé sur un ciel de
+   couchant donnait :
+       MANA     1,18  (seuil 3)     ·  devise  1,15  (seuil 4,5)
+   Illisible, et différemment illisible toutes les six secondes.
+   ⭐ LA DIFFÉRENCE AVEC UN VOILE : celui-ci ne couvre QUE le tiers haut, là
+      où le texte se trouve. Les deux tiers bas de chaque image restent
+      intacts — on garde l'image et on garde le logo. Un voile uniforme
+      payait l'un pour l'autre.
+   ⚠️ Pour l'enlever : supprimer ce bloc. Le titrage redevient alors illisible
+      sur une image sur deux, et c'est un choix, pas un oubli. */
+/* (le dégradé de l'accueil a déménagé dans `.fond-degrade`, global) */
+.inv-sol { display: none; }
+.inv-sol .photo, .inv-sol .photo img { width: 100%; height: 100%; }
+.inv-sol .photo img { object-fit: cover; object-position: 50% 58%; }
+/* 🔴 LE VOILE EST LE DISPOSITIF, PAS UN ORNEMENT. La maquette garde le haut
+   presque opaque et laisse la photographie apparaître au tiers inférieur :
+   c'est ce qui permet d'écrire quatre blocs de texte clair sans aucune ombre
+   portée. Mesuré : au-dessus de 55 %, le kaki tient le contraste du titre à
+   plus de 9:1 quelle que soit l'image en dessous. */
+.inv-sol::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(to bottom,
+    var(--kaki) 0%,
+    color-mix(in oklab, var(--kaki) 94%, transparent) 26%,
+    color-mix(in oklab, var(--kaki) 62%, transparent) 46%,
+    color-mix(in oklab, var(--kaki) 18%, transparent) 62%,
+    color-mix(in oklab, var(--nuit) 34%, transparent) 86%,
+    color-mix(in oklab, var(--nuit) 62%, transparent) 100%);
+}
+/* le crédit remonte au-dessus de la barre flottante : une attribution
+   recouverte n'est pas une attribution */
+.inv-sol .photo-credit { bottom: calc(var(--barre-espace, 108px) + var(--sp-1)); }
+
+.inv-filigrane {
+  position: absolute; top: 0; right: 0; z-index: 1;
+  width: 62%; max-width: 280px; height: auto; aspect-ratio: 200 / 160;
+  /* ⚠️ `stroke`, et pas `color` + `currentColor`. Les deux donnaient le même
+     rendu, mais la seconde formulation déclarait une couleur de TEXTE pour
+     dessiner un trait — et le garde de contraste, qui lit les `color:`, la
+     refusait à juste titre. ⭐ Quand un test refuse quelque chose de
+     légitime, l'exempter est le mauvais réflexe : il a souvent raison sur le
+     fond et tort sur la forme. Ici il disait « ce n'est pas comme ça qu'on
+     dessine un trait », et il avait raison. */
+  stroke: var(--sauge); opacity: 0.1; pointer-events: none;
+}
+
+.inv-contenu {
+  position: relative; z-index: 2;
+  display: flex; flex-direction: column;
+  flex: 1;
+  padding: var(--sp-6) var(--sp-3)
+           calc(var(--barre-espace, 108px) + env(safe-area-inset-bottom, 0px) + var(--sp-3));
+  gap: var(--sp-4);
+}
+
+/* ── la marque ─────────────────────────────────────────────────────────── */
+.inv-marque { display: flex; flex-direction: column; gap: var(--sp-0); }
+.inv-mot {
+  margin: 0; font-family: var(--titre);
+  font-size: clamp(var(--t-xl), 9vw, var(--t-2xl));
+  line-height: 1; color: var(--craie);
+  /* ⚠️ Le suivi large est ce qui fait la marque. À 0, « MANA » redevient un
+     mot ; à 0,18em, c'est une enseigne. Et comme la serif est à fort
+     contraste, l'espace entre les lettres doit laisser respirer les pleins. */
+  letter-spacing: 0.18em;
+}
+.inv-devise {
+  margin: 0; font-size: var(--t-2xs); text-transform: uppercase;
+  letter-spacing: 0.17em; color: var(--texte-immersif-doux);
+}
+
+/* ── le dire ───────────────────────────────────────────────────────────── */
+.inv-dire { display: flex; flex-direction: column; gap: var(--sp-2); }
+.inv-titre {
+  margin: 0; font-family: var(--titre);
+  font-size: clamp(2.3rem, 11.5vw, 3.4rem);
+  line-height: 1.08; letter-spacing: var(--suivi-titre);
+  color: var(--craie);
+}
+.inv-sous {
+  margin: 0; font-size: var(--t-m); line-height: 1.4;
+  /* ⚠️ `in srgb` et non `in oklab`. Le résultat visuel est le même pour deux
+     tons clairs voisins — mais `oklab` reste `oklab()` dans la valeur
+     calculée, qu'aucun outil de contraste ne sait lire. ⭐ Une couleur qu'on
+     ne peut pas MESURER est une couleur qu'on ne vérifiera jamais ; ici, la
+     sonde la comptait noire et signalait un faux échec de 1,9. */
+  /* ⚠️ Le mélange à 82 % donnait 4,17 derrière le fond tournant — sous le
+     seuil. On nomme le ton mesuré au lieu de mélanger au jugé. */
+  color: var(--texte-immersif-doux);
+  max-width: 24ch;
+}
+
+/* ── les gestes ────────────────────────────────────────────────────────── */
+/* ⭐ `margin-top: auto` pousse le bloc en bas SANS hauteur fixe : l'espace
+   qui s'ouvre au-dessus est exactement celui que la photographie occupe, sur
+   n'importe quelle hauteur d'écran. Un `position: absolute; bottom` aurait
+   figé la distance et cassé sur un petit écran. */
+.inv-gestes {
+  margin-top: auto; display: flex; flex-direction: column;
+  gap: var(--sp-2); align-items: stretch;
+}
+
+.inv-primaire {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center;
+  gap: var(--sp-2);
+  /* la serif du titre, comme tous les boutons depuis le 31/10 */
+  font: 500 var(--t-m)/1.2 var(--titre); cursor: pointer; border: 0;
+  /* ⭐ Doré comme toutes les actions depuis le 31/10. Il était en craie — le
+     seul bouton clair de l'app, et donc le seul qui disait « action » dans
+     une autre langue que les autres. */
+  background: var(--action); color: var(--action-texte);
+  border-radius: var(--r-rond);
+  padding: var(--sp-1) var(--sp-1) var(--sp-1) var(--sp-3);
+  min-height: 60px;
+  box-shadow: var(--ombre-levee);
+  transition: background var(--d-micro) var(--e-doux), transform var(--d-micro) var(--e-doux);
+}
+.inv-primaire:hover { background: var(--action-survol); }
+.inv-primaire:active { transform: translateY(1px); }
+.inv-primaire[disabled] { cursor: progress; opacity: 0.82; }
+.inv-primaire-mot { text-align: left; font-size: var(--t-m); }
+.inv-pin { color: var(--nuit); }
+/* la pastille ocre : l'action est là, et nulle part ailleurs sur l'écran */
+.inv-fleche {
+  display: grid; place-items: center;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--ocre); color: var(--nuit);
+}
+.inv-fleche svg {
+  width: 22px; height: 22px; fill: none; stroke: currentColor;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+
+.inv-secondaire {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: var(--sp-1); align-self: center;
+  min-height: 48px; padding: 0 var(--sp-4);
+  border: 1px solid var(--trait-inverse); border-radius: var(--r-rond);
+  color: var(--craie); text-decoration: none; font-size: var(--t-s);
+  /* 🔴 22 % NE SUFFIT PLUS. Ce bouton vit SOUS le dégradé, donc sur l'image
+     nue : son texte craie y est tombé à 1,07 sur cinq cadres mesurés.
+     ⚠️ Calculé, pas ajusté : pour que la craie (238,235,221) atteigne 4,5, le
+        fond composé doit descendre sous ~107 en sRGB. Contre du blanc pur,
+        le canal BLEU du bleu nuit (67) est le plus exigeant — il impose
+        α ≥ 0,79. On pose 84 %, avec la marge qui va bien.
+     ⭐ Le canal contraignant n'est pas celui qu'on regarde : on juge une
+        couleur sur sa clarté, et c'est sa composante la plus claire qui
+        décide du contraste. */
+  background: color-mix(in srgb, var(--nuit) 84%, transparent);
+  backdrop-filter: blur(6px);
+  transition: border-color var(--d-micro) var(--e-doux), background var(--d-micro) var(--e-doux);
+}
+.inv-secondaire:hover { border-color: var(--ocre); background: color-mix(in oklab, var(--nuit) 38%, transparent); }
+:where(.inv-primaire, .inv-secondaire):focus-visible {
+  outline: 2px solid var(--ocre); outline-offset: 3px;
+}
+
+.inv-etat { margin: 0; font-size: var(--t-xs); color: var(--craie); text-align: center; }
+
+/* ⭐ UN DOCUMENT S'AFFICHE ENTIER. `contain` au lieu de `cover`, sur un fond
+   de craie qui prolonge le papier : un plan manuscrit de 1695 vaut par la
+   disposition qu'il montre, et en couper la moitié supprime précisément ce
+   qu'il apporte. La règle vit sur l'IMAGE, pas sur l'écran qui l'emploie :
+   une carte ancienne ne doit jamais être recadrée, où qu'on la pose. */
+.photo[data-cadrage="entier"] { background: var(--craie-pure); }
+.photo[data-cadrage="entier"] img { object-fit: contain; object-position: 50% 50%; }
+
+/* 🔴 LE CRÉDIT D'UNE COUVERTURE VA EN HAUT À GAUCHE. En bas, il entre en
+   collision avec le titre — et la parade évidente (allonger la marge basse)
+   est fragile : elle tient pour un crédit de deux lignes et casse au premier
+   de trois, c'est-à-dire chez le prochain auteur au nom long.
+   ⭐ Deux éléments qui se disputent un coin ne se règlent pas en mesurant
+      l'un pour l'autre — c'est la mesure prise sur un objet et appliquée à un
+      autre, le défaut qui revient le plus souvent ici. On les met dans des
+      coins différents : le marque-page à droite, le crédit à gauche, et
+      aucun des deux n'a à connaître la taille de l'autre. */
+.fiche-couverture .photo-credit {
+  top: var(--sp-2); bottom: auto; left: var(--sp-2); right: auto;
+  text-align: left; justify-content: flex-start;
+  /* on laisse la place du bouton marque-page, qui fait 44 px plus sa marge */
+  max-width: calc(100% - 44px - var(--sp-4));
+}
+.chemin-indetermine { color: var(--texte-doux); }
+
+/* ═══ ÉCRAN 2 — LE CHROME DE LA CARTE ═════════════════════════════════════
+   ⚠️ Tout ce bloc est posé AU-DESSUS du canvas, en absolu. Le canvas n'a
+      aucun enfant : ce qu'on y dessine n'est pas cliquable, et tout ce qui
+      se clique vit en DOM. C'est ce qui rend l'écran utilisable au clavier
+      alors que la carte est une image peinte.                               */
+.terr-carte { position: relative; }
+
+/* 🔴 ELLE FLOTTAIT SUR LA CARTE — déplacée sous elle le 31/10/2026, donc
+   elle quitte l'absolu. ⚠️ Un bloc déplacé dans le DOM garde son
+   positionnement : laissée en `position: absolute`, elle se serait collée en
+   haut de la FEUILLE et aurait recouvert « Le territoire ». Déplacer dans le
+   markup et oublier le CSS ne casse rien visiblement — ça déplace le défaut. */
+.terr-recherche {
+  margin: 0 0 var(--sp-2);
+  display: flex; align-items: center; gap: var(--sp-1);
+  background: var(--fond-surelevé); border-radius: var(--r-rond);
+  padding: 0 var(--sp-2); min-height: 48px;
+  box-shadow: var(--ombre-carte); color: var(--texte-doux);
+}
+.terr-recherche input {
+  flex: 1; min-width: 0; font: inherit; border: 0; background: none;
+  color: var(--texte); padding: var(--sp-1) 0;
+}
+.terr-recherche input::placeholder { color: var(--texte-doux); }
+.terr-recherche input:focus { outline: none; }
+.terr-recherche:focus-within { box-shadow: var(--ombre-carte), 0 0 0 2px var(--ocre); }
+.terr-effacer { background: none; border: 0; padding: 4px; cursor: pointer; color: var(--texte-doux); }
+
+.terr-resultats {
+  /* dans le flux, elle aussi : les résultats poussent la liste vers le bas
+     au lieu de flotter par-dessus. */
+  list-style: none; margin: 0 0 var(--sp-2); padding: var(--sp-0);
+  background: var(--fond-surelevé); border-radius: var(--r-m);
+  box-shadow: var(--ombre-levee);
+  /* ⚠️ Plafonnée ET défilante : huit résultats sur un petit écran
+     recouvriraient la carte entière. */
+  max-height: 46svh; overflow-y: auto;
+}
+.terr-resultat {
+  display: flex; flex-direction: column; gap: 1px; width: 100%;
+  text-align: left; font: inherit; background: none; border: 0; cursor: pointer;
+  padding: var(--sp-1) var(--sp-2); border-radius: var(--r-s); color: var(--texte);
+}
+.terr-resultat:hover, .terr-resultat:focus-visible { background: var(--fond-enfoncé); }
+.terr-resultat-nom { font-family: var(--titre); font-size: var(--t-s); }
+.terr-rien { padding: var(--sp-2); font-size: var(--t-xs); color: var(--texte-doux); }
+
+.terr-commandes {
+  position: absolute; z-index: var(--z-releve);
+  top: calc(var(--sp-2) + env(safe-area-inset-top, 0px)); right: var(--sp-2);
+  display: flex; flex-direction: column; gap: var(--sp-1);
+}
+.terr-rond {
+  width: 44px; height: 44px; display: grid; place-items: center;
+  border: 0; border-radius: 50%; cursor: pointer;
+  background: var(--fond-surelevé); color: var(--texte);
+  box-shadow: var(--ombre-carte);
+  transition: color var(--d-micro) var(--e-doux);
+}
+.terr-rond:hover { color: var(--texte-action); }
+.terr-rond:focus-visible { outline: 2px solid var(--ocre); outline-offset: 2px; }
+
+.terr-calques {
+  position: absolute; z-index: var(--z-panneau);
+  top: calc(var(--sp-2) + env(safe-area-inset-top, 0px) + 52px); right: var(--sp-2);
+  background: var(--fond-surelevé); border-radius: var(--r-m);
+  box-shadow: var(--ombre-levee); padding: var(--sp-2);
+  display: flex; flex-direction: column; gap: var(--sp-2); max-width: 15rem;
+}
+.terr-calque { display: grid; grid-template-columns: auto 1fr; gap: var(--sp-1);
+               align-items: start; cursor: pointer; color: var(--texte); }
+.terr-calque input { margin-top: 3px; accent-color: var(--ocre); }
+.terr-calque span { display: flex; flex-direction: column; }
+.terr-calque-nom { font-size: var(--t-s); }
+
+.terr-gps, .terr-vise {
+  position: absolute; z-index: var(--z-releve); left: var(--sp-2); right: var(--sp-2);
+  bottom: var(--sp-2); margin: 0;
+  background: color-mix(in srgb, #192b43 86%, transparent); color: var(--craie);
+  border-radius: var(--r-m); padding: var(--sp-1) var(--sp-2);
+  font-size: var(--t-xs); backdrop-filter: blur(4px);
+}
+
+/* ── la feuille ────────────────────────────────────────────────────────── */
+.terr-poignee {
+  display: block; width: 44px; height: 24px; margin: 0 auto var(--sp-1);
+  border: 0; background: none; cursor: pointer; padding: 0;
+  position: relative;
+}
+/* ⭐ La barre est dessinée en `::before` : la zone CLIQUABLE fait 44 px de
+   haut — la cible minimale — alors que le trait n'en fait que 4. Dessiner le
+   trait lui-même en bouton donnerait une cible de quatre pixels. */
+.terr-poignee::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 10px; height: 4px;
+  border-radius: var(--r-rond); background: var(--trait-fort);
+}
+.terr-poignee:focus-visible { outline: 2px solid var(--ocre); outline-offset: 2px; border-radius: var(--r-s); }
+
+.terr-pastilles { margin: 0 0 var(--sp-1); display: flex; gap: var(--sp-1); }
+.terr-pastille {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--fond-enfoncé); color: var(--texte);
+  font-size: var(--t-2xs); text-transform: uppercase;
+  letter-spacing: var(--suivi-label); border-radius: var(--r-rond);
+  padding: 4px var(--sp-1);
+}
+.terr-pastille-icone { width: 1.1em; height: 1.1em; color: var(--texte-action); }
+.terr-fiche-titre { font-family: var(--titre); font-size: var(--t-l);
+                    line-height: 1.15; margin: 0 0 var(--sp-1); }
+
+.terr-chiffres { display: flex; gap: var(--sp-4); margin: 0 0 var(--sp-1); }
+.terr-chiffres > div { display: flex; align-items: center; gap: 6px; }
+.terr-chiffres dt { margin: 0; color: var(--texte-doux); display: flex; }
+.terr-chiffres dd { margin: 0; font-variant-numeric: tabular-nums; font-weight: 700; }
+.terr-accroche { margin: 0 0 var(--sp-2); color: var(--texte-doux); font-size: var(--t-xs); }
+.terr-vignette { border-radius: var(--r-m); overflow: hidden; margin-bottom: var(--sp-2); }
+
+.terr-actions { display: flex; gap: var(--sp-2); margin-top: var(--sp-2); }
+/* ⚠️ `flex: 1` sur les DEUX : un bouton principal plus large que le
+   secondaire hiérarchise déjà par la couleur ; le faire aussi par la taille
+   donne deux cibles inégales, et c'est la petite qu'on rate en marchant. */
+/* 🔴 `white-space: nowrap` ET `min-width: 0`. Sans le premier, « Lancer la
+   balade » se brise en trois lignes et la pilule — qui porte un rayon
+   `9999px` — devient un ovale haut de 80 px. Sans le second, un enfant en
+   `flex: 1` refuse de descendre sous sa largeur de contenu et pousse le
+   voisin hors du cadre. ⭐ Un rayon « pilule » suppose une hauteur d'une
+   ligne : il ne dégrade pas, il se déforme. */
+.terr-bouton {
+  flex: 1 1 0; min-width: 0; white-space: nowrap;
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 6px; text-decoration: none;
+  padding-inline: var(--sp-2); font-size: var(--t-xs);
+}
+.terr-bouton .m-icone { width: 1.15em; height: 1.15em; }
+/* sous 340 px, deux boutons côte à côte ne tiennent plus : on empile */
+@media (max-width: 340px) {
+  .terr-actions { flex-direction: column; }
+}
+
+/* ═══ ÉCRAN 4 — EN CHEMIN, IMMERSIF ═══════════════════════════════════════
+   ⚠️ `100svh` et non `100vh` : sur mobile, `vh` compte la barre d'adresse
+      comme si elle n'existait pas, et le bas de l'écran — c'est-à-dire la
+      carte flottante et le 112 — passe sous le navigateur.                  */
+.ech {
+  position: relative; isolation: isolate;
+  min-height: 100svh; display: flex; flex-direction: column;
+  background: var(--kaki-sombre); color: var(--craie);
+}
+.ech-sol { position: absolute; inset: 0; z-index: 0; }
+.ech-sol .photo, .ech-sol .photo img { width: 100%; height: 100%; }
+.ech-sol .photo img { object-fit: cover; object-position: 50% 48%; }
+/* ⚠️ Le crédit remonte au-dessus de la carte flottante ET de la barre du
+   bas : masqué, il ne remplit plus la condition de la licence — et c'est la
+   seule chose de cet écran qui soit une obligation légale. */
+.ech-sol .photo-credit {
+  bottom: auto; top: calc(var(--sp-2) + env(safe-area-inset-top, 0px) + 56px);
+  right: var(--sp-2);
+}
+/* ⭐ Le voile est PLUS SOMBRE qu'ailleurs, et c'est une décision de terrain :
+   cet écran se lit dehors, en plein soleil, parfois à bout de bras. On perd
+   un peu de la photographie pour gagner la lisibilité — l'inverse serait
+   joli sur une maquette et inutilisable sur un sentier. */
+.ech-sol::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(to bottom,
+    color-mix(in oklab, var(--nuit) 72%, transparent) 0%,
+    color-mix(in oklab, var(--nuit) 26%, transparent) 26%,
+    color-mix(in oklab, var(--nuit) 40%, transparent) 58%,
+    color-mix(in oklab, var(--nuit) 88%, transparent) 100%);
+}
+.ech-atlas { width: 100%; height: 100%; display: grid; place-items: center; padding: var(--sp-4); }
+.ech-atlas-svg { width: 100%; height: auto; max-height: 100%; }
+
+/* ── la barre du haut ──────────────────────────────────────────────────── */
+.ech-haut {
+  position: relative; z-index: 2;
+  display: grid; grid-template-columns: 48px 1fr 48px; gap: var(--sp-2);
+  align-items: center;
+  padding: calc(var(--sp-2) + env(safe-area-inset-top, 0px)) var(--sp-2) 0;
+}
+.ech-titre {
+  margin: 0; text-align: center; font-family: var(--titre);
+  font-size: var(--t-s); color: var(--craie);
+  /* ⚠️ Le titre se tronque plutôt que de passer sur deux lignes : la barre
+     doit garder la même hauteur d'un parcours à l'autre, sinon la carte
+     flottante saute quand on change de promenade. */
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  text-shadow: 0 1px 6px rgb(25 43 67 / 70%);
+}
+.ech-rond {
+  width: 48px; height: 48px; display: grid; place-items: center;
+  border: 0; border-radius: 50%; cursor: pointer; text-decoration: none;
+  background: color-mix(in srgb, #192b43 62%, transparent);
+  color: var(--craie); backdrop-filter: blur(8px);
+}
+.ech-rond-actif { color: var(--ocre); }
+.ech-rond:focus-visible { outline: 2px solid var(--ocre); outline-offset: 2px; }
+
+/* ── le bas ────────────────────────────────────────────────────────────── */
+.ech-bas {
+  position: relative; z-index: 2; margin-top: auto;
+  display: flex; flex-direction: column; gap: var(--sp-1);
+  padding: var(--sp-2)
+           var(--sp-2)
+           calc(var(--barre-espace, 108px) + env(safe-area-inset-bottom, 0px) + var(--sp-2));
+}
+.ech-hors, .ech-gps {
+  margin: 0; font-size: var(--t-xs); line-height: 1.45;
+  background: color-mix(in srgb, #192b43 86%, transparent);
+  border-radius: var(--r-m); padding: var(--sp-1) var(--sp-2);
+  backdrop-filter: blur(4px);
+}
+.ech-hors { border-left: 3px solid var(--etat-empeche); }
+
+.ech-carte {
+  background: var(--craie); color: var(--nuit);
+  border-radius: var(--r-l); padding: var(--sp-2);
+  box-shadow: var(--ombre-levee);
+  display: flex; flex-direction: column; gap: var(--sp-2);
+}
+.ech-etape { display: grid; grid-template-columns: 56px 1fr; gap: var(--sp-2); align-items: center; }
+.ech-pastille {
+  display: grid; place-items: center; width: 56px; height: 56px;
+  border-radius: var(--r-m); background: var(--craie-ombre);
+  color: var(--sauge-sombre); font-family: var(--titre); font-size: var(--t-l);
+}
+.ech-etape-corps { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.ech-label { color: var(--ocre-sombre); }
+/* ⭐ L'information principale est la PLUS GROSSE de l'écran. C'est la seule
+   chose qu'on doit pouvoir lire d'un coup d'œil, bras tendu. */
+/* 🔴 DEUX LIGNES, PAS UNE TRONCATURE. « Batterie Droite de 32 cm » devenait
+   « Batterie Droite de 32 … » : le calibre — ce qui distingue cette batterie
+   des six autres du parcours — était précisément ce que l'ellipse mangeait.
+   ⭐ Tronquer est acceptable sur un libellé secondaire ; sur l'INFORMATION
+      PRINCIPALE d'un écran, c'est couper la réponse à la question posée.
+   ⚠️ `-webkit-line-clamp` reste préfixé partout en 2026, et il exige les
+      trois propriétés : sans `-webkit-box`, il ne fait rien du tout. */
+.ech-nom {
+  font-family: var(--titre); font-size: var(--t-l); line-height: 1.12;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.ech-distance { font-size: var(--t-s); font-variant-numeric: tabular-nums; }
+.ech-vol { color: var(--sauge-sombre); font-size: var(--t-2xs); }
+.ech-attente { margin: 0; font-family: var(--titre); font-size: var(--t-m); }
+
+.ech-barre { position: relative; height: 6px; border-radius: var(--r-rond);
+             background: var(--craie-ombre); }
+.ech-barre-fait { position: absolute; inset-block: 0; inset-inline-start: 0;
+                  border-radius: var(--r-rond); background: var(--ocre);
+                  transition: inline-size var(--d-panneau) var(--e-doux); }
+.ech-jalon {
+  position: absolute; top: 50%; width: 9px; height: 9px; border-radius: 50%;
+  transform: translate(-50%, -50%); background: var(--craie);
+  border: 2px solid var(--sauge);
+}
+.ech-jalon-passe { border-color: var(--ocre); background: var(--ocre); }
+/* la goutte : la position, posée SUR la barre, au-dessus des jalons */
+.ech-goutte {
+  position: absolute; top: 50%; width: 22px; height: 22px;
+  transform: translate(-50%, -50%); border-radius: 50% 50% 50% 0;
+  rotate: -45deg; background: var(--ocre);
+  box-shadow: var(--ombre-pose);
+  transition: inset-inline-start var(--d-panneau) var(--e-doux);
+}
+.ech-chiffres { margin: 0; font-size: var(--t-xs); color: var(--sauge-sombre);
+                font-variant-numeric: tabular-nums; }
+.ech-chiffres strong { color: var(--nuit); }
+.ech-indetermine { margin: 0; font-size: var(--t-xs); color: var(--sauge-sombre); }
+
+.ech-actions { display: flex; gap: var(--sp-2); align-items: stretch; }
+.ech-pause {
+  flex: 1; min-width: 0; min-height: 56px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font: inherit; font-size: var(--t-s); cursor: pointer; white-space: nowrap;
+  border: 0; border-radius: var(--r-rond);
+  background: var(--nuit); color: var(--craie);
+}
+.ech-pause:focus-visible { outline: 2px solid var(--ocre); outline-offset: 3px; }
+/* ⚠️ Le 112 est de la TAILLE D'UN POUCE MOUILLÉ et séparé du reste : c'est
+   la seule cible qu'on doit pouvoir atteindre sans regarder, et la seule
+   qu'on ne doit jamais toucher par erreur — d'où l'écart, pas la couleur. */
+.ech-sos {
+  flex: 0 0 72px; min-height: 56px; display: grid; place-items: center;
+  border-radius: var(--r-rond); text-decoration: none;
+  /* ⚠️ `--terre` ici donnait 3,45 sous de la craie en 18 px gras — et le seuil
+     des grands corps commence à 18,66 px, pas à 18. Un pixel de moins que le
+     seuil fait basculer l'exigence de 3,0 à 4,5 : le bouton tombait du mauvais
+     côté d'une frontière qu'on ne voit pas en relisant la règle. */
+  background: var(--terre-sombre); color: var(--craie);
+  font-weight: 700; font-size: var(--t-m); letter-spacing: 0.04em;
+}
+.ech-sos:focus-visible { outline: 2px solid var(--craie); outline-offset: 3px; }
+
+/* ═══ LE FOND TOURNANT ════════════════════════════════════════════════════
+   ⚠️ `position: fixed` SUR UN ÉLÉMENT, et non `background-attachment: fixed`.
+      Les deux produisent un fond immobile au défilement, mais la seconde est
+      notoirement saccadée sur iOS — elle y est ignorée ou recomposée à chaque
+      image. Un élément fixe est composité une fois par le GPU et ne bouge
+      plus. ⭐ Deux façons d'obtenir le même dessin ne coûtent pas la même
+      chose : celle qui coûte se voit en marchant, pas au bureau.             */
+.fond {
+  position: fixed; inset: 0; z-index: -1;
+  background: var(--sable);        /* le sol reste sous les images */
+  overflow: hidden; pointer-events: none;
+  /* 🔴 `contain: paint`, SURTOUT PAS `strict` — et ça m'a coûté une demi-heure.
+     `strict` ajoute la containment de TAILLE : l'élément est dimensionné
+     comme s'il n'avait aucun contenu, et ses deux couches en `inset: 0` ne
+     peignaient plus du tout. Le fond chargeait ses images, les positionnait
+     en 432×763, les passait à `opacity: 1` — et restait invisible.
+     ⭐ Posé comme une optimisation (« sa propre couche de composition »), il
+        supprimait la fonctionnalité entière. Une optimisation qui change le
+        rendu n'est pas une optimisation, c'est une régression qu'on a
+        écrite soi-même en croyant bien faire. Trouvé par MUTATION : tout le
+        DOM était juste, aucune inspection ne pouvait le dire.
+     `paint` suffit à ce qu'on voulait : le clipping et le contexte
+     d'empilement, sans toucher au dimensionnement. */
+  contain: paint;
+}
+/* 🔴 LE FONDU CROISÉ NAÏF LAISSE PASSER LE FOND — mesuré le 31/10 : une
+   capture prise en plein fondu montrait la couche visible à 0,40 d'opacité.
+   Deux couches à 0,4 et 0,6 ne composent PAS une image opaque : le sable de
+   `.fond` traverse les deux, et l'écran se délave à chaque transition.
+   ⭐ La parade n'est pas d'accélérer le fondu, c'est de ne jamais laisser les
+      deux couches transparentes en même temps : la SORTANTE reste pleinement
+      opaque EN DESSOUS, et l'entrante se fond par-dessus elle. À chaque
+      instant, le composé est opaque.
+   ⚠️ D'où le `transition: opacity 0s linear <délai>` sur la sortante : elle
+      ne s'efface pas progressivement, elle ATTEND la fin du fondu puis
+      disparaît d'un coup — invisible, puisqu'elle est déjà recouverte. */
+/* ⚠️ Le repli des transitions vaut 1000 ms — la même valeur que le composant
+   pose en ligne. Un repli qui diverge de la valeur réelle est un faux témoin :
+   il ne s'applique jamais, donc personne ne le corrige, et la session
+   suivante le lit comme la règle. */
+.fond-couche {
+  position: absolute; inset: 0;
+  opacity: 0; z-index: 0;
+  transition: opacity 0s linear var(--fond-fondu, 1000ms);
+}
+.fond-couche[data-visible] {
+  opacity: 1; z-index: 1;
+  transition: opacity var(--fond-fondu, 1000ms) var(--e-doux);
+}
+.fond-couche img {
+  width: 100%; height: 100%;
+  /* ⭐ `cover` : sur un téléphone en portrait, une image 16:9 ne montre que
+     sa bande centrale ; sur un écran large, elle s'affiche presque entière.
+     C'est exactement ce qu'on veut — le chrome reste au format mobile, seul
+     le fond s'élargit. */
+  object-fit: cover; object-position: 50% 50%;
+  display: block;
+}
+
+/* 🔴 LE VOILE GOUVERNE TOUS LES CONTRASTES DE L'APPLICATION.
+   Vingt-deux fonds différents derrière trois cent soixante-neuf textes : sans
+   une couche opaque entre les deux, aucun rapport de contraste n'est
+   garantissable — il changerait toutes les trois secondes.
+   ⚠️ L'opacité n'est donc PAS un réglage esthétique : c'est le paramètre dont
+      dépend la lisibilité de tout le site. Elle est mesurée, pas choisie. */
+/* 🔴 LE VOILE EST SUPPRIMÉ — 31/10/2026, demande du fondateur. Les images se
+   voient telles quelles.
+   ⚠️ CE QUE ÇA COÛTE, ET IL FAUT LE SAVOIR : les contrastes des écrans
+      immersifs étaient tenus par ce voile, pas par les couleurs. Sans lui, le
+      texte clair de l'accueil se pose directement sur vingt-deux images dont
+      certaines ont un ciel de couchant à 228 de luminance — le titre y tombe
+      sous 1,5 contre 4,82 avec le voile à 75 %.
+   ⭐ Les écrans de LECTURE ne sont pas touchés : leur colonne est opaque, et
+      c'est elle qui porte le texte. Le fond s'y voit autour, à pleine force.
+   La parade, si elle est voulue, n'est pas de remettre un voile global mais
+   un fond local SOUS LE TEXTE seul — l'image reste entière partout ailleurs. */
+/* ═══ LE DÉGRADÉ, SUR TOUTES LES PAGES ═══════════════════════════════════
+   ⚠️ LES PALIERS SONT CALCULÉS, PAS DESSINÉS. Opacité minimale pour que
+      chaque texte passe son seuil CONTRE DU BLANC PUR — le pire pixel qu'une
+      des vingt-deux images puisse présenter sous lui :
+         à  9 % de hauteur → 0,56      à 26 % → 0,56
+         à 13 %            → 0,71      à 39 % → 0,71
+      D'où un plateau à 0,74 jusqu'à 40 % de la hauteur, puis l'extinction.
+   ⭐ Premier essai : 0,80 → 0,28 sur 46 %. Le sous-titre y tombait à 2,21 sur
+      les quatre cadres mesurés. Un dégradé « qui a l'air suffisant » ne l'est
+      pas : c'est la POSITION de chaque texte qui dicte ses paliers.
+   ⛔ Et il s'arrête à 64 % : les deux tiers bas de chaque image restent
+      intacts. C'est ce qui le distingue d'un voile — on garde l'image ET le
+      titre, au lieu de payer l'un pour l'autre.                              */
+.fond-degrade {
+  position: absolute; inset: 0 0 auto 0; height: 64%;
+  z-index: 2; pointer-events: none;
+  background: linear-gradient(to bottom,
+    color-mix(in srgb, var(--nuit) 78%, transparent) 0%,
+    color-mix(in srgb, var(--nuit) 75%, transparent) 22%,
+    color-mix(in srgb, var(--nuit) 74%, transparent) 62%,
+    color-mix(in srgb, var(--nuit) 40%, transparent) 82%,
+    transparent 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* ⚠️ On neutralise le FONDU, pas l'affichage : la rotation, elle, est déjà
+     arrêtée en JavaScript — une transition à 0 ms ferait encore tourner les
+     images, par à-coups. Les deux gardes sont nécessaires et ne font pas la
+     même chose. */
+  .fond-couche { transition: none; }
+}
+
+/* ═══ LE CHROME RESTE MOBILE PARTOUT ══════════════════════════════════════
+   ⭐ C'est la décision du 31/10 : « les bulles s'affichent au format mobile
+      partout — mobile, desktop, tablette ; seul le fond s'élargit ». Une
+      application, pas un site qui s'étale. Le contenu garde donc une colonne
+      de largeur de téléphone, centrée, à toutes les tailles d'écran.
+   ⚠️ `--colonne` vaut 440 px : la largeur d'un grand téléphone. Au-delà, les
+      lignes dépassent la mesure de lecture confortable et l'interface cesse
+      d'avoir l'air d'une application.                                        */
+:root { --colonne: 440px; }
+/* ⚠️ LA COLONNE EST OPAQUE, ET C'EST CE QUI REND LE RESTE POSSIBLE. Tous les
+   contrastes du site ont été mesurés sur le sable ; si le fond transparaissait
+   dessous, aucun ne tiendrait. Le fond se voit AUTOUR, pas DESSOUS.
+   ⛔ Sauf sur les écrans immersifs, qui posent leur propre voile kaki et
+      doivent, eux, laisser passer l'image — d'où l'exception ci-dessous. */
+/* 🔴 LA COLONNE EST TRANSPARENTE SUR TOUTES LES PAGES — 31/10, demande du
+   fondateur : « applique le dégradé à toutes les pages ». Le fond tournant se
+   voit donc partout, et le dégradé tient les titres partout.
+   ⚠️ CE QUE ÇA DÉPLACE : le texte de CORPS ne peut pas vivre sur le fond —
+      mesuré, aucun ton secondaire n'y passe l'AA. Il lui faut une surface
+      opaque, qui commence SOUS le titre. Chaque écran porte donc désormais
+      deux zones : l'en-tête, sur le fond, et le corps, sur sa surface. */
+.app-colonne { background: transparent; min-height: 100svh; }
+@media (min-width: 560px) {
+  .app-colonne {
+    max-width: var(--colonne);
+    margin-inline: auto;
+    /* une ombre douce détache la colonne du fond, sans la transformer en
+       carte : elle reste le corps de l'app, pas un panneau posé dessus */
+    box-shadow: 0 0 60px rgb(25 43 67 / 22%);
+  }
+}

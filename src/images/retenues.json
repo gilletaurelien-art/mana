@@ -1,0 +1,230 @@
+{
+  "_": "LA SÉLECTION ÉDITORIALE. Écrite à la main, après avoir REGARDÉ les 264 candidates libres sur planches-contact. Chaque entrée nomme le fichier Commons exact (identifiant stable), le rôle qu'elle joue, et le lieu qu'elle REPRÉSENTE VRAIMENT.",
+  "_lieu": "🔴 LE LIEU EST LU SUR LE FICHIER, JAMAIS SUR LA CATÉGORIE. Trois pièges relevés le 31/10 : « Aerial photographs of Finistère » a rendu la Pointe du Raz et l'Île-de-Sein, à 40 km de Crozon ; « Tas de Pois » a rendu une vue PRISE DEPUIS la Pointe de Dinan ; « Calluna vulgaris » a rendu de la bruyère finlandaise. Étiqueter par la catégorie aurait produit trois légendes fausses sur une page qui promet des lieux réels.",
+  "_ambiance": "lieu: null signifie AMBIANCE — cette image n'illustre aucun lieu et ne doit jamais être présentée comme en montrant un. C'est un contrat lu par le code, pas une note.",
+  "_rejets": "Rejets instructifs, gardés pour qu'on ne refasse pas la requête : Category:Waves contient un schéma de physique au tableau et un cône de Mach ; Category:GR 34 est à 11/12 des relevés botaniques ; Category:Granite a rendu un échantillon brésilien ; Category:Goulien est une commune du Cap Sizun et non la plage de Crozon.",
+  "images": [
+    {
+      "id": "brume-aube-1",
+      "fichier": "File:Mer de nuages au lever du soleil (Ifremer 00620-73177 - 29140).jpg",
+      "famille": "coastal",
+      "lieu": "Mer de nuages au lever du soleil, mer d'Iroise",
+      "role": "couverture",
+      "pourquoi": "la lumière rasante et la brume que la direction demande, à 8256 px — et aucun ciel publicitaire"
+    },
+    {
+      "id": "brume-aube-2",
+      "fichier": "File:Mer de nuages au lever du soleil (Ifremer 00620-73177 - 29141).jpg",
+      "famille": "coastal",
+      "lieu": "Mer de nuages au lever du soleil, mer d'Iroise",
+      "role": "banniere"
+    },
+    {
+      "id": "menez-hom",
+      "fichier": "File:9382 Petit Ménez-Hom.jpg",
+      "famille": "trails",
+      "lieu": "Petit Ménez-Hom, Dinéault",
+      "role": "chemin",
+      "pourquoi": "un sentier qui s'enfonce dans la lande — le sujet que Category:GR 34 n'avait pas"
+    },
+    {
+      "id": "guern",
+      "fichier": "File:Pointe de Guern-CROZON.jpg",
+      "famille": "coastal",
+      "lieu": "Pointe de Guern, Crozon",
+      "role": "carte-decouverte"
+    },
+    {
+      "id": "tempete-1",
+      "fichier": "File:Tempête en presqu'île de Crozon (11328899955).jpg",
+      "famille": "details",
+      "lieu": "Presqu'île de Crozon, un jour de tempête",
+      "role": "respiration",
+      "pourquoi": "embrun, contraste doux, presque monochrome : la matière sans le spectaculaire"
+    },
+    {
+      "id": "tempete-2",
+      "fichier": "File:Tempête en presqu'île de Crozon (11329049393).jpg",
+      "famille": "details",
+      "lieu": "Presqu'île de Crozon, un jour de tempête",
+      "role": "respiration"
+    },
+    {
+      "id": "crozon-cote",
+      "fichier": "File:Le Brestoâ - Presqu'île de Crozon - 20210719- 073.jpg",
+      "famille": "coastal",
+      "lieu": "Presqu'île de Crozon",
+      "role": "carte-decouverte"
+    },
+    {
+      "id": "camaret",
+      "fichier": "File:Mobeye-ÉtéDesVilles-Camaret-sur-Mer-237.jpg",
+      "famille": "coastal",
+      "lieu": "Camaret-sur-Mer",
+      "role": "couverture"
+    },
+    {
+      "id": "pen-hir",
+      "fichier": "File:France Bretagne 29 POINTE DE PENHIR 01.jpg",
+      "famille": "coastal",
+      "lieu": "Pointe de Pen-Hir, Camaret-sur-Mer",
+      "role": "fiche"
+    },
+    {
+      "id": "dinan-sud",
+      "fichier": "File:Crozon - Pointe de Dinan - Côte vers le sud.jpeg",
+      "famille": "coastal",
+      "lieu": "Pointe de Dinan, Crozon",
+      "role": "banniere",
+      "pourquoi": "CC0 : la seule de la sélection qui n'exige aucune attribution"
+    },
+    {
+      "id": "dinan-brume",
+      "fichier": "File:056 La Pointe de Dinan.JPG",
+      "famille": "coastal",
+      "lieu": "Pointe de Dinan, Crozon",
+      "role": "couverture",
+      "pourquoi": "brume, teintes rabattues, aucune saturation — l'image la plus proche de la direction. ⚠️ Son sujet (la falaise) est à droite et son tiers supérieur est du ciel plat : sans focale, un cadre portrait plein écran ne montre que le brouillard.",
+      "focale": "72% 46%"
+    },
+    {
+      "id": "dinan-lostmarch",
+      "fichier": "File:001 Entre Pointe de Dinan et Lostmarch.jpg",
+      "famille": "trails",
+      "lieu": "Entre la Pointe de Dinan et Lostmarc'h, Crozon",
+      "role": "chemin",
+      "pourquoi": "⚠️ Mon premier relevé écrivait « Lostmarc'h » avec l'apostrophe du toponyme breton ; le fichier Commons porte « Lostmarch ». Le script l'a déclaré INTROUVABLE au lieu de lui substituer une voisine — c'est exactement ce qu'on lui demande : ne rien inventer, et le dire."
+    },
+    {
+      "id": "chevre-lande",
+      "fichier": "File:Bretagne - Finistère - cap de la chèvre - 20180726 - 045.jpg",
+      "famille": "trails",
+      "lieu": "Cap de la Chèvre, Crozon",
+      "role": "respiration"
+    },
+    {
+      "id": "chevre-sentier",
+      "fichier": "File:Bretagne - Finistère - cap de la chèvre - 20180726 - 002.jpg",
+      "famille": "trails",
+      "lieu": "Cap de la Chèvre, Crozon",
+      "role": "chemin"
+    },
+    {
+      "id": "tas-de-pois-sentier",
+      "fichier": "File:049 Les Tas de Pois vus de la Pointe de Dinan.JPG",
+      "famille": "trails",
+      "lieu": "Les Tas de Pois, vus de la Pointe de Dinan",
+      "role": "chemin",
+      "pourquoi": "⚠️ le lieu du PHOTOGRAPHE n'est pas le lieu du SUJET : la légende le dit"
+    },
+    {
+      "id": "tas-de-pois",
+      "fichier": "File:France Bretagne 29 POINTE DE PENHIR 03.jpg",
+      "famille": "coastal",
+      "lieu": "Les Tas de Pois, Camaret-sur-Mer",
+      "role": "fiche"
+    },
+    {
+      "id": "lagatjar-soir",
+      "fichier": "File:20100705 Alignements de Lagatjar 1.jpg",
+      "famille": "heritage",
+      "lieu": "Alignement de Lagatjar, Camaret-sur-Mer",
+      "role": "fiche",
+      "pourquoi": "fin de journée, herbe sèche, aucun ciel bleu — le patrimoine sans la carte postale"
+    },
+    {
+      "id": "lagatjar-allee",
+      "fichier": "File:Alignement de Lagatjar , Menhir , Mégalith , Hinkelstein - panoramio.jpg",
+      "famille": "heritage",
+      "lieu": "Alignement de Lagatjar, Camaret-sur-Mer",
+      "role": "chemin"
+    },
+    {
+      "id": "kermorvan-1",
+      "fichier": "File:2025-07-22-Kermorvan lighthouse-DJI 20250722214614 0008 D.jpg",
+      "famille": "aerial",
+      "lieu": "Phare de Kermorvan, Le Conquet",
+      "role": "couverture"
+    },
+    {
+      "id": "kermorvan-2",
+      "fichier": "File:2025-07-22-Kermorvan lighthouse-DJI 20250722214245 0004 D.jpg",
+      "famille": "aerial",
+      "lieu": "Phare de Kermorvan, Le Conquet",
+      "role": "banniere"
+    },
+    {
+      "id": "pointe-du-raz",
+      "fichier": "File:Aerial image of Pointe du Raz (view from the southeast).jpg",
+      "famille": "aerial",
+      "lieu": "Pointe du Raz, Plogoff",
+      "role": "reseau-chemins",
+      "pourquoi": "le réseau de sentiers se LIT du ciel : c'est l'univers cartographique, pas une vue de Crozon"
+    },
+    {
+      "id": "ile-de-sein",
+      "fichier": "File:Aerial image of Île-de-Sein (view from the southeast).jpg",
+      "famille": "aerial",
+      "lieu": "Île-de-Sein",
+      "role": "reseau-chemins"
+    },
+    {
+      "id": "bruyere-granit",
+      "fichier": "File:Blooming heather - panoramio.jpg",
+      "famille": "details",
+      "lieu": null,
+      "role": "respiration"
+    },
+    {
+      "id": "bruyere-soir",
+      "fichier": "File:Calluna vulgaris 6 (51380640878).jpg",
+      "famille": "details",
+      "lieu": null,
+      "role": "respiration",
+      "pourquoi": "contre-jour au crépuscule — ambiance pure, et la légende ne prétend rien"
+    },
+    {
+      "id": "espagnols-brume",
+      "fichier": "File:Presqu'île de Crozon Pointe des Espagnols 1.jpg",
+      "famille": "coastal",
+      "lieu": "Pointe des Espagnols, Roscanvel",
+      "role": "couverture",
+      "pourquoi": "la promenade des forts du goulet passe ici — c'est la seule image de la bibliothèque qui montre un lieu RÉELLEMENT traversé par un de nos quatre parcours"
+    },
+    {
+      "id": "espagnols-sentier",
+      "fichier": "File:Roscanvel - Pointe des Espagnols - Panorama.jpeg",
+      "famille": "trails",
+      "lieu": "Pointe des Espagnols, Roscanvel",
+      "role": "chemin",
+      "pourquoi": "CC0, et le sentier y descend vers la pointe"
+    },
+    {
+      "id": "espagnols-1695",
+      "fichier": "File:Brest. - Plan des batteries haute et basse de la pointe des Espagnols. Fait à Brest le 12e août 1695 - btv1b8442148z.jpg",
+      "famille": "heritage",
+      "lieu": "Pointe des Espagnols, Roscanvel",
+      "role": "fiche",
+      "pourquoi": "⭐ plan manuscrit de 1695, Bibliothèque nationale de France, domaine public. La promenade longe sept batteries : ce document EST le sujet, pas une illustration de celui-ci.",
+      "cadrage": "entier"
+    },
+    {
+      "id": "ile-vierge",
+      "fichier": "File:Bretagne - Finistère - cap de la chèvre - 20180726 - 035.jpg",
+      "famille": "coastal",
+      "lieu": "Plage de l'Île Vierge, Cap de la Chèvre, Crozon",
+      "role": "couverture",
+      "pourquoi": "⚠️ titrée « cap de la chèvre » par son auteur, trouvée dans la catégorie de la plage : les deux sont vraies, la plage EST au cap. La légende dit les deux."
+    },
+    {
+      "id": "ile-vierge-lande",
+      "fichier": "File:Cap de la chèvre - GR34 - 20200719 - 064.jpg",
+      "famille": "trails",
+      "lieu": "Plage de l'Île Vierge, Cap de la Chèvre, Crozon",
+      "role": "chemin"
+    }
+  ],
+  "_besoin": "🔴 LEÇON DU 31/10 AU SOIR. Les vingt-quatre premières ont été choisies sur leur QUALITÉ photographique — et pas une seule ne montrait un lieu traversé par les quatre promenades du site (Roscanvel, Crozon). Une bibliothèque se curate sur ce dont les écrans ont BESOIN, pas sur ce que les planches offrent de plus beau. Les cinq suivantes comblent exactement ce manque.",
+  "_cadrage": "⭐ `cadrage: \"entier\"` marque ce qui est un DOCUMENT et non une photographie — un plan, une carte ancienne, une gravure. Une photographie se recadre : on en montre une part, et c'est encore elle. Un document recadré n'est plus le document : le plan de 1695 montre la disposition des batteries, et en couper la moitié supprime exactement ce qu'il apporte. Ces images s'affichent donc ENTIÈRES, sur un fond de craie, jamais en couverture pleine largeur.",
+  "_focale": "⭐ §4.5 de la bible : « le recadrage doit préserver le sujet principal ; utiliser object-position et des points focaux lorsque nécessaire ». La focale est un pourcentage « x% y% » qui désigne CE QU'IL FAUT GARDER quand le cadre coupe. Elle vit ici, avec l'image, et non dans la feuille de style : la même photographie est recadrée en couverture, en bannière et en vignette, et son sujet ne se déplace pas d'un écran à l'autre. Relevée en cherchant la zone de plus forte VARIANCE locale — une falaise a du détail, un banc de brume n'en a pas — puis confirmée à l'œil."
+}

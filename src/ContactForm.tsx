@@ -11,8 +11,7 @@ export function ContactForm() {
         </a>
       </div>
       <p className="contact-note">
-        Nous répondons vite, honnêtement, sans prospection forcée.
-        Aucune donnée n'est revendue.
+        Réponse rapide. Aucune donnée revendue.
       </p>
     </div>
   );

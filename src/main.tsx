@@ -1,6 +1,15 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
+// ⚠️ LES TOKENS AVANT LA FEUILLE, et l'ordre n'est pas cosmétique : une
+//    variable lue avant d'être définie vaut `unset`, et la couleur tombe
+//    silencieusement sur l'héritage. Le défaut ne se voit alors que sur
+//    l'écran qu'on ne regarde pas ce jour-là.
+import "./tokens.css";
+// ⚠️ Les primitives APRÈS les tokens et AVANT la feuille historique : elles
+//    lisent les premiers, et la seconde doit pouvoir les surcharger le temps
+//    de la reprise écran par écran.
+import "./systeme.css";
 import "./styles.css";
 
 createRoot(document.getElementById("root")!).render(

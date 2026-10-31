@@ -269,13 +269,12 @@ export function Composer() {
 
         <section className="page-panel">
           <p className="page-intro">
-            On ne vous propose pas un topoguide : on fabrique une boucle depuis
-            l'endroit où vous êtes, par les chemins plutôt que par les routes,
-            et qui passe <strong>devant</strong> ce qu'il y a à voir.
+            Une boucle depuis où vous êtes, par les chemins, qui passe
+            <strong> devant</strong> ce qu'il y a à voir.
           </p>
           <p className="page-note">
             {erreur ? <strong>{erreur}</strong>
-              : !graphe ? "Chargement des chemins de la presqu'île…"
+              : !graphe ? "Chargement des chemins…"
               : `${graphe.a.length.toLocaleString("fr-FR")} tronçons de chemin · ${graphe.l.length} lieux remarquables`}
           </p>
           {/* ── LES FERMETURES OFFICIELLES ────────────────────────────────
@@ -288,9 +287,9 @@ export function Composer() {
               route sans connaître les fermetures ne doit pas en avoir l'air. */}
           {fermetures === null && (
             <p className="page-note" role="status">
-              <strong>Les fermetures officielles n'ont pas pu être chargées.</strong>{" "}
-              Les boucles proposées ne tiennent donc pas compte des arrêtés en
-              cours. Vérifiez auprès de l'
+              <strong>Fermetures officielles indisponibles.</strong>{" "}
+              Les boucles ne tiennent pas compte des arrêtés en cours.
+              Vérifiez auprès de l'
               <a href="https://www.crozon-tourisme.bzh/trouver-son-activite/randonnee-velo-trail-2/"
                  rel="noopener">office de tourisme</a> avant de partir.
             </p>
@@ -303,7 +302,7 @@ export function Composer() {
                   {touchees.actives.length} secteur{touchees.actives.length > 1 ? "s" : ""} du
                   sentier côtier {touchees.actives.length > 1 ? "sont fermés" : "est fermé"} par arrêté.
                 </strong>{" "}
-                Les boucles proposées ne les empruntent pas.
+                Les boucles ne les empruntent pas.
               </p>
               <ul>
                 {touchees.actives.map((f) => (
@@ -333,8 +332,8 @@ export function Composer() {
           {/* ⭐ Dit une fois, la mesure est un argument ; répétée, c'est du décor. */}
           {graphe && (
             <p className="page-note">
-              Tout est calculé dans votre téléphone. Votre position n'est
-              envoyée nulle part.
+              Tout est calculé dans votre téléphone. Votre position ne part
+              nulle part.
             </p>
           )}
         </section>
@@ -348,10 +347,8 @@ export function Composer() {
                 s'arrêter ou changer d'avis devient un échec. Ce n'en est pas
                 un : c'est le propre de la flânerie. */}
             <p className="page-texte">
-              Prenez-en la moitié aujourd'hui et le reste un autre jour.
-              Coupez par où vous voulez. Faites demi-tour parce que la lumière
-              est plus belle derrière vous. Rien ici ne compte vos pas, ne
-              tient de série, ne vous dira que vous y êtes « presque ».
+              Prenez-en la moitié. Coupez où vous voulez. Faites demi-tour
+              pour la lumière. Rien ici ne compte vos pas.
             </p>
           </section>
         )}
@@ -395,13 +392,12 @@ export function Composer() {
                   <strong>
                     Le sentier qui part d'ici est fermé par arrêté municipal.
                   </strong>{" "}
-                  Aucune boucle ne peut donc être composée depuis ce point : le
-                  chemin d'accès ne rejoint plus le reste du réseau.
+                  Aucune boucle depuis ce point&nbsp;: l'accès ne rejoint plus
+                  le réseau.
                 </p>
                 <p className="page-texte">
-                  Ce n'est pas un problème de durée, et il ne sert à rien de
-                  chercher un chemin plus proche — c'est précisément celui-là
-                  qui est interdit. Éloignez-vous du trait de côte, ou partez
+                  Ce n'est pas la durée&nbsp;: c'est ce chemin-là qui est
+                  interdit. Éloignez-vous du trait de côte, ou partez
                   d'un autre point.
                 </p>
                 {touchees?.actives.map((f) => (
@@ -413,9 +409,8 @@ export function Composer() {
               </>
             ) : (
               <p className="page-texte">
-                Aucune boucle de cette longueur ne part d'ici. Essayez une durée
-                différente — ou rapprochez-vous d'un chemin : la presqu'île est
-                bien maillée, mais pas partout.
+                Aucune boucle de cette longueur ne part d'ici. Changez la
+                durée, ou rapprochez-vous d'un chemin.
               </p>
             )}
           </section>

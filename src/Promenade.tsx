@@ -6,6 +6,7 @@ import type { Walk } from "./walks";
 import type { WalkPoint } from "./walks";
 import { WalkMap } from "./WalkMap";
 import { CarteOuSchema } from "./CarteOuSchema";
+import { ProchaineEtape } from "./ProchaineEtape";
 // ⚠️ CHARGÉE À LA DEMANDE, et ce n'est pas une optimisation de confort :
 //    maplibre pèse ~900 Ko. Importée normalement, elle partait dans le bundle
 //    d'ACCUEIL — 1,29 Mo au premier écran, pour une carte que l'accueil
@@ -52,8 +53,24 @@ function enGpx(walk: (typeof WALKS)[number]): string {
   const pts = walk.points
     .map((p) => `      <trkpt lat="${p.lat}" lon="${p.lon}" />`)
     .join("\n");
+  /* 🔴 L'ATTRIBUTION VOYAGE DANS LE FICHIER, PAS SEULEMENT À L'ÉCRAN. Un GPX
+     se télécharge, se réexpédie, s'ouvre dans une montre six mois plus tard —
+     à ce moment-là, la page qui portait « © OpenStreetMap, ODbL » n'est plus
+     là. La licence ODbL demande que l'attribution suive la DONNÉE ; un
+     crédit affiché seulement sur la page qui l'exporte ne suit rien.
+     ⚠️ `<copyright>` et `<desc>` : la première est lue par les outils, la
+        seconde par les humains. Les deux, parce qu'aucune n'atteint les deux. */
   return `<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="mana.bzh">
+<gpx version="1.1" creator="mana.bzh"
+     xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata>
+    <name>${walk.titre}</name>
+    <desc>Tracé d'après OpenStreetMap. © les contributeurs d'OpenStreetMap, sous licence ODbL (opendatacommons.org/licenses/odbl/). Référence : ${walk.osmRef}. Aucune altitude : nous n'en disposons pas.</desc>
+    <copyright author="les contributeurs d'OpenStreetMap">
+      <license>https://opendatacommons.org/licenses/odbl/1-0/</license>
+    </copyright>
+    <link href="${walk.osmUrl}"><text>Le tracé sur OpenStreetMap</text></link>
+  </metadata>
   <trk><name>${walk.titre}</name><trkseg>
 ${pts}
   </trkseg></trk>
@@ -221,6 +238,13 @@ export function Promenade({ slug }: { slug: string }) {
   return (
     <main className="page">
       <div className="wrap">
+        {/* ── ÉCRAN 4 · LE BANDEAU « EN CHEMIN » ──────────────────────────
+            ⭐ EN TÊTE, AVANT LE TITRE, et c'est tout l'écart entre lire une
+               fiche et marcher. Quelqu'un qui a le téléphone en main sur le
+               sentier ne cherche pas le nom du parcours — il le connaît : il
+               cherche ce qui vient. Le reste de la page ne bouge pas, mais la
+               première chose qu'on voit, oui. */}
+        <ProchaineEtape walk={walk} moi={moi} />
         <p className="hero-label">Promenade</p>
         <h1 className="page-titre"><span>{walk.titre}</span></h1>
 
@@ -234,9 +258,9 @@ export function Promenade({ slug }: { slug: string }) {
             {/* ⛔ On ne dit PAS la difficulté, l'accès poussette/PMR ni les
                 chiens : OpenStreetMap ne les porte pas pour ce sentier, et une
                 case « facile » inventée envoie quelqu'un sur une falaise. */}
-            Tracé réel issu d'<a href={walk.osmUrl}>OpenStreetMap</a> (ODbL).
-            Difficulté, accessibilité et accueil des chiens ne sont pas
-            renseignés à la source : nous ne les affichons pas.
+            Tracé issu d'<a href={walk.osmUrl}>OpenStreetMap</a> (ODbL).
+            Difficulté, accessibilité, chiens : non renseignés à la source,
+            donc non affichés.
           </p>
           <div className="est-actions" style={{ marginTop: "var(--sp-2)" }}>
             <button

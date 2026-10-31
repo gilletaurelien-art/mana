@@ -1,19 +1,25 @@
 import { useState } from "react";
-import { useRef, useLayoutEffect } from "react";
-import { usePath, baseUrl, routePromenade } from "./router";
+import { useEffect, useRef, useLayoutEffect } from "react";
+import { usePath, baseUrl, routePromenade, routeEnChemin, routeRencontres, routeComplet } from "./router";
 import {
   GlyphRadio,
   GlyphNavigation,
   GlyphSecurite,
   GlyphDecouverte,
-  GlyphBoussole,
+  GlyphCarte,
   GlyphSentier,
 } from "./Glyphs";
 import { Promenades } from "./Promenades";
 import { Invitation } from "./Invitation";
 import { Territoire2030 } from "./Territoire2030";
 import { Composer } from "./Composer";
+import { Radio } from "./Radio";
 import { Promenade } from "./Promenade";
+import { FichePromenade } from "./FichePromenade";
+import { EnChemin } from "./EnChemin";
+import { Fond } from "./Fond";
+import { Rencontres } from "./Rencontres";
+import { Espace } from "./Espace";
 import { Territoire } from "./Territoire";
 import { MentionsLegales } from "./MentionsLegales";
 import { ContactForm } from "./ContactForm";
@@ -31,7 +37,7 @@ const MODULES = [
     titre: "Navigation & cartographie",
     accroche: "Le parcours dans la poche.",
     texte:
-      "Le tracé reste dans la poche sans réseau. GPS en temps réel avec boussole — et aucun rappel à l'ordre si vous coupez ailleurs : un parcours se prend, il ne se suit pas. Le fond de carte, lui, demande du réseau — hors ligne, le parcours s'affiche en schéma.",
+      "Le tracé reste dans la poche sans réseau. GPS et boussole, aucun rappel à l'ordre si vous coupez ailleurs. Hors ligne, le parcours s'affiche en schéma : le fond de carte, lui, demande du réseau.",
     cta: { label: "Voir les parcours", href: "/promenades" },
   },
   {
@@ -40,16 +46,23 @@ const MODULES = [
     titre: "Sécurité côte",
     accroche: "Prudence honnête.",
     texte:
-      "SOS en un geste : position GPS partagée par SMS aux secours ou aux proches. Marées et météo : renvoi systématique vers les sources officielles — aucune donnée simulée.",
+      "SOS en un geste : position GPS par SMS, aux secours ou aux proches. Marées et météo : renvoi aux sources officielles. Aucune donnée simulée.",
     cta: { label: "Découvrir", href: "/promenade/forts-du-goulet" },
   },
   {
     glyphe: GlyphDecouverte,
     num: "03",
     titre: "Découverte & patrimoine",
-    accroche: "La Bretagne racontée.",
+    accroche: "Ce qu'on croise.",
+    /* 🔴 CE TEXTE PROMETTAIT LES FILTRES « POUSSETTE/PMR » ET « CHIENS »,
+       retirés le 28/10/2026 parce qu'OpenStreetMap ne porte pas ces attributs
+       — et retirés précisément pour que personne ne parte en poussette sur un
+       sentier de falaise. La page d'accueil a continué de les annoncer.
+       ⭐ Une suppression se fait dans le code ET dans ce qui la promet. Le
+          premier endroit où une fonction existe encore après sa mort, c'est
+          la phrase qui la vendait. */
     texte:
-      "Anecdotes du littoral, faune et flore, filtres concrets : durée, poussette/PMR, chiens, boucle ou aller-retour.",
+      "Lieux, faune et flore croisés sur le parcours. Filtres : durée, boucle ou aller simple.",
     cta: { label: "Explorer", href: "/promenades" },
   },
   {
@@ -58,7 +71,7 @@ const MODULES = [
     titre: "Carnet & export",
     accroche: "Gardez la trace.",
     texte:
-      "Export GPX en un clic, lisible par toutes les montres et applications. Fonctionne hors ligne, du cap à la grève — le réseau n'attendra pas, nous non plus.",
+      "Export GPX, lisible par toutes les montres et applications. Fonctionne hors ligne.",
     cta: { label: "Ouvrir un parcours", href: "/promenade/anse-saint-nicolas" },
   },
 ];
@@ -78,6 +91,24 @@ export default function App() {
    * L'observateur relève la hauteur réelle à chaque changement de taille et la
    * publie en variable. La page n'a plus à connaître la barre.
    */
+  /**
+   * ⭐ QUI COMMANDE LE VOILE DU FOND. Deux régimes : la craie sur les écrans
+   *    de lecture, le kaki sur les écrans immersifs (accueil, marche). Le
+   *    voile est au-dessus du fond tournant et sous tout le contenu — c'est
+   *    LUI qui tient les contrastes, pas l'image, qui change toutes les trois
+   *    secondes. L'attribut vit sur la racine pour qu'une seule règle CSS
+   *    suffise, sans que chaque écran ait à connaître le fond.
+   */
+  /* 🔴 `useLayoutEffect`, PAS `useEffect`. Posé après la peinture, l'attribut
+     laissait le premier cadre en régime « lecture » : colonne opaque en
+     sable, texte clair par-dessus — l'accueil s'affichait BLANC pendant une
+     image avant de basculer. ⭐ Un défaut d'une seule frame ne se voit pas
+     sur une capture d'écran et se voit à chaque navigation. */
+  useLayoutEffect(() => {
+    const immersif = path === "/" || /\/en-chemin\/?$/.test(path);
+    document.documentElement.dataset.fond = immersif ? "immersif" : "lecture";
+  }, [path]);
+
   const barreRef = useRef<HTMLElement | null>(null);
   useLayoutEffect(() => {
     const el = barreRef.current;
@@ -103,6 +134,23 @@ export default function App() {
 
   return (
     <>
+      {/* ⭐ LE FOND EST HORS DU FLUX ET HORS DE LA COLONNE. Monté une seule
+          fois, en tête de l'arbre : il ne se remonte pas d'une page à
+          l'autre, donc la rotation ne repart jamais de zéro quand on navigue.
+          ⚠️ C'est aussi pour ça qu'il n'est PAS dans le composant de page :
+          un fond qui se réinitialise à chaque clic ferait clignoter
+          l'application au lieu de la tenir. */}
+      <Fond />
+      {/* ⭐ LA COLONNE. « Les bulles s'affichent au format mobile partout —
+          mobile, desktop, tablette ; seul le fond s'élargit » (31/10). Une
+          application, pas un site qui s'étale : le chrome garde la largeur
+          d'un téléphone à toutes les tailles d'écran, et le fond tournant
+          occupe ce qui dépasse.
+          ⚠️ Elle enveloppe TOUT sauf le fond — en-tête, contenu, pied — sinon
+             la barre du haut s'étirerait sur un écran large pendant que le
+             reste resterait étroit, et l'illusion d'application tomberait au
+             premier regard de bureau. */}
+      <div className="app-colonne">
       <header className="site-header" ref={barreRef}>
         <div className="wrap">
           <nav className="nav">
@@ -114,22 +162,28 @@ export default function App() {
               <GlyphRadio size={48} />
               <span>Radio</span>
             </a>
-            {/* La barre du bas ne garde que Radio et Promenades, de part et
-                d'autre de la marque. La recherche pointait vers l'accueil — un
-                bouton qui ne cherche rien — et « Territoire » reste atteignable
-                depuis le pied de page, sur toutes les pages : la page n'est
-                donc pas orpheline, ce qui est la seule chose qui comptait.
+            {/* La barre du bas garde Radio et la Carte, de part et d'autre
+                de la marque.
+                ⭐ LA CARTE REMPLACE LES PROMENADES — 31/10/2026. La boussole
+                qui occupait cette place menait à la LISTE ; la carte, elle,
+                est le geste qu'on fait debout, dehors, avec le pouce. Et le
+                bouton « Explorer la carte » de l'accueil part avec ce
+                changement : une fonction à deux endroits, dont l'un est
+                permanent, est une fonction dupliquée.
+                ⚠️ `/promenades` n'est pas orpheline pour autant : elle reste
+                dans le pied, sur toutes les pages, et c'est la seule chose
+                qui comptait.
                 ⚠️ « MANA » seul ICI, « MANA.bzh » dans le pied : ce n'est pas
                 une incohérence. Le pied est l'endroit où l'on signe. */}
             <a className="brand" href={`${B}/`} aria-current={path === "/" ? "page" : undefined}>
               MANA
             </a>
             <a
-              href={`${B}/promenades`}
-              aria-current={path.startsWith("/promenade") ? "page" : undefined}
+              href={`${B}/carte`}
+              aria-current={path === "/carte" ? "page" : undefined}
             >
-              <GlyphBoussole size={48} />
-              <span>Promenades</span>
+              <GlyphCarte size={48} />
+              <span>Carte</span>
             </a>
           </nav>
         </div>
@@ -141,41 +195,29 @@ export default function App() {
             <p className="hero-label">Écouter</p>
             <h1 className="page-titre"><span>MANAradio</span></h1>
 
-            <section className="page-panel radio-player-panel">
-              <div className="radio-player">
-                <button
-                  type="button"
-                  className="radio-play"
-                  aria-label="Lecture"
-                  title="Hors antenne — bientôt"
-                >
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M8.5 5.5v13l10-6.5z" />
-                  </svg>
-                </button>
-                <div className="radio-infos">
-                  <p className="radio-etat">Hors antenne</p>
-                  <p className="radio-note">Le direct arrivera bientôt — aucun flux simulé.</p>
-                </div>
-              </div>
-            </section>
-
-            <section className="page-panel">
-              <p className="apercu-label">En cours</p>
-              <p className="page-texte">
-                Aucun titre à l'antenne pour l'instant. Les épisodes
-                et la programmation s'afficheront ici dès la première
-                émission réelle.
-              </p>
-            </section>
+            <Radio />
           </div>
         </main>
       ) : path === "/composer" ? (
         <Composer />
       ) : path === "/promenades" ? (
         <Promenades />
+      ) : path === "/espace" ? (
+        <Espace base={B} />
+      ) : routeRencontres(path) ? (
+        <Rencontres base={B} slug={routeRencontres(path)!} />
+      ) : routeEnChemin(path) ? (
+        /* debout, dehors : une information, des cibles de 56 px, le 112 */
+        <EnChemin base={B} slug={routeEnChemin(path)!} />
+      ) : routeComplet(path) ? (
+        /* ⚠️ L'ANCIENNE PAGE RESTE ATTEIGNABLE, et ce n'est pas de
+           l'indécision : elle porte l'export GPX, le profil et la carte
+           maplibre, que l'écran de marche n'emporte pas. On ne supprime pas
+           une page tant que ce qu'elle seule sait faire n'a pas de toit. */
+        <Promenade slug={routeComplet(path)!} />
       ) : routePromenade(path) ? (
-        <Promenade slug={routePromenade(path)!} />
+        /* assis, au calme : la fiche éditoriale */
+        <FichePromenade base={B} slug={routePromenade(path)!} />
       ) : path === "/carte" ? (
         <Territoire2030 base={B} />
       ) : path === "/territoire" ? (
@@ -236,7 +278,12 @@ export default function App() {
               <GlyphRadio size={36} />
               <h2 className="section-title">MANAradio</h2>
               <div className="sous-bulle">
-                <p className="section-accroche">En ligne.</p>
+                {/* ⛔ CETTE LIGNE DISAIT « En ligne. » EN DUR. Une affirmation
+                    d'état écrite dans le code est vraie tant que l'état l'est —
+                    et la page d'accueil aurait annoncé l'antenne ouverte un
+                    soir où elle est coupée. L'état vivant se lit sur /radio,
+                    où il est mesuré ; ici on nomme la chose, pas son état. */}
+                <p className="section-accroche">La radio de l'Alliance.</p>
                 <p className="section-texte">
                   À écouter en marchant — ou au coin du feu.
                 </p>
@@ -258,8 +305,8 @@ export default function App() {
               MANA<em>.bzh</em>
             </p>
             <p className="footer-note">
-              Promenades bretonnes — hors ligne, GPS, GPX. Gratuit,
-              sobre, aucune donnée revendue.
+              Presqu'île de Crozon. Hors ligne, GPS, GPX. Gratuit, aucune
+              donnée revendue.
             </p>
             <ContactForm />
           </div>
@@ -275,6 +322,7 @@ export default function App() {
           </nav>
         </div>
       </footer>
+      </div>
     </>
   );
 }
