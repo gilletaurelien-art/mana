@@ -85,7 +85,7 @@ html {
 /* ===== Header : pilule flottante fixe en bas d'écran ===== */
 .site-header {
   position: fixed;
-  bottom: var(--sp-2);
+  bottom: calc(var(--sp-2) + env(safe-area-inset-bottom, 0px));
   left: 0;
   right: 0;
   z-index: 10;
@@ -448,8 +448,17 @@ html {
   .moteur-barre { flex-wrap: nowrap; border-radius: 999px; padding: 6px; }
   .moteur-loupe { display: none; }
   .moteur-barre input { flex: 1 1 auto; min-width: 0; font-size: var(--t-s); padding: 10px 10px; border: none; }
-  .moteur-fleche { width: 44px; height: 44px; flex: 0 0 44px; }
 }
+/* 🔴 LA RÈGLE MOBILE ÉTAIT ÉCRITE AVANT LA RÈGLE DE BASE, DONC PERDUE.
+   La largeur mobile de ce bouton vivait plus haut dans le fichier, dans le
+   bloc média ci-dessus. À spécificité égale, c'est la DERNIÈRE déclaration
+   qui gagne : la base à 40 px écrasait les 44 px annoncés pour le mobile.
+   Mesuré le 31/10 : 40 px de haut sur un écran de 335, pour le bouton
+   principal du champ de départ.
+   ⭐ Une requête de média n'ajoute AUCUNE spécificité. Une règle responsive
+      placée avant sa base est une intention, pas un effet — et elle se lit
+      comme un correctif déjà appliqué.
+   L'override mobile est désormais APRÈS la base, tout en bas de ce bloc. */
 /* Flèche de recherche : pilule or ronde, dans la barre après le champ */
 .moteur-fleche {
   flex: 0 0 auto;
@@ -475,6 +484,10 @@ html {
 .moteur-fleche:hover {
   transform: translateX(2px);
   box-shadow: 0 4px 14px rgb(201 162 39 / 45%);
+}
+/* ⚠️ 44 px : la cible tactile minimale, et APRÈS la base pour qu'elle gagne. */
+@media (max-width: 720px) {
+  .moteur-fleche { width: 44px; height: 44px; flex: 0 0 44px; }
 }
 
 /* ===== Pages éditoriales ===== */
@@ -780,7 +793,16 @@ html {
 }
 
 /* Nav fixe en bas : réserve l'espace pour ne pas masquer le footer */
-body { padding-bottom: 84px; }
+/* ⚠️ PLUS DE NOMBRE MAGIQUE. `84px` était juste le jour de son écriture, et
+   faux dès que les icônes de la barre ont doublé : mesuré le 31/10, la barre
+   occupait 100 px et recouvrait la carte de promenade. La variable est posée
+   à l'exécution par la barre elle-même (voir App.tsx) ; le repli ne sert que
+   le temps du premier rendu.
+   ⚠️ Et `env(safe-area-inset-bottom)` n'est pas un raffinement : sans lui, la
+   barre tombe dans la zone du geste d'accueil des téléphones à encoche. */
+body {
+  padding-bottom: calc(var(--barre-espace, 108px) + env(safe-area-inset-bottom, 0px) + var(--sp-2));
+}
 
 /* ===== Croix & coeur sous la fiche balade ===== */
 .balade-actions {
@@ -1049,3 +1071,86 @@ body { padding-bottom: 84px; }
   color: var(--blanc-chaud);
   font: 700 10px/1 var(--sans);
 }
+
+
+/* ═══ Accueil : la promesse, le champ, la carte ═══════════════════════════ */
+
+/* ⭐ La promesse est DISCRÈTE À DESSEIN. Elle prend la place d'une troisième
+   accroche : si elle criait, elle ferait exactement ce qu'on lui reprochait. */
+.hero-promesse {
+  margin: var(--sp-1) 0 var(--sp-3);
+  font-size: var(--t-s);
+  line-height: 1.45;
+  color: var(--primary);
+  max-width: 30ch;
+  margin-inline: auto;
+  text-wrap: balance;
+}
+
+/* La sortie vers la géolocalisation — seconde, jamais concurrente du champ */
+.hero-ou {
+  margin: var(--sp-1) 0 0;
+  font-size: var(--t-xs);
+  opacity: 0.75;
+}
+/* ⚠️ 17 PIXELS DE HAUT, MESURÉ — un lien de texte nu n'est pas une cible au
+   pouce. La zone cliquable est agrandie par de la marge intérieure, sans
+   grossir le texte : la discrétion visuelle reste, l'atteignabilité arrive.
+   ⭐ Le même piège vaut pour toute « petite action secondaire » : on la dessine
+      petite, et on oublie que le doigt, lui, n'a pas changé de taille. */
+.hero-ou a {
+  display: inline-block;
+  padding: 12px 8px;
+  margin: -6px 0;
+  color: var(--primary);
+  text-underline-offset: 3px;
+}
+
+/* ⭐ « Sur le chemin » : la seule chose de cette carte qu'un topoguide n'a pas.
+   Un filet à gauche plutôt qu'une bulle de plus — la page doit s'alléger. */
+.swipe-chemin {
+  margin: var(--sp-2) 0 0;
+  padding-left: var(--sp-2);
+  border-left: 2px solid var(--or);
+  font-size: var(--t-xs);
+  line-height: 1.5;
+  color: var(--ink);
+}
+.swipe-chemin-label {
+  display: block;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 0.78em;
+  color: var(--primary);
+  opacity: 0.8;
+}
+.swipe-chemin-reste { opacity: 0.6; }
+
+/* ═══ Les deux actions, NOMMÉES ═══════════════════════════════════════════
+   ⛔ Les anciennes étaient une croix et un cœur : « écarter » et
+   « enregistrer » — deux gestes que cet écran ne fait ni l'un ni l'autre. */
+.balade-actions { gap: var(--sp-2); align-items: stretch; }
+.balade-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;           /* la cible tactile minimale, au pouce */
+  padding: 0 var(--sp-3);
+  border-radius: 999px;
+  font-size: var(--t-xs);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  border: 1px solid var(--or);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+.balade-action svg {
+  width: 16px; height: 16px; fill: none;
+  stroke: currentColor; stroke-width: 1.6;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.balade-action-second { background: transparent; color: var(--primary); }
+.balade-action-premier { background: var(--ink); color: var(--sand); border-color: var(--ink); }
+.balade-action:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgb(27 42 74 / 14%); }
+.balade-action:focus-visible { outline: 2px solid var(--or); outline-offset: 2px; }

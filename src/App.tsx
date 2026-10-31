@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useRef, useLayoutEffect } from "react";
 import { usePath, baseUrl, routePromenade } from "./router";
 import { WALKS } from "./walks";
 import {
@@ -64,6 +65,35 @@ const MODULES = [
 
 export default function App() {
   const path = usePath();
+
+  /**
+   * 🔴 LA BARRE DIT ELLE-MÊME LA PLACE QU'ELLE PREND.
+   *
+   * `body { padding-bottom: 84px }` était juste le jour de son écriture, et
+   * faux dès que les icônes sont passées de 24 à 48 : mesuré le 31/10, la
+   * barre occupait 100 px pour 84 compensés, et elle RECOUVRAIT la carte de
+   * promenade. ⭐ Une valeur vivante recopiée dans une feuille de style se
+   * périme en silence — on ne la corrige pas, on cesse de l'écrire.
+   *
+   * L'observateur relève la hauteur réelle à chaque changement de taille et la
+   * publie en variable. La page n'a plus à connaître la barre.
+   */
+  const barreRef = useRef<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    const el = barreRef.current;
+    if (!el) return;
+    const poser = () => {
+      const r = el.getBoundingClientRect();
+      // du haut de la barre au bas de la fenêtre : hauteur ET décollement
+      const occupe = Math.max(0, window.innerHeight - r.top);
+      document.documentElement.style.setProperty("--barre-espace", `${Math.round(occupe)}px`);
+    };
+    poser();
+    const ro = new ResizeObserver(poser);
+    ro.observe(el);
+    window.addEventListener("resize", poser);
+    return () => { ro.disconnect(); window.removeEventListener("resize", poser); };
+  }, []);
   const [lieu, setLieu] = useState("");
   const [walkIndex, setWalkIndex] = useState(0);
 
@@ -77,7 +107,7 @@ export default function App() {
 
   return (
     <>
-      <header className="site-header">
+      <header className="site-header" ref={barreRef}>
         <div className="wrap">
           <nav className="nav">
             {/* ⚠️ « ici » n'est pas « cette URL exactement ». Une fiche de
@@ -173,9 +203,16 @@ export default function App() {
         <>
           <section className="hero">
             <div className="wrap bulle-xl hero-moteur">
+              {/* ⚠️ TROIS NIVEAUX, PAS TROIS SLOGANS. « en Armor & Argoat »
+                  était une troisième accroche là où il fallait une PROMESSE :
+                  trois formules poétiques d'affilée disent d'où l'on parle,
+                  jamais ce que le produit fait. La signature territoriale
+                  reste, le nom reste, et la place libérée dit l'essentiel. */}
               <p className="hero-label">Terre, Mer & Lumière — Bretagne</p>
               <h1 className="brand-grand">Promenades</h1>
-              <p className="hero-label">en Armor & Argoat</p>
+              <p className="hero-promesse">
+                Découvrez ce que vous croiserez en chemin.
+              </p>
 
               {/* Moteur de saisie de localité */}
               <div className="moteur-barre" role="search" aria-label="Rechercher une localité">
@@ -205,38 +242,72 @@ export default function App() {
                 </button>
               </div>
 
+              {/* ⚠️ CE LIEN NE CRÉE AUCUNE FONCTION : il mène au compositeur,
+                  qui sait DÉJÀ partir de la position (« Partir d'où je suis »,
+                  géolocalisation traitée dans le téléphone). On expose une
+                  capacité existante depuis l'endroit où la question se pose —
+                  on n'en invente pas une pour embellir l'écran. */}
+              <p className="hero-ou">
+                ou <a href={`${B}/composer`}>partir d'où je suis</a>
+              </p>
+
               {/* La balade : une seule, avec sa carte — croix/coeur */}
               <div className="balade-unique">
                 <div className="balade-carte">
                   <WalkMap walk={walk} width={280} height={180} />
                 </div>
+                {/* ⭐ LE TITRE D'ABORD. La commune en capitales passait devant
+                    le nom de la promenade : on lisait « ROSCANVEL » avant de
+                    savoir ce qu'on regardait. */}
+                <h2 className="swipe-titre">{walk.titre}</h2>
                 <p className="swipe-lieu">{walk.lieu}</p>
-                <p className="swipe-titre">{walk.titre}</p>
                 <p className="swipe-meta">
                   {walk.distanceKm} km · ≈ {walk.dureeEstimeeH} h de marche ·{" "}
                   {walk.boucle ? "boucle" : "aller simple"}
                 </p>
+
+                {/* ⭐ CE QUE MANA A ET QU'UN TOPOGUIDE N'A PAS — et la donnée
+                    existait déjà, inutilisée. Chaque étape porte `pos`, sa
+                    position LE LONG du chemin : ce sont donc des lieux qu'on
+                    rencontre, pas des lieux « à proximité » qui demanderaient
+                    un détour. ⛔ On n'affiche que ce que la donnée contient,
+                    et on dit le reste par un compte, jamais par un « etc. ». */}
+                {walk.etapes.length > 0 && (
+                  <p className="swipe-chemin">
+                    <span className="swipe-chemin-label">Sur le chemin</span>{" "}
+                    {walk.etapes.slice(0, 3).map((e) => e.nom).join(" · ")}
+                    {walk.etapes.length > 3 && (
+                      <span className="swipe-chemin-reste">
+                        {" "}et {walk.etapes.length - 3} autres
+                      </span>
+                    )}
+                  </p>
+                )}
+                {/* 🔴 LES DEUX ICÔNES MENTAIENT. Une croix veut dire « écarter »
+                    et ce bouton fait défiler les quatre promenades ; un cœur
+                    veut dire « enregistrer » et ce lien OUVRE la fiche — rien
+                    n'est enregistré nulle part, il n'y a pas de compte.
+                    Les `aria-label` étaient justes depuis le début : c'est le
+                    dessin qui disait autre chose. ⭐ Un libellé lu par un
+                    lecteur d'écran et démenti par l'image ne protège que la
+                    moitié des gens. */}
                 <div className="balade-actions">
                   <button
                     type="button"
-                    className="balade-btn balade-x"
-                    aria-label="Parcours suivant"
-                    title="Parcours suivant"
+                    className="balade-action balade-action-second"
                     onClick={walkSuivant}
                   >
                     <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M6 6l12 12M18 6 6 18" />
+                      <path d="M4 12h14" />
+                      <path d="m12 6 6 6-6 6" />
                     </svg>
+                    Suivante
                   </button>
                   <a
-                    className="balade-btn balade-coeur"
+                    className="balade-action balade-action-premier"
                     href={`${B}/promenade/${walk.slug}`}
-                    aria-label="Ouvrir le parcours"
-                    title="Ouvrir le parcours"
                   >
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M12 20s-6.5-4.1-6.5-9A4.2 4.2 0 0 1 12 8.4 4.2 4.2 0 0 1 18.5 11c0 4.9-6.5 9-6.5 9z" />
-                    </svg>
+                    Découvrir
                   </a>
                 </div>
               </div>
