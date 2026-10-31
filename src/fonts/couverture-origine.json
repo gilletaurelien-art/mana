@@ -1,0 +1,9 @@
+{
+  "_lisez_moi": "Caractères que CHAQUE police ne portait DÉJÀ PAS avant tout sous-ensemble, relevés le 31/10/2026 sur les fichiers d'origine (récupérés de l'historique git). Ils retombent sur la police système, et c'était le cas avant. ⚠️ C'est une MESURE, pas une permission : tout caractère perdu EN PLUS fait échouer polices.test.ts.",
+  "releve_le": "2026-10-31",
+  "polices": {
+    "Rubik-Regular.woff2": "Ţţͯπᵉ′″←→↗①②─⚠⛔✅⭐️🔴",
+    "Rubik-Bold.woff2": "Ţţͯπᵉ′″←→↗①②─⚠⛔✅⭐️🔴",
+    "MarelleBaton2-Regular.woff2": "¥ª¬¯µºÁÃÄÅÌÍÐÒÓÕÖØÚÝÞáãåìíðòóõøúýþĀāĂăĄąĆćĈĉĊċČčĎďĐđĒēĔĕĖėĘęĚěĜĝĞğĠġĢģĤĥĦħĨĩĪīĬĭĮįİĲĳĴĵĶķĸĹĺĻļĽľĿŀŁłŃńŅņŇňŉŊŋŌōŎŏŐőŔŕŖŗŘřŚśŜŝŞşŠšŢţŤťŦŧŨũŪūŬŭŮůŰűŲųŴŵŶŷŹźŻżŽžſͯπᵉ′″─⛔✅⭐️🔴"
+  }
+}
