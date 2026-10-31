@@ -164,6 +164,45 @@ describe("le jeu de cartes des balades", () => {
     expect(code).toMatch(/À moins de/);
   });
 
+  /**
+   * ⭐ TROIS FONCTIONS, PAS CINQ (31/10/2026, décision du fondateur). Les deux
+   *    boutons de la feuille — « Voir le détail » et « Suivre sur la carte » —
+   *    ont été retirés : cinq commandes sur une fiche qu'on tranche au pouce,
+   *    c'était trois de trop, et quarante-quatre pixels pris à la carte.
+   * ⚠️ MAIS LA FICHE DE L'OFFICE RESTE ATTEIGNABLE. Retirer le bouton sans
+   *    laisser de chemin aurait rendu leurs 46 circuits sans porte de sortie,
+   *    au moment même où l'on négocie l'accord de reprise. Le CRÉDIT est
+   *    devenu le lien — sa place juste : un crédit renvoie à qui il crédite.
+   */
+  it("la fiche de l'Office reste à un doigt, par le crédit", () => {
+    expect(code).toMatch(/className="jeu-source"/);
+    expect(code).toMatch(/href=\{w\.source\}/);
+  });
+
+  /**
+   * 🔴 LA BARRE DU BAS A ÉTÉ RÉDUITE DE 40 %, ET « MANA AUSSI HAUT QUE LES
+   *    ICÔNES » EST UNE RELATION, PAS DEUX NOMBRES. Les deux valeurs vivaient
+   *    en dur — 48 px dans le JSX, 43,2 px dans la feuille — liées par un
+   *    calcul que ni l'un ni l'autre ne portait. Réduire l'une sans l'autre
+   *    cassait l'égalité en silence.
+   */
+  it("la marque de la barre DÉRIVE de la taille des icônes", () => {
+    const tokens = readFileSync(new URL("./tokens.css", import.meta.url), "utf8");
+    expect(tokens).toMatch(/--barre-marque:\s*calc\(var\(--barre-icone\)\s*\*\s*0\.9\)/);
+    const feuille = readFileSync(new URL("./styles.css", import.meta.url), "utf8");
+    expect(feuille).toMatch(/font-size: var\(--barre-marque\)/);
+    /* ⛔ ET PLUS AUCUNE TAILLE D'ICÔNE DANS LE JSX DE LA BARRE.
+       ⚠️ On découpe le bloc `<nav>` avant de chercher : la première version
+          interdisait `size=` dans tout `App.tsx` et a refusé le glyphe de
+          MANAradio sur la page d'accueil, qui n'a rien à voir. ⭐ Un motif
+          juste, appliqué trop large, refuse du travail correct — et on finit
+          par désarmer le garde plutôt que par corriger sa portée. */
+    const app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
+    const barre = app.slice(app.indexOf('<nav className="nav">'), app.indexOf("</nav>"));
+    expect(barre.length).toBeGreaterThan(200);
+    expect(barre).not.toMatch(/size=/);
+  });
+
   /** ⭐ Un jeu de cartes qui ne répond qu'au doigt n'existe pas pour qui
    *  navigue au clavier. Les flèches tranchent, et trois boutons doublent. */
   it("se joue aussi au clavier", () => {

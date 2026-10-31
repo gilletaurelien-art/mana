@@ -159,7 +159,10 @@ export default function App() {
                 Promenades : l'or doit y rester allumé, sinon il s'éteint
                 précisément au moment où l'on s'enfonce dans la section. */}
             <a href={`${B}/radio`} aria-current={path === "/radio" ? "page" : undefined}>
-              <GlyphRadio size={48} />
+              {/* ⚠️ Pas de `size` : la taille vient de `--barre-icone` (voir styles.css).
+                  Deux valeurs liées par un calcul ne peuvent pas vivre dans deux
+                  fichiers dont l'un ne lit pas l'autre. */}
+              <GlyphRadio />
               <span>Radio</span>
             </a>
             {/* La barre du bas garde Radio et la Carte, de part et d'autre
@@ -182,7 +185,7 @@ export default function App() {
               href={`${B}/carte`}
               aria-current={path === "/carte" ? "page" : undefined}
             >
-              <GlyphCarte size={48} />
+              <GlyphCarte />
               <span>Carte</span>
             </a>
           </nav>

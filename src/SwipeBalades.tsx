@@ -461,60 +461,81 @@ function Carte({
           <span className="jeu-pratique">{PRATIQUE[w.pratique]}</span>
           <span className="jeu-forme">{w.boucle ? "Boucle" : "Aller simple"}</span>
           {w.difficulte && <span className="jeu-forme">{DIFFICULTE[w.difficulte]}</span>}
+          <span className="jeu-bandeau-lieu">
+            {w.commune ?? w.depart ?? "Presqu’île de Crozon"}
+          </span>
         </p>
 
         <h2 className="jeu-nom">{w.titre}</h2>
-        <p className="jeu-lieu">{w.commune ?? w.depart ?? "Presqu’île de Crozon"}</p>
 
-        {/* ⭐ TROIS CHIFFRES, ET DEUX SONT LA PAROLE DE L'OFFICE. La distance
-            est MESURÉE sur le tracé (la leur s'en écarte de 17 % au pire) ;
-            la durée et le dénivelé sont DÉCLARÉS par eux, jamais calculés —
-            une estimation sous un libellé « balisé par l'Office » lui ferait
-            endosser notre arithmétique.
+        {/* ⭐ UNE SEULE LIGNE DE CHIFFRES, comme la maquette. Le lieu, la
+            durée, la distance, le dénivelé : quatre faits sur un rang, avec
+            un pictogramme chacun. L'ancienne présentation en `dt`/`dd`
+            empilait deux étages et coûtait quarante pixels — c'est-à-dire de
+            la cartographie, puisque la feuille prend sur la carte.
             ⚠️ Un chiffre absent ne s'invente pas : 6 fiches sur 46 ne donnent
                pas de durée, 2 pas de dénivelé. La case disparaît. */}
-        <dl className="jeu-faits">
-          {w.duree && <div><dt>Durée</dt><dd>{w.duree}</dd></div>}
-          <div><dt>Distance</dt><dd className="jeu-km">{w.km.toLocaleString("fr-FR")} km</dd></div>
-          {w.denivele != null && <div><dt>Dénivelé</dt><dd>+{w.denivele} m</dd></div>}
-        </dl>
+        <p className="jeu-faits">
+          {w.duree && (
+            <span className="jeu-fait">
+              <svg className="jeu-fait-icone" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />
+              </svg>
+              <span className="sr-only">Durée </span>{w.duree}
+            </span>
+          )}
+          <span className="jeu-fait jeu-km">
+            <svg className="jeu-fait-icone" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 12h18M6 9l-3 3 3 3M18 9l3 3-3 3" />
+            </svg>
+            <span className="sr-only">Distance </span>{w.km.toLocaleString("fr-FR")} km
+          </span>
+          {w.denivele != null && (
+            <span className="jeu-fait jeu-km">
+              <svg className="jeu-fait-icone" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 19h18M4 17l7-9 4 5 5-7" />
+              </svg>
+              <span className="sr-only">Dénivelé </span>+{w.denivele} m
+            </span>
+          )}
+        </p>
 
         {/* ⭐ LA SEULE LIGNE QUI NE VIENNE PAS DE L'OFFICE. Leur fiche donne
             des chiffres ; elle ne dit pas que le circuit passe à quatre mètres
             d'un alignement mégalithique. ⛔ Et le seuil est DIT : « à
-            proximité » n'est pas « sur le chemin ». */}
+            proximité » n'est pas « sur le chemin ».
+            ⚠️ Sur UNE ligne, qui se coupe proprement : ces noms sont une
+               invitation à regarder la carte, pas un inventaire à lire. */}
         {proches.length > 0 && (
           <p className="jeu-proches">
-            <span className="jeu-proches-label">À moins de {SEUIL_PROCHES} m du tracé</span>
-            {proches.slice(0, 3).map((x) => (
-              <span key={x.l.osm} className="jeu-proche">
-                {x.l.n}<span className="jeu-proche-cat"> · {inv!.libelles[x.l.c] ?? x.l.c}</span>
-              </span>
-            ))}
+            <span className="jeu-proches-label">À moins de {SEUIL_PROCHES} m :</span>{" "}
+            {proches.slice(0, 3).map((x) => x.l.n).join(" · ")}
           </p>
         )}
 
-        <div className="jeu-actions">
-          <a className="m-action-fine jeu-lien" href={w.source} target="_blank" rel="noreferrer">
-            Voir le détail
-          </a>
-          {/* ⛔ PAS « LANCER LA BALADE ». L'écran de marche guidée n'existe que
-              pour les itinéraires MANA, qui portent des étapes ; un circuit de
-              l'Office n'en a pas. ⭐ Une promesse d'interface qu'on ne peut pas
-              tenir se reformule, elle ne se dessine pas en espérant que
-              personne n'appuie dessus. Ce bouton-ci tient : la carte, le tracé,
-              et votre position. */}
-          <button type="button" className="m-action jeu-lien" onClick={() => surCarte(w.p[0])}>
-            Suivre sur la carte
-          </button>
-        </div>
-
         {/* ⛔ TROIS MENTIONS, ET AUCUNE N'EST UN ORNEMENT : qui a balisé, qui
             a déclaré les chiffres, d'où vient le fond. La dernière est une
-            obligation de l'ODbL, les deux autres une obligation d'honnêteté. */}
-        <p className="jeu-provenance">
-          Balisé par l’Office de tourisme · durée et dénivelé déclarés par lui
-          · fond {ATTRIBUTION[substrat]}
+            obligation de l'ODbL, les deux autres une obligation d'honnêteté.
+            ⚠️ SUR UNE LIGNE, ET ELLE NE SE COUPE PAS. Elle tenait sur deux et
+               coûtait seize pixels de carte ; la raccourcir était tentant,
+               l'abréger aurait été une faute. On l'a resserrée, pas amputée —
+               et `title` rend le texte entier au survol. */}
+        <p className="jeu-provenance" title={`Itinéraire balisé par l’Office de tourisme. Durée et dénivelé déclarés par l’Office. Fond de carte : ${ATTRIBUTION[substrat]}.`}>
+          {/* ⭐ LE CRÉDIT EST LE LIEN, et c'est sa place juste : un crédit
+              renvoie à celui qu'il crédite. Les deux boutons « Voir le détail »
+              et « Suivre sur la carte » ont quitté la feuille — trois
+              fonctions suffisent, et elles sont rondes, sous la carte. La
+              fiche de l'Office reste à un doigt, sur la mention qui la nomme
+              déjà. ⚠️ `stopPropagation` : sans lui, le lien part en même temps
+              que le glissement commence. */}
+          <a href={w.source} target="_blank" rel="noreferrer"
+             className="jeu-source" onPointerDown={(e) => e.stopPropagation()}>
+            Office de tourisme
+            <svg className="jeu-source-icone" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M14 4h6v6M20 4 11 13" />
+            </svg>
+          </a>
+          {" · chiffres déclarés · "}{ATTRIBUTION[substrat]}
         </p>
       </div>
     </article>

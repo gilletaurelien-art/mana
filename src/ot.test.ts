@@ -34,14 +34,23 @@ describe("les itinéraires de l'Office", () => {
 
   it("⛔ aucun tracé ne dépasse l'emprise de la communauté de communes", () => {
     // Le garde qui aurait arrêté « Le tour du Cap de la chèvre » tout seul.
+    //
+    // ⚠️ IL FAISAIT 50 174 `expect()` — quatre par point, sur 12 543 points —
+    //    et il a fini par DÉPASSER les cinq secondes de vitest : un échec
+    //    intermittent, sur un test qui passait seul. ⭐ Cinquante mille
+    //    assertions ne disent rien de plus que quatre, elles coûtent
+    //    seulement le temps de les compter. On balaie, puis on affirme — et
+    //    le message nomme le fautif, ce que la boucle ne faisait pas mieux.
+    const hors: string[] = [];
     for (const i of r.itineraires) {
       for (const [lon, lat] of i.p) {
-        expect(lon, i.slug).toBeGreaterThan(-4.70);
-        expect(lon, i.slug).toBeLessThan(-4.00);
-        expect(lat, i.slug).toBeGreaterThan(48.10);
-        expect(lat, i.slug).toBeLessThan(48.40);
+        if (lon <= -4.70 || lon >= -4.00 || lat <= 48.10 || lat >= 48.40) {
+          hors.push(`${i.slug} → ${lon},${lat}`);
+          break;
+        }
       }
     }
+    expect(hors).toEqual([]);
   });
 
   it("⛔ l'artefact ne dit nulle part que l'Office RECOMMANDE MANA", () => {

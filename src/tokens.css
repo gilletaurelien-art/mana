@@ -360,6 +360,23 @@
   /* échelle majeure tierce (1,25), ancrée sur 16 px et ARRÊTÉE :
      une échelle à laquelle on ajoute un cran « juste pour ce titre » n'est
      plus une échelle. */
+  /* ═══ LA BARRE DU BAS — UNE SEULE VALEUR DÉCIDÉE ══════════════════════
+     ⭐ « MANA AUSSI HAUT QUE LES ICÔNES » EST UNE RELATION, PAS DEUX NOMBRES.
+        Elle a été calculée le 31/10 : un SVG de la grille 24 peint 16,2
+        unités de haut (relevé au `getBBox`), soit 0,675 de sa boîte ; et la
+        hauteur de capitale d'Instrument Serif vaut 0,75 em (relevée au pixel
+        sur un canvas). D'où marque = icône × 0,675 / 0,75 = **icône × 0,9**.
+     ⚠️ C'EST POUR ÇA QUE LA RELATION EST ÉCRITE COMME UNE MULTIPLICATION. Les
+        deux valeurs vivaient en dur, 48 px et 43,2 px : réduire l'une sans
+        l'autre cassait silencieusement l'égalité que le fondateur avait
+        demandée, et personne n'aurait su pourquoi la marque a l'air petite.
+     Réduite de 40 % le 31/10/2026 à la demande du fondateur : 48 → 28,8. */
+  --barre-icone:  28.8px;
+  --barre-marque: calc(var(--barre-icone) * 0.9);
+  /* le rembourrage des liens suit la même réduction — 8/16 → 4,8/9,6 */
+  --barre-creux:  4.8px;
+  --barre-cale:   9.6px;
+
   --t-2xs: 0.75rem;  --t-xs: 0.8125rem; --t-s: 1rem;
   --t-m: 1.25rem;    --t-l: 1.5625rem;  --t-xl: 1.953rem;
   --t-2xl: 2.441rem; --t-3xl: 3.052rem;

@@ -221,10 +221,18 @@ a { color: var(--texte-action); text-underline-offset: 3px; }
   border: 1px solid var(--bulle-trait);
   border-radius: var(--r-rond);
   box-shadow: var(--ombre-levee), var(--bulle-eclat);
-  padding: var(--sp-1) var(--sp-4);
+  /* ⚠️ Le rembourrage suit la réduction de 40 % lui aussi : le laisser à
+     `--sp-1` aurait rendu une barre plus basse mais aux mêmes marges, donc
+     visuellement plus serrée qu'elle ne devait l'être. */
+  padding: var(--barre-creux) var(--sp-3);
   max-width: var(--largeur);
   width: fit-content;
 }
+/* ⭐ LA TAILLE DES ICÔNES EST POSÉE ICI, PAS DANS LE JSX. Elle était écrite
+   `size={48}` dans `App.tsx` et 43,2 px dans cette feuille : deux valeurs
+   liées par un calcul, dans deux fichiers, dont l'une ne pouvait pas lire
+   l'autre. Une seule décide désormais (`--barre-icone`), l'autre en dérive. */
+.nav a svg { width: var(--barre-icone); height: var(--barre-icone); }
 /* ⭐ « AUSSI HAUT QUE LES ICÔNES » SE MESURE SUR L'ENCRE, PAS SUR LES BOÎTES.
    Un SVG de 48 px ne dessine pas sur 48 px — son `getBBox()` rend 16,2 unités
    sur la grille 24, soit **32,4 px** peints. Et une capitale n'occupe pas sa
@@ -254,7 +262,20 @@ a { color: var(--texte-action); text-underline-offset: 3px; }
   gap: 8px;
   font-size: var(--t-xs);
   white-space: nowrap;
-  padding: 8px 16px;
+  padding: var(--barre-creux) var(--barre-cale);
+  /* 🔴 LA RÉDUCTION DE 40 % FAISAIT TOMBER LA CIBLE À 40 × 50 px. Mesuré, pas
+     supposé. C'est sous les 44 px de côté qui font le minimum d'une cible
+     tactile — sur une barre PERMANENTE, visée au pouce, dehors, en marchant.
+     ⭐ Une réduction qui fait passer un contrôle sous la cible du pouce n'est
+        plus un changement de taille, c'est une régression d'usage. On rend
+        donc les quatre pixels manquants en hauteur de BOÎTE, pas en
+        rembourrage : l'encre reste réduite de 40 %, la cible redevient
+        conforme, et la barre ne regagne que quatre pixels.
+     ⚠️ CE QUE ÇA COÛTE, ET IL FAUT LE DIRE : la barre tombe à 56 px et non
+        50 — une réduction de 33 % au lieu de 40. Les six pixels manquants
+        sont le minimum tactile, et ils ne se négocient pas. */
+  min-height: 44px; min-width: 44px;
+  justify-content: center;
   border-radius: var(--r-rond);
   border: 1px solid transparent;
   transition: box-shadow 160ms ease, transform 160ms ease, border-color 160ms ease;
@@ -1052,7 +1073,11 @@ a { color: var(--texte-action); text-underline-offset: 3px; }
       GAGNE. */
 .nav a.brand {
   font-family: var(--serif);
-  font-size: 43.2px;
+  /* ⭐ DÉRIVÉE, PLUS ÉCRITE. Voir `--barre-marque` dans `tokens.css` : la
+     relation « aussi haut que les icônes » est une multiplication, donc elle
+     survit à tout changement de taille — y compris la réduction de 40 % du
+     31/10, qui aurait sinon cassé l'égalité en silence. */
+  font-size: var(--barre-marque);
   line-height: 0.78;
   font-weight: 400;
   color: var(--ink);
@@ -2191,15 +2216,26 @@ body { padding-bottom: var(--reserve-barre); }
 .jeu-feuille {
   position: absolute; z-index: 4;
   left: 10px; right: 10px; bottom: 86px;
-  padding: 16px 18px 14px;
+  padding: 13px 16px 12px;
   border-radius: var(--r-xl);
   background: color-mix(in srgb, var(--bulle-creux) 92%, transparent);
   backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--bulle-trait);
   box-shadow: var(--bulle-eclat), 0 16px 36px rgb(13 16 12 / 44%);
-  display: grid; gap: 5px;
+  display: grid; gap: 3px;
 }
-.jeu-bandeau { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 2px; }
+/* ⚠️ LA COMMUNE REJOINT LE BANDEAU, elle a quitté le rang des chiffres. Sur
+   430 px, « Pont-de-Buis-lès-Quimerch · 3h45 · 12,6 km · +220 m » passait à la
+   ligne — 46 px au lieu de 23. ⭐ Et c'est sa vraie place : une commune est une
+   identité, pas une mesure. Le rang des chiffres ne porte que des chiffres. */
+.jeu-bandeau {
+  display: flex; gap: 6px; align-items: center; margin: 0 0 2px;
+  white-space: nowrap; overflow: hidden;
+}
+.jeu-bandeau-lieu {
+  margin-left: auto; font-size: var(--t-xs); color: var(--bulle-texte-doux);
+  overflow: hidden; text-overflow: ellipsis;
+}
 .jeu-pratique, .jeu-forme {
   padding: 4px 10px; border-radius: var(--r-rond);
   font-size: var(--t-2xs); letter-spacing: 0.06em; text-transform: uppercase;
@@ -2208,44 +2244,71 @@ body { padding-bottom: var(--reserve-barre); }
 .jeu-forme { border: 1px solid var(--bulle-trait-fort); color: var(--bulle-texte-doux); }
 .jeu-nom {
   margin: 0; font-family: var(--titre); font-size: var(--t-l);
-  line-height: 1.12; text-wrap: balance;
+  line-height: 1.1; text-wrap: balance;
+  /* ⚠️ DEUX LIGNES AU PLUS. « Circuit 56 - Argol - Landévennec par les crêtes »
+     en prenait trois, et trois lignes de titre poussaient la feuille au-delà
+     du tiers. ⭐ Le plafond vit ici plutôt que dans une consigne de rédaction :
+     un titre vient de l'Office, on ne le réécrit pas. */
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  overflow: hidden;
 }
-.jeu-lieu { margin: 0; font-size: var(--t-xs); color: var(--bulle-texte-doux); }
-.jeu-faits { display: flex; gap: var(--sp-2); margin: 7px 0 0; }
-.jeu-faits div { display: grid; gap: 1px; }
-.jeu-faits dt {
-  font-size: var(--t-2xs); letter-spacing: 0.06em; text-transform: uppercase;
-  color: var(--bulle-texte-doux);
+
+/* ⭐ UN SEUL RANG DE CHIFFRES. L'ancienne présentation en `dt`/`dd` empilait
+   deux étages — libellé au-dessus, valeur en dessous — et coûtait quarante
+   pixels. Dans une feuille qui partage sa hauteur avec la carte, quarante
+   pixels de mise en page sont quarante pixels de cartographie.
+   ⚠️ Les libellés ne disparaissent pas pour autant : ils passent en
+      `.sr-only`, donc une synthèse vocale lit « Durée 3h45 · Distance 12,6
+      kilomètres » là où l'œil lit un pictogramme. */
+.jeu-faits {
+  display: flex; align-items: center; gap: 4px 14px; white-space: nowrap;
+  margin: 5px 0 0; font-size: var(--t-xs); color: var(--bulle-texte);
 }
-.jeu-faits dd { margin: 0; font-size: var(--t-s); }
+.jeu-fait { display: inline-flex; align-items: center; gap: 5px; }
+.jeu-fait-icone {
+  width: 15px; height: 15px; flex: none;
+  fill: none; stroke: var(--bulle-action); stroke-width: 1.8;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.jeu-fait-lieu { color: var(--bulle-texte-doux); }
 .jeu-km { font-variant-numeric: tabular-nums; }
 
-/* ⭐ LA LIGNE QUE L'OFFICE N'A PAS. Un filet doré à gauche la détache sans en
-   faire une carte de plus : c'est une note en marge, pas un panneau. */
+/* ⭐ LA LIGNE QUE L'OFFICE N'A PAS — sur UNE ligne, et elle se coupe.
+   ⚠️ Ces noms sont une invitation à regarder la carte, où ils sont posés à
+      leur place : un inventaire de trois lignes dirait la même chose en
+      prenant le tiers de la feuille. Le filet doré la rattache au reste sans
+      en faire un panneau de plus. */
 .jeu-proches {
-  margin: 7px 0 0; padding-left: 10px;
+  margin: 5px 0 0; padding-left: 9px;
   border-left: 2px solid var(--ocre);
-  display: grid; gap: 1px;
-  font-size: var(--t-xs);
+  font-size: var(--t-xs); line-height: 1.3;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.jeu-proches-label {
-  font-size: var(--t-2xs); letter-spacing: 0.06em; text-transform: uppercase;
-  color: var(--bulle-texte-doux);
-}
-.jeu-proche { line-height: 1.35; }
-.jeu-proche-cat { color: var(--bulle-texte-doux); }
+.jeu-proches-label { color: var(--bulle-texte-doux); }
 
-.jeu-actions { display: flex; gap: 8px; margin-top: 9px; }
-/* ⚠️ `white-space: nowrap` et le rembourrage rogné : « Suivre sur la carte »
-   passait sur deux lignes et la feuille grandissait de 22 px, qu'elle prenait
-   à la carte. ⭐ Dans une feuille qui partage sa hauteur avec une image, une
-   ligne de texte en trop se paie en cartographie. */
-.jeu-lien { flex: 1 1 0; display: grid; place-items: center; text-align: center;
-            font-size: var(--t-xs); min-height: 44px; padding-inline: 6px;
-            white-space: nowrap; }
+/* ⭐ LES DEUX BOUTONS DE LA FEUILLE ONT ÉTÉ RETIRÉS LE 31/10 : « remplace les
+   deux fonctions par nos trois ». Cinq commandes sur une fiche qu'on tranche
+   au pouce, c'était trois de trop — et quarante-quatre pixels rendus à la
+   carte. Les trois cercles suffisent ; la fiche de l'Office reste accessible
+   par le crédit, qui est devenu le lien. */
+.jeu-source {
+  color: inherit; text-decoration: underline; text-underline-offset: 2px;
+  white-space: nowrap;
+}
+.jeu-source-icone {
+  width: 9px; height: 9px; margin-left: 3px; vertical-align: baseline;
+  fill: none; stroke: currentColor; stroke-width: 2.4;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* ⚠️ SUR UNE LIGNE, ET ELLE NE SE COUPE PAS. Elle en prenait deux et coûtait
+   seize pixels de carte. L'abréger aurait été une faute — c'est une mention
+   légale et deux mentions d'honnêteté — alors elle est resserrée, pas
+   amputée, et `title` rend la phrase entière au survol. */
 .jeu-provenance {
-  margin: 7px 0 0; font-size: var(--t-2xs);
-  color: var(--bulle-texte-doux); line-height: 1.35;
+  margin: 6px 0 0; font-size: var(--t-2xs);
+  color: var(--bulle-texte-doux); line-height: 1.3;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
 /* ── Les trois commandes ──────────────────────────────────────────────── */
