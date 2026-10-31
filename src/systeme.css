@@ -329,6 +329,41 @@
 .fiche-couverture-carte .fiche-titre { color: var(--texte); }
 .fiche-couverture-carte .fiche-sur-titre { color: var(--texte-doux); }
 
+/* ── QUI RÉPOND DE CE TRACÉ ───────────────────────────────────────────────
+   ⛔ Les trois rangs se distinguent par la FORME autant que par la couleur :
+      un liseré à gauche, un mot en capitales. Quelqu'un qui ne sépare pas les
+      teintes doit pouvoir voir qu'il ne s'agit pas du même rang — et le texte
+      le dit en toutes lettres de toute façon, c'est lui qui porte. */
+.fiche-provenance {
+  margin: var(--sp-1) 0 0;
+  font-size: var(--t-xs);
+  padding-left: var(--sp-2);
+  border-left: 3px solid var(--trait-fort);
+  color: inherit;
+  max-width: 46ch;
+}
+/* 🔴 ET AUCUNE DE CES RÈGLES NE NOMME UNE COULEUR DE TEXTE. La première
+   version posait `color: var(--texte)` — le kaki, calculé pour un panneau
+   clair. Sur l'écran de marche la mention vit DANS une bulle de verre :
+   mesurée à **1,77**. La mention la plus importante de l'app, illisible
+   exactement là où l'on est déjà parti.
+   ⭐ C'est la troisième fois ce soir qu'un rôle de fond clair atterrit sur un
+      fond sombre. La parade n'est pas une quatrième valeur : c'est de ne RIEN
+      nommer. `inherit` suit le conteneur, quel qu'il soit, aujourd'hui et
+      après le prochain changement de matière.
+   ⚠️ Ce qui distingue les rangs est donc le LISERÉ et la GRAISSE, pas la
+      teinte — et c'est mieux ainsi : ça marche aussi pour qui ne sépare pas
+      les couleurs. Le texte dit le rang en toutes lettres de toute façon. */
+.fiche-provenance-ot { border-left-color: var(--sauge-sombre); }
+.fiche-provenance-mana { border-left-color: var(--ocre); }
+.fiche-provenance-osm { border-left-color: var(--trait-fort); }
+/* ⛔ NON BALISÉ : le seul des quatre où l'absence d'information est un RISQUE
+   et non une lacune — liseré terre cuite et graisse appuyée. */
+.fiche-provenance-compose {
+  border-left-color: var(--etat-empeche);
+  font-weight: 600;
+}
+
 
 .fiche-rencontres { display: flex; flex-direction: column; gap: var(--sp-2); }
 .fiche-etapes { list-style: none; margin: 0; padding: 0;

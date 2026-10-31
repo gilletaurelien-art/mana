@@ -1,6 +1,6 @@
 import { useEffect, useState, lazy, Suspense } from "react";
 import { baseUrl } from "./router";
-import { WALKS, distAuTrace, distM, effortLisible } from "./walks";
+import { WALKS, distAuTrace, distM, effortLisible, MENTION } from "./walks";
 import { chargerItineraire } from "./catalogue";
 import type { Walk } from "./walks";
 import type { WalkPoint } from "./walks";
@@ -65,7 +65,7 @@ function enGpx(walk: (typeof WALKS)[number]): string {
      xmlns="http://www.topografix.com/GPX/1/1">
   <metadata>
     <name>${walk.titre}</name>
-    <desc>Tracé d'après OpenStreetMap. © les contributeurs d'OpenStreetMap, sous licence ODbL (opendatacommons.org/licenses/odbl/). Référence : ${walk.osmRef}. Aucune altitude : nous n'en disposons pas.</desc>
+    <desc>${MENTION[walk.provenance]}. Tracé d'après OpenStreetMap. © les contributeurs d'OpenStreetMap, sous licence ODbL (opendatacommons.org/licenses/odbl/). Référence : ${walk.osmRef}. Aucune altitude : nous n'en disposons pas.</desc>
     <copyright author="les contributeurs d'OpenStreetMap">
       <license>https://opendatacommons.org/licenses/odbl/1-0/</license>
     </copyright>
@@ -253,6 +253,9 @@ export function Promenade({ slug }: { slug: string }) {
           <p className="page-note">
             {walk.distanceKm} km · {effortLisible(walk.distanceKm)} ·{" "}
             {walk.boucle ? "boucle" : "aller simple"}. Estimation à 3,5 km/h.
+          </p>
+          <p className={`fiche-provenance fiche-provenance-${walk.provenance}`}>
+            {MENTION[walk.provenance]}
           </p>
           <p className="page-note">
             {/* ⛔ On ne dit PAS la difficulté, l'accès poussette/PMR ni les

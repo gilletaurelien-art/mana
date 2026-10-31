@@ -247,6 +247,7 @@ export function Composer() {
     if (!graphe || !b) return null;
     const t = traits(graphe, b).map((l) => l.map(([lon, lat]) => ({ lon, lat })));
     return {
+      provenance: "compose" as const,
       slug: "composee", titre: "Votre promenade", lieu: "Crozon", resume: "",
       distanceKm: Math.round(b.metres / 100) / 10,
       // ⚠️ La durée se calcule sur le RESSENTI, pas sur les kilomètres :

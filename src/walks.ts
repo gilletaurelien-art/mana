@@ -60,8 +60,53 @@ export function effortLisible(km: number): string {
   return `≈ ${Math.ceil(h / 6)} jours de marche (6 h/jour)`;
 }
 
+/**
+ * ⛔ QUI RÉPOND DE CE TRACÉ — et ce n'est pas une étiquette décorative.
+ *
+ * Les trois rangs ne disent pas la même chose, et la confusion a un coût qui
+ * n'est pas esthétique : quelqu'un qui suit une boucle NON BALISÉE sur le
+ * sentier côtier doit le savoir avant de partir, pas le découvrir à une
+ * bifurcation, de nuit, au-dessus d'une falaise.
+ *
+ * · `ot`      — balisé et entretenu par l'Office de tourisme. Il y a des
+ *               marques sur les poteaux. ⛔ Ce rang exige LEURS tracés : un
+ *               tracé redessiné « d'après » un balisage n'est pas le balisage,
+ *               et il fait quitter le chemin marqué à la première imprécision
+ *               — sous un libellé qui dit « balisé ».
+ * · `mana`    — parcouru et vérifié par nous. Pas de balisage promis.
+ * · `osm`     — relation nommée dans OpenStreetMap. 🔴 CE RANG A ÉTÉ AJOUTÉ
+ *               PARCE QUE LE TYPE L'A EXIGÉ : les 1 032 itinéraires bretons
+ *               du catalogue ne rentraient dans aucun des trois autres. Ils
+ *               sont souvent balisés — par une commune, une fédération — mais
+ *               nous ne savons PAS par qui, et nous ne les avons pas
+ *               parcourus. Les ranger en `ot` aurait été la faute exacte que
+ *               ce champ existe pour empêcher.
+ *               ⭐ Un champ obligatoire ne sert pas qu'à remplir des cases :
+ *                  il a trouvé une catégorie que je n'avais pas vue, à
+ *                  l'endroit où le compilateur a refusé de deviner.
+ * · `compose` — fabriqué par le moteur depuis une position. Aucune marque sur
+ *               le terrain, aucun passage humain.
+ *
+ * ⭐ ET LE LIBELLÉ DIT UN FAIT, PAS UN AVIS. « L'office de tourisme
+ *    recommande » affirme que l'Office adoube MANA : c'est une affirmation sur
+ *    un tiers, elle se retire, et elle vieillit mal. « Balisé par l'Office de
+ *    tourisme » se constate sur un poteau.
+ */
+export type Provenance = "ot" | "mana" | "osm" | "compose";
+
+export const MENTION: Record<Provenance, string> = {
+  ot: "Itinéraire balisé par l'Office de tourisme",
+  mana: "Vérifié sur le terrain par MANA",
+  osm: "Tracé relevé dans OpenStreetMap — balisage non vérifié",
+  compose: "Composé par MANA — non balisé",
+};
+
 export interface Walk {
   slug: string;
+  /** Qui répond de ce tracé. ⚠️ Pas optionnel : un itinéraire sans rang
+   *  déclaré s'afficherait sans mention, et l'absence de mention se lit comme
+   *  « c'est balisé » — le défaut dans le sens le plus coûteux. */
+  provenance: Provenance;
   titre: string;
   lieu: string;
   resume: string;
@@ -402,6 +447,7 @@ const ile_vierge: WalkPoint[] = [
 export const WALKS: Walk[] = [
   {
     slug: "forts-du-goulet",
+    provenance: "mana",
     titre: "Les forts du goulet — la côte de Roscanvel",
     lieu: "Roscanvel, Finistère",
     resume:
@@ -426,6 +472,7 @@ export const WALKS: Walk[] = [
   },
   {
     slug: "saint-fiacre",
+    provenance: "mana",
     titre: "La balade de Saint-Fiacre",
     lieu: "Crozon, Finistère",
     resume:
@@ -443,6 +490,7 @@ export const WALKS: Walk[] = [
   },
   {
     slug: "anse-saint-nicolas",
+    provenance: "mana",
     titre: "L'Anse Saint-Nicolas",
     lieu: "Crozon, Finistère",
     resume:
@@ -462,6 +510,7 @@ export const WALKS: Walk[] = [
   },
   {
     slug: "ile-vierge",
+    provenance: "mana",
     titre: "Balade Sonore de l'Île Vierge",
     lieu: "Crozon, Finistère",
     resume:

@@ -107,6 +107,8 @@ export async function chargerItineraire(slug: string): Promise<Walk | null> {
 
   const etapes: Etape[] = [];
   return {
+    // relation OSM nommée : balisée par on ne sait qui, non parcourue
+    provenance: "osm" as const,
     slug: d.s,
     titre: d.n,
     lieu: d.d ?? "Bretagne",

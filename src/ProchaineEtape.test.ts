@@ -13,7 +13,7 @@ import type { Walk } from "./walks";
 
 /** fabrique un parcours minimal : seuls `points` comptent ici */
 const parcours = (points: { lat: number; lon: number }[]): Walk =>
-  ({ slug: "x", titre: "x", lieu: "x", resume: "", distanceKm: 1,
+  ({ provenance: "mana", slug: "x", titre: "x", lieu: "x", resume: "", distanceKm: 1,
      dureeEstimeeH: 1, boucle: false, osmUrl: "", osmRef: "",
      points, etapes: [] }) as Walk;
 

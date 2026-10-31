@@ -1297,7 +1297,13 @@ body {
 
 .carte-etiquette {
   font: 600 11px/1.2 var(--sans);
-  color: var(--ink);
+  /* ⚠️ SA PROPRE SURFACE, DONC SA PROPRE ENCRE. Cette pastille est blanche :
+     posée dans une bulle de verre (écran "complet"), elle héritait du
+     `--ink` remappé en craie — clair sur blanc, 1,18. Troisième porteur du
+     même piège après `.btn-clair` et `.fiche-provenance`. ⭐ La règle se
+     formule une fois : un composant qui apporte son fond ne descend plus du
+     contexte, il doit nommer sa couleur de texte. */
+  color: var(--nuit);
   background: rgb(255 255 255 / 88%);
   padding: 2px 6px; border-radius: var(--r-s);
   box-shadow: var(--ombre-pose);

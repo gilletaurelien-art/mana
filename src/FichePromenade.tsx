@@ -21,7 +21,7 @@
  *    survit à la page.
  */
 import { lazy, useEffect, useState } from "react";
-import { WALKS, effortLisible } from "./walks";
+import { WALKS, effortLisible, MENTION } from "./walks";
 import type { Walk } from "./walks";
 import { Atlas } from "./Atlas";
 import { Photo, image } from "./images/Photo";
@@ -138,6 +138,13 @@ export function FichePromenade({ base, slug }: { base: string; slug: string }) {
           </p>
           <p className="m-etiquette fiche-sur-titre">{walk.lieu}</p>
           <h1 className="m-accroche fiche-titre">{walk.titre}</h1>
+          {/* ⛔ QUI RÉPOND DE CE TRACÉ, sous le titre et jamais plus bas. Un
+              marcheur qui décide s'il part lit le titre et la distance ; s'il
+              doit descendre pour apprendre que le parcours n'est pas balisé,
+              il l'apprendra sur le terrain. */}
+          <p className={`fiche-provenance fiche-provenance-${walk.provenance}`}>
+            {MENTION[walk.provenance]}
+          </p>
         </div>
       </header>
 
