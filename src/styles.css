@@ -1156,27 +1156,58 @@ body {
 .balade-action:focus-visible { outline: 2px solid var(--or); outline-offset: 2px; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   LES QUATRE MATIÈRES — direction 2030, « l'atlas vivant »
-   ⚠️ ELLES S'AJOUTENT, ELLES NE REMPLACENT PAS. Les variables historiques
-   (--ink, --or, --sand) tiennent encore trente écrans : les écraser d'un coup
-   casserait tout ce qui n'a pas été repris. La nouvelle palette entre par
-   l'écran d'invitation, et gagnera du terrain écran par écran — chaque reprise
-   étant vérifiable séparément.
-   ⭐ L'or cesse d'être la couleur dominante pour devenir un accent rare : ici
-      il ne sert qu'aux lieux qu'on croise et à l'action principale.
+   LA PALETTE — direction 2030, « l'atlas vivant »
+   Arbitrage d'Aurélien : kaki sombre en signature, kaki sauge, bleu nuit,
+   ocre réservé aux ACTIONS et aux points d'attention, craie chaude pour la
+   lecture.
+   ⭐ LE KAKI EST LA SIGNATURE, ET C'EST LUI QUI SORT MANA DU LOT. Le bleu nuit
+      + or est la combinaison « premium » de toutes les interfaces de 2026 :
+      il se reconnaît en une seconde, et il ne dit rien du territoire. Le kaki
+      dit la lande, l'ajonc sec, la pierre lichenée — des matières de la
+      presqu'île, pas un code de luxe.
+   ⚠️ LE BLEU NUIT RESTE, MAIS IL CHANGE DE RÔLE : il n'est plus le fond, il
+      devient la mer et la profondeur. Un fond qui portait tout ne peut pas
+      aussi désigner quelque chose.
+   ⛔ L'OCRE NE SERT QU'À L'ACTION ET À L'ALERTE. Dès qu'il décore, il cesse
+      d'être lisible comme « ici, quelque chose vous attend ».
+   ⚠️ CES VARIABLES S'AJOUTENT, ELLES N'ÉCRASENT PAS `--ink`, `--or`, `--sand`.
+      Celles-ci tiennent encore trente écrans : les remplacer d'un coup
+      casserait tout ce qui n'a pas été repris. La palette gagne écran par
+      écran, chaque reprise restant vérifiable seule.
    ═══════════════════════════════════════════════════════════════════════════ */
 :root {
-  --encre: #111c2d;
-  --pierre: #f1eee5;
-  --verre: #a9c8bd;
-  --lumiere: #d6a94d;
+  --kaki: #343f32;          /* signature : identité, surfaces immersives */
+  --kaki-clair: #43503f;    /* élévation d'un cran */
+  --sauge: #92977c;         /* cartographie, nature, éléments secondaires */
+  --nuit: #192b43;          /* profondeur, structure, typographie */
+  --ocre: #c69a48;          /* ACTIONS, repères, découvertes — rien d'autre */
+  --craie: #eeebdd;         /* fonds et surfaces de lecture */
+  --terre: #a96f54;         /* accents éditoriaux PONCTUELS — ornement */
+  /* 🔴 ET SA VARIANTE POUR LE TEXTE. #a96f54 sur la craie donne 3,45 : il en
+     faut 4,5. Mesuré le 31/10 sur le label « Sur le chemin ».
+     ⭐ La teinte n'est pas ajustée à l'œil, elle est CALCULÉE : on descend la
+        clarté par pas en gardant teinte et saturation, et on s'arrête au
+        premier palier qui passe — 84 %, soit 4,61. Une couleur choisie à
+        l'œil « a l'air lisible » exactement jusqu'au jour où quelqu'un la
+        mesure. */
+  --terre-texte: #8e5d47;
+
+  /* alias conservés le temps de la reprise écran par écran */
+  --encre: var(--kaki);
+  --pierre: var(--craie);
+  --verre: var(--sauge);
+  --lumiere: var(--ocre);
 }
 
 /* ═══ L'INVITATION — état 1 ══════════════════════════════════════════════ */
 .invitation {
   position: relative;
   isolation: isolate;
-  background: var(--encre);
+  /* ⚠️ Le bleu nuit n'est plus le fond : il est la mer, en bas, et il donne
+     au kaki une profondeur que l'aplat n'a pas. Un dégradé de DEUX matières
+     nommées, pas un dégradé décoratif. */
+  background:
+    linear-gradient(to bottom, var(--kaki) 0%, var(--kaki) 48%, var(--nuit) 100%);
   color: var(--pierre);
   /* ⚠️ `svh` et non `vh` : sur mobile, `vh` compte la barre d'adresse comme
      si elle n'existait pas, et le bas de l'écran passe sous le navigateur.
@@ -1218,11 +1249,11 @@ body {
   inset: 0;
   background: linear-gradient(
     to bottom,
-    rgb(17 28 45 / 0%) 0%,
-    rgb(17 28 45 / 62%) 22%,
-    rgb(17 28 45 / 86%) 46%,
-    rgb(17 28 45 / 62%) 74%,
-    rgb(17 28 45 / 0%) 100%
+    rgb(52 63 50 / 0%) 0%,
+    rgb(52 63 50 / 62%) 22%,
+    rgb(52 63 50 / 86%) 46%,
+    rgb(52 63 50 / 62%) 74%,
+    rgb(52 63 50 / 0%) 100%
   );
 }
 
@@ -1264,8 +1295,9 @@ body {
   min-height: 56px;
   border: none;
   border-radius: 999px;
-  background: var(--lumiere);
-  color: var(--encre);
+  background: var(--ocre);
+  /* le bleu nuit sur l'ocre, et non le kaki : 7,4 contre 4,4 */
+  color: var(--nuit);
   font: inherit;
   font-weight: 600;
   font-size: var(--t-s);
@@ -1274,18 +1306,24 @@ body {
 }
 .invitation-primaire:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgb(214 169 77 / 28%);
+  box-shadow: 0 8px 24px rgb(198 154 72 / 32%);
 }
 .invitation-primaire:disabled { opacity: 0.7; cursor: progress; }
 .invitation-primaire:focus-visible { outline: 2px solid var(--pierre); outline-offset: 3px; }
 
+/* ⚠️ CONTRASTE REMONTÉ APRÈS LE CHANGEMENT DE PALETTE. Le kaki est plus
+   clair que le bleu nuit qu'il remplace : trois textes réglés sur l'ancien
+   fond sont passés sous le seuil AA sans que rien ne le signale — « ou » à
+   3,30, le pied à 3,85, le bouton à 4,39 pour 4,5 requis.
+   ⭐ Un changement de fond REQUALIFIE tous les contrastes posés dessus. Ce
+      n'est pas une retouche de couleur, c'est une remesure. */
 .invitation-ou {
   text-align: center;
   font-size: var(--t-xs);
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--verre);
-  opacity: 0.7;
+  color: var(--craie);
+  opacity: 0.72;
 }
 
 .invitation-champ {
@@ -1297,8 +1335,8 @@ body {
   /* ⚠️ Un contour, pas un fond translucide : le verre dépoli rend le texte
      illisible dès que le tracé passe derrière, et c'est exactement ce que le
      brief refuse. */
-  border: 1px solid rgb(169 200 189 / 45%);
-  background: rgb(17 28 45 / 72%);
+  border: 1px solid rgb(146 151 124 / 45%);
+  background: rgb(52 63 50 / 72%);
 }
 .invitation-champ input {
   flex: 1 1 auto;
@@ -1310,7 +1348,7 @@ body {
   font: inherit;
   font-size: var(--t-s);
 }
-.invitation-champ input::placeholder { color: rgb(241 238 229 / 52%); }
+.invitation-champ input::placeholder { color: rgb(238 235 221 / 52%); }
 .invitation-champ input:focus { outline: none; }
 .invitation-champ:focus-within { border-color: var(--lumiere); }
 .invitation-champ button {
@@ -1336,8 +1374,8 @@ body {
   margin: var(--sp-6) 0 0;
   font-size: var(--t-xs);
   line-height: 1.6;
-  color: var(--verre);
-  opacity: 0.8;
+  color: var(--craie);
+  opacity: 0.78;
 }
 
 /* ⭐ LE TERRITOIRE APPARAÎT — et c'est la seule animation de cet écran.
@@ -1363,4 +1401,106 @@ body {
   .invitation-contenu { margin-inline: 0; }
   .invitation-atlas { inset: 0 -4% 0 28%; }
   .invitation-atlas-svg { max-height: 86svh; opacity: 0.62; }
+}
+
+/* ═══ ÉCRAN 2 — LE TERRITOIRE ════════════════════════════════════════════
+   ⚠️ La carte occupe le haut, le panneau le bas : au pouce, ce qu'on TOUCHE
+   doit être près de la main, ce qu'on REGARDE peut être loin. L'inverse —
+   carte en bas — oblige à traverser l'écran pour agir. */
+.terr {
+  min-height: 100svh;
+  display: grid;
+  grid-template-rows: minmax(38svh, 46svh) 1fr;
+  background: var(--kaki);
+  color: var(--craie);
+  padding-bottom: calc(var(--barre-espace, 108px) + env(safe-area-inset-bottom, 0px));
+}
+.terr-carte { position: relative; overflow: hidden; }
+.terr-carte canvas { display: block; }
+.terr-attente {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  margin: 0; padding: var(--sp-4);
+  font-size: var(--t-xs); color: var(--sauge); text-align: center;
+}
+.terr-erreur { color: var(--ocre); }
+
+.terr-panneau {
+  padding: var(--sp-4);
+  background: var(--craie);
+  color: var(--nuit);
+  border-radius: 22px 26px 0 0;
+  margin-top: -18px;
+  position: relative;
+  z-index: 1;
+}
+.terr-entete { margin-bottom: var(--sp-3); }
+.terr-titre {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(1.9rem, 7vw, 2.6rem);
+  line-height: 1.05;
+}
+.terr-mesure { margin: 6px 0 0; font-size: var(--t-xs); color: #4a5564; }
+
+.terr-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.terr-item {
+  width: 100%;
+  min-height: 56px;
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  padding: 10px var(--sp-3);
+  border: 1px solid rgb(25 43 67 / 16%);
+  border-radius: 14px 18px 12px 16px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+.terr-item:hover { border-color: var(--ocre); }
+.terr-item:focus-visible { outline: 2px solid var(--ocre); outline-offset: 2px; }
+/* ⭐ L'actif se dit par l'OCRE et par `aria-pressed`, jamais par la couleur
+   seule : qui ne distingue pas les teintes a besoin de l'état annoncé. */
+.terr-item-active { border-color: var(--ocre); background: rgb(198 154 72 / 12%); }
+.terr-item-titre { font-weight: 600; font-size: var(--t-s); }
+.terr-item-meta { font-size: var(--t-xs); color: #4a5564; }
+
+.terr-fiche { margin-top: var(--sp-4); }
+.terr-fiche-label {
+  margin: 0 0 8px;
+  font-size: var(--t-xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--terre-texte);
+}
+.terr-lieux { list-style: none; margin: 0 0 var(--sp-3); padding: 0; display: grid; gap: 6px; }
+.terr-lieux li {
+  display: grid; gap: 1px;
+  padding-left: var(--sp-2);
+  border-left: 2px solid var(--ocre);
+}
+.terr-lieu-nom { font-size: var(--t-s); }
+.terr-lieu-cat { font-size: var(--t-xs); color: #4a5564; }
+
+.terr-action {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 48px; padding: 0 var(--sp-4);
+  border-radius: 999px;
+  background: var(--ocre); color: var(--nuit);
+  font-weight: 600; font-size: var(--t-s); text-decoration: none;
+}
+.terr-source { margin: var(--sp-4) 0 0; font-size: var(--t-xs); color: #4a5564; line-height: 1.5; }
+
+.invitation-carte { margin: var(--sp-3) 0 0; font-size: var(--t-xs); }
+.invitation-carte a {
+  display: inline-block; padding: 12px 8px; margin: -6px 0;
+  color: var(--sauge); text-underline-offset: 3px;
+}
+
+@media (min-width: 900px) {
+  .terr { grid-template-rows: none; grid-template-columns: 1fr minmax(360px, 420px); }
+  .terr-panneau { margin-top: 0; border-radius: 0; overflow-y: auto; max-height: 100svh; }
 }

@@ -11,6 +11,7 @@ import {
 } from "./Glyphs";
 import { Promenades } from "./Promenades";
 import { Invitation } from "./Invitation";
+import { Territoire2030 } from "./Territoire2030";
 import { Composer } from "./Composer";
 import { Promenade } from "./Promenade";
 import { Territoire } from "./Territoire";
@@ -175,6 +176,8 @@ export default function App() {
         <Promenades />
       ) : routePromenade(path) ? (
         <Promenade slug={routePromenade(path)!} />
+      ) : path === "/carte" ? (
+        <Territoire2030 base={B} />
       ) : path === "/territoire" ? (
         <Territoire />
       ) : path === "/mentions-legales" ? (

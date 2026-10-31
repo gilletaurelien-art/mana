@@ -108,6 +108,14 @@ export function Invitation({ base }: { base: string }) {
 
         {/* ⚠️ Le message d'état vit SOUS les entrées, jamais en modale : on ne
             bloque pas une page pour dire qu'une permission a été refusée. */}
+        {/* ⚠️ TROISIÈME ENTRÉE, ET ELLE EST DÉLIBÉRÉMENT LA PLUS DISCRÈTE.
+            « Autour de moi » et le champ répondent à la question posée ;
+            explorer la carte, c'est pour qui n'a pas de réponse. Mettre les
+            trois au même niveau ferait choisir au lieu d'inviter. */}
+        <p className="invitation-carte">
+          <a href={`${base}/carte`}>Explorer la carte</a>
+        </p>
+
         {motGps && (
           <p className="invitation-etat" role="status">
             {motGps}
