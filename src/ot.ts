@@ -28,6 +28,18 @@ export interface ItineraireOT {
   /** MESURÉE sur le tracé, pas reprise de la fiche — elles diffèrent de 1,2 %
    *  en médiane, et de 17 % au pire. */
   km: number;
+  /**
+   * ⭐ DÉCLARÉS PAR L'OFFICE, pas calculés par nous — et c'est ce qui les rend
+   *    publiables sous un libellé « balisé par l'Office ». Une durée sortie
+   *    d'une formule est une estimation ; la leur est leur parole.
+   * ⛔ Et le dénivelé ne vient PAS du GPX : les 552 balises `<ele>` du
+   *    « Sentier du Menhir » valent toutes 0.0.
+   * ⚠️ `null` sur 6 fiches pour la durée, 2 pour le dénivelé — une absence
+   *    VRAIE, qui manque à quelques-uns et non à tous. Le pipeline refuse
+   *    d'écrire si elle manque aux 46.
+   */
+  duree: string | null;
+  denivele: number | null;
   boucle: boolean;
   /** la fiche de l'Office : c'est là qu'on envoie, c'est elle qui fait foi */
   source: string;

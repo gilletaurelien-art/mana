@@ -70,6 +70,38 @@ describe("le jeu de cartes des balades", () => {
     expect(carte).toMatch(/m\.remove\(\)/);
   });
 
+  /**
+   * ⛔ CE QU'ON NE PROMET PAS. L'écran de marche guidée n'existe que pour les
+   *    itinéraires MANA, qui portent des étapes ; un circuit de l'Office n'en
+   *    a pas. ⭐ Une promesse d'interface qu'on ne peut pas tenir se
+   *    reformule, elle ne se dessine pas en espérant que personne n'appuie
+   *    dessus — la même règle que « Mes promenades » sans compte.
+   */
+  it("ne promet pas de lancer une balade qu'on ne sait pas guider", () => {
+    expect(code).not.toMatch(/Lancer la balade/i);
+  });
+
+  /**
+   * ⛔ AUCUNE PHOTOGRAPHIE, AUCUNE PROSE DE L'OFFICE. Nous n'avons pas
+   *    d'images de ces circuits ; celles de l'Office ne portent aucune
+   *    licence, et leur texte « À propos » est à eux. Les FAITS qu'ils
+   *    déclarent se citent, leur rédaction non — et l'accord n'est pas signé.
+   */
+  it("n'emprunte ni photographie ni rédaction à l'Office", () => {
+    const art = readFileSync(new URL("./ot.json", import.meta.url), "utf8");
+    const j = JSON.parse(art) as { itineraires: Record<string, unknown>[] };
+    const champs = new Set(j.itineraires.flatMap((w) => Object.keys(w)));
+    for (const interdit of ["photo", "photos", "image", "images", "apropos", "a_propos", "description", "texte"]) {
+      expect([...champs], `« ${interdit} » dans src/ot.json`).not.toContain(interdit);
+    }
+  });
+
+  /** ⛔ « À proximité » n'est pas « sur le chemin » : le seuil est DIT. */
+  it("dit le seuil quand il cite des sites proches", () => {
+    expect(code).toMatch(/SEUIL_PROCHES/);
+    expect(code).toMatch(/À moins de/);
+  });
+
   /** ⭐ Un jeu de cartes qui ne répond qu'au doigt n'existe pas pour qui
    *  navigue au clavier. Les flèches tranchent, et trois boutons doublent. */
   it("se joue aussi au clavier", () => {

@@ -61,7 +61,15 @@ const R_LAT = 111_320;
 /* ⭐ La table des catégories a DÉMÉNAGÉ dans `categories.ts` : la fiche de
    promenade en a besoin aussi, et une table recopiée diverge. */
 
-export function Territoire2030({ base }: { base: string }) {
+/**
+ * ⚠️ `centre` : le point sur lequel l'écran s'ouvre, quand on y arrive depuis
+ *    le jeu de cartes ou depuis une recherche. ⭐ Il POSE UN REPÈRE, il ne
+ *    recadre pas : la carte montre toute la communauté de communes, et la
+ *    recadrer sur un point ferait perdre ce qui fait sa valeur — voir le
+ *    territoire entier. Il choisit en revanche le bon onglet : ouvrir l'Aulne
+ *    sur un repère de Camaret montrerait une carte sans son repère.
+ */
+export function Territoire2030({ base, centre }: { base: string; centre?: [number, number] }) {
   const toile = useRef<HTMLCanvasElement | null>(null);
   const boite = useRef<HTMLDivElement | null>(null);
   const [graphe, setGraphe] = useState<Graphe | null>(null);
@@ -101,7 +109,7 @@ export function Territoire2030({ base }: { base: string }) {
   /* ⭐ DEUX TERRITOIRES, ET CELUI-CI SE CHOISIT — contrairement au
      compositeur, où la position tranche. Cet écran répond à « qu'y a-t-il
      ici ? » : il faut pouvoir regarder l'autre moitié sans y être. */
-  const [terr, setTerr] = useState(DEFAUT);
+  const [terr, setTerr] = useState(() => (centre && territoireDe(centre[0], centre[1])) || DEFAUT);
   /* ⚠️ Chargés À LA DEMANDE, comme sur la liste : 258 Ko que personne ne paie
      avant d'ouvrir la carte. ⭐ Et filtrés sur le territoire affiché — les 46
      circuits couvrent les deux moitiés de la communauté, en dessiner la
@@ -248,6 +256,15 @@ export function Territoire2030({ base }: { base: string }) {
    *     s'allume, la feuille s'ouvre sur sa fiche. Un résultat « lieu » pose
    *     seulement un repère. Rendre les deux identiques obligerait à
    *     recliquer dans la liste ce qu'on vient de trouver. */
+  /* ⚠️ UNE SEULE FOIS, À L'OUVERTURE. Sans le garde, le repère se reposerait
+     à chaque rendu et effacerait ce que la personne vient de chercher. */
+  const repereFait = useRef(false);
+  useEffect(() => {
+    if (!centre || repereFait.current) return;
+    repereFait.current = true;
+    setVise({ nom: "Point visé", detail: "depuis les balades", g: centre });
+  }, [centre]);
+
   const choisir = (r: Resultat) => {
     setVise({ nom: r.nom, detail: r.detail, g: r.g });
     if (r.genre === "promenade") { setChoisie(r.slug); setFeuille("deploye"); }

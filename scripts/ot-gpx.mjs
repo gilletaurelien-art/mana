@@ -129,6 +129,17 @@ for (const slug of SLUGS) {
     pratique: /Running - Trail/.test(t) ? "trail" : /VTT/.test(t) ? "vtt"
             : /Cyclotouriste/.test(t) ? "velo" : "pied",
     difficulte: /\b(Facile|Moyen|Difficile)\b/.exec(t)?.[1]?.toLowerCase() ?? null,
+    /* ⭐ LA DURÉE ET LE DÉNIVELÉ SONT DÉCLARÉS PAR L'OFFICE, PAS CALCULÉS PAR
+       NOUS — et c'est ce qui les rend publiables. Une durée calculée d'une
+       formule (Naismith, Tobler) est une ESTIMATION : l'afficher à côté d'un
+       libellé « balisé par l'Office » lui ferait endosser notre arithmétique.
+       Ici, la fiche dit « Durée 3h · Dénivelé 153 m » ; on la cite.
+       ⛔ ET SURTOUT PAS DEPUIS LE GPX. Les 552 balises `<ele>` du « Sentier du
+          Menhir » valent TOUTES 0.0 : le relevé n'a pas d'altitude. Un D+
+          calculé là-dessus rendrait 0 m pour tous les circuits, ce qui a l'air
+          d'une donnée et n'en est pas une. */
+    duree: t.match(/Durée\s+(\d{1,2}\s*h(?:\s*\d{2})?|\d{1,3}\s*min)/i)?.[1]?.replace(/\s+/g, "") ?? null,
+    denivele: (() => { const m = t.match(/Dénivelé\s+(\d{1,4})\s*m/i); return m ? +m[1] : null; })(),
     km: +L.toFixed(1),
     boucle: metres(pts[0], pts[pts.length - 1]) < 300,
     source: `${SITE}/itineraire/${slug}/`,
@@ -162,6 +173,26 @@ for (const r of retenus) {
 }
 const sansCommune = retenus.filter((r) => !r.commune).length;
 console.log(`commune : ${retenus.length - sansCommune}/${retenus.length} par la BAN`);
+
+/* 🔴 LE GARDE DU CHAMP VIDE — posé après l'avoir vécu DEUX FOIS sur la
+   commune. ⭐ Un champ vide sur les 46 n'est pas une donnée manquante, c'est
+   une extraction fausse : une donnée vraiment absente manque à QUELQUES-UNS,
+   pas à tous. Le motif de la durée ou du dénivelé peut cesser de mordre au
+   prochain habillage du site de l'Office — et rien, sans ce garde, ne le
+   dirait : l'app afficherait simplement des fiches sans chiffres.
+   ⚠️ Il court AVANT l'écriture, jamais après : un script qui écrit puis
+      vérifie laisse un fichier cassé sur le disque. */
+for (const [champ, n] of [
+  ["duree", retenus.filter((r) => r.duree).length],
+  ["denivele", retenus.filter((r) => r.denivele != null).length],
+  ["commune", retenus.length - sansCommune],
+]) {
+  console.log(`${champ} : ${n}/${retenus.length}`);
+  if (n === 0) {
+    console.error(`\n⛔ AUCUN « ${champ} » sur ${retenus.length} fiches — c'est une EXTRACTION FAUSSE, pas une donnée absente. Rien n'est écrit.`);
+    process.exit(1);
+  }
+}
 
 console.log(`\n${retenus.length} retenus · ${refuses.length} refusés`);
 for (const r of refuses) console.log(`  ⛔ ${r.slug} — ${r.motif}`);

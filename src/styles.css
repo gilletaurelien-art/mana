@@ -1998,50 +1998,87 @@ body { padding-bottom: var(--reserve-barre); }
       sortira de la colonne, c'est une requête de CONTENEUR qu'il faudra
       (`@container`), pas celle-ci. */
 
-/* ═══ ÉCRAN 2 bis — LE JEU DE CARTES DES BALADES ═════════════════════════
+/* ═══ ÉCRAN 2 — LE JEU DE CARTES DES BALADES ═════════════════════════════
    ⭐ L'ÉCRAN PRINCIPAL DU TERRITOIRE DEPUIS LE 31/10/2026. La carte du
       territoire devient le REPLI : elle sert qui sait déjà où il va ; le jeu
       sert qui ne le sait pas encore, c'est-à-dire presque tout le monde.
    ⚠️ Tout vit dans la colonne de 440 px — aucune requête de média ici, et ce
       n'est pas un oubli : voir `src/colonne.test.ts`. */
 .jeu {
-  /* 🔴 `100svh` SEUL DÉBORDE, et c'est l'erreur jumelle du rectangle kaki de
-     `.terr` : `body` réserve déjà la hauteur de la barre flottante EN PLUS.
-     L'écran mesurait alors 100svh + 124 px, et les trois commandes — le
-     geste même de l'écran — tombaient sous le pli. Mesuré, pas supposé. */
+  /* 🔴 `100svh` SEUL DÉBORDE : `body` réserve DÉJÀ la hauteur de la barre
+     flottante. L'écran mesurait 100svh + 124 px et les trois commandes — le
+     geste même de l'écran — tombaient sous le pli. L'erreur jumelle du
+     rectangle kaki de `.terr`. */
   min-height: calc(100svh - var(--reserve-barre));
   max-height: calc(100svh - var(--reserve-barre));
   display: grid;
-  grid-template-rows: auto auto 1fr auto auto;
+  grid-template-rows: auto 1fr auto;
   gap: var(--sp-2);
-  padding: var(--sp-3) var(--sp-3) var(--sp-2);
-  background: transparent;   /* le fond tournant se voit, comme partout */
+  padding: var(--sp-2) var(--sp-2) var(--sp-2);
+  background: transparent;
   color: var(--bulle-texte);
+  position: relative;
 }
-.jeu-entete { text-align: center; }
-.jeu-titre {
-  margin: 0; font-family: var(--titre); font-size: var(--t-l);
-  line-height: var(--lh-titre);
-}
-.jeu-mesure { margin: 4px 0 0; font-size: var(--t-xs); color: var(--bulle-texte-doux); }
 
-/* ── Les familles de pratique ─────────────────────────────────────────────
-   ⚠️ Sans elles, quelqu'un qui marche traverse 21 cartes de VTT et de vélo
-      sur 46. Un jeu qui fait passer plus de la moitié de ses cartes à côté
-      du sujet n'est pas un jeu, c'est une corvée. */
-.jeu-familles {
-  display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;
-}
-.jeu-famille {
-  padding: 7px 14px; border-radius: var(--r-rond);
-  border: 1px solid var(--bulle-trait);
-  /* ⚠️ 88 %, PAS 55 %. À 55 % ces pastilles passaient — mais seulement parce
-     qu'elles tombent sous `.fond-degrade`, qui ne couvre que les 64 % du
-     haut. Mesuré sans lui, contre du blanc pur : 3,97. Elles tiennent
-     aujourd'hui par leur POSITION dans la grille, et une position se déplace
-     sans que personne n'y repense. À 88 % elles tiennent toutes seules. */
+/* ── LA BARRE DU HAUT ─────────────────────────────────────────────────── */
+.jeu-haut { display: flex; gap: 8px; align-items: center; }
+.jeu-chercher {
+  flex: 1 1 auto; min-width: 0;
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 14px; height: 46px; border-radius: var(--r-rond);
+  /* ⚠️ 88 % : cette barre flotte sur la carte OSM, dont la couleur change à
+     chaque circuit. Une surface semi-transparente a la couleur de ce qu'elle
+     recouvre — mesuré contre du blanc pur, en deçà de 88 % la craie échoue. */
   background: color-mix(in srgb, var(--bulle-unie) 88%, transparent);
-  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--bulle-trait);
+}
+.jeu-chercher .m-icone { width: 20px; height: 20px; flex: none; opacity: 0.8; }
+.jeu-chercher input {
+  flex: 1 1 auto; min-width: 0;
+  background: none; border: none; color: inherit; font: inherit;
+  font-size: var(--t-s);
+}
+.jeu-chercher input::placeholder { color: var(--bulle-texte-doux); }
+.jeu-chercher input:focus { outline: none; }
+.jeu-chercher:focus-within { border-color: var(--ocre); }
+.jeu-rond {
+  flex: none; display: grid; place-items: center;
+  width: 46px; height: 46px; border-radius: var(--r-rond);
+  background: color-mix(in srgb, var(--bulle-unie) 88%, transparent);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--bulle-trait);
+  color: var(--bulle-texte); cursor: pointer;
+}
+.jeu-rond .m-icone { width: 22px; height: 22px; }
+.jeu-rond:focus-visible, .jeu-chercher input:focus-visible { outline: 2px solid var(--ocre); outline-offset: 2px; }
+
+/* ── Les résultats, et les familles : posés PAR-DESSUS la pile ────────────
+   ⚠️ Dans le flux, ils pousseraient la pile vers le bas et la carte changerait
+      de taille à chaque frappe. */
+.jeu-resultats, .jeu-familles {
+  position: absolute; left: var(--sp-2); right: var(--sp-2); top: calc(46px + var(--sp-3));
+  z-index: 20;
+  border-radius: var(--r-l);
+  background: color-mix(in srgb, var(--bulle-unie) 94%, transparent);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--bulle-trait);
+  box-shadow: 0 14px 34px rgb(13 16 12 / 42%);
+}
+.jeu-resultats { list-style: none; margin: 0; padding: 6px; display: grid; gap: 2px; }
+.jeu-resultats button {
+  width: 100%; display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+  padding: 10px 12px; border: none; background: none; border-radius: var(--r-m);
+  color: inherit; font: inherit; text-align: left; cursor: pointer; min-height: 44px;
+}
+.jeu-resultats button:hover { background: color-mix(in srgb, var(--craie) 10%, transparent); }
+.jeu-resultat-nom { font-family: var(--titre); font-size: var(--t-s); }
+.jeu-resultat-cat { font-size: var(--t-2xs); color: var(--bulle-texte-doux); flex: none; }
+.jeu-familles { display: flex; gap: 6px; flex-wrap: wrap; padding: 10px; }
+.jeu-famille {
+  padding: 8px 14px; border-radius: var(--r-rond); min-height: 40px;
+  border: 1px solid var(--bulle-trait);
+  background: color-mix(in srgb, var(--bulle-unie) 88%, transparent);
   color: inherit; font-size: var(--t-xs); cursor: pointer;
 }
 .jeu-famille:hover { border-color: var(--ocre); }
@@ -2053,22 +2090,17 @@ body { padding-bottom: var(--reserve-barre); }
 
 /* ── La pile ──────────────────────────────────────────────────────────── */
 .jeu-pile { position: relative; display: grid; min-height: 0; }
-/* 🔴 L'ÉCRAN DE FIN NE PEUT PAS VIVRE SUR LE FOND NU. `.fond-degrade` ne
-   couvre que les 64 % du HAUT, et il s'éteint à partir de 40 % : à mi-hauteur
-   il ne reste presque rien. Mesuré contre le pire pixel qu'une des vingt-deux
-   images puisse présenter — du blanc pur — `--texte-immersif-doux` (#e9e7d8)
-   y tombe à **1,23**. Il en faut 4,5.
-   ⭐ Une surface semi-transparente a la couleur de ce qu'elle recouvre : sur
-      un fond qui TOURNE, aucun ton ne tient sans surface à lui. Le jeu finit
-      donc sur une carte, comme il a commencé — c'est aussi le bon dessin. */
 .jeu-vide, .jeu-fin {
   grid-area: 1 / 1; align-self: center; text-align: center;
   padding: var(--sp-4); margin: 0;
+  /* 🔴 L'ÉCRAN DE FIN NE PEUT PAS VIVRE SUR LE FOND NU. `.fond-degrade` ne
+     couvre que les 64 % du haut et s'éteint dès 40 % : `--texte-immersif-doux`
+     y tombe à 1,23 contre le pire pixel d'une des vingt-deux images. Le jeu
+     finit donc sur une carte, comme il a commencé. */
   border-radius: var(--r-xl);
   border: 1px solid var(--bulle-trait);
   background: var(--bulle);
-  backdrop-filter: var(--bulle-flou);
-  -webkit-backdrop-filter: var(--bulle-flou);
+  backdrop-filter: var(--bulle-flou); -webkit-backdrop-filter: var(--bulle-flou);
   box-shadow: var(--bulle-eclat), 0 18px 40px rgb(13 16 12 / 38%);
 }
 .jeu-vide { font-size: var(--t-xs); color: var(--bulle-texte-doux); }
@@ -2086,54 +2118,35 @@ body { padding-bottom: var(--reserve-barre); }
   border-radius: var(--r-xl);
   border: 1px solid var(--bulle-trait);
   background: var(--bulle);
-  backdrop-filter: var(--bulle-flou);
-  -webkit-backdrop-filter: var(--bulle-flou);
+  backdrop-filter: var(--bulle-flou); -webkit-backdrop-filter: var(--bulle-flou);
   box-shadow: var(--bulle-eclat), 0 18px 40px rgb(13 16 12 / 38%);
   will-change: transform;
 }
 /* ⚠️ `touch-action: none` sur la carte du dessus, et nulle part ailleurs :
    sans lui le navigateur s'approprie le glissement pour faire défiler la
-   page, et `pointermove` ne rend qu'UN événement avant d'être annulé. Même
-   piège que `.terr-carte`, et c'est ici qu'il coûte le plus cher. */
+   page, et `pointermove` ne rend qu'UN événement avant d'être annulé. */
 .jeu-carte-dessus { cursor: grab; touch-action: none; }
 .jeu-carte-dessus:active { cursor: grabbing; }
 
-/* ── Le visage : le tracé ─────────────────────────────────────────────── */
-.jeu-portrait { position: relative; display: grid; min-height: 0; padding: var(--sp-3); }
-.jeu-portrait svg { width: 100%; height: 100%; display: block; }
-.jeu-trace {
-  fill: none; stroke: var(--ocre); stroke-width: 3.2;
-  stroke-linecap: round; stroke-linejoin: round;
+.jeu-portrait { position: relative; display: grid; min-height: 0; overflow: hidden; }
+.jeu-silhouette {
+  position: relative; z-index: 1; width: 100%; height: 100%;
+  padding: var(--sp-3); transition: opacity 320ms ease;
 }
-.jeu-trace-ombre {
-  fill: none; stroke: rgb(13 16 12 / 45%); stroke-width: 7;
-  stroke-linecap: round; stroke-linejoin: round;
-}
+.jeu-trace { fill: none; stroke: var(--ocre); stroke-width: 3.2;
+             stroke-linecap: round; stroke-linejoin: round; }
+.jeu-trace-ombre { fill: none; stroke: rgb(13 16 12 / 45%); stroke-width: 7;
+                   stroke-linecap: round; stroke-linejoin: round; }
 .jeu-depart { fill: var(--craie); stroke: var(--ocre); stroke-width: 2.5; }
 .jeu-arrivee { fill: none; stroke: var(--craie); stroke-width: 2.5; }
-.jeu-pratique {
-  position: absolute; top: var(--sp-3); left: var(--sp-3);
-  padding: 5px 11px; border-radius: var(--r-rond);
-  background: color-mix(in srgb, var(--bulle-creux) 80%, transparent);
-  border: 1px solid var(--bulle-trait);
-  font-size: var(--t-2xs); letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--bulle-texte);
-}
 
-/* ── Les verdicts ─────────────────────────────────────────────────────────
-   ⭐ Ils n'existent QUE pendant le geste : leur opacité suit le doigt. Un
-      libellé posé en permanence apprendrait la règle une fois et encombrerait
-      les quarante-cinq cartes suivantes. */
-/* 🔴 LES DEUX VERDICTS ÉTAIENT ILLISIBLES, ET POUR LA RAISON DÉJÀ CONNUE :
-      ils se posaient EN COULEUR sur la bulle, dont le pire arrêt composé sur
-      du blanc vaut (118,97,58). Mesuré : « Je garde » en `--ocre-clair`
-      **3,14**, « Passer » en `--sauge-sur-sombre` **2,46**.
-   ⭐ Sur un sol doré, l'or ne peut plus marquer l'action. Un verdict porte
-      donc sa PROPRE surface — ce qui est aussi son bon dessin : un tampon,
-      pas une mention. Les deux reprennent des appariements déjà mesurés :
-      blanc sur `--action` (4,55) et craie sur `--bulle-creux` (11,04). */
+/* 🔴 LES DEUX VERDICTS PORTENT LEUR PROPRE SURFACE. En couleur sur la bulle
+   ils donnaient 3,14 (« Je garde », ocre clair) et 2,46 (« Passer », sauge).
+   ⭐ Sur un sol doré, l'or ne peut plus marquer l'action. Les deux reprennent
+      des appariements déjà mesurés : blanc sur `--action` (4,55) et craie sur
+      `--bulle-creux` (11,04). */
 .jeu-verdict {
-  position: absolute; top: 22%;
+  position: absolute; top: 14%; z-index: 5;
   padding: 8px 16px; border-radius: var(--r-m);
   font-family: var(--titre); font-size: var(--t-m); line-height: 1;
   border: 2px solid var(--trait-inverse); pointer-events: none;
@@ -2147,21 +2160,28 @@ body { padding-bottom: var(--reserve-barre); }
   background: var(--bulle-creux); color: var(--bulle-texte);
 }
 
-/* ── Le pied de carte ─────────────────────────────────────────────────── */
-.jeu-corps {
-  padding: var(--sp-3);
-  background: color-mix(in srgb, var(--bulle-creux) 72%, transparent);
+/* ── LA FEUILLE DU BAS ────────────────────────────────────────────────── */
+.jeu-feuille {
+  position: relative; z-index: 4;
+  padding: var(--sp-3) var(--sp-3) 14px;
+  background: color-mix(in srgb, var(--bulle-creux) 88%, transparent);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
   border-top: 1px solid var(--bulle-trait);
   display: grid; gap: 6px;
 }
+.jeu-bandeau { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 2px; }
+.jeu-pratique, .jeu-forme {
+  padding: 4px 10px; border-radius: var(--r-rond);
+  font-size: var(--t-2xs); letter-spacing: 0.06em; text-transform: uppercase;
+}
+.jeu-pratique { background: var(--action); color: var(--action-texte); font-weight: 600; }
+.jeu-forme { border: 1px solid var(--bulle-trait-fort); color: var(--bulle-texte-doux); }
 .jeu-nom {
   margin: 0; font-family: var(--titre); font-size: var(--t-l);
   line-height: 1.12; text-wrap: balance;
 }
 .jeu-lieu { margin: 0; font-size: var(--t-xs); color: var(--bulle-texte-doux); }
-.jeu-faits {
-  display: flex; gap: var(--sp-3); margin: 6px 0 0;
-}
+.jeu-faits { display: flex; gap: var(--sp-3); margin: 8px 0 0; }
 .jeu-faits div { display: grid; gap: 1px; }
 .jeu-faits dt {
   font-size: var(--t-2xs); letter-spacing: 0.06em; text-transform: uppercase;
@@ -2169,6 +2189,30 @@ body { padding-bottom: var(--reserve-barre); }
 }
 .jeu-faits dd { margin: 0; font-size: var(--t-s); }
 .jeu-km { font-variant-numeric: tabular-nums; }
+
+/* ⭐ LA LIGNE QUE L'OFFICE N'A PAS. Un filet doré à gauche la détache sans en
+   faire une carte de plus : c'est une note en marge, pas un panneau. */
+.jeu-proches {
+  margin: 8px 0 0; padding-left: 10px;
+  border-left: 2px solid var(--ocre);
+  display: grid; gap: 1px;
+  font-size: var(--t-xs);
+}
+.jeu-proches-label {
+  font-size: var(--t-2xs); letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--bulle-texte-doux);
+}
+.jeu-proche { line-height: 1.35; }
+.jeu-proche-cat { color: var(--bulle-texte-doux); }
+
+.jeu-actions { display: flex; gap: 8px; margin-top: 10px; }
+/* ⚠️ `white-space: nowrap` et le rembourrage rogné : « Suivre sur la carte »
+   passait sur deux lignes et la feuille grandissait de 22 px, qu'elle prenait
+   à la carte. ⭐ Dans une feuille qui partage sa hauteur avec une image, une
+   ligne de texte en trop se paie en cartographie. */
+.jeu-lien { flex: 1 1 0; display: grid; place-items: center; text-align: center;
+            font-size: var(--t-xs); min-height: 44px; padding-inline: 6px;
+            white-space: nowrap; }
 .jeu-provenance {
   margin: 8px 0 0; font-size: var(--t-2xs);
   color: var(--bulle-texte-doux); line-height: 1.4;
@@ -2178,51 +2222,24 @@ body { padding-bottom: var(--reserve-barre); }
 .jeu-commandes { display: flex; gap: var(--sp-3); justify-content: center; align-items: center; }
 .jeu-bouton {
   display: grid; place-items: center;
-  width: 60px; height: 60px; border-radius: var(--r-rond);
+  width: 58px; height: 58px; border-radius: var(--r-rond);
   border: 1px solid var(--bulle-trait-fort);
-  /* ⚠️ 78 % NE SUFFISAIT PAS. Les trois commandes vivent aux trois quarts de
-     la hauteur, là où `.fond-degrade` est éteint : la surface a donc la
-     couleur de l'image. Contre du blanc pur, un verre à 78 % rend un fond
-     effectif de (115,110,87) et la craie y tombe à 4,08 — sous le seuil. À
-     88 %, (97,91,66) et 5,2. Le flou ne change rien au calcul : il rend la
-     MOYENNE LOCALE, pas une atténuation. */
+  /* ⚠️ 88 % : ces trois cercles vivent aux trois quarts de la hauteur, là où
+     `.fond-degrade` est éteint. À 78 % la craie y tombait à 4,08. */
   background: color-mix(in srgb, var(--bulle-unie) 88%, transparent);
   backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   color: var(--bulle-texte); cursor: pointer;
 }
 .jeu-bouton .m-icone { width: 26px; height: 26px; }
 .jeu-bouton:focus-visible { outline: 2px solid var(--ocre); outline-offset: 3px; }
-/* ⚠️ Le bouton du milieu est plus petit À DESSEIN : ouvrir la fiche de
-   l'Office n'est pas un verdict, c'est un détour. Trois cercles identiques
+/* ⚠️ Le bouton du milieu est plus petit À DESSEIN : voir le circuit sur la
+   carte n'est pas un verdict, c'est un détour. Trois cercles identiques
    donneraient trois gestes de même poids. */
 .jeu-ouvre { width: 48px; height: 48px; }
-.jeu-ouvre .m-icone { width: 20px; height: 20px; }
+.jeu-ouvre .m-icone { width: 21px; height: 21px; }
 .jeu-garde { background: var(--action); border-color: var(--action); color: var(--action-texte); }
 .jeu-garde:hover { background: var(--action-survol); }
 .jeu-passe:hover { border-color: var(--sauge-sur-sombre); }
-
-/* ── Le pied d'écran : le repli, nommé ────────────────────────────────── */
-/* ⭐ LE REPLI SE NOMME DANS L'EN-TÊTE, PAS EN BAS. Posé sous les trois
-   commandes, il tombait sous la barre flottante sur un téléphone — et un
-   repli qu'on ne voit pas n'est pas un repli. */
-.jeu-pied {
-  /* ⚠️ MÊME CAUSE QUE L'ÉCRAN DE FIN, EN PIRE : à 81 % de la hauteur, le
-     dégradé est éteint depuis longtemps. Cette ligne porte donc sa propre
-     pastille de verre — elle ne compte pas sur le fond. */
-  justify-self: center;
-  display: flex; justify-content: center; gap: var(--sp-3); align-items: baseline;
-  margin: 2px 0 0; padding: 6px 16px; border-radius: var(--r-rond);
-  background: color-mix(in srgb, var(--bulle-creux) 76%, transparent);
-  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-  font-size: var(--t-xs); color: var(--bulle-texte-doux);
-}
-.jeu-repli {
-  border: none; background: none; padding: 8px 0; cursor: pointer;
-  color: inherit; text-decoration: underline; text-underline-offset: 3px;
-  font: inherit;
-}
-.jeu-repli:focus-visible { outline: 2px solid var(--ocre); outline-offset: 2px; }
-.jeu-carnet { font-variant-numeric: tabular-nums; }
 
 @media (prefers-reduced-motion: reduce) {
   .jeu-carte { transition: none !important; }

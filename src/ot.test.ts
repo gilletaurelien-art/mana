@@ -60,3 +60,41 @@ describe("les itinéraires de l'Office", () => {
     expect(MENTION.ot).toMatch(/balisé par l'Office de tourisme/i);
   });
 });
+
+describe("ce que l'Office déclare", () => {
+  /**
+   * ⭐ LA DURÉE ET LE DÉNIVELÉ SONT LEUR PAROLE, PAS NOTRE CALCUL. Une durée
+   *    sortie d'une formule, affichée sous « balisé par l'Office », leur
+   *    ferait endosser notre arithmétique.
+   * ⛔ Et le dénivelé ne vient pas du GPX : les 552 balises `<ele>` du
+   *    « Sentier du Menhir » valent toutes 0.0.
+   */
+  it("la durée a la forme que l'Office écrit", () => {
+    for (const w of recueil.itineraires) {
+      if (w.duree === null) continue;
+      expect(w.duree, w.slug).toMatch(/^\d{1,2}h(\d{2})?$|^\d{1,3}min$/);
+    }
+  });
+
+  it("le dénivelé est un nombre de mètres plausible", () => {
+    for (const w of recueil.itineraires) {
+      if (w.denivele === null) continue;
+      expect(w.denivele, w.slug).toBeGreaterThan(0);
+      expect(w.denivele, w.slug).toBeLessThan(2000);
+    }
+  });
+
+  /**
+   * 🔴 UN CHAMP VIDE SUR LES 46 N'EST PAS UNE DONNÉE MANQUANTE, C'EST UNE
+   *    EXTRACTION FAUSSE — vécu deux fois sur la commune. Une absence VRAIE
+   *    manque à quelques-uns, pas à tous. Le pipeline refuse d'écrire dans ce
+   *    cas ; ce test tient l'artefact déjà écrit.
+   * ⚠️ Et le seuil n'est pas « tous » : 6 fiches sur 46 ne donnent vraiment
+   *    pas de durée, 2 pas de dénivelé. On exige une MAJORITÉ.
+   */
+  it("les chiffres de l'Office sont présents sur la plupart des fiches", () => {
+    const n = recueil.itineraires.length;
+    expect(recueil.itineraires.filter((w) => w.duree).length).toBeGreaterThan(n / 2);
+    expect(recueil.itineraires.filter((w) => w.denivele != null).length).toBeGreaterThan(n / 2);
+  });
+});

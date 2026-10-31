@@ -20,8 +20,16 @@ const Territoire2030 = lazy(() =>
 
 export function EcranTerritoire({ base }: { base: string }) {
   const [vue, setVue] = useState<"jeu" | "carte">("jeu");
+  /** le point sur lequel la carte s'ouvre, quand on y arrive d'une balade */
+  const [centre, setCentre] = useState<[number, number] | undefined>();
 
-  if (vue === "jeu") return <SwipeBalades surCarte={() => setVue("carte")} />;
+  if (vue === "jeu") {
+    return (
+      <SwipeBalades
+        surCarte={(c) => { setCentre(c); setVue("carte"); }}
+      />
+    );
+  }
 
   return (
     <Suspense fallback={<p className="jeu-vide" role="status">Lecture du territoire…</p>}>
@@ -35,7 +43,7 @@ export function EcranTerritoire({ base }: { base: string }) {
         </svg>
         Balades
       </button>
-      <Territoire2030 base={base} />
+      <Territoire2030 base={base} centre={centre} />
     </Suspense>
   );
 }
