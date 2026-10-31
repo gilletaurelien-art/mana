@@ -1868,6 +1868,30 @@ body {
 /* ── Les deux territoires ─────────────────────────────────────────────────
    ⚠️ 44 px de haut : ce sont des cibles au pouce, sur un écran qu'on tient
       dehors. Un onglet de 28 px se rate une fois sur trois en marchant. */
+/* ── Les circuits de l'Office ─────────────────────────────────────────── */
+.ot-filtres { display: flex; flex-wrap: wrap; gap: 6px; margin: var(--sp-2) 0; }
+.ot-filtre {
+  min-height: 36px; padding: 0 var(--sp-2);
+  font: inherit; font-size: var(--t-xs); cursor: pointer;
+  color: inherit; background: transparent;
+  border: 1px solid var(--bulle-trait); border-radius: var(--r-rond);
+}
+.ot-filtre:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.ot-filtre-actif { background: var(--action); color: var(--action-texte); border-color: var(--action); font-weight: 600; }
+.ot-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.ot-item {
+  display: grid; gap: 2px; padding: 10px 0;
+  border-bottom: 1px solid var(--bulle-trait);
+  text-decoration: none; color: inherit;
+  /* ⚠️ 44 px au minimum : ce sont des cibles au pouce, et la liste en compte
+     quarante-six. Une rangée trop serrée se rate en défilant. */
+  min-height: 44px; align-content: center;
+}
+.ot-liste li:last-child .ot-item { border-bottom: 0; }
+.ot-item:hover .ot-item-titre { color: var(--bulle-action); }
+.ot-item-titre { font-family: var(--titre); font-size: var(--t-m); line-height: 1.2; }
+.ot-item-meta { font-size: var(--t-xs); color: var(--bulle-texte-doux); }
+
 .terr-onglets { display: flex; gap: 6px; margin-top: var(--sp-2); }
 .terr-onglet {
   flex: 1 1 0; min-height: 44px; padding: 0 var(--sp-2);

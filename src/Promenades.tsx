@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { baseUrl } from "./router";
 import { WALKS, effortLisible } from "./walks";
 import { chargerIndex, chargerCommunes, chercher, trajet, estContinu } from "./catalogue";
+import { chargerOT, PRATIQUE, type ItineraireOT } from "./ot";
+import { MENTION } from "./walks";
 import type { Fiche, Commune } from "./catalogue";
 
 // Les sentiers de randonnée de BRETAGNE — 1 032 itinéraires, 14 540 km.
@@ -71,13 +73,17 @@ export function Promenades() {
   const [fiches, setFiches] = useState<Fiche[] | null>(null);
   const [lieux, setLieux] = useState<Commune[] | null>(null);
   const [erreur, setErreur] = useState("");
+  /* ⚠️ Chargé À LA DEMANDE : 258 Ko de tracés que personne ne paie avant
+     d'arriver sur cette page. */
+  const [ot, setOt] = useState<ItineraireOT[] | null>(null);
+  const [pratique, setPratique] = useState<ItineraireOT["pratique"] | "tous">("tous");
 
   useEffect(() => {
     setQ(new URLSearchParams(window.location.search).get("q") ?? "");
   }, []);
 
   useEffect(() => {
-    document.title = "Les sentiers de la presqu'île de Crozon — MANA.bzh";
+    document.title = "Les sentiers — presqu'île de Crozon & Aulne maritime — MANA.bzh";
     return () => {
       document.title = "MANA.bzh — Promenades & découvertes en Bretagne";
     };
@@ -87,6 +93,7 @@ export function Promenades() {
     // ⚠️ L'échec des communes n'est PAS bloquant : sans elles, la recherche
     //    retombe sur le texte. Un index chargé vaut mieux qu'une page morte.
     chargerCommunes().then(setLieux).catch(() => setLieux(null));
+    chargerOT().then((r) => setOt(r.itineraires)).catch(() => setOt([]));
     chargerIndex()
       .then(setFiches)
       // ⚠️ UNE ERREUR SE DIT. Sans ce message, un refus CORS ou une coupure
@@ -113,12 +120,17 @@ export function Promenades() {
   return (
     <main className="page">
       <div className="wrap">
-        <p className="hero-label">Presqu'île de Crozon</p>
+        {/* ⚠️ « Presqu'île de Crozon » jusqu'au 31/10 — faux depuis que la
+            page porte les 46 circuits de l'Office, dont ceux de Pont-de-Buis
+            et du Faou. ⭐ Ajouter du contenu requalifie le CADRE : un titre
+            qui survit à ce qu'il annonce devient un faux témoin. */}
+        <p className="hero-label">Presqu'île de Crozon &amp; Aulne maritime</p>
         <h1 className="page-titre"><span>Les sentiers</span></h1>
 
         <section className="page-panel">
           <p className="page-intro">
-            7 itinéraires, 181 km, tracés d'après OpenStreetMap.
+            7 itinéraires tracés d'après OpenStreetMap, 181 km. Et les
+            46 circuits balisés de l'Office, plus bas.
           </p>
           <div className="moteur-barre" role="search">
             <svg className="moteur-loupe" viewBox="0 0 24 24" aria-hidden="true">
@@ -238,6 +250,54 @@ export function Promenades() {
             ))}
           </div>
         </section>
+
+        {/* ── LES ITINÉRAIRES BALISÉS ─────────────────────────────────────
+            ⛔ CE NE SONT PAS LES NÔTRES, et le libellé le dit. « Balisé par
+               l'Office de tourisme » est un fait qui se constate sur un
+               poteau ; « recommandé par » serait un avis sur un tiers.
+            ⚠️ Le lien mène à LEUR fiche : c'est elle qui fait foi, et c'est
+               eux qui entretiennent le balisage. */}
+        {ot !== null && ot.length > 0 && (
+          <section className="page-panel">
+            <p className="apercu-label">Balisés</p>
+            <h2 className="section-title" style={{ marginBottom: "var(--sp-1)" }}>
+              Les {ot.length} circuits de l'Office de tourisme
+            </h2>
+            <p className="fiche-provenance fiche-provenance-ot">{MENTION.ot}</p>
+
+            <div className="ot-filtres" role="group" aria-label="Pratique">
+              {(["tous", "pied", "vtt", "velo", "trail"] as const).map((k) => (
+                <button key={k} type="button"
+                  className={k === pratique ? "ot-filtre ot-filtre-actif" : "ot-filtre"}
+                  aria-pressed={k === pratique}
+                  onClick={() => setPratique(k)}>
+                  {k === "tous" ? "Tous" : PRATIQUE[k]}
+                </button>
+              ))}
+            </div>
+
+            <ul className="ot-liste">
+              {ot.filter((i) => pratique === "tous" || i.pratique === pratique).map((i) => (
+                <li key={i.slug}>
+                  <a className="ot-item" href={i.source} target="_blank" rel="noreferrer noopener">
+                    <span className="ot-item-titre">{i.titre}</span>
+                    <span className="ot-item-meta">
+                      {PRATIQUE[i.pratique]} ·{" "}
+                      {/* ⚠️ Le kilométrage est MESURÉ sur le tracé, pas repris
+                          de leur fiche : les deux diffèrent de 1,2 % en
+                          médiane et de 17 % au pire. On affiche ce qu'on a
+                          vérifié. */}
+                      {i.km.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} km ·{" "}
+                      {i.boucle ? "boucle" : "aller simple"}
+                      {i.difficulte && ` · ${i.difficulte}`}
+                      {i.commune && ` · ${i.commune}`}
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {/* ⭐ APRÈS LA LISTE, PAS AVANT — 31/10/2026. Elle s'ouvrait sur
             « composez la vôtre », c'est-à-dire sur du travail, avant d'avoir
