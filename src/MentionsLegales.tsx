@@ -20,7 +20,7 @@ export function MentionsLegales() {
     <main className="page">
       <div className="wrap">
         <p className="hero-label">Informations légales</p>
-        <h1 className="page-titre">Mentions légales</h1>
+        <h1 className="page-titre"><span>Mentions légales</span></h1>
 
         <section className="page-panel">
           <p className="apercu-label">Éditeur</p>

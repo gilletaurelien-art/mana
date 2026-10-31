@@ -85,7 +85,7 @@ export function Promenades() {
     <main className="page">
       <div className="wrap">
         <p className="hero-label">Où marcher en Bretagne</p>
-        <h1 className="page-titre">Les sentiers</h1>
+        <h1 className="page-titre"><span>Les sentiers</span></h1>
 
         <section className="page-panel">
           <p className="page-intro">

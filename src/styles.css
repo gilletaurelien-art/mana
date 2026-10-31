@@ -909,7 +909,18 @@ body { padding-bottom: 84px; }
       soit le titre — `box-decoration-break: clone` le répète LIGNE À LIGNE,
       sinon les lignes intermédiaires restent nues.
    (Un halo en `text-shadow` a été essayé d'abord : lisible, mais sale.) */
+/* ⭐ LE TITRE EST UN BLOC QUI CENTRE, LE BANDEAU EST EN LIGNE DANS CE BLOC.
+   Le bandeau sombre doit épouser CHAQUE LIGNE du titre — c'est ce que fait
+   `box-decoration-break: clone`, et ça n'existe que sur une boîte EN LIGNE.
+   Or on ne centre pas une boîte en ligne : c'est son parent qui la centre.
+   D'où la répartition — le `h1` devient le bloc qui aligne, le `span` porte
+   l'encre. Mettre le fond sur le `h1` en bloc étirerait la bande sur toute la
+   largeur, ce qui est un autre dessin. */
 .page .page-titre {
+  display: block;
+  text-align: center;
+}
+.page .page-titre > span {
   display: inline;
   background: var(--ink);
   box-decoration-break: clone;
@@ -927,11 +938,14 @@ body { padding-bottom: 84px; }
       rétrécit au contenu, donc un bandeau qui épouse le texte sans quitter sa
       propre ligne. */
 .page .page-titre { line-height: 1.5; }
+/* `display: table` épouse le contenu ; `margin-inline: auto` le centre.
+   ⚠️ On garde `margin-bottom` : l'écrire en raccourci l'effacerait. */
 .page .hero-label {
   display: table;
   background: var(--ink);
   padding: 0.25em 0.5em;
   margin-bottom: var(--sp-1);
+  margin-inline: auto;
 }
 .page .wrap > .page-titre { margin-bottom: 0; }
 .page .wrap > .page-titre + * { margin-top: var(--sp-4); }

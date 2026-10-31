@@ -75,7 +75,7 @@ function PromenadeEnChemin() {
     <main className="page">
       <div className="wrap">
         <p className="hero-label">Promenade</p>
-        <h1 className="page-titre">Chargement…</h1>
+        <h1 className="page-titre"><span>Chargement…</span></h1>
       </div>
     </main>
   );
@@ -87,7 +87,7 @@ function PromenadeInconnue({ slug }: { slug: string }) {
     <main className="page">
       <div className="wrap">
         <p className="hero-label">Introuvable</p>
-        <h1 className="page-titre">Cette promenade n'existe pas</h1>
+        <h1 className="page-titre"><span>Cette promenade n'existe pas</span></h1>
         <section className="page-panel">
           <p className="page-intro">
             Aucun parcours ne porte le nom « {slug} ». Il a pu être renommé
@@ -222,7 +222,7 @@ export function Promenade({ slug }: { slug: string }) {
     <main className="page">
       <div className="wrap">
         <p className="hero-label">Promenade</p>
-        <h1 className="page-titre">{walk.titre}</h1>
+        <h1 className="page-titre"><span>{walk.titre}</span></h1>
 
         <section className="page-panel">
           {walk.resume && <p className="page-intro">{walk.resume}</p>}

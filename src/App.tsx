@@ -108,7 +108,7 @@ export default function App() {
         <main className="page">
           <div className="wrap">
             <p className="hero-label">Écouter</p>
-            <h1 className="page-titre">MANAradio</h1>
+            <h1 className="page-titre"><span>MANAradio</span></h1>
 
             <section className="page-panel radio-player-panel">
               <div className="radio-player">
@@ -153,7 +153,7 @@ export default function App() {
         <main className="page">
           <div className="wrap">
             <p className="hero-label">Nous joindre</p>
-            <h1 className="page-titre">Contact</h1>
+            <h1 className="page-titre"><span>Contact</span></h1>
             <section className="page-panel">
               <p className="page-intro">
                 Une question sur les promenades, le territoire, un

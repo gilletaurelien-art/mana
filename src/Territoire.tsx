@@ -41,7 +41,7 @@ export function Territoire() {
     <main className="page">
       <div className="wrap">
         <p className="hero-label">Terre & lumière</p>
-        <h1 className="page-titre">Le territoire</h1>
+        <h1 className="page-titre"><span>Le territoire</span></h1>
 
         <section className="page-panel">
           <p className="page-intro">
