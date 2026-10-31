@@ -9,7 +9,8 @@
     "test": "vitest run",
     "preview": "vite preview",
     "carte:style": "node scripts/carte-style.mjs",
-    "carte:verifier": "node scripts/carte-style.mjs --verifier"
+    "carte:verifier": "node scripts/carte-style.mjs --verifier && node scripts/carte-ortho.mjs --verifier",
+    "carte:ortho": "node scripts/carte-ortho.mjs"
   },
   "dependencies": {
     "maplibre-gl": "^4.7.1",

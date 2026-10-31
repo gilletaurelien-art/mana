@@ -2,7 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { chargerOT, PRATIQUE, type ItineraireOT } from "./ot";
 import { portrait } from "./portrait";
 import { ajouterAuCarnet, lireCarnet } from "./carnet";
-import { ATTRIBUTION_OSM } from "./carte-fond";
+import { ATTRIBUTION, lireFond, poserFond, type Fond } from "./carte-fond";
 import { chargerLieux, nommer, type Inventaire } from "./lieux";
 import { lieuxProches, SEUIL_PROCHES } from "./proches";
 
@@ -76,7 +76,9 @@ export function SwipeBalades({ surCarte }: { surCarte: (centre?: [number, number
   const [envol, setEnvol] = useState<Verdict | null>(null);
   const [inv, setInv] = useState<Inventaire | null>(null);
   const [requete, setRequete] = useState("");
-  const [filtresOuverts, setFiltresOuverts] = useState(false);
+  const [calquesOuverts, setCalquesOuverts] = useState(false);
+  const [fond, setFond] = useState<Fond>("plan");
+  useEffect(() => { setFond(lireFond()); }, []);
   const depart = useRef<{ x: number; y: number; id: number } | null>(null);
   const boite = useRef<HTMLDivElement>(null);
   const [largeur, setLargeur] = useState(360);
@@ -200,10 +202,10 @@ export function SwipeBalades({ surCarte }: { surCarte: (centre?: [number, number
         </div>
         <button
           type="button" className="jeu-rond"
-          aria-pressed={filtresOuverts}
-          onClick={() => setFiltresOuverts((v) => !v)}
+          aria-expanded={calquesOuverts} aria-controls="jeu-calques"
+          onClick={() => setCalquesOuverts((v) => !v)}
         >
-          <span className="sr-only">Filtrer par pratique</span>
+          <span className="sr-only">Fond de carte et pratique</span>
           <svg className="m-icone" viewBox="0 0 24 24" aria-hidden="true">
             <path d="m12 3 9 5-9 5-9-5z" /><path d="m3 13 9 5 9-5" />
           </svg>
@@ -223,24 +225,45 @@ export function SwipeBalades({ surCarte }: { surCarte: (centre?: [number, number
         </ul>
       )}
 
-      {filtresOuverts && (
-        <div className="jeu-familles" role="tablist" aria-label="Pratique">
-          {FAMILLES.map((f) => {
-            const n = f.clef === "tout"
-              ? (tout ?? []).length
-              : (tout ?? []).filter((w) => w.pratique === f.clef).length;
-            if (tout && n === 0) return null;
-            return (
+      {calquesOuverts && (
+        <div className="jeu-calques" id="jeu-calques">
+          {/* ── LE FOND ─────────────────────────────────────────────────
+              ⭐ LE CHOIX SE RETIENT. Quelqu'un qui préfère la photographie
+                 aérienne la préfère aussi à la carte suivante ; le lui
+                 redemander quarante-six fois serait une question, pas un
+                 réglage. Il vit dans CE navigateur et nulle part ailleurs. */}
+          <p className="jeu-calque-titre">Fond</p>
+          <div className="jeu-familles" role="radiogroup" aria-label="Fond de carte">
+            {([["plan", "Plan"], ["ortho", "Vue aérienne"]] as const).map(([clef, nom]) => (
               <button
-                key={f.clef} type="button" role="tab"
-                aria-selected={famille === f.clef}
-                className={famille === f.clef ? "jeu-famille jeu-famille-active" : "jeu-famille"}
-                onClick={() => { setFamille(f.clef); setFiltresOuverts(false); }}
+                key={clef} type="button" role="radio" aria-checked={fond === clef}
+                className={fond === clef ? "jeu-famille jeu-famille-active" : "jeu-famille"}
+                onClick={() => { setFond(clef); poserFond(clef); }}
               >
-                {f.nom}
+                {nom}
               </button>
-            );
-          })}
+            ))}
+          </div>
+
+          <p className="jeu-calque-titre">Pratique</p>
+          <div className="jeu-familles" role="tablist" aria-label="Pratique">
+            {FAMILLES.map((f) => {
+              const n = f.clef === "tout"
+                ? (tout ?? []).length
+                : (tout ?? []).filter((w) => w.pratique === f.clef).length;
+              if (tout && n === 0) return null;
+              return (
+                <button
+                  key={f.clef} type="button" role="tab"
+                  aria-selected={famille === f.clef}
+                  className={famille === f.clef ? "jeu-famille jeu-famille-active" : "jeu-famille"}
+                  onClick={() => { setFamille(f.clef); setCalquesOuverts(false); }}
+                >
+                  {f.nom}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -278,6 +301,7 @@ export function SwipeBalades({ surCarte }: { surCarte: (centre?: [number, number
               dessus={dessus}
               profondeur={profondeur}
               fond={profondeur < FONDS_VIVANTS}
+              substrat={fond}
               dx={dessus ? dx : 0}
               part={dessus ? part : 0}
               envol={dessus ? envol : null}
@@ -326,11 +350,11 @@ export function SwipeBalades({ surCarte }: { surCarte: (centre?: [number, number
 const L = 300, H = 330;   // le repère de la silhouette, en unités de `viewBox`
 
 function Carte({
-  w, inv, dessus, profondeur, fond, dx, part, envol, surCarte,
+  w, inv, dessus, profondeur, fond, substrat, dx, part, envol, surCarte,
   surPrendre, surBouger, surLacher,
 }: {
   w: ItineraireOT; inv: Inventaire | null;
-  dessus: boolean; profondeur: number; fond: boolean;
+  dessus: boolean; profondeur: number; fond: boolean; substrat: Fond;
   dx: number; part: number; envol: Verdict | null;
   surCarte: (centre?: [number, number]) => void;
   surPrendre: (e: React.PointerEvent) => void;
@@ -402,7 +426,7 @@ function Carte({
       <div className="jeu-portrait">
         {fond && (
           <Suspense fallback={null}>
-            <CarteFondOT p={w.p} lieux={proches.map((x) => x.l)} basOcculte={occulte.bas} hautOcculte={occulte.haut} />
+            <CarteFondOT p={w.p} lieux={proches.map((x) => x.l)} basOcculte={occulte.bas} hautOcculte={occulte.haut} fond={substrat} />
           </Suspense>
         )}
         {/* ⚠️ La silhouette est repoussée au-dessus de la feuille par le même
@@ -490,7 +514,7 @@ function Carte({
             obligation de l'ODbL, les deux autres une obligation d'honnêteté. */}
         <p className="jeu-provenance">
           Balisé par l’Office de tourisme · durée et dénivelé déclarés par lui
-          · fond {ATTRIBUTION_OSM}
+          · fond {ATTRIBUTION[substrat]}
         </p>
       </div>
     </article>

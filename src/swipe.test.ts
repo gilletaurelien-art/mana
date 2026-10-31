@@ -53,11 +53,46 @@ describe("le jeu de cartes des balades", () => {
    *    mention posée une fois en pied de site ne couvre pas un jeu où chaque
    *    carte est une vue cartographique à elle seule.
    */
-  it("chaque carte porte l'attribution du fond", () => {
-    expect(code).toMatch(/ATTRIBUTION_OSM/);
+  it("chaque carte porte l'attribution DU FOND AFFICHÉ", () => {
+    /* ⚠️ DEUXIÈME FOIS CE SOIR QU'UN GARDE NOMME UNE ORTHOGRAPHE. La version
+       précédente exigeait l'identifiant `ATTRIBUTION_OSM` ; elle a refusé le
+       jour où l'attribution est devenue variable — ce qui était justement le
+       progrès. ⭐ Un garde doit tenir ce qui doit rester vrai, pas la forme
+       qu'avait le code quand on l'a écrit. */
+    expect(code).toMatch(/ATTRIBUTION\[/);
     const fond = readFileSync(new URL("./carte-fond.ts", import.meta.url), "utf8");
-    expect(fond).toMatch(/OpenStreetMap/);
-    expect(fond).toMatch(/ODbL/);
+    /* ⛔ CRÉDITER OPENSTREETMAP SOUS UNE PHOTOGRAPHIE DE L'IGN SERAIT FAUX DANS
+       LES DEUX SENS : on citerait qui n'a rien fourni et on tairait qui a
+       fourni. Les deux fonds ont donc leur mention, et elles diffèrent. */
+    const table = fond.slice(fond.indexOf("export const ATTRIBUTION"));
+    expect(table).toMatch(/plan:[^\n]*OpenStreetMap[^\n]*ODbL/);
+    expect(table).toMatch(/ortho:[^\n]*IGN/);
+    expect(table.match(/ortho:[^\n]*/)?.[0]).toMatch(/OpenStreetMap/);
+  });
+
+  /**
+   * ⛔ LES TUILES AÉRIENNES PASSENT PAR NOTRE RELAIS. En direct, le navigateur
+   *    du promeneur dirait à l'IGN son IP ET la zone qu'il regarde. C'est la
+   *    même règle que pour OpenFreeMap, et elle se vérifie dans l'artefact.
+   */
+  it("le fond aérien ne sort pas de notre relais", () => {
+    const style = JSON.parse(
+      readFileSync(new URL("../public/carte-ortho.json", import.meta.url), "utf8"),
+    ) as { sources: Record<string, { tiles?: string[] }>; sprite?: string; glyphs?: string;
+           layers: { type: string }[]; metadata: { attribution: string } };
+    const urls = [
+      ...Object.values(style.sources).flatMap((s) => s.tiles ?? []),
+      style.sprite ?? "", style.glyphs ?? "",
+    ].filter(Boolean);
+    expect(urls.length).toBeGreaterThan(2);
+    for (const u of urls) {
+      expect(u, u).toMatch(/^https:\/\/mana\.bzh\/carte\//);
+      expect(u, u).not.toMatch(/geopf|openfreemap|maptiler|mapbox/);
+    }
+    /* ⛔ Aucun remplissage : on aurait payé une photographie aérienne pour la
+       cacher sous un dessin. */
+    expect(style.layers.filter((l) => l.type === "fill" || l.type === "background")).toEqual([]);
+    expect(style.metadata.attribution).toMatch(/IGN/);
   });
 
   /**

@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 //    sans erreur visible.
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { STYLE_CARTE } from "./carte-fond";
+import { STYLES, type Fond } from "./carte-fond";
 import { picto } from "./pictos";
 import type { Lieu } from "./lieux";
 
@@ -29,7 +29,7 @@ import type { Lieu } from "./lieux";
  *    arrive devant. Les cartes plus profondes gardent leur silhouette.
  */
 export function CarteFondOT({
-  p, lieux = [], serre = 18, basOcculte = 0, hautOcculte = 0,
+  p, lieux = [], serre = 18, basOcculte = 0, hautOcculte = 0, fond = "plan",
 }: {
   p: [number, number][];
   /**
@@ -63,6 +63,8 @@ export function CarteFondOT({
    *    défaut, à l'autre bout de l'écran.
    */
   hautOcculte?: number;
+  /** « plan » (tuiles vectorielles OSM) ou « ortho » (photographie IGN) */
+  fond?: Fond;
 }) {
   const plan = useRef<HTMLDivElement | null>(null);
   const svg = useRef<SVGSVGElement | null>(null);
@@ -74,7 +76,7 @@ export function CarteFondOT({
 
     const m = new maplibregl.Map({
       container: plan.current,
-      style: STYLE_CARTE,
+      style: STYLES[fond],
       center: p[0],
       zoom: 11,
       interactive: false,
@@ -185,10 +187,10 @@ export function CarteFondOT({
       //    cartes restent blanches.
       m.remove();
     };
-  }, [p, lieux, serre, basOcculte, hautOcculte]);
+  }, [p, lieux, serre, basOcculte, hautOcculte, fond]);
 
   return (
-    <div className={prete ? "ot-fond ot-fond-prete" : "ot-fond"}>
+    <div className={`${prete ? "ot-fond ot-fond-prete" : "ot-fond"} ot-fond-${fond}`}>
       <div className="ot-plan" ref={plan} />
       <svg className="ot-calque" ref={svg} aria-hidden="true">
         <path id="ot-sous" />

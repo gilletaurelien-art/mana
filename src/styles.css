@@ -2065,7 +2065,7 @@ body { padding-bottom: var(--reserve-barre); }
 /* ── Les résultats, et les familles : posés PAR-DESSUS la pile ────────────
    ⚠️ Dans le flux, ils pousseraient la pile vers le bas et la carte changerait
       de taille à chaque frappe. */
-.jeu-resultats, .jeu-familles {
+.jeu-resultats, .jeu-calques {
   position: absolute; left: var(--sp-2); right: var(--sp-2);
   top: calc(46px + var(--sp-2) + 8px);
   z-index: 20;
@@ -2084,7 +2084,12 @@ body { padding-bottom: var(--reserve-barre); }
 .jeu-resultats button:hover { background: color-mix(in srgb, var(--craie) 10%, transparent); }
 .jeu-resultat-nom { font-family: var(--titre); font-size: var(--t-s); }
 .jeu-resultat-cat { font-size: var(--t-2xs); color: var(--bulle-texte-doux); flex: none; }
-.jeu-familles { display: flex; gap: 6px; flex-wrap: wrap; padding: 10px; }
+.jeu-calques { padding: 10px 12px 12px; }
+.jeu-calque-titre {
+  margin: 6px 0 6px; font-size: var(--t-2xs);
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--bulle-texte-doux);
+}
+.jeu-familles { display: flex; gap: 6px; flex-wrap: wrap; }
 .jeu-famille {
   padding: 8px 14px; border-radius: var(--r-rond); min-height: 40px;
   border: 1px solid var(--bulle-trait);
@@ -2324,6 +2329,15 @@ body { padding-bottom: var(--reserve-barre); }
   content: ""; position: absolute; inset: 0; pointer-events: none;
   background: linear-gradient(to bottom,
     rgb(38 46 36 / 34%) 0%, rgb(38 46 36 / 22%) 55%, rgb(38 46 36 / 52%) 100%);
+}
+/* ⚠️ UNE PHOTOGRAPHIE AÉRIENNE EST PLUS CONTRASTÉE QU'UN PLAN, et son blanc
+   est du vrai blanc : sable, toits, écume. Le voile posé pour le plan n'y
+   suffit pas — le tracé doré s'y perd et les étiquettes aussi. Il est donc
+   plus ferme sous l'ortho, et c'est le seul endroit où les deux fonds
+   diffèrent à l'écran. */
+.ot-fond-ortho::after {
+  background: linear-gradient(to bottom,
+    rgb(28 34 26 / 46%) 0%, rgb(28 34 26 / 34%) 55%, rgb(28 34 26 / 58%) 100%);
 }
 /* La silhouette s'efface quand le fond est prêt — les deux projections ne
    coïncident pas, les superposer donnerait un tracé doublé de travers. */
