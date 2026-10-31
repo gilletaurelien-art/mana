@@ -240,6 +240,14 @@ export function CarteFondOT({
           compilateur, ni les tests, ni l'écran. Seule la relecture le voit. */
     carte.current = m;
     recadrer.current = cadrer;
+    /* ⚠️ UNE POIGNÉE SUR LE NŒUD, et c'est un outil de diagnostic assumé.
+       Depuis une page EN LIGNE, on ne peut interroger ni l'état d'une source
+       ni le compte de tuiles : `performance` ne voit pas ce que le worker de
+       maplibre demande, et une capture d'écran n'est pas toujours possible.
+       Sans poignée, « carte vide », « mauvais zoom » et « tuiles refusées »
+       se ressemblent exactement. Elle n'expose aucune donnée personnelle et
+       ne change rien au rendu. */
+    (plan.current as HTMLDivElement & { __carte?: unknown }).__carte = m;
 
 
     return () => {
