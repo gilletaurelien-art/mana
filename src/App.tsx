@@ -80,8 +80,12 @@ export default function App() {
       <header className="site-header">
         <div className="wrap">
           <nav className="nav">
-            <a href={`${B}/radio`}>
-              <GlyphRadio />
+            {/* ⚠️ « ici » n'est pas « cette URL exactement ». Une fiche de
+                promenade (`/promenade/anse-saint-nicolas`) est DANS la section
+                Promenades : l'or doit y rester allumé, sinon il s'éteint
+                précisément au moment où l'on s'enfonce dans la section. */}
+            <a href={`${B}/radio`} aria-current={path === "/radio" ? "page" : undefined}>
+              <GlyphRadio size={48} />
               <span>Radio</span>
             </a>
             {/* La barre du bas ne garde que Radio et Promenades, de part et
@@ -91,11 +95,14 @@ export default function App() {
                 donc pas orpheline, ce qui est la seule chose qui comptait.
                 ⚠️ « MANA » seul ICI, « MANA.bzh » dans le pied : ce n'est pas
                 une incohérence. Le pied est l'endroit où l'on signe. */}
-            <a className="brand" href={`${B}/`}>
+            <a className="brand" href={`${B}/`} aria-current={path === "/" ? "page" : undefined}>
               MANA
             </a>
-            <a href={`${B}/promenades`}>
-              <GlyphBoussole />
+            <a
+              href={`${B}/promenades`}
+              aria-current={path.startsWith("/promenade") ? "page" : undefined}
+            >
+              <GlyphBoussole size={48} />
               <span>Promenades</span>
             </a>
           </nav>

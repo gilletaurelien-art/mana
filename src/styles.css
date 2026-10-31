@@ -628,8 +628,52 @@ html {
 }
 .contact-note { font-size: var(--t-xs); opacity: 0.6; margin-top: var(--sp-2); }
 
+/* ═══ LES ICÔNES VIVANTES DE LA BARRE ════════════════════════════════════
+   ⚠️ LENTES À DESSEIN. Une barre de navigation est présente sur CHAQUE page :
+   une animation rapide y devient du bruit qu'on ne peut pas éteindre. Neuf
+   secondes pour un tour d'aiguille, deux secondes et demie pour un cycle
+   d'onde — on la remarque si on la regarde, jamais si on lit. */
+
+@keyframes boussole-tourne {
+  to { transform: rotate(360deg); }
+}
+.g-aiguille {
+  /* ⚠️ `transform-box: view-box` est OBLIGATOIRE : sans lui, l'origine d'une
+     transformation sur un élément SVG se calcule sur sa boîte englobante
+     propre, et l'aiguille pivoterait autour d'elle-même, en décrivant un
+     cercle à côté de la rose. */
+  transform-box: view-box;
+  transform-origin: 12px 12px;
+  animation: boussole-tourne 9s linear infinite;
+}
+
+@keyframes onde-pulse {
+  0%, 100% { opacity: 0.3; }
+  45%      { opacity: 1; }
+}
+.g-onde { animation: onde-pulse 2.5s ease-in-out infinite; }
+.g-onde-2 { animation-delay: 0.45s; }
+
+/* ═══ LA FONCTION ACTIVE PASSE EN OR ═════════════════════════════════════
+   ⭐ `aria-current="page"` porte les DEUX : il dit à un lecteur d'écran où
+   l'on est, et il sert de crochet à la couleur. Une classe `.est-active`
+   n'aurait donné que la couleur — l'information serait restée visuelle. */
+/* ⚠️ `:not(.brand)` EST DÉLIBÉRÉ. La marque porte elle aussi
+   `aria-current` quand on est sur l'accueil — c'est juste pour un lecteur
+   d'écran — mais elle ne doit PAS passer en or : ce n'est pas une icône de
+   fonction, c'est le nom du site, et un nom qui change de couleur selon la
+   page devient une signalétique au lieu d'une signature.
+   ⭐ Sans cette exclusion, le bon rendu tiendrait par un accident de
+      spécificité — et un accident se « corrige » à la première refonte. */
+.nav a[aria-current="page"]:not(.brand),
+.nav a[aria-current="page"]:not(.brand):hover { color: var(--or); }
+
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
+  /* ⛔ Et l'animation aussi. Une icône qui tourne sans fin est exactement ce
+     que ce réglage existe pour éteindre — l'or, lui, reste : c'est une
+     information, pas un mouvement. */
+  .g-aiguille, .g-onde { animation: none !important; }
 }
 
 /* ===== Hub : MANAradio au centre, dans le hero ===== */

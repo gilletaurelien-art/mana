@@ -44,8 +44,12 @@ export function GlyphRadio({ size = 24 }: GlyphProps) {
   return (
     <svg {...base} width={size} height={size} aria-hidden="true">
       <circle cx={12} cy={12} r={2.2} />
-      <path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 16.2a6 6 0 0 0 0-8.4" />
-      <path d="M5 5a9.9 9.9 0 0 0 0 14M19 19a9.9 9.9 0 0 0 0-14" />
+      {/* ⚠️ L'ORDRE DES ONDES PORTE LE SENS : l'intérieure pulse d'abord,
+          l'extérieure après. Une onde part du centre ; les inverser ferait une
+          onde qui rentre, ce que personne ne sait nommer mais que tout le
+          monde trouve bizarre. */}
+      <path className="g-onde g-onde-1" d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 16.2a6 6 0 0 0 0-8.4" />
+      <path className="g-onde g-onde-2" d="M5 5a9.9 9.9 0 0 0 0 14M19 19a9.9 9.9 0 0 0 0-14" />
       <Accent cx={12} cy={12} r={1} />
     </svg>
   );
@@ -107,12 +111,17 @@ export function GlyphSentier({ size = 24 }: GlyphProps) {
 export function GlyphBoussole({ size = 24 }: GlyphProps) {
   return (
     <svg {...base} width={size} height={size} aria-hidden="true">
-      {/* la rose, sur la grille de 24 : centre 12, rayon 8 */}
+      {/* la rose, sur la grille de 24 : centre 12, rayon 8 — elle NE TOURNE PAS */}
       <circle cx={12} cy={12} r={8} />
-      {/* l'aiguille — un losange fin sur la diagonale nord-est / sud-ouest,
-          la forme qu'on reconnaît même à 24 pixels */}
-      <path d="M15.4 8.6 13.3 13.3 8.6 15.4 10.7 10.7Z" />
-      <Accent cx={15.4} cy={8.6} r={1.6} />
+      {/* ⭐ SEULE L'AIGUILLE TOURNE, ET C'EST TOUT LE SUJET. Faire tourner le
+          cercle ne se verrait pas (un rond en rotation est un rond), et faire
+          tourner le glyphe entier donnerait une roue, pas une boussole. On
+          groupe donc l'aiguille et sa pastille, et on les fait pivoter autour
+          du centre de la rose. */}
+      <g className="g-aiguille">
+        <path d="M15.4 8.6 13.3 13.3 8.6 15.4 10.7 10.7Z" />
+        <Accent cx={15.4} cy={8.6} r={1.6} />
+      </g>
     </svg>
   );
 }
