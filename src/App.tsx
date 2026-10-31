@@ -2,13 +2,12 @@ import { useState } from "react";
 import { usePath, baseUrl, routePromenade } from "./router";
 import { WALKS } from "./walks";
 import {
-  GlyphRecherche,
   GlyphRadio,
   GlyphNavigation,
   GlyphSecurite,
   GlyphDecouverte,
+  GlyphBoussole,
   GlyphSentier,
-  GlyphTerritoire,
 } from "./Glyphs";
 import { WalkMap } from "./WalkMap";
 import { Promenades } from "./Promenades";
@@ -81,29 +80,23 @@ export default function App() {
       <header className="site-header">
         <div className="wrap">
           <nav className="nav">
-            <a href={`${B}/`} aria-label="Rechercher — accueil" title="Rechercher">
-              <GlyphRecherche />
-              <span className="sr-only">Rechercher</span>
-            </a>
             <a href={`${B}/radio`}>
               <GlyphRadio />
               <span>Radio</span>
             </a>
-            {/* ⚠️ « MANA » seul ICI, « MANA.bzh » dans le pied de page — ce
-                n'est pas une incohérence. La barre du bas est étroite et
-                partagée avec quatre entrées ; le domaine y mange la place sans
-                rien apprendre à qui est déjà sur le site. Le pied, lui, est
-                l'endroit où l'on signe. */}
+            {/* La barre du bas ne garde que Radio et Promenades, de part et
+                d'autre de la marque. La recherche pointait vers l'accueil — un
+                bouton qui ne cherche rien — et « Territoire » reste atteignable
+                depuis le pied de page, sur toutes les pages : la page n'est
+                donc pas orpheline, ce qui est la seule chose qui comptait.
+                ⚠️ « MANA » seul ICI, « MANA.bzh » dans le pied : ce n'est pas
+                une incohérence. Le pied est l'endroit où l'on signe. */}
             <a className="brand" href={`${B}/`}>
               MANA
             </a>
             <a href={`${B}/promenades`}>
-              <GlyphSentier />
+              <GlyphBoussole />
               <span>Promenades</span>
-            </a>
-            <a href={`${B}/territoire`}>
-              <GlyphTerritoire />
-              <span>Territoire</span>
             </a>
           </nav>
         </div>

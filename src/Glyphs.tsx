@@ -87,12 +87,32 @@ export function GlyphDecouverte({ size = 24 }: GlyphProps) {
   );
 }
 
+/** Le chemin sinueux — il sert à la section « Carnet & export » de l'accueil.
+ *  ⚠️ Il a failli être REMPLACÉ par la boussole le 31/10 : une recherche de
+ *     `<GlyphSentier` ne trouvait qu'un usage, parce que le second n'est pas
+ *     du JSX mais une donnée (`glyphe: GlyphSentier` dans la liste des
+ *     sections). ⭐ Chercher la forme d'appel qu'on a en tête, c'est trouver
+ *     l'inventaire qu'on imaginait. C'est `tsc` qui a rattrapé, pas moi. */
 export function GlyphSentier({ size = 24 }: GlyphProps) {
   return (
     <svg {...base} width={size} height={size} aria-hidden="true">
       <path d="M5 19c2.5-.5 4-2 5.5-4.5C12 12 13 9.5 15.5 8c1.7-1 3.4-1.4 5-1" />
       <path d="M5 13.5c2-.4 3.2-1.6 4.4-3.6" strokeDasharray="2 3" />
       <Accent cx={19.5} cy={7.2} r={1.7} />
+    </svg>
+  );
+}
+
+/** La boussole — l'entrée « Promenades » de la barre du bas. */
+export function GlyphBoussole({ size = 24 }: GlyphProps) {
+  return (
+    <svg {...base} width={size} height={size} aria-hidden="true">
+      {/* la rose, sur la grille de 24 : centre 12, rayon 8 */}
+      <circle cx={12} cy={12} r={8} />
+      {/* l'aiguille — un losange fin sur la diagonale nord-est / sud-ouest,
+          la forme qu'on reconnaît même à 24 pixels */}
+      <path d="M15.4 8.6 13.3 13.3 8.6 15.4 10.7 10.7Z" />
+      <Accent cx={15.4} cy={8.6} r={1.6} />
     </svg>
   );
 }
