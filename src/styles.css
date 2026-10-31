@@ -2316,14 +2316,20 @@ body:has(.jeu) { padding-bottom: 0; }
   stroke-linecap: round; stroke-linejoin: round;
 }
 
-/* ⚠️ SUR UNE LIGNE, ET ELLE NE SE COUPE PAS. Elle en prenait deux et coûtait
-   seize pixels de carte. L'abréger aurait été une faute — c'est une mention
-   légale et deux mentions d'honnêteté — alors elle est resserrée, pas
-   amputée, et `title` rend la phrase entière au survol. */
+/* 🔴 ELLE ÉTAIT COUPÉE À L'ÉCRAN : « … vue aérienne © IGN · étiq… ». Vu sur
+   la capture de production, pas déduit.
+   ⛔ UNE ATTRIBUTION QUI DOIT ÊTRE VISIBLE NE PEUT PAS ÊTRE LA LIGNE QU'ON
+      ROGNE. L'ODbL et la licence de l'IGN demandent une mention VISIBLE ; un
+      `title` ne se survole pas au pouce, sur un téléphone, dehors. Je l'avais
+      mise sur une ligne pour gagner seize pixels de carte — c'est exactement
+      le genre d'arbitrage qu'on n'a pas le droit de faire ici.
+   ⭐ Les seize pixels sont rendus : la carte garde 67 % et la mention est
+      entière. La ligne des SITES, elle, peut se couper — c'est une invitation
+      à regarder la carte, pas une obligation. Les deux lignes se ressemblent
+      et n'ont pas le même statut : l'une se rogne, l'autre jamais. */
 .jeu-provenance {
   margin: 6px 0 0; font-size: var(--t-2xs);
   color: var(--bulle-texte-doux); line-height: 1.3;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
 /* ── Les trois commandes ──────────────────────────────────────────────── */

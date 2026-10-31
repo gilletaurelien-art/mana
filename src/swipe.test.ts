@@ -199,6 +199,26 @@ describe("le jeu de cartes des balades", () => {
     expect(lecture).toMatch(/catch \{ return "ortho"; \}/);
   });
 
+  /**
+   * ⛔ L'ATTRIBUTION NE SE ROGNE PAS. Elle a été coupée à l'écran —
+   *    « … vue aérienne © IGN · étiq… » — parce que je l'avais mise sur une
+   *    ligne avec `text-overflow: ellipsis` pour gagner seize pixels de
+   *    carte. L'ODbL et la licence de l'IGN demandent une mention VISIBLE, et
+   *    un `title` ne se survole pas au pouce, dehors.
+   * ⭐ La ligne des SITES, juste au-dessus, se coupe sans dommage : c'est une
+   *    invitation à regarder la carte. Deux lignes qui se ressemblent et
+   *    n'ont pas le même statut — ce test tient la différence.
+   */
+  it("l'attribution n'est jamais rognée, la ligne des sites peut l'être", () => {
+    const css = readFileSync(new URL("./styles.css", import.meta.url), "utf8");
+    const bloc = (sel: string) => {
+      const i = css.indexOf(sel + " {");
+      return css.slice(i, css.indexOf("}", i));
+    };
+    expect(bloc(".jeu-provenance")).not.toMatch(/text-overflow|white-space: nowrap/);
+    expect(bloc(".jeu-proches")).toMatch(/text-overflow: ellipsis/);
+  });
+
   /** ⛔ « À proximité » n'est pas « sur le chemin » : le seuil est DIT. */
   it("dit le seuil quand il cite des sites proches", () => {
     expect(code).toMatch(/SEUIL_PROCHES/);
