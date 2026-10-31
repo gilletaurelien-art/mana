@@ -47,7 +47,7 @@ const MODULES = [
     accroche: "Prudence honnête.",
     texte:
       "SOS en un geste : position GPS par SMS, aux secours ou aux proches. Marées et météo : renvoi aux sources officielles. Aucune donnée simulée.",
-    cta: { label: "Découvrir", href: "/promenade/forts-du-goulet" },
+    cta: { label: "Découvrir", href: "/promenades" },
   },
   {
     glyphe: GlyphDecouverte,
@@ -72,7 +72,7 @@ const MODULES = [
     accroche: "Gardez la trace.",
     texte:
       "Export GPX, lisible par toutes les montres et applications. Fonctionne hors ligne.",
-    cta: { label: "Ouvrir un parcours", href: "/promenade/anse-saint-nicolas" },
+    cta: { label: "Ouvrir un parcours", href: "/promenades" },
   },
 ];
 
@@ -311,10 +311,12 @@ export default function App() {
             <ContactForm />
           </div>
           <nav className="footer-nav" aria-label="Pied de page">
+            {/* ⚠️ Les trois liens vers nos promenades sont partis le 31/10 avec
+                leur retrait de la vitrine. Les URL, elles, répondent toujours —
+                c'est le pied de page qui cesse de les annoncer, pas le site qui
+                les perd. */}
             <a href={`${B}/promenades`}>Promenades</a>
-            <a href={`${B}/promenade/forts-du-goulet`}>Les forts du goulet</a>
-            <a href={`${B}/promenade/saint-fiacre`}>Saint-Fiacre</a>
-            <a href={`${B}/promenade/anse-saint-nicolas`}>L'Anse Saint-Nicolas</a>
+            <a href={`${B}/carte`}>La carte</a>
             <a href={`${B}/radio`}>MANAradio</a>
             <a href={`${B}/territoire`}>Le territoire</a>
             <a href={`${B}/contact`}>Contact</a>

@@ -29,8 +29,9 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DEFAUT, TERRITOIRES, territoireDe, urlGraphe } from "./territoires";
+import { chargerOT, type ItineraireOT } from "./ot";
 import { libelleCategorie } from "./categories";
-import { WALKS, effortLisible } from "./walks";
+import { WALKS, VITRINE, effortLisible } from "./walks";
 import type { Walk } from "./walks";
 import { ILLUSTRATIONS } from "./illustrations";
 import { Photo, image } from "./images/Photo";
@@ -74,7 +75,10 @@ export function Territoire2030({ base }: { base: string }) {
   const [requete, setRequete] = useState("");
   const [vise, setVise] = useState<{ nom: string; detail: string; g: [number, number] } | null>(null);
   const [calquesOuverts, setCalquesOuverts] = useState(false);
-  const [calques, setCalques] = useState({ lieux: true, littoral: true, promenades: true });
+  const [calques, setCalques] = useState({
+    lieux: true, littoral: true, promenades: true, balises: true,
+  });
+
   const [moi, setMoi] = useState<[number, number] | null>(null);
   const [motGps, setMotGps] = useState("");
   const [feuille, setFeuille] = useState<"replie" | "deploye">("replie");
@@ -97,6 +101,20 @@ export function Territoire2030({ base }: { base: string }) {
      compositeur, où la position tranche. Cet écran répond à « qu'y a-t-il
      ici ? » : il faut pouvoir regarder l'autre moitié sans y être. */
   const [terr, setTerr] = useState(DEFAUT);
+  /* ⚠️ Chargés À LA DEMANDE, comme sur la liste : 258 Ko que personne ne paie
+     avant d'ouvrir la carte. ⭐ Et filtrés sur le territoire affiché — les 46
+     circuits couvrent les deux moitiés de la communauté, en dessiner la
+     totalité sur la presqu'île ferait sortir des traits du cadre. */
+  const [ot, setOt] = useState<ItineraireOT[]>([]);
+  useEffect(() => { chargerOT().then((r) => setOt(r.itineraires)).catch(() => setOt([])); }, []);
+  const otIci = useMemo(
+    () => ot.filter((i) => {
+      const [lo, la] = i.p[0];
+      return lo >= terr.emprise[0] && lo <= terr.emprise[2]
+          && la >= terr.emprise[1] && la <= terr.emprise[3];
+    }),
+    [ot, terr],
+  );
 
   useEffect(() => { document.title = "Le territoire — MANA"; }, []);
 
@@ -119,7 +137,7 @@ export function Territoire2030({ base }: { base: string }) {
 
   /** Les promenades vérifiées qui tombent dans le territoire affiché. */
   const dIci = useMemo(
-    () => WALKS.filter((w) => {
+    () => VITRINE.filter((w) => {
       const p = w.points[0];
       return p && territoireDe(p.lon, p.lat)?.slug === terr.slug;
     }),
@@ -166,7 +184,7 @@ export function Territoire2030({ base }: { base: string }) {
     const q = plat(requete.trim());
     if (q.length < 2) return [];
 
-    const promenades: Resultat[] = WALKS
+    const promenades: Resultat[] = VITRINE
       .filter((w) => plat(w.titre).includes(q) || plat(w.lieu).includes(q))
       .map((w) => ({
         genre: "promenade", nom: w.titre, slug: w.slug,
@@ -174,7 +192,7 @@ export function Territoire2030({ base }: { base: string }) {
         g: [w.points[0].lon, w.points[0].lat],
       }));
 
-    const etapes: Resultat[] = WALKS.flatMap((w) =>
+    const etapes: Resultat[] = VITRINE.flatMap((w) =>
       w.etapes.filter((e) => plat(e.nom).includes(q)).map((e) => ({
         genre: "lieu" as const, nom: e.nom,
         detail: `${libelleCategorie(e.categorie)} · sur ${w.titre}`,
@@ -448,7 +466,28 @@ export function Territoire2030({ base }: { base: string }) {
       }
 
       // ── passe 2 : les promenades vérifiées
-      for (const w of calques.promenades ? WALKS : []) {
+      /* ── les circuits balisés de l'Office ──────────────────────────────
+         ⛔ DESSINÉS AVANT LES NÔTRES, ET PLUS DISCRETS. Ce ne sont pas nos
+            tracés : ils ne doivent pas prendre la vedette sur la carte de
+            MANA, et ils ne doivent pas non plus se confondre avec eux. Un
+            trait plus fin, dans la sauge du végétal, et sous la couche des
+            promenades vérifiées — l'ordre de dessin EST la hiérarchie. */
+      if (calques.balises) {
+        ctx.strokeStyle = cheminBeau;
+        ctx.lineWidth = 1.4;
+        ctx.globalAlpha = 0.75;
+        for (const i of otIci) {
+          ctx.beginPath();
+          i.p.forEach(([lo, la], k) => {
+            const x = X(lo), y = Y(la);
+            if (k === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+          });
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      for (const w of calques.promenades ? VITRINE : []) {
         const vedette = choisie === null || choisie === w.slug;
         ctx.beginPath();
         w.points.forEach((p, i) => {
@@ -535,7 +574,7 @@ export function Territoire2030({ base }: { base: string }) {
     const ro = new ResizeObserver(dessiner);
     ro.observe(b);
     return () => ro.disconnect();
-  }, [graphe, choisie, walk, calques, vise, moi, vueTic]);
+  }, [graphe, choisie, walk, calques, vise, moi, vueTic, otIci]);
 
   return (
     <main className="terr">
@@ -603,7 +642,7 @@ export function Territoire2030({ base }: { base: string }) {
                 décor coûteux — on l'aurait su au premier essai. */}
             {([
               ["littoral", "Le littoral", "la distance à la mer, par tronçon"],
-              ["promenades", "Les promenades", "les quatre parcours vérifiés"],
+              ["balises", "Les circuits balisés", "ceux de l'Office de tourisme"],
               ["lieux", "Les lieux", "ce qu'on croise sur le parcours choisi"],
             ] as const).map(([clef, nom, quoi]) => (
               <label key={clef} className="terr-calque">

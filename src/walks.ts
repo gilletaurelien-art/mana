@@ -444,6 +444,24 @@ const ile_vierge: WalkPoint[] = [
   {lat:48.19397,lon:-4.52719}, {lat:48.19392,lon:-4.52716}, {lat:48.19387,lon:-4.52713},
 ];
 
+/**
+ * ── CE QUE LE PRODUIT MONTRE ─────────────────────────────────────────────
+ *
+ * 🔴 LES QUATRE PROMENADES MANA SONT RETIRÉES DE LA VITRINE le 31/10/2026 :
+ *    les 46 circuits balisés de l'Office prennent toute la place visible.
+ *
+ * ⭐ RETIRÉES, PAS DÉTRUITES — et la distinction est le sujet de cette
+ *    constante. Leurs écrans restent vivants et atteignables par URL :
+ *    `/promenade/forts-du-goulet`, son écran de marche, ses rencontres, son
+ *    GPX. Supprimer les données aurait laissé cinq écrans sans contenu — et
+ *    les rendre à la vitrine se fait ICI, en remettant `WALKS`.
+ *
+ * ⚠️ `WALKS` reste la source des ROUTES et des tests ; `VITRINE` est ce que
+ *    les listes affichent. Confondre les deux, c'est soit casser les URL en
+ *    vidant `WALKS`, soit ne rien cacher du tout.
+ */
+export const VITRINE: Walk[] = [];
+
 export const WALKS: Walk[] = [
   {
     slug: "forts-du-goulet",

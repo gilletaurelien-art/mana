@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { baseUrl } from "./router";
-import { WALKS, effortLisible } from "./walks";
+import { VITRINE, effortLisible } from "./walks";
 import { chargerIndex, chargerCommunes, chercher, trajet, estContinu } from "./catalogue";
 import { chargerOT, PRATIQUE, type ItineraireOT } from "./ot";
 import { MENTION } from "./walks";
@@ -235,21 +235,27 @@ export function Promenades() {
           </section>
         )}
 
-        <section className="page-panel">
-          <p className="apercu-label">Vérifiées</p>
-          <p className="page-texte">4 promenades vérifiées, hors ligne.</p>
-          <div className="est-actions" style={{ marginBottom: 0 }}>
-            {WALKS.map((w) => (
-              <a
-                key={w.slug}
-                className="btn btn-ghost"
-                href={`${B}/promenade/${w.slug}`}
-              >
-                {w.titre}
-              </a>
-            ))}
-          </div>
-        </section>
+        {/* ⚠️ VIDE DEPUIS LE 31/10 — `VITRINE` est une liste vide, et cette
+            section ne s'affiche donc pas. Elle reste écrite : le jour où les
+            promenades MANA reviennent, il n'y a rien à reconstruire.
+            ⭐ Une section conditionnée par ses données se tait toute seule ;
+               une section supprimée demande qu'on la réinvente. */}
+        {VITRINE.length > 0 && (
+          <section className="page-panel">
+            <p className="apercu-label">Vérifiées</p>
+            <p className="page-texte">
+              {VITRINE.length} promenade{VITRINE.length > 1 ? "s" : ""} vérifiée
+              {VITRINE.length > 1 ? "s" : ""}, hors ligne.
+            </p>
+            <div className="est-actions" style={{ marginBottom: 0 }}>
+              {VITRINE.map((w) => (
+                <a key={w.slug} className="btn btn-ghost" href={`${B}/promenade/${w.slug}`}>
+                  {w.titre}
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* ── LES ITINÉRAIRES BALISÉS ─────────────────────────────────────
             ⛔ CE NE SONT PAS LES NÔTRES, et le libellé le dit. « Balisé par
