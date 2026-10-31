@@ -1977,7 +1977,17 @@ body {
   color: var(--sauge); text-underline-offset: 3px;
 }
 
-@media (min-width: 900px) {
-  .terr { grid-template-rows: none; grid-template-columns: 1fr minmax(360px, 420px); }
-  .terr-panneau { margin-top: 0; border-radius: 0; overflow-y: auto; max-height: 100svh; }
-}
+/* 🔴 ICI VIVAIT UN `@media (min-width: 900px)` QUI METTAIT LA CARTE ET LE
+   PANNEAU CÔTE À CÔTE — et sur un écran de bureau il FAISAIT DISPARAÎTRE LA
+   CARTE. Mesuré au navigateur à 1 280 px : `.terr` fait **440 px de large**,
+   `grid-template-columns` rendu `20px 420px`. Le `1fr` de la carte recevait
+   ce que le panneau de 420 px laissait d'une colonne de 440 — vingt pixels.
+   ⭐ UNE REQUÊTE DE MÉDIA MESURE LA FENÊTRE, JAMAIS LE CONTENEUR. La règle
+      avait été écrite quand on pensait l'écran ; le 31/10, `.app-colonne` a
+      figé TOUTE l'app à 440 px (« les bulles s'affichent au format mobile
+      partout ; seul le fond s'élargit »). La fenêtre a grandi, la boîte non,
+      et `min-width: 900px` a continué de dire oui.
+   ⚠️ Rien ne remplace la règle : la disposition en rangées est la bonne à
+      440 px, quelle que soit la taille de la fenêtre. Le jour où un écran
+      sortira de la colonne, c'est une requête de CONTENEUR qu'il faudra
+      (`@container`), pas celle-ci. */
