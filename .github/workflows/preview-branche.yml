@@ -52,7 +52,7 @@ jobs:
               const pg = await ctx.newPage();
               await pg.goto("http://127.0.0.1:8765/mana/" + path, { waitUntil: "networkidle" });
               await pg.waitForTimeout(900);
-              await pg.screenshot({ path: "capture-" + name + ".png", fullPage: h > 900 });
+              await pg.screenshot({ path: "capture-" + name + ".png", fullPage: true });
               await ctx.close();
             }
             await b.close();
