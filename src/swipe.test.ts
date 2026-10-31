@@ -111,6 +111,12 @@ describe("le jeu de cartes des balades", () => {
        qu'on COMPTE des tuiles réellement acceptées avant de montrer le fond. */
     expect(carte).toMatch(/tuiles > 0 && m\.areTilesLoaded\(\)/);
     expect(carte).toMatch(/dataType === "source"/);
+    /* ⭐ ET SEULEMENT LES TUILES DU SOL. « Des tuiles sont arrivées » ne veut
+       rien dire si ce ne sont pas celles qui peignent le fond : mesuré, un
+       ombrage de relief suffisait à déclarer prête une carte vide. */
+    expect(carte).toMatch(/d\.sourceId === base/);
+    const fondTs = readFileSync(new URL("./carte-fond.ts", import.meta.url), "utf8");
+    expect(fondTs).toMatch(/SOURCE_DE_BASE[\s\S]*plan: "openmaptiles"[\s\S]*ortho: "ortho"/);
     expect(carte).toMatch(/interactive: false/);
     // ⚠️ Et le contexte WebGL se libère, sinon 46 glissements saturent le
     //    plafond du navigateur et les dernières cartes restent blanches.
@@ -156,6 +162,41 @@ describe("le jeu de cartes des balades", () => {
        VISIBLE d'une carte n'est pas sa surface : depuis qu'elle va à fond
        perdu, cadrer sur la boîte entière centre le tracé DERRIÈRE la feuille. */
     expect(carte).toMatch(/bottom: serre \+ basOcculte/);
+  });
+
+  /**
+   * 🔴 ZÉRO TUILE DEMANDÉE, ET LA CARTE AVAIT L'AIR DE CHARGER. L'effet qui
+   *    crée la carte dépendait de `lieux` — un tableau RECONSTRUIT À CHAQUE
+   *    RENDU par le parent — et des deux occultations, qui bougent au gré du
+   *    `ResizeObserver`. Il se démontait et se remontait sans fin : chaque
+   *    carte neuve annulait les requêtes de la précédente.
+   * ⭐ UNE DÉPENDANCE RECRÉÉE À CHAQUE RENDU TRANSFORME UN EFFET EN BOUCLE DE
+   *    RECONSTRUCTION — et le symptôme n'est pas « ça boucle », c'est « rien
+   *    ne s'affiche ». Seul ce qui change VRAIMENT de carte doit la recréer.
+   */
+  it("la carte ne se reconstruit que si le terrain ou le fond change", () => {
+    const carte = readFileSync(new URL("./CarteFondOT.tsx", import.meta.url), "utf8");
+    expect(carte).toMatch(/\}, \[p, fond\]\);/);
+    // le cadrage vit dans un SECOND effet, qui ne recrée rien
+    expect(carte).toMatch(/\}, \[lieux, basOcculte, hautOcculte, serre\]\);/);
+    // et le parent mémorise le tableau qu'il passe
+    expect(code).toMatch(/const sites = useMemo/);
+  });
+
+  /**
+   * ⭐ LES DEUX DÉFAUTS DU 31/10 — « à pied » et « vue aérienne ».
+   * ⚠️ Et le repli de `lireFond` quand `localStorage` LÈVE doit être le même
+   *    défaut : sans ce soin, une partie des visiteurs (Safari privé, cookies
+   *    bloqués) aurait silencieusement l'autre fond, et personne ne saurait
+   *    pourquoi la carte n'a pas la même tête chez eux.
+   */
+  it("ouvre sur « à pied » et sur la vue aérienne", () => {
+    expect(code).toMatch(/useState<ItineraireOT\["pratique"\] \| "tout">\("pied"\)/);
+    expect(code).toMatch(/useState<Fond>\("ortho"\)/);
+    const fondTs = readFileSync(new URL("./carte-fond.ts", import.meta.url), "utf8");
+    const lecture = fondTs.slice(fondTs.indexOf("export function lireFond"));
+    expect(lecture).toMatch(/=== "plan" \? "plan" : "ortho"/);
+    expect(lecture).toMatch(/catch \{ return "ortho"; \}/);
   });
 
   /** ⛔ « À proximité » n'est pas « sur le chemin » : le seuil est DIT. */

@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 //    sans erreur visible.
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { STYLES, type Fond } from "./carte-fond";
+import { SOURCE_DE_BASE, STYLES, type Fond } from "./carte-fond";
 import { picto } from "./pictos";
 import type { Lieu } from "./lieux";
 
@@ -70,6 +70,32 @@ export function CarteFondOT({
   const svg = useRef<SVGSVGElement | null>(null);
   const [prete, setPrete] = useState(false);
 
+  /**
+   * 🔴 ZÉRO TUILE DEMANDÉE, ET LA CARTE AVAIT L'AIR DE CHARGER. Mesuré en
+   *    production : le style arrivait, le canvas existait, les sprites
+   *    partaient — et pas une seule requête de tuile, jamais.
+   *
+   *    L'effet dépendait de `lieux`, `basOcculte` et `hautOcculte`. Le premier
+   *    est un TABLEAU RECONSTRUIT À CHAQUE RENDU par le parent ; les deux
+   *    autres bougent au gré du `ResizeObserver`. L'effet se démontait et se
+   *    remontait sans fin : chaque carte neuve annulait les requêtes de la
+   *    précédente (`AbortError` en console), et aucune n'avait le temps
+   *    d'aboutir.
+   *
+   * ⭐ UNE DÉPENDANCE RECRÉÉE À CHAQUE RENDU TRANSFORME UN EFFET EN BOUCLE DE
+   *    RECONSTRUCTION — et le symptôme n'est pas « ça boucle », c'est « rien
+   *    ne s'affiche ». Le coût se lit en requêtes avortées, pas en lenteur.
+   *
+   * ⚠️ Ces trois valeurs ne décrivent PAS une carte différente : elles
+   *    décrivent le même terrain, cadré autrement. Elles passent donc par des
+   *    refs, et un second effet se contente de RECADRER. Seuls le tracé et le
+   *    fond — ce qui change vraiment de carte — recréent l'instance.
+   */
+  const carte = useRef<maplibregl.Map | null>(null);
+  const recadrer = useRef<() => void>(() => {});
+  const vues = useRef({ lieux, basOcculte, hautOcculte, serre });
+  vues.current = { lieux, basOcculte, hautOcculte, serre };
+
   useEffect(() => {
     if (!plan.current || p.length < 2) return;
     setPrete(false);
@@ -121,6 +147,7 @@ export function CarteFondOT({
     };
 
     const cadrer = () => {
+      const { lieux, basOcculte, hautOcculte, serre } = vues.current;
       m.resize();
       let loMin = Infinity, loMax = -Infinity, laMin = Infinity, laMax = -Infinity;
       for (const [lo, la] of p) {
@@ -173,9 +200,15 @@ export function CarteFondOT({
           une erreur remettrait le rectangle uni par-dessus la silhouette. */
     let echoue = false;
     let tuiles = 0;
+    /* ⚠️ ON NE COMPTE QUE LES TUILES DE LA SOURCE QUI PEINT LE SOL. Compter
+       toutes les sources laissait l'ombrage du relief — ou n'importe quoi
+       d'autre — répondre à la place du fond : mesuré, « prêt » avec zéro
+       tuile vectorielle, et la silhouette (vraie) recouverte par une carte
+       vide (fausse). */
+    const base = SOURCE_DE_BASE[fond];
     m.on("data", (e) => {
-      if ((e as { dataType?: string }).dataType === "source"
-          && (e as { tile?: unknown }).tile) tuiles++;
+      const d = e as { dataType?: string; sourceId?: string; tile?: unknown };
+      if (d.dataType === "source" && d.sourceId === base && d.tile) tuiles++;
     });
     const peutMontrer = () => {
       if (echoue) return;
@@ -195,8 +228,19 @@ export function CarteFondOT({
       //    glissements saturent le plafond du navigateur et les dernières
       //    cartes restent blanches.
       m.remove();
+      carte.current = null;
     };
-  }, [p, lieux, serre, basOcculte, hautOcculte, fond]);
+    carte.current = m;
+    recadrer.current = cadrer;
+  /* ⚠️ `p` et `fond` SEULEMENT. Tout le reste passe par `vues` — voir la note
+     au-dessus : une dépendance qui change à chaque rendu reconstruit la carte
+     au lieu de la régler. */
+  }, [p, fond]);
+
+  /* Le second effet : il RECADRE, il ne reconstruit pas. */
+  useEffect(() => {
+    if (carte.current) recadrer.current();
+  }, [lieux, basOcculte, hautOcculte, serre]);
 
   return (
     <div className={`${prete ? "ot-fond ot-fond-prete" : "ot-fond"} ot-fond-${fond}`}>

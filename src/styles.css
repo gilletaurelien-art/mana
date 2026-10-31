@@ -2029,6 +2029,21 @@ body { padding-bottom: var(--reserve-barre); }
       sert qui ne le sait pas encore, c'est-à-dire presque tout le monde.
    ⚠️ Tout vit dans la colonne de 440 px — aucune requête de média ici, et ce
       n'est pas un oubli : voir `src/colonne.test.ts`. */
+/* 🔴 DEUX RÉSERVES POUR UNE SEULE BARRE — la troisième fois ce soir, et
+   toujours le même dessin. `body` réserve la hauteur de la barre flottante,
+   `.app-colonne` réclame `100svh` de son côté, et `.jeu` fait déjà la
+   soustraction : la page dépassait de 88 px et défilait sous l'écran « plein
+   écran » qu'on venait de demander.
+   ⭐ Une réserve d'espace doit être prise UNE fois, par un seul élément. Ici
+      c'est `.jeu` qui sait ce qu'il lui faut ; la colonne n'a donc rien à
+      exiger sur cet écran.
+   ⚠️ `:has` plutôt qu'une classe posée en JavaScript : la mise en page ne
+      doit pas attendre un rendu React pour être juste. Là où `:has` manque,
+      on retombe sur l'ancien comportement — un défilement de 88 px, pas un
+      écran cassé. */
+body:has(.jeu) { padding-bottom: 0; }
+.app-colonne:has(.jeu) { min-height: 0; }
+
 .jeu {
   /* 🔴 `100svh` SEUL DÉBORDE : `body` réserve DÉJÀ la hauteur de la barre
      flottante. L'écran mesurait 100svh + 124 px et les trois commandes — le

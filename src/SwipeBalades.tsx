@@ -69,7 +69,11 @@ const FAMILLES: { clef: ItineraireOT["pratique"] | "tout"; nom: string }[] = [
 export function SwipeBalades({ surCarte }: { surCarte: (centre?: [number, number]) => void }) {
   const [tout, setTout] = useState<ItineraireOT[] | null>(null);
   const [erreur, setErreur] = useState("");
-  const [famille, setFamille] = useState<ItineraireOT["pratique"] | "tout">("tout");
+  /* ⭐ « À PIED » PAR DÉFAUT (31/10/2026, décision du fondateur). Sur 46
+     circuits, 21 sont à vélo, en VTT ou en trail : ouvrir sur « Tout » faisait
+     traverser la moitié du jeu à côté du sujet. Les quatre familles restent à
+     un geste. */
+  const [famille, setFamille] = useState<ItineraireOT["pratique"] | "tout">("pied");
   const [i, setI] = useState(0);
   const [carnet, setCarnet] = useState<string[]>([]);
   const [glisse, setGlisse] = useState(0);
@@ -77,7 +81,7 @@ export function SwipeBalades({ surCarte }: { surCarte: (centre?: [number, number
   const [inv, setInv] = useState<Inventaire | null>(null);
   const [requete, setRequete] = useState("");
   const [calquesOuverts, setCalquesOuverts] = useState(false);
-  const [fond, setFond] = useState<Fond>("plan");
+  const [fond, setFond] = useState<Fond>("ortho");
   useEffect(() => { setFond(lireFond()); }, []);
   const depart = useRef<{ x: number; y: number; id: number } | null>(null);
   const boite = useRef<HTMLDivElement>(null);
@@ -399,6 +403,11 @@ function Carte({
     () => (fond && inv ? lieuxProches(w.p, inv.lieux, 6) : []),
     [fond, inv, w],
   );
+  /* ⚠️ MÉMORISÉ, ET CE N'EST PAS UNE OPTIMISATION. `proches.map(...)` rend un
+     TABLEAU NEUF à chaque rendu ; passé en dépendance d'un effet, il le fait
+     repartir à chaque fois. C'est exactement ce qui a vidé la carte de ses
+     tuiles en production — voir la note de `CarteFondOT`. */
+  const sites = useMemo(() => proches.map((x) => x.l), [proches]);
 
   const angle = Math.max(-9, Math.min(9, part * 9));
   const style: React.CSSProperties = {
@@ -426,7 +435,7 @@ function Carte({
       <div className="jeu-portrait">
         {fond && (
           <Suspense fallback={null}>
-            <CarteFondOT p={w.p} lieux={proches.map((x) => x.l)} basOcculte={occulte.bas} hautOcculte={occulte.haut} fond={substrat} />
+            <CarteFondOT p={w.p} lieux={sites} basOcculte={occulte.bas} hautOcculte={occulte.haut} fond={substrat} />
           </Suspense>
         )}
         {/* ⚠️ La silhouette est repoussée au-dessus de la feuille par le même

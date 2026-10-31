@@ -26,6 +26,25 @@ export const STYLE_CARTE = `${import.meta.env.BASE_URL}carte-style.json`;
 export const STYLE_ORTHO = `${import.meta.env.BASE_URL}carte-ortho.json`;
 
 export type Fond = "plan" | "ortho";
+
+/**
+ * 🔴 LE NOM DE LA SOURCE QUI PORTE LE FOND — et c'est un garde, pas une
+ *    commodité.
+ *
+ * Le compteur de tuiles acceptait N'IMPORTE QUELLE source. Mesuré en
+ * développement, fond « plan » : zéro tuile vectorielle arrivée (la liste
+ * blanche du relais ne connaît pas `localhost` pour `planet`), et le fond se
+ * déclarait quand même prêt — il recouvrait la silhouette, qui est VRAIE, par
+ * une carte vide, qui ne l'est pas.
+ *
+ * ⭐ « Des tuiles sont arrivées » ne veut rien dire si ce ne sont pas CELLES
+ *    QUI PEIGNENT LE SOL. Un ombrage de relief ou un jeu de sprites suffisait
+ *    à satisfaire la question mal posée.
+ */
+export const SOURCE_DE_BASE: Record<Fond, string> = {
+  plan: "openmaptiles",
+  ortho: "ortho",
+};
 export const STYLES: Record<Fond, string> = { plan: STYLE_CARTE, ortho: STYLE_ORTHO };
 
 /**
@@ -41,10 +60,17 @@ export const ATTRIBUTION: Record<Fond, string> = {
 
 const CLEF = "mana.fond.v1";
 
-/** ⚠️ `localStorage` LÈVE, il ne rend pas simplement vide (Safari privé). */
+/**
+ * ⭐ LA VUE AÉRIENNE EST LE DÉFAUT (31/10/2026, décision du fondateur). C'est
+ *    la photographie qui dit où l'on met les pieds : les haies, le sable, la
+ *    lande. Le plan reste à un geste pour qui cherche un nom de route.
+ * ⚠️ `localStorage` LÈVE, il ne rend pas simplement vide (Safari privé) — et
+ *    le repli doit alors être le DÉFAUT, pas l'autre valeur : sans ce soin,
+ *    une partie des visiteurs aurait silencieusement l'autre fond.
+ */
 export function lireFond(): Fond {
-  try { return localStorage.getItem(CLEF) === "ortho" ? "ortho" : "plan"; }
-  catch { return "plan"; }
+  try { return localStorage.getItem(CLEF) === "plan" ? "plan" : "ortho"; }
+  catch { return "ortho"; }
 }
 export function poserFond(f: Fond): void {
   try { localStorage.setItem(CLEF, f); } catch { /* la visite reste cohérente */ }

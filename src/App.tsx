@@ -301,6 +301,18 @@ export default function App() {
         </>
       )}
 
+      {/* ⭐ PAS DE PIED SUR L'ÉCRAN DU TERRITOIRE — 31/10/2026, demande du
+          fondateur : « masque le footer, carte en plein écran ». Le jeu de
+          cartes est un OUTIL qu'on tient debout, dehors : un pied de site qui
+          dépasse sous la barre flottante y est un bout d'autre chose.
+          ⚠️ CE QUE ÇA DÉPLACE, ET IL FAUT LE VÉRIFIER : les mentions légales
+             et le contact vivent dans ce pied. Ils restent sur TOUTES les
+             autres pages, atteignables en un geste par la barre du bas — on
+             masque un chemin, on n'en supprime aucun.
+          ⛔ L'attribution des données, elle, ne part PAS avec : elle est sur
+             la carte elle-même, parce qu'elle doit voyager avec ce qu'elle
+             crédite et non avec la page. */}
+      {path !== "/carte" && (
       <footer className="site-footer">
         <div className="wrap footer-colonnes">
           <div>
@@ -327,6 +339,7 @@ export default function App() {
           </nav>
         </div>
       </footer>
+      )}
       </div>
     </>
   );
