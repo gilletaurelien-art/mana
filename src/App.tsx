@@ -89,8 +89,13 @@ export default function App() {
               <GlyphRadio />
               <span>Radio</span>
             </a>
+            {/* ⚠️ « MANA » seul ICI, « MANA.bzh » dans le pied de page — ce
+                n'est pas une incohérence. La barre du bas est étroite et
+                partagée avec quatre entrées ; le domaine y mange la place sans
+                rien apprendre à qui est déjà sur le site. Le pied, lui, est
+                l'endroit où l'on signe. */}
             <a className="brand" href={`${B}/`}>
-              MANA<em>.bzh</em>
+              MANA
             </a>
             <a href={`${B}/promenades`}>
               <GlyphSentier />

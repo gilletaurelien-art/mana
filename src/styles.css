@@ -906,25 +906,33 @@ body { padding-bottom: 84px; }
    chance, sur du sombre.
    ⭐ Un contraste qui dépend de la LONGUEUR du texte n'est pas un contraste,
       c'est un hasard qui a tenu. Le bandeau d'encre le rend vrai quel que
-      soit le titre — `box-decoration-break: clone` le répète LIGNE À LIGNE,
-      sinon les lignes intermédiaires restent nues.
+      soit le titre.
+   ⚠️ Il a d'abord été fait en `box-decoration-break: clone`, un bandeau par
+      ligne. Remplacé le 31/10 par une boîte unique — voir plus bas pourquoi.
    (Un halo en `text-shadow` a été essayé d'abord : lisible, mais sale.) */
-/* ⭐ LE TITRE EST UN BLOC QUI CENTRE, LE BANDEAU EST EN LIGNE DANS CE BLOC.
-   Le bandeau sombre doit épouser CHAQUE LIGNE du titre — c'est ce que fait
-   `box-decoration-break: clone`, et ça n'existe que sur une boîte EN LIGNE.
-   Or on ne centre pas une boîte en ligne : c'est son parent qui la centre.
-   D'où la répartition — le `h1` devient le bloc qui aligne, le `span` porte
-   l'encre. Mettre le fond sur le `h1` en bloc étirerait la bande sur toute la
-   largeur, ce qui est un autre dessin. */
+/* ⭐ LE TITRE EST UN BLOC QUI CENTRE, LE BANDEAU EST UNE BOÎTE DEDANS.
+   Le `h1` ne porte aucun fond : en bloc, sa bande s'étirerait sur toute la
+   largeur, ce qui est un autre dessin. Il ne fait qu'aligner. Le `span`
+   porte l'encre et épouse le texte.
+   ⚠️ Cette note a décrit pendant une heure un bandeau EN LIGNE répété ligne
+      à ligne. C'est faux depuis le 31/10 — la raison est juste en dessous. */
 .page .page-titre {
   display: block;
   text-align: center;
 }
 .page .page-titre > span {
-  display: inline;
+  /* 🔴 `inline` + `box-decoration-break: clone` DONNE UN BANDEAU PAR LIGNE, et
+     dès qu'un titre passe à la ligne les deux fragments se touchent : les
+     coins arrondis y creusent des encoches blanches, parce que la ligne du
+     dessous est plus courte. Vu le 31/10 sur « COMPOSER UNE / PROMENADE ».
+     ⭐ Une bulle n'est pas une pile de fragments, c'est UNE forme. En
+        `inline-block`, la boîte épouse la ligne la plus longue, contient les
+        deux lignes, et ne porte qu'un seul contour arrondi.
+     ⚠️ Ce qu'on perd, assumé : le fond ne colle plus au mot près sur une
+        ligne courte. C'est le prix d'un contour propre, et c'est le dessin
+        des bulles de la charte. */
+  display: inline-block;
   background: var(--ink);
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
   /* ⚠️ LE `box-shadow` A DISPARU, ET C'EST LUI QU'IL FALLAIT RETIRER. Il
      étirait le fond de 0,3em de chaque côté — d'où les petits ergots carrés
      qui dépassaient. Un `border-radius` ne les aurait pas arrondis : une ombre
