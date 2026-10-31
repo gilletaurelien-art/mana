@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
 import { indexer, composer, noeudLePlusProche, traits, formeDeLaBoucle, SOURCE_MAREES, cheminDeRetour, composanteAtteint } from "./composition";
 import type { Graphe, Boucle, Retour } from "./composition";
+import { DEFAUT, territoireDe, urlGraphe } from "./territoires";
 import type { Walk } from "./walks";
 import { WalkMap } from "./WalkMap";
 import { CarteOuSchema } from "./CarteOuSchema";
@@ -130,14 +131,29 @@ export function Composer() {
     return () => { document.title = "MANA.bzh — Promenades & découvertes en Bretagne"; };
   }, []);
 
+  /* ⭐ LE GRAPHE SUIT LA POSITION, et c'est le sujet même de cet écran : on
+     compose depuis OÙ L'ON EST. La communauté de communes est servie en deux
+     fichiers — presqu'île et Aulne maritime — parce qu'un seul pèserait
+     1,5 Mo gzip et ferait attendre quelqu'un qui est déjà dehors.
+     ⚠️ `territoire` est dans les dépendances : se déplacer d'un bout à l'autre
+        de la comcom recharge le bon graphe. Sans ça on composerait sur le
+        réseau d'à côté, avec un départ accroché à des kilomètres. */
+  const territoire = useMemo(
+    () => territoireDe(position[0], position[1]) ?? DEFAUT,
+    [position],
+  );
+
   useEffect(() => {
-    fetch(`${BASE}/crozon.json`)
+    let vivant = true;
+    setGraphe(null);
+    fetch(urlGraphe(BASE, territoire))
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
-      .then(setGraphe)
+      .then((g) => { if (vivant) setGraphe(g); })
       // ⚠️ UNE ERREUR SE DIT. Sans ce message, un refus CORS rendrait une page
       //    vide et silencieuse — le visiteur conclurait qu'il n'y a rien ici.
-      .catch(() => setErreur("Les chemins n'ont pas pu être chargés. Vérifiez votre connexion."));
-  }, []);
+      .catch(() => { if (vivant) setErreur("Les chemins n'ont pas pu être chargés. Vérifiez votre connexion."); });
+    return () => { vivant = false; };
+  }, [territoire]);
 
   // ── LES FERMETURES OFFICIELLES ───────────────────────────────────────────
   // Fichier SÉPARÉ du graphe, servi avec l'application : une fermeture se
@@ -442,7 +458,7 @@ export function Composer() {
                   {x.montee >= 40 && ` · +${Math.round(x.montee)} m`}
                   {x.marees > 0 && " · marée"}
                   {x.bordDeMer > 300 && ` · ${(x.bordDeMer / 1000).toFixed(1)} km de mer`}
-                  {x.lieux.length > 0 && ` · ${x.lieux.length} lieux`}
+                  {x.lieux.length > 0 && ` · ${x.lieux.length} lieu${x.lieux.length > 1 ? "x" : ""}`}
                 </button>
               ))}
             </div>

@@ -579,7 +579,15 @@ a { color: var(--texte-action); text-underline-offset: 3px; }
       seul endroit de la feuille où une matière se nomme à dessein. */
 .btn-clair {
   background: var(--craie-pure);
-  color: var(--texte);
+  /* 🔴 DEUXIÈME CORRECTION DE CETTE LIGNE DANS LA SOIRÉE, et la première était
+     à moitié juste. `var(--ink)` la cassait en thème clair (1,09) ; je l'ai
+     passée à `var(--texte)`, qui règle le clair — et casse le SOMBRE, où
+     `--texte` vaut la craie : craie sur blanc, 1,09 à nouveau.
+     ⭐ UN RÔLE BASCULE AVEC LE THÈME ; CE BOUTON NON. Il porte sa propre
+        surface blanche dans les deux thèmes, donc il lui faut une MATIÈRE —
+        le seul cas où le §3 se franchit à dessein, et le même que
+        `.carte-etiquette`. Kaki sur #f7f5ec : 10,10. */
+  color: var(--kaki);
   border-color: var(--craie);
   box-shadow: var(--ombre-carte);
 }
@@ -1778,10 +1786,15 @@ body {
    Mesuré : kaki sur craie **9,23** (la nuit donnait 11,96 — on perd de la
    marge, on reste très au-dessus des 4,5), 8,19 sur craie-ombre. */
 .terr {
-  --texte: var(--kaki);
-  --ink: var(--kaki);
-  --trait: color-mix(in oklab, var(--kaki) 16%, transparent);
-  --trait-fort: color-mix(in oklab, var(--kaki) 28%, transparent);
+  /* 🔴 QUATRE REDÉFINITIONS VIVAIENT ICI, ET ELLES SONT PARTIES LE 31/10.
+     Elles forçaient l'encre en kaki sur cet écran, à l'époque où `--texte`
+     valait encore le bleu nuit. L'encre est devenue kaki POUR TOUTE L'APP
+     une heure plus tard : ce bloc n'ajoutait plus rien en thème clair — et
+     en thème SOMBRE il écrasait la craie par du kaki sur un panneau sombre,
+     1,27 de contraste sur le titre, les onglets et la liste.
+     ⭐ Une surcharge locale survit à la raison qui l'a fait écrire, et elle
+        devient fausse dans le régime qu'on ne regarde pas. Le rôle sait déjà
+        répondre dans les deux thèmes ; il n'avait plus besoin d'aide. */
   min-height: 100svh;
   display: grid;
   grid-template-rows: minmax(38svh, 46svh) 1fr;
@@ -1823,7 +1836,11 @@ body {
 
 .terr-panneau {
   padding: var(--sp-4);
-  background: var(--craie);
+  /* 🔴 NOMMAIT UNE MATIÈRE, PAS UN RÔLE — et le panneau restait CRAIE en
+     thème sombre pendant que `--texte-doux` passait à la sauge claire :
+     2,53 de contraste sur trois textes. Même faute que `color: var(--nuit)`
+     dix lignes plus bas, corrigée le même soir. */
+  background: var(--fond);
   /* 🔴 CETTE LIGNE DISAIT `var(--nuit)` — une MATIÈRE, pas un rôle, et c'est
      elle qui gagnait contre le `--texte` redéfini sur `.terr`. Le §3 des
      tokens le dit : un composant qui nomme une matière décide d'une
@@ -1847,6 +1864,27 @@ body {
   line-height: 1.05;
 }
 .terr-mesure { margin: 6px 0 0; font-size: var(--t-xs); color: var(--texte-doux); }
+
+/* ── Les deux territoires ─────────────────────────────────────────────────
+   ⚠️ 44 px de haut : ce sont des cibles au pouce, sur un écran qu'on tient
+      dehors. Un onglet de 28 px se rate une fois sur trois en marchant. */
+.terr-onglets { display: flex; gap: 6px; margin-top: var(--sp-2); }
+.terr-onglet {
+  flex: 1 1 0; min-height: 44px; padding: 0 var(--sp-2);
+  font: inherit; font-size: var(--t-xs); cursor: pointer;
+  color: inherit; background: transparent;
+  border: 1px solid var(--trait); border-radius: var(--r-rond);
+  transition: border-color 160ms ease, background 160ms ease;
+}
+.terr-onglet:hover { border-color: var(--ocre); }
+.terr-onglet:focus-visible { outline: 2px solid var(--ocre); outline-offset: 2px; }
+/* ⭐ L'actif se dit par l'OR ET par la graisse ET par `aria-selected` — jamais
+   par la couleur seule : qui ne sépare pas les teintes a besoin des deux
+   autres, et le lecteur d'écran du troisième. */
+.terr-onglet-actif {
+  border-color: var(--action); background: var(--action);
+  color: var(--action-texte); font-weight: 600;
+}
 
 .terr-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .terr-item {

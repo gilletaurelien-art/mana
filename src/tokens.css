@@ -439,7 +439,14 @@
     --texte-patrimoine:#c4866a;
     --trait:           color-mix(in oklab, var(--craie) 14%, transparent);
     --trait-fort:      color-mix(in oklab, var(--craie) 26%, transparent);
-    --action-texte:    #1a1f18;
+    /* 🔴 CETTE VALEUR ÉTAIT LE JUMEAU OUBLIÉ. Elle datait de l'or vif
+       (#c69a48), où du texte sombre était le bon choix. `--action` est passé
+       à #94702e le 31/10 pour porter du BLANC ; ce thème-ci a gardé l'ancien
+       appariement et le bouton doré est tombé à 3,68 — jamais vu, parce que
+       tous les balayages de la soirée tournaient en thème clair.
+       ⭐ Changer un rôle change tous ses porteurs, y compris dans l'autre
+          thème. Un thème non balayé est un régime où rien n'est mesuré. */
+    --action-texte:    #ffffff;
     --inactif-texte:   color-mix(in oklab, var(--craie) 40%, var(--kaki));
     --inactif-fond:    var(--kaki-clair);
     --carte-fond:      var(--kaki-sombre);
@@ -465,7 +472,10 @@
   --texte-patrimoine: #c4866a;
   --trait: color-mix(in oklab, var(--craie) 14%, transparent);
   --trait-fort: color-mix(in oklab, var(--craie) 26%, transparent);
-  --action-texte: #1a1f18;
+  --action-texte: #ffffff;   /* même correction qu'au bloc @media — les deux
+                                blocs disent la même chose et doivent le dire
+                                ensemble, sinon le choix explicite diverge de
+                                la préférence du système. */
   --inactif-texte: color-mix(in oklab, var(--craie) 40%, var(--kaki));
   --inactif-fond: var(--kaki-clair);
   --carte-fond: var(--kaki-sombre);

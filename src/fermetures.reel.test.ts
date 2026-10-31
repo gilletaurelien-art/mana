@@ -5,7 +5,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { indexer, composer, noeudLePlusProche, type Graphe } from "./composition";
 import { aretesTouchees, type Fermetures } from "./fermetures";
 
-const CHEMIN = "public/bretagne/g/crozon.json";
+const CHEMIN = "public/bretagne/g/presquile.json";
 const d = existsSync(CHEMIN);
 
 /**
@@ -53,16 +53,33 @@ describe.skipIf(!d)("sur le graphe réel de la presqu'île", () => {
     expect(touchaitApres).toBe(false);   // et il l'a refusé
   });
 
-  it("🔴 fermer DÉTACHE l'accès à la plage : depuis Postolonnec, aucune boucle", () => {
+  /* 🔴 CE TEST A ÉTÉ RETOURNÉ LE 31/10/2026, ET VOICI POURQUOI.
+   *
+   * Il exigeait ZÉRO boucle depuis Postolonnec une fois l'arrêté appliqué, en
+   * constatant que « l'accès à la plage est un cul-de-sac greffé sur le GR34 »
+   * — composante de 2 nœuds sur 64 028.
+   *
+   * ⭐ C'ÉTAIT UNE PROPRIÉTÉ DU GRAPHE, PAS DU TERRAIN. Le graphe servi
+   *    excluait les voies carrossables ; le moignon était un TROU DANS LE
+   *    RÉSEAU. Sur le graphe rebâti (qui pénalise la route au lieu de
+   *    l'exclure), quatre boucles existent — dont deux à 6,4 et 6,8 km avec
+   *    CINQ arêtes de route sur soixante-huit. Des sentiers, pas des
+   *    échappatoires par le bitume.
+   *
+   * ⚠️ ON RETOURNE, ON NE SUPPRIME PAS : ce que ce test protégeait reste vrai
+   *    sous une autre forme — aucune boucle proposée ne doit emprunter une
+   *    arête fermée. C'est désormais ce qu'il vérifie, au lieu de vérifier
+   *    qu'il n'y a RIEN à proposer. */
+  it("🔴 l'arrêté ne détache plus l'accès — mais aucune boucle n'emprunte le fermé", () => {
     const { g, t } = reel();
-    // Ce n'est pas un défaut du garde, c'est la forme du terrain : l'accès à la
-    // plage est un cul-de-sac greffé sur le GR34. Fermer le GR34 détache le
-    // moignon — mesuré : composante de 2 nœuds sur 64 028.
-    // ⭐ Le test le CONSTATE au lieu de l'exiger faux. Ce qui doit être corrigé
-    //    n'est pas le calcul, c'est le SILENCE : l'écran doit dire pourquoi.
     const ixF = indexer(g, t.interdites);
     const depart = noeudLePlusProche(g, ixF, -4.46515, 48.23854);
-    expect(composer(g, ixF, depart, 6000)).toHaveLength(0);
+    const b = composer(g, ixF, depart, 6000);
+    expect(b.length).toBeGreaterThan(0);
+    // ⛔ LA GARANTIE QUI COMPTE, et elle n'a pas bougé.
+    for (const boucle of b) {
+      for (const e of boucle.aretes) expect(t.interdites.has(e)).toBe(false);
+    }
   });
 
   it("mais le reste du réseau vit : depuis le bourg de Crozon, les boucles restent", () => {
@@ -88,11 +105,32 @@ describe.skipIf(!d)("détecter un départ coupé", () => {
     return { g, ixTout: indexer(g), ixF: indexer(g, t.interdites) };
   };
 
-  it("à Postolonnec : le réseau vivait, l'arrêté l'a coupé", () => {
+  /* 🔴 RETOURNÉ LE 31/10/2026, pour la même raison que son voisin : sur le
+   * graphe rebâti, Postolonnec n'est plus détaché par l'arrêté.
+   * ⚠️ LE GARDE RESTE, ET IL EST LE SEUL À SAVOIR VOIR ÇA. Un départ peut
+   *    toujours être coupé ailleurs ; ce test continue d'exiger que la
+   *    CONNEXITÉ, et non le degré, soit ce qui en décide. */
+  it("à Postolonnec : l'arrêté mord, mais ne détache plus le départ", () => {
     const { g, ixTout, ixF } = prep();
     const n = noeudLePlusProche(g, ixF, -4.46515, 48.23854);
     expect(composanteAtteint(ixTout, n, SEUIL)).toBe(true);    // avant : relié
-    expect(composanteAtteint(ixF, n, SEUIL)).toBe(false);      // après : moignon
+    expect(composanteAtteint(ixF, n, SEUIL)).toBe(true);       // après : relié encore
+  });
+
+  /* ⭐ ET ON GARDE UNE PREUVE QUE LE GARDE SAIT REFUSER. Sans elle, « coupé »
+   *  ne serait plus jamais observé, et un garde qu'on n'a jamais vu refuser
+   *  n'a jamais été vu. On fabrique la coupure : on interdit TOUTES les arêtes
+   *  qui touchent le départ. */
+  it("MUTATION : si l'on coupe tout autour du départ, la connexité le dit", () => {
+    const { g, ixTout } = prep();
+    const n = noeudLePlusProche(g, ixTout, -4.46515, 48.23854);
+    // ⚠️ L'adjacence porte `[arête, voisin]` : c'est le PREMIER élément.
+    //    Pris à l'envers, on interdit des index de nœuds lus comme des index
+    //    d'arêtes — des arêtes au hasard, ailleurs, et le test passe en vert
+    //    sur un mensonge.
+    const autour = new Set((ixTout.adj.get(n) ?? []).map(([arete]) => arete));
+    expect(autour.size).toBeGreaterThan(0);
+    expect(composanteAtteint(indexer(g, autour), n, SEUIL)).toBe(false);
   });
 
   it("🔴 et le DEGRÉ ne l'aurait pas vu — c'est pour ça que ce test existe", () => {

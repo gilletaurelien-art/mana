@@ -28,6 +28,7 @@
  *    est ce que le graphe contient.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
+import { DEFAUT, TERRITOIRES, territoireDe, urlGraphe } from "./territoires";
 import { libelleCategorie } from "./categories";
 import { WALKS, effortLisible } from "./walks";
 import type { Walk } from "./walks";
@@ -92,15 +93,38 @@ export function Territoire2030({ base }: { base: string }) {
   const [vueBougee, setVueBougee] = useState(false);
   const ZOOM_MIN = 1, ZOOM_MAX = 12;
 
+  /* ⭐ DEUX TERRITOIRES, ET CELUI-CI SE CHOISIT — contrairement au
+     compositeur, où la position tranche. Cet écran répond à « qu'y a-t-il
+     ici ? » : il faut pouvoir regarder l'autre moitié sans y être. */
+  const [terr, setTerr] = useState(DEFAUT);
+
+  useEffect(() => { document.title = "Le territoire — MANA"; }, []);
+
   useEffect(() => {
-    document.title = "Le territoire — MANA";
-    fetch(`${BASE}/crozon.json`)
+    let vivant = true;
+    setGraphe(null); setErreur("");
+    /* ⚠️ `setVise(null)` AVEC le changement de territoire : un lieu visé porte
+       un index d'arête, et cet index ne désigne pas le même chemin dans
+       l'autre graphe. Le garder ferait pointer la carte sur un tronçon au
+       hasard — un défaut invisible, puisqu'il reste un repère à l'écran. */
+    setVise(null);
+    fetch(urlGraphe(BASE, terr))
       .then((r) => { if (!r.ok) throw new Error(String(r.status)); return r.json(); })
-      .then(setGraphe)
+      .then((g) => { if (vivant) setGraphe(g); })
       // ⚠️ Une erreur se DIT. Sans ce message, un refus réseau rendrait un
       //    écran vide et muet, et on conclurait qu'il n'y a rien ici.
-      .catch(() => setErreur("Le territoire n'a pas pu être chargé. Vérifiez votre connexion."));
-  }, []);
+      .catch(() => { if (vivant) setErreur("Le territoire n'a pas pu être chargé. Vérifiez votre connexion."); });
+    return () => { vivant = false; };
+  }, [terr]);
+
+  /** Les promenades vérifiées qui tombent dans le territoire affiché. */
+  const dIci = useMemo(
+    () => WALKS.filter((w) => {
+      const p = w.points[0];
+      return p && territoireDe(p.lon, p.lat)?.slug === terr.slug;
+    }),
+    [terr],
+  );
 
   const walk: Walk | null = useMemo(
     () => (choisie ? WALKS.find((w) => w.slug === choisie) ?? null : null),
@@ -626,6 +650,21 @@ export function Territoire2030({ base }: { base: string }) {
         </button>
         <header className="terr-entete">
           <h1 className="terr-titre">Le territoire</h1>
+          {/* ⛔ Deux onglets, pas une liste déroulante : il n'y a que deux
+              territoires, et une liste cache la moitié de l'offre derrière un
+              geste. Le jour où il y en a six, ceci change. */}
+          <div className="terr-onglets" role="tablist" aria-label="Territoire">
+            {TERRITOIRES.map((t) => (
+              <button
+                key={t.slug} type="button" role="tab"
+                aria-selected={t.slug === terr.slug}
+                className={t.slug === terr.slug ? "terr-onglet terr-onglet-actif" : "terr-onglet"}
+                onClick={() => setTerr(t)}
+              >
+                {t.nom}
+              </button>
+            ))}
+          </div>
           {graphe && (
             <p className="terr-mesure">
               {graphe.a.length.toLocaleString("fr-FR")} tronçons · {graphe.l.length} lieux
@@ -696,8 +735,19 @@ export function Territoire2030({ base }: { base: string }) {
         {/* ⭐ L'ALTERNATIVE ACCESSIBLE N'EST PAS UNE CONCESSION : c'est la même
             information, en liste. Choisir une promenade au clavier doit marcher
             aussi bien qu'au doigt sur la carte. */}
+        {/* 🔴 LA LISTE SUIT LE TERRITOIRE. Sans ce filtre, « Les forts du
+            goulet » s'affichait sous l'onglet Aulne maritime : quatre
+            promenades de Roscanvel et Crozon proposées à quelqu'un qui
+            regarde Pont-de-Buis. ⭐ Ajouter un onglet n'ajoute pas seulement
+            une donnée : il requalifie TOUT ce qui est affiché à côté. */}
+        {dIci.length === 0 ? (
+          <p className="terr-mesure">
+            Aucune promenade vérifiée sur ce territoire pour l'instant — la
+            carte et la composition, elles, y fonctionnent.
+          </p>
+        ) : (
         <ul className="terr-liste">
-          {WALKS.map((w) => {
+          {dIci.map((w) => {
             const active = choisie === w.slug;
             return (
               <li key={w.slug}>
@@ -723,6 +773,7 @@ export function Territoire2030({ base }: { base: string }) {
             );
           })}
         </ul>
+        )}
 
         {walk && (
           <div className="terr-fiche">
