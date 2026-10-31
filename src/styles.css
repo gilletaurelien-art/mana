@@ -2247,3 +2247,40 @@ body { padding-bottom: var(--reserve-barre); }
 }
 .terr-retour .m-icone { width: 18px; height: 18px; }
 .terr-retour:focus-visible { outline: 2px solid var(--ocre); outline-offset: 2px; }
+
+/* ── LE FOND OSM D'UNE CARTE DU JEU ──────────────────────────────────────
+   ⚠️ `.ot-plan` porte la carte, `.ot-calque` le tracé par-dessus. On
+      n'ajoute NI source NI calque au style maplibre : le tracé est en SVG,
+      reprojeté à chaque rendu. Même dispositif que la fiche, même raison —
+      toucher au style pendant son chargement le casse en silence. */
+.ot-fond {
+  position: absolute; inset: 0;
+  /* ⭐ Le fond ARRIVE, il ne surgit pas : tant qu'il n'est pas prêt, c'est la
+     silhouette qu'on voit, peinte sans réseau ni WebGL. */
+  opacity: 0; transition: opacity 320ms ease;
+}
+.ot-fond-prete { opacity: 1; }
+.ot-plan, .ot-calque { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ot-calque { pointer-events: none; }
+#ot-sous  { fill: none; stroke: rgb(13 16 12 / 55%); stroke-width: 7;
+            stroke-linecap: round; stroke-linejoin: round; }
+#ot-trait { fill: none; stroke: var(--ocre); stroke-width: 3.2;
+            stroke-linecap: round; stroke-linejoin: round; }
+#ot-depart{ fill: var(--craie); stroke: var(--ocre); stroke-width: 2.5; }
+/* ⛔ La carte ne prend AUCUN geste : c'est ce qui permet au jeu de garder le
+   sien. `interactive: false` le dit déjà à maplibre ; ceci tient le cas où
+   une future version attacherait quand même un écouteur. */
+.ot-fond, .ot-fond * { pointer-events: none !important; }
+/* ⚠️ La carte est lumineuse là où la bulle est sombre : sans ce voile, le
+   pied de carte et les pastilles perdent le fond sur lequel ils ont été
+   mesurés. Il est posé SOUS le tracé, qui garde donc tout son or. */
+.ot-fond::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(to bottom,
+    rgb(38 46 36 / 34%) 0%, rgb(38 46 36 / 22%) 55%, rgb(38 46 36 / 52%) 100%);
+}
+/* La silhouette s'efface quand le fond est prêt — les deux projections ne
+   coïncident pas, les superposer donnerait un tracé doublé de travers. */
+.jeu-portrait:has(.ot-fond-prete) .jeu-silhouette { opacity: 0; }
+.jeu-silhouette { position: relative; z-index: 1; transition: opacity 320ms ease; }
+.jeu-odbl { white-space: nowrap; }

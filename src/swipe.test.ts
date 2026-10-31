@@ -40,6 +40,36 @@ describe("le jeu de cartes des balades", () => {
     expect(code).not.toMatch(/localStorage\.setItem/);
   });
 
+  /**
+   * ⛔ L'ATTRIBUTION ODbL VOYAGE AVEC LA CARTE, PAS SEULEMENT AVEC LA PAGE.
+   *    `attributionControl: false` la retire de maplibre — c'est alors à
+   *    l'écran de la porter, sur CHAQUE carte où le fond s'affiche. Une
+   *    mention posée une fois en pied de site ne couvre pas un jeu où chaque
+   *    carte est une vue cartographique à elle seule.
+   */
+  it("chaque carte porte l'attribution du fond", () => {
+    expect(code).toMatch(/ATTRIBUTION_OSM/);
+    const fond = readFileSync(new URL("./carte-fond.ts", import.meta.url), "utf8");
+    expect(fond).toMatch(/OpenStreetMap/);
+    expect(fond).toMatch(/ODbL/);
+  });
+
+  /**
+   * 🔴 LE FOND NE SE DÉCLARE PAS PRÊT SUR LA FOI DE L'ÉTAT INTERNE.
+   *    `areTilesLoaded()` a dit OUI alors qu'aucune tuile n'était arrivée —
+   *    il répond « plus rien en attente », ce qui est vrai aussi quand tout a
+   *    échoué. Le seul signal qui porte sur ce qu'on VOIT est
+   *    `queryRenderedFeatures()`.
+   */
+  it("le fond OSM ne se montre que s'il a vraiment peint", () => {
+    const carte = readFileSync(new URL("./CarteFondOT.tsx", import.meta.url), "utf8");
+    expect(carte).toMatch(/queryRenderedFeatures\(\)\.length > 0/);
+    expect(carte).toMatch(/interactive: false/);
+    // ⚠️ Et le contexte WebGL se libère, sinon 46 glissements saturent le
+    //    plafond du navigateur et les dernières cartes restent blanches.
+    expect(carte).toMatch(/m\.remove\(\)/);
+  });
+
   /** ⭐ Un jeu de cartes qui ne répond qu'au doigt n'existe pas pour qui
    *  navigue au clavier. Les flèches tranchent, et trois boutons doublent. */
   it("se joue aussi au clavier", () => {

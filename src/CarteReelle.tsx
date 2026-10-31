@@ -67,7 +67,10 @@ import type { Walk, WalkPoint } from "./walks";
  *    fichier doit être régénéré depuis le serveur — sinon la carte pointe
  *    silencieusement sur un jeu retiré.
  */
-const STYLE = `${import.meta.env.BASE_URL}carte-style.json`;
+/* ⚠️ L'adresse elle-même vit dans `carte-fond.ts` : le jeu de cartes la lit
+   aussi, et deux copies divergeraient sans bruit. La note ci-dessus reste
+   ici, où le dispositif est le plus long à comprendre. */
+import { STYLE_CARTE as STYLE } from "./carte-fond";
 
 export function CarteReelle({
   walk,

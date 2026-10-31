@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 
 /**
  * ⛔ CE FICHIER TIENT DEUX GARANTIES, DONT UNE DE VIE PRIVÉE.
@@ -58,9 +58,27 @@ describe("le style de carte embarqué", () => {
     expect(att).toMatch(/OpenStreetMap/i);
   });
 
-  it("l'app lit le fichier embarqué, pas l'URL distante", () => {
-    const src = readFileSync(new URL("./CarteReelle.tsx", import.meta.url), "utf8");
-    expect(src).toContain("carte-style.json");
-    expect(src).not.toMatch(/const STYLE = "https:\/\/mana\.bzh/);
+  /**
+   * ⭐ CE TEST NOMMAIT `CarteReelle.tsx`, ET IL A ÉCHOUÉ LE JOUR OÙ L'ADRESSE
+   *    A DÉMÉNAGÉ — exactement comme il devait. Un garde qui désigne un
+   *    FICHIER meurt au premier refactor ; celui-ci désigne désormais la
+   *    RÈGLE : l'adresse est décidée à UN SEUL endroit, et personne d'autre
+   *    ne l'écrit en dur. C'est ce qui empêche une seconde carte de pointer
+   *    un jeu de tuiles retiré pendant que la première va bien.
+   */
+  it("l'adresse du style est décidée à un seul endroit", () => {
+    const decideur = readFileSync(new URL("./carte-fond.ts", import.meta.url), "utf8");
+    expect(decideur).toContain("carte-style.json");
+    expect(decideur).not.toMatch(/https:\/\/mana\.bzh\/carte\/style\.json/);
+
+    const autres = readdirSync(new URL(".", import.meta.url))
+      .filter((f) => /\.(ts|tsx)$/.test(f) && f !== "carte-fond.ts" && !f.includes(".test."))
+      .filter((f) => {
+        const t = readFileSync(new URL(`./${f}`, import.meta.url), "utf8")
+          .replace(/\/\*[\s\S]*?\*\//g, "")
+          .split("\n").filter((l) => !/^\s*(\/\/|\*)/.test(l)).join("\n");
+        return t.includes("carte-style.json");
+      });
+    expect(autres, "une seconde copie de l'adresse divergerait sans bruit").toEqual([]);
   });
 });

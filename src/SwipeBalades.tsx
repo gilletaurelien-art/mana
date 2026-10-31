@@ -1,7 +1,17 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { chargerOT, PRATIQUE, type ItineraireOT } from "./ot";
 import { portrait } from "./portrait";
 import { ajouterAuCarnet, lireCarnet } from "./carnet";
+import { ATTRIBUTION_OSM } from "./carte-fond";
+
+/**
+ * ⚠️ MAPLIBRE ET SON STYLE PÈSENT PLUS QUE TOUT LE RESTE DE L'ÉCRAN. Ils ne
+ *    partent qu'au moment où une carte en a besoin — c'est-à-dire au premier
+ *    rendu du jeu, pas au chargement de l'application.
+ */
+const CarteFondOT = lazy(() =>
+  import("./CarteFondOT").then((m) => ({ default: m.CarteFondOT })),
+);
 
 /**
  * LE JEU DE CARTES DES BALADES — l'écran principal du territoire.
@@ -28,6 +38,14 @@ import { ajouterAuCarnet, lireCarnet } from "./carnet";
 const SEUIL = 0.28;
 /** Combien de cartes on peint derrière celle du dessus. */
 const PILE = 2;
+/**
+ * ⚠️ COMBIEN DE FONDS OSM VIVENT EN MÊME TEMPS. Un fond = un contexte WebGL,
+ *    et les navigateurs en plafonnent le nombre (16 chez Chrome, moins sur
+ *    téléphone). Deux suffisent : celle du dessus, et la suivante — pour
+ *    qu'aucun fond ne surgisse au moment où elle arrive devant. La troisième
+ *    garde sa silhouette, qu'on ne voit de toute façon que par la tranche.
+ */
+const FONDS_VIVANTS = 2;
 
 type Verdict = "garde" | "passe";
 
@@ -216,6 +234,7 @@ export function SwipeBalades({ surCarte }: { surCarte: () => void }) {
               w={w}
               dessus={dessus}
               profondeur={profondeur}
+              fond={profondeur < FONDS_VIVANTS}
               dx={dessus ? dx : 0}
               part={dessus ? part : 0}
               envol={dessus ? envol : null}
@@ -266,9 +285,9 @@ export function SwipeBalades({ surCarte }: { surCarte: () => void }) {
 const L = 300, H = 330;   // le repère du portrait, en unités de `viewBox`
 
 function Carte({
-  w, dessus, profondeur, dx, part, envol, surPrendre, surBouger, surLacher,
+  w, dessus, profondeur, fond, dx, part, envol, surPrendre, surBouger, surLacher,
 }: {
-  w: ItineraireOT; dessus: boolean; profondeur: number;
+  w: ItineraireOT; dessus: boolean; profondeur: number; fond: boolean;
   dx: number; part: number; envol: Verdict | null;
   surPrendre: (e: React.PointerEvent) => void;
   surBouger: (e: React.PointerEvent) => void;
@@ -298,9 +317,23 @@ function Carte({
       onPointerCancel={dessus ? surLacher : undefined}
       aria-hidden={dessus ? undefined : true}
     >
-      {/* ── LE VISAGE : le tracé, et lui seul ───────────────────────────── */}
+      {/* ── LE VISAGE : LA CARTE OSM, et le tracé dessus ────────────────
+          ⭐ LA SILHOUETTE RESTE SOUS LA CARTE, et ce n'est pas une doublure
+             décorative : elle est peinte à l'instant même, sans réseau ni
+             WebGL, pendant que les tuiles arrivent. Une carte qui charge et
+             une carte morte se ressemblent — ici, il y a toujours quelque
+             chose de VRAI à l'écran, et c'est le même tracé.
+          ⚠️ Les deux projections ne coïncident pas (l'une est
+             équirectangulaire, l'autre est Mercator) : c'est pourquoi la
+             silhouette s'efface quand le fond est prêt, au lieu de rester
+             dessous en désaccord d'un ou deux pixels. */}
       <div className="jeu-portrait">
-        <svg viewBox={`0 0 ${L} ${H}`} role="img"
+        {fond && (
+          <Suspense fallback={null}>
+            <CarteFondOT p={w.p} />
+          </Suspense>
+        )}
+        <svg className="jeu-silhouette" viewBox={`0 0 ${L} ${H}`} role="img"
              aria-label={`Tracé de ${w.titre}, ${w.km} kilomètres`}>
           {p && (
             <>
@@ -338,7 +371,13 @@ function Carte({
         {/* ⛔ LA MENTION NE S'ENLÈVE PAS. Elle n'est pas un crédit en bas de
             page : c'est ce qui distingue un circuit BALISÉ sur le terrain
             d'un itinéraire composé par nous. */}
-        <p className="jeu-provenance">Itinéraire balisé par l’Office de tourisme</p>
+        <p className="jeu-provenance">
+          Itinéraire balisé par l’Office de tourisme
+          {/* ⛔ L'ATTRIBUTION VOYAGE AVEC LA CARTE. `attributionControl: false`
+              la retire de maplibre ; l'ODbL l'exige partout où le fond
+              s'affiche, donc sur chaque carte du jeu. */}
+          <span className="jeu-odbl"> · Fond {ATTRIBUTION_OSM}</span>
+        </p>
       </div>
     </article>
   );
