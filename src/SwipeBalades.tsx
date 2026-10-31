@@ -451,9 +451,12 @@ function Carte({
           </button>
         </div>
 
+        {/* ⛔ TROIS MENTIONS, ET AUCUNE N'EST UN ORNEMENT : qui a balisé, qui
+            a déclaré les chiffres, d'où vient le fond. La dernière est une
+            obligation de l'ODbL, les deux autres une obligation d'honnêteté. */}
         <p className="jeu-provenance">
-          Itinéraire balisé par l’Office de tourisme · Durée et dénivelé
-          déclarés par l’Office · Fond {ATTRIBUTION_OSM}
+          Balisé par l’Office de tourisme · durée et dénivelé déclarés par lui
+          · fond {ATTRIBUTION_OSM}
         </p>
       </div>
     </article>

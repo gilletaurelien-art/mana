@@ -2161,13 +2161,18 @@ body { padding-bottom: var(--reserve-barre); }
 }
 
 /* ── LA FEUILLE DU BAS ────────────────────────────────────────────────── */
+/* ⚠️ LA FEUILLE PARTAGE SA HAUTEUR AVEC LA CARTE, et chaque pixel qu'elle
+   prend est de la cartographie en moins. Mesuré en production : à
+   `--sp-3` de rembourrage elle occupait 60 % de la fiche, la carte 40 %.
+   ⭐ Le rembourrage se règle donc sur la PART qu'on veut laisser à l'image,
+      pas sur l'échelle d'espacement par défaut. Ramené à 18/14 : 52/48. */
 .jeu-feuille {
   position: relative; z-index: 4;
-  padding: var(--sp-3) var(--sp-3) 14px;
+  padding: 18px 18px 14px;
   background: color-mix(in srgb, var(--bulle-creux) 88%, transparent);
   backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
   border-top: 1px solid var(--bulle-trait);
-  display: grid; gap: 6px;
+  display: grid; gap: 5px;
 }
 .jeu-bandeau { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 2px; }
 .jeu-pratique, .jeu-forme {
@@ -2181,7 +2186,7 @@ body { padding-bottom: var(--reserve-barre); }
   line-height: 1.12; text-wrap: balance;
 }
 .jeu-lieu { margin: 0; font-size: var(--t-xs); color: var(--bulle-texte-doux); }
-.jeu-faits { display: flex; gap: var(--sp-3); margin: 8px 0 0; }
+.jeu-faits { display: flex; gap: var(--sp-2); margin: 7px 0 0; }
 .jeu-faits div { display: grid; gap: 1px; }
 .jeu-faits dt {
   font-size: var(--t-2xs); letter-spacing: 0.06em; text-transform: uppercase;
@@ -2193,7 +2198,7 @@ body { padding-bottom: var(--reserve-barre); }
 /* ⭐ LA LIGNE QUE L'OFFICE N'A PAS. Un filet doré à gauche la détache sans en
    faire une carte de plus : c'est une note en marge, pas un panneau. */
 .jeu-proches {
-  margin: 8px 0 0; padding-left: 10px;
+  margin: 7px 0 0; padding-left: 10px;
   border-left: 2px solid var(--ocre);
   display: grid; gap: 1px;
   font-size: var(--t-xs);
@@ -2205,7 +2210,7 @@ body { padding-bottom: var(--reserve-barre); }
 .jeu-proche { line-height: 1.35; }
 .jeu-proche-cat { color: var(--bulle-texte-doux); }
 
-.jeu-actions { display: flex; gap: 8px; margin-top: 10px; }
+.jeu-actions { display: flex; gap: 8px; margin-top: 9px; }
 /* ⚠️ `white-space: nowrap` et le rembourrage rogné : « Suivre sur la carte »
    passait sur deux lignes et la feuille grandissait de 22 px, qu'elle prenait
    à la carte. ⭐ Dans une feuille qui partage sa hauteur avec une image, une
@@ -2214,8 +2219,8 @@ body { padding-bottom: var(--reserve-barre); }
             font-size: var(--t-xs); min-height: 44px; padding-inline: 6px;
             white-space: nowrap; }
 .jeu-provenance {
-  margin: 8px 0 0; font-size: var(--t-2xs);
-  color: var(--bulle-texte-doux); line-height: 1.4;
+  margin: 7px 0 0; font-size: var(--t-2xs);
+  color: var(--bulle-texte-doux); line-height: 1.35;
 }
 
 /* ── Les trois commandes ──────────────────────────────────────────────── */
