@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useRef, useLayoutEffect } from "react";
 import { usePath, baseUrl, routePromenade } from "./router";
-import { WALKS } from "./walks";
 import {
   GlyphRadio,
   GlyphNavigation,
@@ -10,8 +9,8 @@ import {
   GlyphBoussole,
   GlyphSentier,
 } from "./Glyphs";
-import { WalkMap } from "./WalkMap";
 import { Promenades } from "./Promenades";
+import { Invitation } from "./Invitation";
 import { Composer } from "./Composer";
 import { Promenade } from "./Promenade";
 import { Territoire } from "./Territoire";
@@ -94,16 +93,12 @@ export default function App() {
     window.addEventListener("resize", poser);
     return () => { ro.disconnect(); window.removeEventListener("resize", poser); };
   }, []);
-  const [lieu, setLieu] = useState("");
-  const [walkIndex, setWalkIndex] = useState(0);
-
-  const walkSuivant = () => setWalkIndex((i) => (i + 1) % WALKS.length);
-  const walk = WALKS[walkIndex];
-
-  const chercher = () => {
-    const q = lieu.trim();
-    window.location.assign(`${B}/promenades${q ? `?q=${encodeURIComponent(q)}` : ""}`);
-  };
+  /* ⚠️ L'état du carrousel de promenades, le champ de recherche et la
+     navigation vers `/promenades` vivaient ici : ils servaient l'ancien héros
+     et SEULEMENT lui. Ils sont partis avec. Le même travail se fait
+     maintenant dans `Invitation`, au plus près de l'endroit où l'on clique.
+     ⭐ Du code mort laissé « au cas où » est un faux témoin : la session
+        suivante le lit et croit qu'un carrousel existe encore quelque part. */
 
   return (
     <>
@@ -201,118 +196,18 @@ export default function App() {
         </main>
       ) : (
         <>
-          <section className="hero">
-            <div className="wrap bulle-xl hero-moteur">
-              {/* ⚠️ TROIS NIVEAUX, PAS TROIS SLOGANS. « en Armor & Argoat »
-                  était une troisième accroche là où il fallait une PROMESSE :
-                  trois formules poétiques d'affilée disent d'où l'on parle,
-                  jamais ce que le produit fait. La signature territoriale
-                  reste, le nom reste, et la place libérée dit l'essentiel. */}
-              <p className="hero-label">Terre, Mer & Lumière — Bretagne</p>
-              <h1 className="brand-grand">Promenades</h1>
-              <p className="hero-promesse">
-                Découvrez ce que vous croiserez en chemin.
-              </p>
-
-              {/* Moteur de saisie de localité */}
-              <div className="moteur-barre" role="search" aria-label="Rechercher une localité">
-                <svg className="moteur-loupe" viewBox="0 0 24 24" aria-hidden="true">
-                  <circle cx="10.5" cy="10.5" r="6.5" />
-                  <path d="m15.5 15.5 4.5 4.5" />
-                </svg>
-                <input
-                  id="moteur-lieu"
-                  type="search"
-                  autoComplete="off"
-                  placeholder="Au départ de…"
-                  value={lieu}
-                  onChange={(e) => setLieu(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && chercher()}
-                />
-                <button
-                  type="button"
-                  className="moteur-fleche"
-                  aria-label="Rechercher"
-                  onClick={chercher}
-                >
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M4 12h15" />
-                    <path d="m13 6 6 6-6 6" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* ⚠️ CE LIEN NE CRÉE AUCUNE FONCTION : il mène au compositeur,
-                  qui sait DÉJÀ partir de la position (« Partir d'où je suis »,
-                  géolocalisation traitée dans le téléphone). On expose une
-                  capacité existante depuis l'endroit où la question se pose —
-                  on n'en invente pas une pour embellir l'écran. */}
-              <p className="hero-ou">
-                ou <a href={`${B}/composer`}>partir d'où je suis</a>
-              </p>
-
-              {/* La balade : une seule, avec sa carte — croix/coeur */}
-              <div className="balade-unique">
-                <div className="balade-carte">
-                  <WalkMap walk={walk} width={280} height={180} />
-                </div>
-                {/* ⭐ LE TITRE D'ABORD. La commune en capitales passait devant
-                    le nom de la promenade : on lisait « ROSCANVEL » avant de
-                    savoir ce qu'on regardait. */}
-                <h2 className="swipe-titre">{walk.titre}</h2>
-                <p className="swipe-lieu">{walk.lieu}</p>
-                <p className="swipe-meta">
-                  {walk.distanceKm} km · ≈ {walk.dureeEstimeeH} h de marche ·{" "}
-                  {walk.boucle ? "boucle" : "aller simple"}
-                </p>
-
-                {/* ⭐ CE QUE MANA A ET QU'UN TOPOGUIDE N'A PAS — et la donnée
-                    existait déjà, inutilisée. Chaque étape porte `pos`, sa
-                    position LE LONG du chemin : ce sont donc des lieux qu'on
-                    rencontre, pas des lieux « à proximité » qui demanderaient
-                    un détour. ⛔ On n'affiche que ce que la donnée contient,
-                    et on dit le reste par un compte, jamais par un « etc. ». */}
-                {walk.etapes.length > 0 && (
-                  <p className="swipe-chemin">
-                    <span className="swipe-chemin-label">Sur le chemin</span>{" "}
-                    {walk.etapes.slice(0, 3).map((e) => e.nom).join(" · ")}
-                    {walk.etapes.length > 3 && (
-                      <span className="swipe-chemin-reste">
-                        {" "}et {walk.etapes.length - 3} autres
-                      </span>
-                    )}
-                  </p>
-                )}
-                {/* 🔴 LES DEUX ICÔNES MENTAIENT. Une croix veut dire « écarter »
-                    et ce bouton fait défiler les quatre promenades ; un cœur
-                    veut dire « enregistrer » et ce lien OUVRE la fiche — rien
-                    n'est enregistré nulle part, il n'y a pas de compte.
-                    Les `aria-label` étaient justes depuis le début : c'est le
-                    dessin qui disait autre chose. ⭐ Un libellé lu par un
-                    lecteur d'écran et démenti par l'image ne protège que la
-                    moitié des gens. */}
-                <div className="balade-actions">
-                  <button
-                    type="button"
-                    className="balade-action balade-action-second"
-                    onClick={walkSuivant}
-                  >
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M4 12h14" />
-                      <path d="m12 6 6 6-6 6" />
-                    </svg>
-                    Suivante
-                  </button>
-                  <a
-                    className="balade-action balade-action-premier"
-                    href={`${B}/promenade/${walk.slug}`}
-                  >
-                    Découvrir
-                  </a>
-                </div>
-              </div>
-            </div>
-          </section>
+          {/* ═══ ÉTAT 1 — L'INVITATION ══════════════════════════════════
+              ⭐ CE QUI DISPARAÎT ICI N'EST PAS PERDU. L'ancien héros empilait
+              un moteur de recherche, UNE promenade, sa vignette, sa distance
+              et deux boutons : on arrivait dans un produit, et le territoire
+              servait d'illustration. Les quatre promenades restent
+              atteignables — par la barre, par le pied de page, par la
+              recherche — et l'atlas les montre toutes à la fois.
+              ⚠️ Les sections éditoriales qui suivent sont CONSERVÉES : elles
+              portent les capacités réelles (hors ligne, sécurité côte, carnet,
+              radio). Les supprimer pour alléger la maquette aurait été
+              détruire du contenu au nom du design. */}
+          <Invitation base={B} />
 
           <main className="wrap">
             {MODULES.map((m) => {

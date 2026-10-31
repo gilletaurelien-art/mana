@@ -1154,3 +1154,213 @@ body {
 .balade-action-premier { background: var(--ink); color: var(--sand); border-color: var(--ink); }
 .balade-action:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgb(27 42 74 / 14%); }
 .balade-action:focus-visible { outline: 2px solid var(--or); outline-offset: 2px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LES QUATRE MATIÈRES — direction 2030, « l'atlas vivant »
+   ⚠️ ELLES S'AJOUTENT, ELLES NE REMPLACENT PAS. Les variables historiques
+   (--ink, --or, --sand) tiennent encore trente écrans : les écraser d'un coup
+   casserait tout ce qui n'a pas été repris. La nouvelle palette entre par
+   l'écran d'invitation, et gagnera du terrain écran par écran — chaque reprise
+   étant vérifiable séparément.
+   ⭐ L'or cesse d'être la couleur dominante pour devenir un accent rare : ici
+      il ne sert qu'aux lieux qu'on croise et à l'action principale.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  --encre: #111c2d;
+  --pierre: #f1eee5;
+  --verre: #a9c8bd;
+  --lumiere: #d6a94d;
+}
+
+/* ═══ L'INVITATION — état 1 ══════════════════════════════════════════════ */
+.invitation {
+  position: relative;
+  isolation: isolate;
+  background: var(--encre);
+  color: var(--pierre);
+  /* ⚠️ `svh` et non `vh` : sur mobile, `vh` compte la barre d'adresse comme
+     si elle n'existait pas, et le bas de l'écran passe sous le navigateur.
+     `min-height` et non `height` : un texte long doit pouvoir déborder. */
+  min-height: 100svh;
+  display: grid;
+  align-content: center;
+  padding: var(--sp-6) var(--sp-4)
+           calc(var(--barre-espace, 108px) + env(safe-area-inset-bottom, 0px));
+  overflow: hidden;
+}
+
+/* le territoire, en fond — présent, jamais bavard */
+.invitation-atlas {
+  position: absolute;
+  inset: -6% -10% auto -10%;
+  z-index: -1;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.invitation-atlas-svg {
+  width: 100%;
+  height: auto;
+  max-height: 92svh;
+  opacity: 0.55;
+}
+
+/* 🔴 LE VOILE N'EST PAS UN EFFET, C'EST LA CONDITION DE LISIBILITÉ. Première
+   version : les tracés passaient DERRIÈRE le titre, et « Le monde commence
+   ici » se lisait sur des traits. Le brief l'interdit en toutes lettres — on
+   ne sacrifie jamais la lisibilité à l'effet visuel.
+   ⭐ Un dégradé depuis l'encre, pas un rectangle semi-transparent : le
+      territoire reste entier en haut et en bas, et il s'efface seulement là où
+      le texte le traverse. On ne cache pas la carte, on lui donne le pas. */
+.invitation-atlas::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgb(17 28 45 / 0%) 0%,
+    rgb(17 28 45 / 62%) 22%,
+    rgb(17 28 45 / 86%) 46%,
+    rgb(17 28 45 / 62%) 74%,
+    rgb(17 28 45 / 0%) 100%
+  );
+}
+
+.invitation-contenu { max-width: 34rem; margin-inline: auto; width: 100%; }
+
+.invitation-sur-titre {
+  margin: 0 0 var(--sp-3);
+  font-size: var(--t-xs);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--verre);
+}
+
+/* ⭐ La typographie éditoriale ne sert QUE ce moment : l'arrivée. Partout
+   ailleurs c'est la sans-serif qui travaille. Deux familles, deux rôles. */
+.invitation-titre {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(2.6rem, 11vw, 4.6rem);
+  line-height: 1.02;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+.invitation-question {
+  margin: var(--sp-4) 0 var(--sp-6);
+  font-size: var(--t-m);
+  line-height: 1.45;
+  color: var(--pierre);
+  opacity: 0.82;
+  max-width: 24ch;
+  text-wrap: balance;
+}
+
+.invitation-entrees { display: grid; gap: var(--sp-2); }
+
+.invitation-primaire {
+  min-height: 56px;
+  border: none;
+  border-radius: 999px;
+  background: var(--lumiere);
+  color: var(--encre);
+  font: inherit;
+  font-weight: 600;
+  font-size: var(--t-s);
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+.invitation-primaire:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgb(214 169 77 / 28%);
+}
+.invitation-primaire:disabled { opacity: 0.7; cursor: progress; }
+.invitation-primaire:focus-visible { outline: 2px solid var(--pierre); outline-offset: 3px; }
+
+.invitation-ou {
+  text-align: center;
+  font-size: var(--t-xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--verre);
+  opacity: 0.7;
+}
+
+.invitation-champ {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 4px 4px var(--sp-3);
+  border-radius: 999px;
+  /* ⚠️ Un contour, pas un fond translucide : le verre dépoli rend le texte
+     illisible dès que le tracé passe derrière, et c'est exactement ce que le
+     brief refuse. */
+  border: 1px solid rgb(169 200 189 / 45%);
+  background: rgb(17 28 45 / 72%);
+}
+.invitation-champ input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 48px;
+  border: none;
+  background: transparent;
+  color: var(--pierre);
+  font: inherit;
+  font-size: var(--t-s);
+}
+.invitation-champ input::placeholder { color: rgb(241 238 229 / 52%); }
+.invitation-champ input:focus { outline: none; }
+.invitation-champ:focus-within { border-color: var(--lumiere); }
+.invitation-champ button {
+  flex: 0 0 48px;
+  width: 48px; height: 48px;
+  display: grid; place-items: center;
+  border: none; border-radius: 50%;
+  background: var(--verre);
+  cursor: pointer;
+}
+.invitation-champ button svg {
+  width: 20px; height: 20px; fill: none;
+  stroke: var(--encre); stroke-width: 1.8;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
+.invitation-etat {
+  margin: var(--sp-3) 0 0;
+  font-size: var(--t-xs);
+  color: var(--lumiere);
+}
+.invitation-pied {
+  margin: var(--sp-6) 0 0;
+  font-size: var(--t-xs);
+  line-height: 1.6;
+  color: var(--verre);
+  opacity: 0.8;
+}
+
+/* ⭐ LE TERRITOIRE APPARAÎT — et c'est la seule animation de cet écran.
+   Elle explique une transformation : le trait se dessine, donc le chemin
+   existe avant d'être parcouru. Elle ne se répète pas : une animation qui
+   boucle sur un écran d'arrivée devient un fond d'écran agité. */
+@keyframes atlas-apparait {
+  from { stroke-dashoffset: var(--long); opacity: 0; }
+  to   { stroke-dashoffset: 0; opacity: 1; }
+}
+.atlas-chemin { opacity: 1; }
+.atlas-retrait { opacity: 0.45; }
+
+@media (prefers-reduced-motion: reduce) {
+  .invitation-primaire { transition: none; }
+}
+
+/* ⚠️ Au-delà du mobile, l'atlas prend la gauche et le texte la droite :
+   une colonne de texte de 34 rem centrée sur un écran large laisserait le
+   territoire en décor, alors qu'il EST le sujet. */
+@media (min-width: 900px) {
+  .invitation { padding-inline: 4rem; }
+  .invitation-contenu { margin-inline: 0; }
+  .invitation-atlas { inset: 0 -4% 0 28%; }
+  .invitation-atlas-svg { max-height: 86svh; opacity: 0.62; }
+}

@@ -77,8 +77,24 @@ export function Composer() {
   const [graphe, setGraphe] = useState<Graphe | null>(null);
   const [erreur, setErreur] = useState("");
   const [heures, setHeures] = useState(2);
-  const [position, setPosition] = useState<[number, number]>(CROZON);
-  const [situe, setSitue] = useState(false);
+  /**
+   * ⚠️ LA POSITION PEUT ARRIVER DE L'INVITATION. « Autour de moi » demande la
+   *    permission LÀ OÙ LA QUESTION SE POSE, puis amène ici avec le point.
+   *    Sans ce passage, l'écran d'accueil redemanderait la position que
+   *    l'utilisateur vient tout juste d'accorder — on ferait payer deux fois
+   *    le même consentement.
+   * ⛔ Et rien n'est stocké : la position ne traverse que l'URL de cette
+   *    navigation, elle ne part sur aucun serveur et n'est pas conservée.
+   */
+  const depuisURL = (): [number, number] | null => {
+    const p = new URLSearchParams(window.location.search);
+    const lon = Number(p.get("lon")), lat = Number(p.get("lat"));
+    return Number.isFinite(lon) && Number.isFinite(lat) && (lon !== 0 || lat !== 0)
+      ? [lon, lat] : null;
+  };
+  const recue = depuisURL();
+  const [position, setPosition] = useState<[number, number]>(recue ?? CROZON);
+  const [situe, setSitue] = useState(recue !== null);
   const [motGps, setMotGps] = useState("");
   const [boucles, setBoucles] = useState<Boucle[] | null>(null);
   const [choisie, setChoisie] = useState(0);
