@@ -2330,14 +2330,19 @@ body { padding-bottom: var(--reserve-barre); }
   background: linear-gradient(to bottom,
     rgb(38 46 36 / 34%) 0%, rgb(38 46 36 / 22%) 55%, rgb(38 46 36 / 52%) 100%);
 }
-/* ⚠️ UNE PHOTOGRAPHIE AÉRIENNE EST PLUS CONTRASTÉE QU'UN PLAN, et son blanc
-   est du vrai blanc : sable, toits, écume. Le voile posé pour le plan n'y
-   suffit pas — le tracé doré s'y perd et les étiquettes aussi. Il est donc
-   plus ferme sous l'ortho, et c'est le seul endroit où les deux fonds
-   diffèrent à l'écran. */
+/* ⚠️ LE VOILE A UN SEUL CLIENT, ET CE N'EST PAS LE TEXTE. Tout ce qui se lit
+   sur cette fiche — la feuille, les trois cercles, la barre de recherche —
+   porte sa PROPRE surface à 88-92 % : aucun ne dépend du fond, c'est le
+   balayage de contraste qui l'a établi. Le voile ne sert donc qu'à une
+   chose : que le tracé doré tienne sur la photographie.
+   ⭐ Première valeur posée « pour être sûr » — 46/34/58 : elle éteignait
+      l'image qu'on venait d'aller chercher. Un voile se règle sur ce qu'il
+      doit SAUVER, pas sur une prudence générale.
+   ⚠️ Et il reste un peu plus ferme que celui du plan : une photographie a du
+      VRAI blanc — sable, toits, écume — là où le plan n'a que du papier. */
 .ot-fond-ortho::after {
   background: linear-gradient(to bottom,
-    rgb(28 34 26 / 46%) 0%, rgb(28 34 26 / 34%) 55%, rgb(28 34 26 / 58%) 100%);
+    rgb(28 34 26 / 30%) 0%, rgb(28 34 26 / 20%) 55%, rgb(28 34 26 / 46%) 100%);
 }
 /* La silhouette s'efface quand le fond est prêt — les deux projections ne
    coïncident pas, les superposer donnerait un tracé doublé de travers. */
