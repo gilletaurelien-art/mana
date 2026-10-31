@@ -23,7 +23,18 @@ jobs:
           mkdir -p /tmp/parts/mana
           cp -r site/* /tmp/parts/mana/
           cp site/index.html /tmp/parts/404.html
-          (cd /tmp/parts && python3 -m http.server 8765 --bind 127.0.0.1 >/dev/null 2>&1 &) && sleep 2
+          (cd /tmp/parts && python3 - <<'PY' >/dev/null 2>&1 &
+          import http.server, socketserver
+          class H(http.server.SimpleHTTPRequestHandler):
+              def send_head(self):
+                  import os, urllib.parse
+                  path = self.translate_path(self.path)
+                  if not os.path.exists(path) or os.path.isdir(path) and not os.path.exists(os.path.join(path, "index.html")):
+                      self.path = "/404.html"
+                  return super().send_head()
+          socketserver.TCPServer(("127.0.0.1", 8765), H).serve_forever()
+          PY
+          ) && sleep 2
           node - <<'NODE'
           const { chromium } = require('playwright-core');
           const pages = [
