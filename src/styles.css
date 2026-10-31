@@ -39,15 +39,21 @@
   font-weight: 400;
   font-display: swap;
 }
+/* ⚠️ WOFF2, ET PAS TTF — 31/10/2026. Les deux Rubik étaient servies en TTF,
+   171 et 172 Ko, alors que MarelleBaton était déjà en WOFF2 : le savoir-faire
+   était là, il n'avait pas été appliqué. Converties : 343 Ko → 111 Ko, soit
+   −68 %. C'est le poste le plus lourd du premier chargement, et le hors-ligne
+   le télécharge entièrement.
+   ⛔ Ne jamais réintroduire un .ttf ici : un test le refuse. */
 @font-face {
   font-family: "Rubik";
-  src: url("./fonts/Rubik-Regular.ttf") format("truetype");
+  src: url("./fonts/Rubik-Regular.woff2") format("woff2");
   font-weight: 400;
   font-display: swap;
 }
 @font-face {
   font-family: "Rubik";
-  src: url("./fonts/Rubik-Bold.ttf") format("truetype");
+  src: url("./fonts/Rubik-Bold.woff2") format("woff2");
   font-weight: 700;
   font-display: swap;
 }
