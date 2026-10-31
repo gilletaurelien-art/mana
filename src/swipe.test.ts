@@ -17,7 +17,13 @@ describe("le jeu de cartes des balades", () => {
    *    changerait d'auteur sans que personne ne le décide.
    */
   it("chaque carte porte la provenance de l'Office de tourisme", () => {
-    expect(code).toMatch(/Itinéraire balisé par l[’']Office de tourisme/);
+    /* ⚠️ LE MOTIF PORTE SUR LA SUBSTANCE, PAS SUR LA PHRASE. Première
+       version : « Itinéraire balisé par l'Office de tourisme », au mot près.
+       Elle a refusé une reformulation qui disait exactement la même chose en
+       plus court — un garde qui exige un LIBELLÉ interdit de réécrire ce
+       libellé, et finit par se faire désarmer plutôt que corriger.
+       ⭐ Ce qui doit tenir, c'est que la carte dise QUI A BALISÉ. */
+    expect(code).toMatch(/balisé par l[’']Office de tourisme/i);
   });
 
   /** ⛔ Pas d'étoile, pas de note, pas de « recommandé » : MANA ne classe pas
