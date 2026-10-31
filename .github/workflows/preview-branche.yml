@@ -1,0 +1,53 @@
+name: Preview branche
+on:
+  push:
+    branches: [refonte-locale-atlas]
+
+jobs:
+  screenshot:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm i --no-save playwright-core
+      - run: npx playwright-core install --with-deps chromium
+      - name: Servir et capturer
+        run: |
+          mkdir -p /tmp/parts/mana
+          cp -r site/* /tmp/parts/mana/
+          cp site/index.html /tmp/parts/404.html
+          cd /tmp/parts && (python3 -m http.server 8765 --bind 127.0.0.1 >/dev/null 2>&1 &) && sleep 2
+          node - <<'NODE'
+          const { chromium } = require('playwright-core');
+          const pages = [
+            ["accueil", "", 390, 844],
+            ["accueil-desktop", "", 1440, 900],
+            ["explorer", "promenades", 390, 844],
+            ["fiche", "promenade/gr34-crozon", 390, 844],
+            ["fiche-desktop", "promenade/gr34-crozon", 1440, 900],
+            ["espace", "espace", 390, 844],
+          ];
+          (async () => {
+            const b = await chromium.launch({ args: ["--no-sandbox"] });
+            for (const [name, path, w, h] of pages) {
+              const ctx = await b.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 2 });
+              const pg = await ctx.newPage();
+              await pg.goto("http://127.0.0.1:8765/mana/" + path, { waitUntil: "networkidle" });
+              await pg.waitForTimeout(900);
+              await pg.screenshot({ path: "capture-" + name + ".png", fullPage: h > 900 });
+              await ctx.close();
+            }
+            await b.close();
+          })();
+          NODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: captures-branche
+          path: capture-*.png
