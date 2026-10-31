@@ -150,8 +150,27 @@
       « action » sans dire SUR QUOI se croit universel. */
 .espace,
 .terr,
+.jeu,
 .fiche-couverture,
 .inv { --texte-action: var(--bulle-action); }
+
+/* 🔴 ET `.m-action-fine` NE LIT PAS CE RÔLE-LÀ : elle nomme `--texte` et
+   `--trait-fort`, les rôles du fond CLAIR. Posée sur la bulle du jeu de
+   cartes, « Ouvrir la carte » a été mesurée à **1,86** — en thème clair
+   seulement, puisqu'en sombre `--texte` est déjà de la craie et qu'elle y
+   donnait 4,96. ⭐ Le défaut se cache dans le régime qu'on ne regarde pas :
+   un balayage fait en sombre aurait déclaré l'écran sain.
+   ⚠️ Un bouton transparent ne descend pas du contexte par magie — il hérite
+      de `color` seulement s'il ne nomme rien, et celui-ci nomme. On redéfinit
+      donc les rôles à la portée de l'écran, comme au-dessus.
+   ⭐ C'est l'inverse exact de la surcharge `.terr { --texte: kaki }` qui a
+      cassé le thème sombre : ici l'écran est immersif dans LES DEUX thèmes,
+      et `--bulle-texte` sait déjà répondre dans les deux. Mesuré dans les
+      deux, pas dans un seul. */
+.jeu {
+  --texte: var(--bulle-texte);
+  --trait-fort: var(--bulle-trait-fort);
+}
 
 .m-lien { color: var(--texte-action); text-underline-offset: 3px; text-decoration-thickness: 1px; }
 

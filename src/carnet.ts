@@ -93,3 +93,19 @@ export async function etatHorsLigne(): Promise<EtatHorsLigne> {
     return { pret: false, entrees: 0, graphe: false };
   }
 }
+
+/**
+ * Ajoute sans basculer — le geste du jeu de cartes.
+ *
+ * ⭐ `basculerCarnet` serait faux ici : un glissement vers la droite veut
+ *    toujours dire « je garde », jamais « j'enlève ». Avec une bascule, la
+ *    même balade revue dans un jeu suivant se RETIRERAIT du carnet au moment
+ *    où la personne croit l'y remettre — et rien à l'écran ne le dirait.
+ */
+export function ajouterAuCarnet(slug: string): string[] {
+  const actuel = lireCarnet();
+  if (actuel.includes(slug)) return actuel;
+  const suivant = [...actuel, slug];
+  try { localStorage.setItem(CLEF, JSON.stringify(suivant)); } catch { /* cf. plus haut */ }
+  return suivant;
+}
