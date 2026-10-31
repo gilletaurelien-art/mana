@@ -6,6 +6,8 @@ import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { STYLE_CARTE } from "./carte-fond";
+import { picto } from "./pictos";
+import type { Lieu } from "./lieux";
 
 /**
  * LE FOND OSM D'UNE CARTE DU JEU.
@@ -26,7 +28,34 @@ import { STYLE_CARTE } from "./carte-fond";
  *    suivante — celle-ci pour qu'aucun fond ne « surgisse » au moment où elle
  *    arrive devant. Les cartes plus profondes gardent leur silhouette.
  */
-export function CarteFondOT({ p }: { p: [number, number][] }) {
+export function CarteFondOT({
+  p, lieux = [], serre = 18, basOcculte = 0,
+}: {
+  p: [number, number][];
+  /**
+   * ⭐ LES SITES QUE LE TRACÉ LONGE, POSÉS LÀ OÙ ILS SONT. C'est ce que la
+   *    fiche de l'Office ne montre pas, et ce qui fait de cette carte autre
+   *    chose qu'une vignette : on voit le phare, la plage et le menhir à
+   *    leur place sur le chemin.
+   * ⛔ Chaque repère est à SA coordonnée, jamais déplacé pour être lisible :
+   *    un picto poussé de cinquante mètres pour éviter un voisin envoie
+   *    chercher autre chose que ce qui est là.
+   */
+  lieux?: Lieu[];
+  /** le rembourrage du cadrage, en pixels — plus il est petit, plus le tracé
+   *  remplit l'image */
+  serre?: number;
+  /**
+   * 🔴 LA HAUTEUR QUE LA FEUILLE RECOUVRE, EN PIXELS.
+   * ⭐ LA SURFACE VISIBLE DE LA CARTE N'EST PAS LA SURFACE DE LA CARTE. Depuis
+   *    que la cartographie va à fond perdu, la feuille en couvre le bas ;
+   *    cadrer sur la boîte entière centre le tracé derrière elle. Le
+   *    rembourrage bas doit donc valoir ce qui est OCCULTÉ, pas zéro.
+   * ⚠️ Et il se MESURE sur la feuille rendue : le recopier en dur ici le
+   *    ferait mentir au premier titre sur deux lignes.
+   */
+  basOcculte?: number;
+}) {
   const plan = useRef<HTMLDivElement | null>(null);
   const svg = useRef<SVGSVGElement | null>(null);
   const [prete, setPrete] = useState(false);
@@ -50,7 +79,7 @@ export function CarteFondOT({ p }: { p: [number, number][] }) {
 
     const trait = () => svg.current?.querySelector<SVGPathElement>("#ot-trait");
     const sous = () => svg.current?.querySelector<SVGPathElement>("#ot-sous");
-    const dep = () => svg.current?.querySelector<SVGCircleElement>("#ot-depart");
+    const dep = () => svg.current?.querySelector<SVGGElement>("#ot-depart");
 
     const redessiner = () => {
       const t = trait(), s = sous(), d = dep();
@@ -68,9 +97,17 @@ export function CarteFondOT({ p }: { p: [number, number][] }) {
       t.setAttribute("d", dd);
       if (d) {
         const q = m.project(p[0]);
-        d.setAttribute("cx", q.x.toFixed(1));
-        d.setAttribute("cy", q.y.toFixed(1));
+        d.setAttribute("transform", `translate(${q.x.toFixed(1)} ${q.y.toFixed(1)})`);
       }
+      /* ⚠️ Les repères sont REPROJETÉS à chaque rendu, comme le tracé — ils ne
+         sont pas ajoutés au style maplibre. Toucher au style pendant son
+         chargement le casse en silence (note de `CarteReelle`). */
+      const g = svg.current?.querySelectorAll<SVGGElement>("[data-lieu]");
+      g?.forEach((el) => {
+        const lo = Number(el.dataset.lon), la = Number(el.dataset.lat);
+        const q = m.project([lo, la]);
+        el.setAttribute("transform", `translate(${q.x.toFixed(1)} ${q.y.toFixed(1)})`);
+      });
     };
 
     const cadrer = () => {
@@ -80,7 +117,17 @@ export function CarteFondOT({ p }: { p: [number, number][] }) {
         if (lo < loMin) loMin = lo; if (lo > loMax) loMax = lo;
         if (la < laMin) laMin = la; if (la > laMax) laMax = la;
       }
-      m.fitBounds([[loMin, laMin], [loMax, laMax]], { padding: 26, duration: 0 });
+      /* ⚠️ LE CADRAGE DOIT AUSSI CONTENIR LES REPÈRES. Un site à 140 m du
+         tracé peut tomber hors de la boîte du tracé : son picto se peindrait
+         au bord, à moitié coupé, et à une position fausse à l'œil. */
+      for (const l of lieux) {
+        if (l.g[0] < loMin) loMin = l.g[0]; if (l.g[0] > loMax) loMax = l.g[0];
+        if (l.g[1] < laMin) laMin = l.g[1]; if (l.g[1] > laMax) laMax = l.g[1];
+      }
+      m.fitBounds([[loMin, laMin], [loMax, laMax]], {
+        padding: { top: serre, left: serre, right: serre, bottom: serre + basOcculte },
+        duration: 0,
+      });
       redessiner();
     };
 
@@ -127,7 +174,7 @@ export function CarteFondOT({ p }: { p: [number, number][] }) {
       //    cartes restent blanches.
       m.remove();
     };
-  }, [p]);
+  }, [p, lieux, serre, basOcculte]);
 
   return (
     <div className={prete ? "ot-fond ot-fond-prete" : "ot-fond"}>
@@ -135,7 +182,21 @@ export function CarteFondOT({ p }: { p: [number, number][] }) {
       <svg className="ot-calque" ref={svg} aria-hidden="true">
         <path id="ot-sous" />
         <path id="ot-trait" />
-        <circle id="ot-depart" r="6" />
+        {/* ⭐ Les repères AVANT le départ : celui-ci est le seul qui ne doit
+            jamais passer dessous — c'est par lui qu'on commence à marcher. */}
+        {lieux.map((l) => (
+          <g key={l.osm} className="ot-lieu" data-lieu data-lon={l.g[0]} data-lat={l.g[1]}>
+            <circle className="ot-lieu-fond" r="13" />
+            {/* ⚠️ Le picto est dessiné sur une grille de 24 : on le recentre
+                et on le réduit à 15 px, sinon il déborde de sa pastille. */}
+            <path className="ot-lieu-picto" d={picto(l.c)}
+                  transform="translate(-7.5 -7.5) scale(0.625)" />
+          </g>
+        ))}
+        <g id="ot-depart" className="ot-depart">
+          <circle className="ot-depart-halo" r="12" />
+          <circle className="ot-depart-coeur" r="5" />
+        </g>
       </svg>
     </div>
   );

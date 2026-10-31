@@ -2011,17 +2011,26 @@ body { padding-bottom: var(--reserve-barre); }
      rectangle kaki de `.terr`. */
   min-height: calc(100svh - var(--reserve-barre));
   max-height: calc(100svh - var(--reserve-barre));
+  /* ⭐ LA CARTE VA À FOND PERDU. Une grille à trois rangées donnait à la
+     cartographie une fenêtre de 43 % entre deux marges ; ici la pile occupe
+     TOUT l'écran et la barre du haut comme les trois commandes flottent
+     par-dessus. C'est la différence entre « une carte dans une fiche » et
+     « une fiche posée sur le terrain ». */
   display: grid;
-  grid-template-rows: auto 1fr auto;
-  gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-2) var(--sp-2);
+  grid-template-rows: 1fr;
+  padding: 0;
   background: transparent;
   color: var(--bulle-texte);
   position: relative;
+  overflow: hidden;
 }
 
 /* ── LA BARRE DU HAUT ─────────────────────────────────────────────────── */
-.jeu-haut { display: flex; gap: 8px; align-items: center; }
+.jeu-haut {
+  position: absolute; z-index: 25;
+  top: var(--sp-2); left: var(--sp-2); right: var(--sp-2);
+  display: flex; gap: 8px; align-items: center;
+}
 .jeu-chercher {
   flex: 1 1 auto; min-width: 0;
   display: flex; align-items: center; gap: 8px;
@@ -2057,7 +2066,8 @@ body { padding-bottom: var(--reserve-barre); }
    ⚠️ Dans le flux, ils pousseraient la pile vers le bas et la carte changerait
       de taille à chaque frappe. */
 .jeu-resultats, .jeu-familles {
-  position: absolute; left: var(--sp-2); right: var(--sp-2); top: calc(46px + var(--sp-3));
+  position: absolute; left: var(--sp-2); right: var(--sp-2);
+  top: calc(46px + var(--sp-2) + 8px);
   z-index: 20;
   border-radius: var(--r-l);
   background: color-mix(in srgb, var(--bulle-unie) 94%, transparent);
@@ -2089,9 +2099,10 @@ body { padding-bottom: var(--reserve-barre); }
 }
 
 /* ── La pile ──────────────────────────────────────────────────────────── */
-.jeu-pile { position: relative; display: grid; min-height: 0; }
+.jeu-pile { position: relative; display: grid; min-height: 0; grid-area: 1 / 1; }
 .jeu-vide, .jeu-fin {
-  grid-area: 1 / 1; align-self: center; text-align: center;
+  grid-area: 1 / 1; align-self: center; justify-self: center;
+  width: calc(100% - 2 * var(--sp-2)); text-align: center;
   padding: var(--sp-4); margin: 0;
   /* 🔴 L'ÉCRAN DE FIN NE PEUT PAS VIVRE SUR LE FOND NU. `.fond-degrade` ne
      couvre que les 64 % du haut et s'éteint dès 40 % : `--texte-immersif-doux`
@@ -2113,10 +2124,14 @@ body { padding-bottom: var(--reserve-barre); }
 
 .jeu-carte {
   grid-area: 1 / 1;
-  display: grid; grid-template-rows: 1fr auto;
+  /* ⚠️ Plus de grille à deux rangées : la carte OCCUPE la fiche, et la
+     feuille se pose dessus. Avec `1fr auto`, chaque ligne de texte en plus
+     rognait l'image — c'est le réglage qu'on vient de passer une heure à
+     rattraper au rembourrage. Ici la hauteur du texte ne coûte plus de
+     cartographie : elle couvre de la carte au lieu de la rétrécir. */
   position: relative; overflow: hidden;
-  border-radius: var(--r-xl);
-  border: 1px solid var(--bulle-trait);
+  border-radius: 0;
+  border: none;
   background: var(--bulle);
   backdrop-filter: var(--bulle-flou); -webkit-backdrop-filter: var(--bulle-flou);
   box-shadow: var(--bulle-eclat), 0 18px 40px rgb(13 16 12 / 38%);
@@ -2128,7 +2143,7 @@ body { padding-bottom: var(--reserve-barre); }
 .jeu-carte-dessus { cursor: grab; touch-action: none; }
 .jeu-carte-dessus:active { cursor: grabbing; }
 
-.jeu-portrait { position: relative; display: grid; min-height: 0; overflow: hidden; }
+.jeu-portrait { position: absolute; inset: 0; display: grid; overflow: hidden; }
 .jeu-silhouette {
   position: relative; z-index: 1; width: 100%; height: 100%;
   padding: var(--sp-3); transition: opacity 320ms ease;
@@ -2166,12 +2181,17 @@ body { padding-bottom: var(--reserve-barre); }
    `--sp-3` de rembourrage elle occupait 60 % de la fiche, la carte 40 %.
    ⭐ Le rembourrage se règle donc sur la PART qu'on veut laisser à l'image,
       pas sur l'échelle d'espacement par défaut. Ramené à 18/14 : 52/48. */
+/* ⭐ LA FEUILLE EST POSÉE SUR LA CARTE, pas empilée sous elle : elle a ses
+   coins arrondis, sa marge, et elle laisse voir le terrain tout autour. */
 .jeu-feuille {
-  position: relative; z-index: 4;
-  padding: 18px 18px 14px;
-  background: color-mix(in srgb, var(--bulle-creux) 88%, transparent);
-  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-  border-top: 1px solid var(--bulle-trait);
+  position: absolute; z-index: 4;
+  left: 10px; right: 10px; bottom: 86px;
+  padding: 16px 18px 14px;
+  border-radius: var(--r-xl);
+  background: color-mix(in srgb, var(--bulle-creux) 92%, transparent);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--bulle-trait);
+  box-shadow: var(--bulle-eclat), 0 16px 36px rgb(13 16 12 / 44%);
   display: grid; gap: 5px;
 }
 .jeu-bandeau { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 2px; }
@@ -2224,7 +2244,11 @@ body { padding-bottom: var(--reserve-barre); }
 }
 
 /* ── Les trois commandes ──────────────────────────────────────────────── */
-.jeu-commandes { display: flex; gap: var(--sp-3); justify-content: center; align-items: center; }
+/* Les trois verdicts flottent sous la feuille, sur la carte. */
+.jeu-commandes {
+  position: absolute; z-index: 26; left: 0; right: 0; bottom: 14px;
+  display: flex; gap: var(--sp-3); justify-content: center; align-items: center;
+}
 .jeu-bouton {
   display: grid; place-items: center;
   width: 58px; height: 58px; border-radius: var(--r-rond);
@@ -2306,3 +2330,22 @@ body { padding-bottom: var(--reserve-barre); }
 .jeu-portrait:has(.ot-fond-prete) .jeu-silhouette { opacity: 0; }
 .jeu-silhouette { position: relative; z-index: 1; transition: opacity 320ms ease; }
 .jeu-odbl { white-space: nowrap; }
+
+/* ── LES REPÈRES SUR LA CARTE ────────────────────────────────────────────
+   ⭐ C'est ce que la fiche de l'Office ne montre pas : le phare, la plage et
+      le menhir À LEUR PLACE sur le chemin. ⛔ Chacun est à SA coordonnée, et
+      aucun n'est déplacé pour éviter un voisin — un picto poussé de cinquante
+      mètres envoie chercher autre chose que ce qui est là. */
+.ot-lieu-fond {
+  fill: var(--bulle-creux); stroke: var(--ocre); stroke-width: 1.6;
+}
+.ot-lieu-picto {
+  fill: none; stroke: var(--bulle-action); stroke-width: 1.8;
+  stroke-linecap: round; stroke-linejoin: round;
+  /* ⚠️ Le trait est dessiné sur une grille de 24 puis réduit à 0,625 : sans
+     ce `non-scaling-stroke` il maigrirait d'autant et disparaîtrait. */
+  vector-effect: non-scaling-stroke;
+}
+/* Le départ : le seul repère qui ne passe jamais sous un autre. */
+.ot-depart-halo { fill: rgb(13 16 12 / 42%); stroke: var(--craie); stroke-width: 2; }
+.ot-depart-coeur { fill: var(--craie); }

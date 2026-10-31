@@ -338,12 +338,37 @@ function Carte({
   surLacher: (e: React.PointerEvent) => void;
 }) {
   const p = useMemo(() => portrait(w.p, L, H, 0.12), [w]);
+  /* 🔴 CE QUE LA FEUILLE RECOUVRE — mesuré, jamais recopié. La cartographie
+     va à fond perdu : sans ce chiffre, le tracé se centre DERRIÈRE la
+     feuille. ⭐ La surface visible d'une carte n'est pas sa surface. */
+  const feuille = useRef<HTMLDivElement>(null);
+  const [occulte, setOcculte] = useState(0);
+  useEffect(() => {
+    const f = feuille.current;
+    if (!f) return;
+    const mesurer = () => {
+      const c = f.parentElement;
+      if (!c) return;
+      // du bas de la carte au HAUT de la feuille : c'est tout ce qui est caché
+      setOcculte(Math.round(c.getBoundingClientRect().bottom - f.getBoundingClientRect().top));
+    };
+    const ro = new ResizeObserver(mesurer);
+    ro.observe(f);
+    mesurer();
+    return () => ro.disconnect();
+  }, [w]);
   // ⚠️ Calculé pour la carte du dessus SEULEMENT : 1 358 lieux contre 270
   //    segments, ce n'est pas un coût qu'on paie trois fois pour deux cartes
   //    qu'on ne voit que par la tranche.
+  /* ⚠️ Calculé pour les cartes QUI PORTENT UN FOND : 1 358 lieux contre 270
+     segments, ce n'est pas un coût qu'on paie pour une carte qu'on ne voit
+     que par la tranche.
+     ⭐ SIX SUR LA CARTE, TROIS DANS LE TEXTE. Les pictos se lisent d'un coup
+        d'œil et le tracé a de la place ; la ligne écrite, elle, pousse la
+        cartographie vers le bas à chaque nom de plus. */
   const proches = useMemo(
-    () => (dessus && inv ? lieuxProches(w.p, inv.lieux, 3) : []),
-    [dessus, inv, w],
+    () => (fond && inv ? lieuxProches(w.p, inv.lieux, 6) : []),
+    [fond, inv, w],
   );
 
   const angle = Math.max(-9, Math.min(9, part * 9));
@@ -372,10 +397,13 @@ function Carte({
       <div className="jeu-portrait">
         {fond && (
           <Suspense fallback={null}>
-            <CarteFondOT p={w.p} />
+            <CarteFondOT p={w.p} lieux={proches.map((x) => x.l)} basOcculte={occulte} />
           </Suspense>
         )}
-        <svg className="jeu-silhouette" viewBox={`0 0 ${L} ${H}`} role="img"
+        {/* ⚠️ La silhouette est repoussée au-dessus de la feuille par le même
+            chiffre : sinon le repli se dessine, lui aussi, derrière elle. */}
+        <svg className="jeu-silhouette" style={{ paddingBottom: occulte }}
+             viewBox={`0 0 ${L} ${H}`} role="img"
              aria-label={`Tracé de ${w.titre}, ${w.km} kilomètres`}>
           {p && (
             <>
@@ -398,7 +426,7 @@ function Carte({
       </span>
 
       {/* ── LA FEUILLE DU BAS ────────────────────────────────────────── */}
-      <div className="jeu-feuille">
+      <div className="jeu-feuille" ref={feuille}>
         <p className="jeu-bandeau">
           <span className="jeu-pratique">{PRATIQUE[w.pratique]}</span>
           <span className="jeu-forme">{w.boucle ? "Boucle" : "Aller simple"}</span>
@@ -428,7 +456,7 @@ function Carte({
         {proches.length > 0 && (
           <p className="jeu-proches">
             <span className="jeu-proches-label">À moins de {SEUIL_PROCHES} m du tracé</span>
-            {proches.map((x) => (
+            {proches.slice(0, 3).map((x) => (
               <span key={x.l.osm} className="jeu-proche">
                 {x.l.n}<span className="jeu-proche-cat"> · {inv!.libelles[x.l.c] ?? x.l.c}</span>
               </span>

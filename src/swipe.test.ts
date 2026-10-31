@@ -102,6 +102,21 @@ describe("le jeu de cartes des balades", () => {
     }
   });
 
+  /**
+   * ⛔ UN REPÈRE EST À SA COORDONNÉE, JAMAIS DÉPLACÉ POUR ÊTRE LISIBLE. Un
+   *    picto poussé de cinquante mètres pour éviter un voisin envoie chercher
+   *    autre chose que ce qui est là. Le composant reprojette `l.g` tel quel.
+   */
+  it("les repères de la carte sont posés à leur coordonnée", () => {
+    const carte = readFileSync(new URL("./CarteFondOT.tsx", import.meta.url), "utf8");
+    expect(carte).toMatch(/data-lon=\{l\.g\[0\]\}/);
+    expect(carte).toMatch(/data-lat=\{l\.g\[1\]\}/);
+    /* 🔴 ET LE CADRAGE TIENT COMPTE DE CE QUE LA FEUILLE RECOUVRE. La surface
+       VISIBLE d'une carte n'est pas sa surface : depuis qu'elle va à fond
+       perdu, cadrer sur la boîte entière centre le tracé DERRIÈRE la feuille. */
+    expect(carte).toMatch(/bottom: serre \+ basOcculte/);
+  });
+
   /** ⛔ « À proximité » n'est pas « sur le chemin » : le seuil est DIT. */
   it("dit le seuil quand il cite des sites proches", () => {
     expect(code).toMatch(/SEUIL_PROCHES/);
