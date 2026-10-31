@@ -40,7 +40,34 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { bbox } from "./walks";
 import type { Walk, WalkPoint } from "./walks";
 
-const STYLE = "https://mana.bzh/carte/style.json";
+/**
+ * 🔴 LE STYLE EST EMBARQUÉ, PLUS RELAYÉ — 31/10/2026, après une panne.
+ *
+ * `mana.bzh/carte/style.json` répondait **404**, et `planet.json` avec lui :
+ * les deux `handle` voisins du Caddyfile ne gagnaient pas, et la requête
+ * tombait sur le nginx des tuiles, dont la liste blanche ne compte que quatre
+ * familles de chemins (`planet`, `natural_earth`, `sprites`, `fonts`). Les
+ * fichiers existaient sur le disque depuis le 28/10. ⭐ Un fichier présent,
+ * correct et invisible : on soupçonne la donnée, c'est le routage.
+ *
+ * ⭐ ET C'EST LE PREMIER FICHIER QUE MAPLIBRE LIT. Sans lui rien ne s'affiche,
+ *    pas même une erreur à l'écran — la carte reste blanche et seule la
+ *    console parle. Le faire dépendre d'une route, c'est faire dépendre TOUTE
+ *    la cartographie d'une ligne de configuration d'un serveur tiers.
+ *
+ * Il est donc servi avec l'app, et la TileJSON (`planet.json`) y est INLINÉE :
+ * il ne reste que les chemins qui répondent — tuiles, relief, sprites,
+ * polices. 42 Ko, dans le lot `CarteReelle` déjà différé.
+ *
+ * ⚠️ CE QUI NE CHANGE PAS : les tuiles restent RELAYÉES par nous, en URLs
+ *    absolues vers mana.bzh. Ce n'est pas une maladresse à « simplifier » :
+ *    c'est ce qui empêche l'IP du promeneur de sortir chez l'hébergeur amont.
+ * ⚠️ Et le style EMBARQUE l'horodatage du jeu de tuiles
+ *    (`planet/20260906_080001_pt/`). À la prochaine moisson du planet, ce
+ *    fichier doit être régénéré depuis le serveur — sinon la carte pointe
+ *    silencieusement sur un jeu retiré.
+ */
+const STYLE = `${import.meta.env.BASE_URL}carte-style.json`;
 
 export function CarteReelle({
   walk,
