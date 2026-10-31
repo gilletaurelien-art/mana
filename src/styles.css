@@ -925,8 +925,17 @@ body { padding-bottom: 84px; }
   background: var(--ink);
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
-  padding: 0.08em 0.3em;
-  box-shadow: 0.3em 0 0 var(--ink), -0.3em 0 0 var(--ink);
+  /* ⚠️ LE `box-shadow` A DISPARU, ET C'EST LUI QU'IL FALLAIT RETIRER. Il
+     étirait le fond de 0,3em de chaque côté — d'où les petits ergots carrés
+     qui dépassaient. Un `border-radius` ne les aurait pas arrondis : une ombre
+     portée décalée reste une COPIE décalée de la boîte, donc deux blobs
+     débordant de part et d'autre. On rend donc la même largeur par de la
+     marge intérieure, qui, elle, est bien arrondie par le rayon.
+     0,3em de marge + 0,3em d'ombre = 0,6em : le texte garde son écart. */
+  padding: 0.16em 0.6em;
+  /* la forme synapse de la charte, à l'échelle d'un bandeau de titre —
+     même famille de rayons mixtes que `.sous-bulle`, la bulle encre */
+  border-radius: 20px 26px 18px 24px;
 }
 /* ⚠️ DEUX PIÈGES DE `display: inline`, rencontrés l'un après l'autre :
    1. les lignes d'un texte qui passe à la ligne se CHEVAUCHENT — l'interligne
@@ -943,9 +952,11 @@ body { padding-bottom: 84px; }
 .page .hero-label {
   display: table;
   background: var(--ink);
-  padding: 0.25em 0.5em;
+  padding: 0.3em 0.9em;
   margin-bottom: var(--sp-1);
   margin-inline: auto;
+  /* le même geste, à l'échelle de l'accroche : rayons mixtes, plus serrés */
+  border-radius: 12px 16px 11px 14px;
 }
 .page .wrap > .page-titre { margin-bottom: 0; }
 .page .wrap > .page-titre + * { margin-top: var(--sp-4); }
