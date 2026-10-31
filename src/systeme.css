@@ -894,7 +894,10 @@
 }
 .terr-resultat:hover, .terr-resultat:focus-visible { background: var(--fond-enfoncé); }
 .terr-resultat-nom { font-family: var(--titre); font-size: var(--t-s); }
-.terr-rien { padding: var(--sp-2); font-size: var(--t-xs); color: var(--texte-doux); }
+/* ⚠️ `--texte-doux` vaut la sauge en thème sombre, et cette ligne vit sur le
+   kaki de la carte : 3,65. Même défaut que `.terr-attente`, corrigé le même
+   soir — et le même rôle en est la réponse. */
+.terr-rien { padding: var(--sp-2); font-size: var(--t-xs); color: var(--texte-inverse-doux); }
 
 .terr-commandes {
   position: absolute; z-index: var(--z-releve);

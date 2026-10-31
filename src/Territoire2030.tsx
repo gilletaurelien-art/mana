@@ -30,6 +30,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DEFAUT, TERRITOIRES, territoireDe, urlGraphe } from "./territoires";
 import { chargerOT, type ItineraireOT } from "./ot";
+import { chargerLieux, type Inventaire } from "./lieux";
 import { libelleCategorie } from "./categories";
 import { WALKS, VITRINE, effortLisible } from "./walks";
 import type { Walk } from "./walks";
@@ -76,7 +77,7 @@ export function Territoire2030({ base }: { base: string }) {
   const [vise, setVise] = useState<{ nom: string; detail: string; g: [number, number] } | null>(null);
   const [calquesOuverts, setCalquesOuverts] = useState(false);
   const [calques, setCalques] = useState({
-    lieux: true, littoral: true, promenades: true, balises: true,
+    lieux: true, littoral: true, promenades: true, balises: true, sites: true,
   });
 
   const [moi, setMoi] = useState<[number, number] | null>(null);
@@ -106,6 +107,19 @@ export function Territoire2030({ base }: { base: string }) {
      circuits couvrent les deux moitiés de la communauté, en dessiner la
      totalité sur la presqu'île ferait sortir des traits du cadre. */
   const [ot, setOt] = useState<ItineraireOT[]>([]);
+  /* ⭐ L'INVENTAIRE : 1 358 sites remarquables, dont 734 que personne n'a
+     nommés. C'est la moitié que MANA apporte — l'Office a les circuits, nous
+     avons ce qu'on croise. 110 Ko chargés à la demande. */
+  const [inv, setInv] = useState<Inventaire | null>(null);
+  useEffect(() => { chargerLieux().then(setInv).catch(() => setInv(null)); }, []);
+  const sitesIci = useMemo(
+    () => (inv?.lieux ?? []).filter((l) => {
+      const [lo, la] = l.g;
+      return lo >= terr.emprise[0] && lo <= terr.emprise[2]
+          && la >= terr.emprise[1] && la <= terr.emprise[3];
+    }),
+    [inv, terr],
+  );
   useEffect(() => { chargerOT().then((r) => setOt(r.itineraires)).catch(() => setOt([])); }, []);
   const otIci = useMemo(
     () => ot.filter((i) => {
@@ -200,9 +214,19 @@ export function Territoire2030({ base }: { base: string }) {
       })),
     );
 
-    const lieux: Resultat[] = (graphe?.l ?? [])
-      .filter((l) => plat(l.n).includes(q))
-      .map((l) => ({ genre: "lieu" as const, nom: l.n, detail: libelleCategorie(l.c), g: l.g }));
+    /* ⭐ LA RECHERCHE PUISE DANS L'INVENTAIRE, pas seulement dans les lieux
+       accrochés au réseau. Le graphe n'en porte que ceux qui touchent un
+       chemin ; l'inventaire porte tout — y compris une épave, un îlot ou une
+       baie, qu'aucun sentier ne longe.
+       ⚠️ Et seulement les NOMMÉS : chercher « plage » ne doit pas rendre
+          cinquante résultats tous intitulés « Plage ». Les anonymes se voient
+          sur la carte, ils ne se cherchent pas par leur nom. */
+    const lieux: Resultat[] = sitesIci
+      .filter((l) => l.n && plat(l.n).includes(q))
+      .map((l) => ({
+        genre: "lieu" as const, nom: l.n!,
+        detail: inv?.libelles[l.c] ?? l.c, g: l.g,
+      }));
 
     /* ⚠️ Dédoublonnage par NOM + POSITION ARRONDIE, pas par nom seul : il y a
        quatre « menhir » distincts sur la presqu'île, et les fondre en un seul
@@ -218,7 +242,7 @@ export function Territoire2030({ base }: { base: string }) {
       // ⚠️ Plafonné à huit : une liste qui recouvre la carte n'aide plus à
       //    choisir, elle cache ce qu'on cherchait.
       .slice(0, 8);
-  }, [requete, graphe]);
+  }, [requete, graphe, sitesIci, inv]);
 
   /** ⭐ Un résultat « promenade » SÉLECTIONNE la promenade — le tracé
    *     s'allume, la feuille s'ouvre sur sa fiche. Un résultat « lieu » pose
@@ -472,6 +496,21 @@ export function Territoire2030({ base }: { base: string }) {
             MANA, et ils ne doivent pas non plus se confondre avec eux. Un
             trait plus fin, dans la sauge du végétal, et sous la couche des
             promenades vérifiées — l'ordre de dessin EST la hiérarchie. */
+      /* ── les sites remarquables ────────────────────────────────────────
+         ⚠️ DESSINÉS EN DERNIER, donc au-dessus de tout : ce sont eux qu'on
+            vient chercher sur cet écran. Un point de 2,5 px, pas une
+            pastille : mille trois cent cinquante-huit pastilles feraient une
+            tache. ⭐ La densité EST l'information — on voit où le territoire
+            est riche avant de lire un seul nom. */
+      if (calques.sites && sitesIci.length) {
+        ctx.fillStyle = trace;
+        for (const l of sitesIci) {
+          const x = X(l.g[0]), y = Y(l.g[1]);
+          if (x < -20 || y < -20 || x > W + 20 || y > H + 20) continue;
+          ctx.beginPath(); ctx.arc(x, y, l.n ? 2.6 : 1.8, 0, Math.PI * 2); ctx.fill();
+        }
+      }
+
       if (calques.balises) {
         ctx.strokeStyle = cheminBeau;
         ctx.lineWidth = 1.4;
@@ -574,7 +613,7 @@ export function Territoire2030({ base }: { base: string }) {
     const ro = new ResizeObserver(dessiner);
     ro.observe(b);
     return () => ro.disconnect();
-  }, [graphe, choisie, walk, calques, vise, moi, vueTic, otIci]);
+  }, [graphe, choisie, walk, calques, vise, moi, vueTic, otIci, sitesIci]);
 
   return (
     <main className="terr">
@@ -643,6 +682,7 @@ export function Territoire2030({ base }: { base: string }) {
             {([
               ["littoral", "Le littoral", "la distance à la mer, par tronçon"],
               ["balises", "Les circuits balisés", "ceux de l'Office de tourisme"],
+              ["sites", "Les sites remarquables", "mégalithes, plages, forts, fontaines…"],
               ["lieux", "Les lieux", "ce qu'on croise sur le parcours choisi"],
             ] as const).map(([clef, nom, quoi]) => (
               <label key={clef} className="terr-calque">
@@ -706,7 +746,12 @@ export function Territoire2030({ base }: { base: string }) {
           </div>
           {graphe && (
             <p className="terr-mesure">
-              {graphe.a.length.toLocaleString("fr-FR")} tronçons · {graphe.l.length} lieux
+              {/* ⚠️ On annonce l'INVENTAIRE, pas les lieux accrochés au
+                  réseau : le graphe n'en porte que ceux qui touchent un
+                  chemin. Annoncer 495 quand on en dessine 1 358 ferait un
+                  chiffre juste rapporté au mauvais objet. */}
+              {graphe.a.length.toLocaleString("fr-FR")} tronçons
+              {sitesIci.length > 0 && ` · ${sitesIci.length.toLocaleString("fr-FR")} sites remarquables`}
               {rendu > 0 && ` · dessiné en ${rendu} ms`}
             </p>
           )}
@@ -753,9 +798,15 @@ export function Territoire2030({ base }: { base: string }) {
           <ul className="terr-resultats" role="listbox" aria-label="Lieux trouvés">
             {resultats.length === 0 ? (
               <li className="terr-rien">
-                Aucun lieu de la presqu'île ne porte ce nom. Nous ne cherchons
-                que dans nos {graphe?.l.length ?? 0} lieux relevés&nbsp;: ni
-                adresses, ni commerces.
+                {/* ⚠️ Deux choses fausses ici depuis ce soir : « la presqu'île »
+                    alors qu'un onglet montre l'Aulne, et le compte des lieux du
+                    GRAPHE alors qu'on cherche dans l'inventaire. ⭐ Une phrase
+                    qui cite un chiffre vivant vieillit deux fois plus vite — on
+                    nomme le territoire affiché et on compte ce qu'on fouille. */}
+                Aucun lieu de {terr.nom.toLowerCase()} ne porte ce nom. Nous ne
+                cherchons que dans nos{" "}
+                {sitesIci.filter((l) => l.n).length.toLocaleString("fr-FR")} sites
+                nommés&nbsp;: ni adresses, ni commerces.
               </li>
             ) : (
               resultats.map((r) => (
