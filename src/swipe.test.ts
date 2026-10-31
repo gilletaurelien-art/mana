@@ -104,7 +104,13 @@ describe("le jeu de cartes des balades", () => {
    */
   it("le fond OSM ne se montre que s'il a vraiment peint", () => {
     const carte = readFileSync(new URL("./CarteFondOT.tsx", import.meta.url), "utf8");
-    expect(carte).toMatch(/queryRenderedFeatures\(\)\.length > 0/);
+    /* ⚠️ CE MOTIF A DÉJÀ CHANGÉ DEUX FOIS, parce que le garde lui-même a eu
+       tort deux fois : `areTilesLoaded()` acceptait un échec total, puis
+       `queryRenderedFeatures()` refusait une photographie aérienne — elle n'a
+       aucune entité. ⭐ Ce qui doit rester vrai n'est pas la formule, c'est
+       qu'on COMPTE des tuiles réellement acceptées avant de montrer le fond. */
+    expect(carte).toMatch(/tuiles > 0 && m\.areTilesLoaded\(\)/);
+    expect(carte).toMatch(/dataType === "source"/);
     expect(carte).toMatch(/interactive: false/);
     // ⚠️ Et le contexte WebGL se libère, sinon 46 glissements saturent le
     //    plafond du navigateur et les dernières cartes restent blanches.

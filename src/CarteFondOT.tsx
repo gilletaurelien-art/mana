@@ -146,31 +146,40 @@ export function CarteFondOT({
 
     m.on("render", redessiner);
 
-    /* 🔴 LE FOND NE SE DÉCLARE PRÊT QUE SI DES TUILES SONT ARRIVÉES.
-       ⭐ « Une carte muette ressemble à une carte qui charge » — et sans ce
-          garde elle lui ressemble ENCORE PLUS, puisqu'elle recouvre la
-          silhouette d'un gris uni. Mesuré en développement : `mana.bzh`
-          répond 200 mais sans `access-control-allow-origin`, la liste
-          blanche ne connaissant que le domaine de production. maplibre ne
-          lève rien de visible ; seule la console parle.
-       🔴 ET `areTilesLoaded()` NE SUFFIT PAS — mesuré, le garde a dit OUI
-          alors qu'aucune tuile n'était arrivée. Il répond « plus aucune
-          requête en attente », ce qui est vrai aussi quand elles ont TOUTES
-          échoué. ⭐ Un garde qu'on n'a jamais vu refuser n'a jamais été vu :
-          celui-là, on l'a vu accepter le cas qu'il devait refuser.
-       ⭐ La seule question qui porte sur ce qu'on VOIT est
-          `queryRenderedFeatures()` : y a-t-il quelque chose de peint ? Sans
-          tuiles elle rend 0, quelles que soient les promesses de l'état
-          interne. `load` et `loaded()`, eux, ne deviennent jamais vrais sur ce
-          style (mesuré le 27/10).
-       ⚠️ Et l'échec se VERROUILLE : une erreur suivie d'une minuterie qui
-          repasse à « prêt » remettrait le rectangle gris par-dessus la
-          silhouette. En cas d'échec, la silhouette reste — un dessin vrai
-          plutôt qu'un fond muet. */
+    /* 🔴 LE FOND NE SE DÉCLARE PRÊT QUE SI DES TUILES SONT VRAIMENT ARRIVÉES.
+       ⭐ « Une carte muette ressemble à une carte qui charge » — et sans
+          garde elle lui ressemble encore plus, puisqu'elle recouvre la
+          silhouette d'un rectangle uni. En développement, `mana.bzh` répond
+          200 mais sans `access-control-allow-origin` : la liste blanche ne
+          connaît que la production. Rien n'est visible à l'écran.
+
+       🔴 PREMIER GARDE : `areTilesLoaded()`. Il a dit OUI alors qu'aucune
+          tuile n'était arrivée — il répond « plus aucune requête en
+          attente », ce qui est vrai aussi quand elles ont TOUTES échoué.
+
+       🔴 DEUXIÈME GARDE : `queryRenderedFeatures().length > 0`. Juste pour un
+          fond VECTORIEL, et faux pour une PHOTOGRAPHIE : une image n'a aucune
+          entité. Mesuré en production le 31/10 — 48 tuiles aériennes peintes,
+          le garde refusait, et la carte restait cachée sous sa silhouette.
+          ⭐ Un garde calibré sur une matière refuse l'autre. Celui-là avait
+             raison de refuser le cas que je lui avais montré, et tort sur
+             celui que je ne lui avais pas montré.
+
+       ⭐ LA QUESTION QUI VAUT POUR LES DEUX : une tuile a-t-elle été ACCEPTÉE ?
+          maplibre émet `data` avec `dataType === "source"` et un `tile` quand
+          elle entre dans la carte — jamais quand elle a échoué. C'est le seul
+          signal qui porte sur ce qui est peint, raster ou vecteur.
+       ⚠️ Et l'échec se VERROUILLE : une minuterie qui repasse à « prêt » après
+          une erreur remettrait le rectangle uni par-dessus la silhouette. */
     let echoue = false;
+    let tuiles = 0;
+    m.on("data", (e) => {
+      if ((e as { dataType?: string }).dataType === "source"
+          && (e as { tile?: unknown }).tile) tuiles++;
+    });
     const peutMontrer = () => {
       if (echoue) return;
-      if (m.areTilesLoaded() && m.queryRenderedFeatures().length > 0) setPrete(true);
+      if (tuiles > 0 && m.areTilesLoaded()) setPrete(true);
     };
     m.on("error", () => { echoue = true; setPrete(false); });
     m.once("idle", peutMontrer);
