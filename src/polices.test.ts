@@ -49,6 +49,20 @@ const ORIGINE: { polices: Record<string, string> } =
 
 const jamaisPortes = (fichier: string) => [...(ORIGINE.polices[fichier] ?? "")];
 
+/**
+ * ⚠️ `openSync` rend `Font | FontCollection` — une collection n'a pas de table
+ *    de correspondance à elle. On restreint au lieu de forcer le type : une
+ *    collection ici serait une vraie anomalie (nos trois polices sont des
+ *    fichiers simples), et elle doit se dire, pas se taire derrière un `as`.
+ */
+function ouvrir(chemin: string) {
+  const f = fontkit.openSync(chemin);
+  if (!("hasGlyphForCodePoint" in f)) {
+    throw new Error(`${chemin} est une collection de polices, pas une police`);
+  }
+  return f;
+}
+
 const requis = () => [...new Set([...readFileSync(JEU, "utf8")])]
   .filter((c) => c.trim() !== "");
 
@@ -85,7 +99,7 @@ describe("les polices", () => {
     const car = requis();
     expect(car.length).toBeGreaterThan(200);   // le jeu n'a pas été vidé par accident
     for (const f of readdirSync(DOSSIER).filter((f) => /\.woff2$/.test(f))) {
-      const police = fontkit.openSync(`${DOSSIER}/${f}`);
+      const police = ouvrir(`${DOSSIER}/${f}`);
       const jamais = jamaisPortes(f);
       const perdus = car
         .filter((c) => !jamais.includes(c))
@@ -100,7 +114,7 @@ describe("les polices", () => {
       + " · Île Vierge · Pen-Hir · l'Aber · Rostudel · Kerdreux"
       + " · « guillemets » – tiret – apostrophe’ … €";
     for (const f of readdirSync(DOSSIER).filter((f) => /\.woff2$/.test(f))) {
-      const police = fontkit.openSync(`${DOSSIER}/${f}`);
+      const police = ouvrir(`${DOSSIER}/${f}`);
       const jamais = jamaisPortes(f);
       const manquants = [...new Set([...epreuve])]
         .filter((c) => c.trim() !== "" && !jamais.includes(c))
