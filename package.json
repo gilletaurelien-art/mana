@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "build:racine": "MANA_BASE=/ VITE_GRAPHE_BASE=/bretagne/g vite build && rm -rf site/bretagne",
     "build": "npm run test && tsc -b && vite build",
     "test": "vitest run",
     "preview": "vite preview",
