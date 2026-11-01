@@ -551,25 +551,23 @@ export function Composer() {
               </button>
             </p>
             {motGps && <p className="page-note">{motGps}</p>}
-            {!situe && !motGps && (
-              <p className="page-note">Par défaut, on part du bourg de Crozon.</p>
-            )}
-
-            <details className="cp-plus">
-              <summary>Plus longtemps, ou une demi-heure près</summary>
-              <label className="filtre">
-                {heures} h de marche
-                <span className="page-note">
-                  {" "}— à plat : nous n'avons pas de relevé d'altitude
-                </span>
-                <input type="range" min={1} max={5} step={0.5} value={heures}
-                       onChange={(e) => setHeures(Number(e.target.value))} />
-              </label>
-            </details>
+            {/* ⛔ LA NOTE « par défaut, on part du bourg de Crozon » ET LE
+                CURSEUR REPLIÉ SONT PARTIS — 2/11, demande du fondateur.
+                ⚠️ Conséquence assumée, et elle réduit une capacité : le
+                   moteur accepte 1 à 5 h par demi-heures, et seules 1, 2 et
+                   3 h sont désormais atteignables. Ce n'est pas un oubli,
+                   c'est un arbitrage — trois gestes valent mieux qu'un
+                   réglage, sur un écran qu'on lit debout. */}
           </section>
         )}
 
 
+        {/* 🔴 CE PANNEAU NE S'AFFICHE QUE S'IL A QUELQUE CHOSE À DIRE.
+            Il rendait une carte VIDE dans le cas normal — ni erreur, ni
+            chargement, ni fermetures manquantes. ⭐ Une surface qui existe
+            sans contenu n'est pas neutre : elle dit « il y a quelque chose
+            ici » à quelqu'un qui cherche quoi lire. */}
+        {(erreur || !graphe || fermetures === null) && (
         <section className="page-panel">
           {/* ⚠️ LES COMPTEURS SONT DANS L'ENTÊTE, PAS ICI — ils y étaient
               DEUX fois après la refonte, à trois centimètres d'écart. Il
@@ -599,6 +597,7 @@ export function Composer() {
           )}
 
         </section>
+        )}
 
         {/* ══ LE REFUS, QUAND ON VISAIT UN LIEU ═══════════════════════════
             🔴 C'EST LA PARTIE QUI COMPTE. Une boucle réussie se voit ; un
@@ -710,6 +709,38 @@ export function Composer() {
               </p>
             )}
           </section>
+        )}
+
+        {/* ⭐ LA CARTE AVANT LES TROIS PROPOSITIONS — 2/11, demande du
+            fondateur, et c'est le bon ordre de lecture : on voit d'abord la
+            boucle qu'on tient, puis les deux autres qu'on peut prendre à la
+            place. L'inverse demandait de choisir avant d'avoir rien vu.
+            ⚠️ Elle reste gardée par `b && walk` : tant que rien n'est
+               composé, il n'y a pas de tracé à montrer, et une carte vide
+               poserait la même question qu'un panneau vide. */}
+        {/* ⚠️ DEUX CONTENEURS, ET CE N'EST PAS DU STYLE. Le panneau sans
+              marge avec `overflow: hidden` existe pour que maplibre déborde
+              jusqu'aux bords ; le schéma SVG, lui, est en `width: 100%` et
+              ne résout rien dans ce conteneur-là — mesuré le 31/10 : rendu,
+              mais à 0 × 0 pixel, donc invisible. Un repli qui s'affiche en
+              taille nulle est un repli qui n'existe pas. */}
+        {b && walk && (
+          horsLigne ? (
+            <section className="page-panel">
+              <p className="apercu-label">Carte</p>
+              <WalkMap walk={walk} />
+              <p className="page-note">
+                Sans réseau, le fond de carte ne vient pas : voici le tracé
+                seul. Il ne dépend que de ce qui est déjà dans l'appareil.
+              </p>
+            </section>
+          ) : (
+            <section className="page-panel" style={{ padding: 0, overflow: "hidden" }}>
+              <CarteOuSchema schema={<WalkMap walk={walk} />}>
+                <CarteReelle walk={walk} />
+              </CarteOuSchema>
+            </section>
+          )
         )}
 
         {/* ══ C · LES TROIS PROPOSITIONS ══════════════════════════════
@@ -928,28 +959,6 @@ export function Composer() {
               )}
             </section>
 
-            {/* ⚠️ DEUX CONTENEURS, ET CE N'EST PAS DU STYLE. Le panneau sans
-                marge avec `overflow: hidden` existe pour que maplibre déborde
-                jusqu'aux bords ; le schéma SVG, lui, est en `width: 100%` et
-                ne résout rien dans ce conteneur-là — mesuré le 31/10 : rendu,
-                mais à 0 × 0 pixel, donc invisible. Un repli qui s'affiche en
-                taille nulle est un repli qui n'existe pas. */}
-            {horsLigne ? (
-              <section className="page-panel">
-                <p className="apercu-label">Carte</p>
-                <WalkMap walk={walk} />
-                <p className="page-note">
-                  Sans réseau, le fond de carte ne vient pas : voici le tracé
-                  seul. Il ne dépend que de ce qui est déjà dans l'appareil.
-                </p>
-              </section>
-            ) : (
-              <section className="page-panel" style={{ padding: 0, overflow: "hidden" }}>
-                <CarteOuSchema schema={<WalkMap walk={walk} />}>
-                  <CarteReelle walk={walk} />
-                </CarteOuSchema>
-              </section>
-            )}
 
             {rencontres.length > 0 && (
               <section className="page-panel">
