@@ -259,7 +259,7 @@ describe("le jeu de cartes des balades", () => {
    * ⚠️ La carte du territoire n'était qu'un ÉTAT interne : elle a désormais
    *    une adresse (`?vue=carte`), sans quoi on ne pouvait pas y mener.
    */
-  it("les deux portes de l'accueil mènent à deux endroits", () => {
+  it("aucune porte de l'accueil ne double un onglet de la barre du bas", () => {
     /* ⚠️ TROISIÈME FOIS QU'UN GARDE NOMME UN FICHIER PLUTÔT QU'UNE RÈGLE.
        Il lisait `Invitation.tsx` ; les deux portes ont déménagé dans la fiche
        le 1/11 et il a crié « 0 porte ». ⭐ Ce qui doit rester vrai, c'est que
@@ -271,11 +271,26 @@ describe("le jeu de cartes des balades", () => {
       .replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
     const liens = [...net.matchAll(/href=\{`\$\{base\}([^`]*)`\}/g)].map((m) => m[1]);
     const portes = liens.filter((h) => h.startsWith("/carte"));
-    expect(portes.length).toBe(2);
-    expect(new Set(portes).size, `les deux portes pointent ${portes[0]}`).toBe(2);
-    expect(portes).toContain("/carte?vue=carte");
+    expect(portes.length, "l'accueil n'offre plus aucune porte").toBeGreaterThan(0);
 
-    // ⭐ et l'écran sait entrer par cette adresse, sinon le lien ment
+    /* 🔴 LE TEST A ÉTÉ RETOURNÉ LE 1/11, PAS SUPPRIMÉ. Il exigeait DEUX
+       portes ; le fondateur en a retiré une — « CARTE » doublait le premier
+       onglet de la barre du bas. ⭐ Ce qu'il protégeait reste vrai sous une
+       autre forme, et sous une forme PLUS JUSTE : le défaut n'était jamais
+       « combien de portes », c'était « deux contrôles pour un seul endroit ».
+       Un compte figé l'aurait dit ; cette règle-ci le dit ET couvre le cas
+       que le compte ratait, celui du doublon avec la barre du bas. */
+    const barre = [...readFileSync(new URL("./App.tsx", import.meta.url), "utf8")
+      .matchAll(/<a[^>]*href=\{`\$\{B\}([^`]*)`\}[^>]*aria-current/g)].map((m) => m[1]);
+    expect(barre.length, "les onglets de la barre du bas").toBeGreaterThanOrEqual(4);
+
+    expect(new Set(portes).size, `portes en double : ${portes.join(" ")}`).toBe(portes.length);
+    for (const p of portes) {
+      expect(barre, `« ${p} » est déjà un onglet de la barre du bas`).not.toContain(p);
+    }
+
+    // ⭐ et l'écran sait entrer par `?vue=carte`, que la barre emploie, sinon le lien ment
+    expect(barre).toContain("/carte?vue=carte");
     const ecran = readFileSync(new URL("./EcranTerritoire.tsx", import.meta.url), "utf8");
     expect(ecran).toMatch(/get\("vue"\) === "carte"/);
   });

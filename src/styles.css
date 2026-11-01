@@ -2487,14 +2487,14 @@ body:has(.jeu) { padding-bottom: 0; }
    `nowrap` ne renonce à rien : les deux se déclaraient incompressibles et
    `wrap` a fait la seule chose qu'il pouvait. Avec `flex: 1 1 0`, la base est
    ZÉRO et le partage se fait vraiment — moitié-moitié. */
-/* ⭐ ÉCARTÉES AUX DEUX BORDS — 1/11, demande du fondateur : « balades » à
-   gauche, « carte » à droite. `space-between` plutôt qu'un `flex: 1` : les
-   deux gardent la largeur de leur mot, et c'est l'ESPACE entre elles qui
-   s'étire. ⚠️ Les étirer à parts égales aurait rempli « CARTE » de vide —
-   et un bouton à moitié vide se lit comme un bouton qui attend quelque
-   chose. Ici ils restent denses, et l'écart les sépare.
-   ⚠️ `flex-wrap` reste : sur une colonne plus étroite que prévu, deux
-      boutons qui se chevauchent valent moins que deux boutons empilés. */
+/* ⭐ IL N'EN RESTE QU'UNE — 1/11, demande du fondateur : « CARTE » est le
+   premier onglet de la barre du bas, toujours à l'écran, deux centimètres
+   plus bas. La bulle garde la seule porte qui mène ailleurs.
+   ⚠️ Cette règle a porté trois textes en une journée — « écartées aux deux
+      bords », puis le doré plein, puis ceci. Elle décrit un ÉTAT qui bouge,
+      pas un invariant : la relire avant de s'y fier.
+   Le `flex` reste pour l'alignement vertical du picto et du mot ; avec un
+   seul enfant, `space-between` le laisse au bord gauche — ce qu'on veut. */
 .inv-balade-actions {
   display: flex; justify-content: space-between; align-items: center;
   gap: 8px; margin-top: 12px; flex-wrap: wrap;

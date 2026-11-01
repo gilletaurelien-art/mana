@@ -147,11 +147,14 @@ export function InvitationBalade({ base }: { base: string }) {
         </a>
       </p>
 
-      {/* ⭐ LES DEUX PORTES SONT DANS LA FICHE — 1/11, demande du fondateur.
-          ⚠️ Elles y reviennent SANS en dépendre : l'enveloppe est rendue
-             avant les données (voir plus haut), donc les boutons existent
-             même si `ot.json` n'arrive jamais. C'était la seule objection à
-             les y mettre, et elle est levée par construction. */}
+      {/* ⭐ UNE SEULE PORTE ICI — 1/11, demande du fondateur : « CARTE » est
+          déjà le premier onglet de la barre du bas, visible en permanence,
+          deux centimètres plus bas. Deux chemins vers le même écran, dont
+          l'un ne sert qu'à l'accueil, se disputaient la place du seul qui
+          mène ailleurs.
+          ⚠️ Le bouton restant ne dépend PAS des données : l'enveloppe est
+             rendue avant elles (voir plus haut), donc il existe même si
+             `ot.json` n'arrive jamais. */}
       <nav className="inv-balade-actions" aria-label="Entrer">
         <a className="inv-primaire" href={`${base}/carte`}>
           <svg className="m-icone inv-pin" viewBox="0 0 24 24" aria-hidden="true">
@@ -159,12 +162,6 @@ export function InvitationBalade({ base }: { base: string }) {
             <circle cx="12" cy="10" r="2.6" />
           </svg>
           <span className="inv-primaire-mot">Balades</span>
-        </a>
-        <a className="inv-primaire" href={`${base}/carte?vue=carte`}>
-          <svg className="m-icone inv-pin" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M9 4 3 6.5v13L9 17l6 3 6-2.5v-13L15 7z" /><path d="M9 4v13M15 7v13" />
-          </svg>
-          <span className="inv-primaire-mot">Carte</span>
         </a>
       </nav>
     </article>
