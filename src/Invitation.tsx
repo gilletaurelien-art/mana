@@ -65,7 +65,7 @@ export function Invitation({ base }: { base: string }) {
       <div className="inv-contenu">
         <header className="inv-marque">
           <p className="inv-mot">MANA</p>
-          <p className="inv-devise">Terre, mer &amp; lumière — Bretagne</p>
+          <p className="inv-devise">Terre, mer &amp; lumière</p>
         </header>
 
         <div className="inv-dire">
