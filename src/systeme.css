@@ -823,26 +823,22 @@
    (#94702e) : **4,55**, l'appariement déjà mesuré et déjà posé partout. */
 .inv-pin { color: var(--action-texte); }
 
-/* 🔴 LA FLÈCHE EN BLANC AUSSI — ET LA PASTILLE A DÛ CHANGER DE TON.
-   Blanc sur `--ocre` (#c69a48) donne **2,59**. C'est exactement l'échec que
-   `tokens.css` documente déjà : « l'ocre doré EST clair, et rien de clair ne
-   se pose dessus » — la raison pour laquelle `--action` a été calculée.
-   ⭐ Repeindre la flèche sans toucher au sol, c'était rejouer un défaut que
-      ce projet a déjà payé une fois.
-   Quatre tons mesurés, et un seul tient les DEUX contraintes à la fois :
-     · le blanc dessus (≥ 4,5, c'est un glyphe qu'on doit lire)
-     · la pastille DISTINCTE du bouton doré (≥ 3, c'est une forme)
-       --ocre        2,59 / 1,76   ✗✗
-       --ocre-sombre 5,51 / 1,21   ✗ la pastille disparaît dans le bouton
-       --or-profond  5,83 / 1,28   ✗ idem
-       --kaki-sombre 14,01 / 3,08  ✅
-   ⚠️ Et `--kaki-sombre` n'est pas un choix esthétique de secours : son rôle
-      déclaré est « enfoncement · fond de barre ». Une pastille sertie dans un
-      bouton est exactement ça. */
+/* 🔴 LE ROND SOMBRE AUTOUR DE LA FLÈCHE EST PARTI — 1/11, demande du
+   fondateur. Et il emporte avec lui tout le raisonnement d'il y a vingt
+   minutes : j'avais assombri la pastille en `--kaki-sombre` pour qu'un blanc
+   y tienne (14,01), après avoir mesuré que le blanc sur `--ocre` tombait à
+   2,59.
+   ⭐ LA SUPPRESSION RÈGLE LE PROBLÈME QUE L'ASSOMBRISSEMENT RÉSOLVAIT. Sans
+      pastille, la flèche est blanche SUR LE BOUTON — `--action` — où le blanc
+      vaut **4,55**, l'appariement que toute l'application emploie déjà. Une
+      couche en moins, une valeur en moins à tenir.
+   ⚠️ Le travail de mesure n'était pas perdu pour autant : c'est lui qui a
+      montré qu'aucun or clair ne porte du blanc, et c'est pour ça que le
+      retrait est le bon geste plutôt qu'un repli. */
 .inv-fleche {
   display: grid; place-items: center;
-  width: 44px; height: 44px; border-radius: 50%;
-  background: var(--kaki-sombre); color: var(--action-texte);
+  width: 28px; height: 28px;
+  color: var(--action-texte);
 }
 .inv-fleche svg {
   width: 22px; height: 22px; fill: none; stroke: currentColor;

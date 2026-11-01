@@ -2496,4 +2496,5 @@ body:has(.jeu) { padding-bottom: 0; }
   text-decoration: none;
 }
 .inv-balade-lien .m-icone { width: 17px; height: 17px; flex: none; }
-.inv-balade-lien .inv-fleche svg { width: 16px; height: 16px; }
+.inv-balade-lien .inv-fleche { width: 22px; height: 22px; }
+.inv-balade-lien .inv-fleche svg { width: 18px; height: 18px; }
