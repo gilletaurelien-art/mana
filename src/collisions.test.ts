@@ -62,3 +62,34 @@ describe("les noms de premier niveau", () => {
     expect(fond).toMatch(/BASE_URL\}paysages\//);
   });
 });
+
+describe("le service worker suit le nom des bundles", () => {
+  /* 🔴 LE DÉFAUT QUE CE TEST TIENT, ET JE L'AI INTRODUIT MOI-MÊME LE 1/11.
+     En renommant le dossier des bundles de « assets » vers « app » — pour
+     qu'il ne heurte pas celui de mana.bzh —, le motif du service worker a
+     cessé de correspondre. Le hors-ligne restait « armé », et il ne gardait
+     plus l'application elle-même : la page s'ouvrait en ligne, et rien ne
+     signalait que le cache était devenu creux.
+     ⭐ Un service worker ne peut pas lire la configuration de construction :
+        il ne peut que la RECOPIER. Une recopie ne tient que si quelque chose
+        relie les deux — c'est ce test. */
+  const conf = readFileSync("vite.config.ts", "utf8");
+  const sw = readFileSync("public/sw.js", "utf8");
+
+  it("garde le dossier que Vite produit, quel que soit son nom", () => {
+    const m = conf.match(/assetsDir:\s*"([a-z-]+)"/);
+    expect(m, "assetsDir dans vite.config.ts").not.toBeNull();
+    const dossier = m![1];
+    const sansCommentaires = sw.replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(sansCommentaires, `le service worker ne garde pas « /${dossier}/ »`)
+      .toContain(`/\\/${dossier}\\//`);
+  });
+
+  it("⛔ et il ne garde plus un dossier qui n'existe plus", () => {
+    const sansCommentaires = sw.replace(/\/\*[\s\S]*?\*\//g, "");
+    const dossier = conf.match(/assetsDir:\s*"([a-z-]+)"/)![1];
+    const gardes = [...sansCommentaires.matchAll(/\/\\\/([a-z-]+)\\\/\//g)].map((x) => x[1]);
+    const morts = gardes.filter((d) => d !== dossier && d !== "bretagne" && d !== "carte");
+    expect(morts, `motifs orphelins : ${morts.join(", ")}`).toEqual([]);
+  });
+});

@@ -40,7 +40,12 @@
 //    parcours s'affiche en schéma — comportement spécifié, pas accident.
 //    Seule la feuille de style de la carte est gardée, parce qu'elle est unique.
 
-const CACHE = "mana-bzh-v3";
+/* ⚠️ v4 — 1/11/2026. Le nom du dossier des bundles est passé de « assets » à
+   « app » (il heurtait celui de mana.bzh). Les entrées « /assets/… » des
+   caches déjà posés pointent vers des fichiers qui n'existent plus : les
+   garder ne servirait à rien et occuperait la place. Le ménage d'activation
+   les emporte avec l'ancienne clé. */
+const CACHE = "mana-bzh-v4";
 
 /** Les origines dont on garde les biens. ⚠️ Liste BLANCHE explicite : un
  *  service worker qui mettrait en cache n'importe quelle origine garderait
@@ -52,7 +57,16 @@ const DONNEES = [/\/fermetures\.json$/];
 
 /** Ce qui est immuable et lourd : on le garde, on le rafraîchit derrière. */
 const IMMUABLES = [
-  /\/assets\//,
+  /* 🔴 « app », PAS « assets » — et ce nom DÉPEND DE `vite.config.ts`.
+     Mesuré le 1/11 : en renommant le dossier des bundles pour qu'il ne
+     heurte pas celui de mana.bzh, ce motif a cessé de correspondre. Les
+     bundles n'étaient plus mis en cache — le hors-ligne restait « armé »,
+     et il ne gardait plus l'application elle-même.
+     ⭐ Une valeur qui dépend de la cible en dépend PARTOUT, et un service
+        worker ne peut pas lire la configuration de construction : il ne
+        peut que la RECOPIER. Un test relie les deux et tombe si elles
+        divergent — c'est la seule chose qui tienne une recopie. */
+  /\/app\//,
   /\/bretagne\/g\/.*\.json$/,   // le graphe d'un territoire
   /\/carte\/style\.json$/,
   /* 🔴 `avif` AJOUTÉ LE 31/10/2026 — et son absence était une panne muette.
