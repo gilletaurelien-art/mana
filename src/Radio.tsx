@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { couper, ecouterPoste, etatPoste, lire } from "./poste";
 
 /**
  * MANAradio — le direct, branché le 31/10/2026.
@@ -19,7 +20,6 @@ import { useEffect, useRef, useState } from "react";
  *    navigateur sans lire le flux ; ce qu'on fait, donc, c'est ne RIEN
  *    promettre de plus que ce que l'API dit, et laisser l'oreille trancher.
  */
-const FLUX = "https://radio.mana.bzh/listen/mana/radio.mp3";
 const API = "https://radio.mana.bzh/api/nowplaying/mana";
 
 /** ⚠️ 20 s, pas 5. L'horloge avance toute seule entre deux appels (voir plus
@@ -51,10 +51,12 @@ const mmss = (s: number) => {
 export function Radio() {
   const [antenne, setAntenne] = useState<Antenne | null>(null);
   const [erreur, setErreur] = useState(false);
-  const [joue, setJoue] = useState(false);
-  const [charge, setCharge] = useState(false);
+  /* ⭐ L'ÉTAT DU POSTE N'EST PLUS CELUI DE CET ÉCRAN. Il vit dans `poste.ts`,
+     hors de React : cet écran s'y abonne et le commande, il ne le possède
+     pas. C'est ce qui permet à la radio de continuer quand on part ailleurs
+     — et ce qui fait que l'écran retrouve son état en revenant. */
+  const [{ joue, charge }, setPoste] = useState(etatPoste);
   const [tic, setTic] = useState(0);
-  const audio = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     let vivant = true;
@@ -107,32 +109,21 @@ export function Radio() {
     : 0;
   const part = antenne && antenne.duree > 0 ? Math.min(1, ecoule / antenne.duree) : 0;
 
-  const basculer = () => {
-    const a = audio.current;
-    if (!a) return;
-    if (joue) {
-      a.pause();
-      /* ⚠️ `pause()` ne ferme pas la connexion : le flux continue d'être
-         téléchargé en arrière-plan, et un direct ne se reprend pas là où on
-         l'a laissé. On coupe la source pour de bon, et on la rouvre au
-         besoin — c'est aussi ce qui évite de consommer de la donnée mobile
-         en silence. */
-      a.removeAttribute("src");
-      a.load();
-      setJoue(false);
-      setCharge(false);
-      return;
-    }
-    setCharge(true);
-    a.src = FLUX;
-    a.play().then(
-      () => { setJoue(true); setCharge(false); },
-      () => { setJoue(false); setCharge(false); setErreur(true); },
-    );
-  };
+  /* ⭐ L'ÉCRAN COMMANDE, IL NE POSSÈDE PAS. Toute la logique de flux — ouvrir,
+     couper, relâcher la connexion — vit dans `poste.ts`, parce qu'elle doit
+     survivre à cet écran. */
+  const basculer = () => { if (joue) couper(); else lire(); };
+
+  /* ⚠️ On s'abonne au poste ET on resynchronise à l'arrivée : quelqu'un qui
+     revient sur `/radio` pendant que ça joue doit trouver le bouton dans le
+     bon état, pas un bouton « écouter » sur une antenne ouverte. */
+  useEffect(() => {
+    setPoste(etatPoste());
+    return ecouterPoste(setPoste);
+  }, []);
 
   const indisponible = erreur || (antenne !== null && !antenne.enLigne);
-  const etat = indisponible ? "Hors antenne" : antenne ? "En cours" : "…";
+  const motEtat = indisponible ? "Hors antenne" : antenne ? "En cours" : "…";
 
   return (
     <>
@@ -152,7 +143,7 @@ export function Radio() {
             </svg>
           </button>
           <div className="radio-infos">
-            <p className="radio-etat">{etat}</p>
+            <p className="radio-etat">{motEtat}</p>
             {indisponible ? (
               <p className="radio-note">
                 {erreur ? "Antenne injoignable. Vérifiez votre connexion." : "Reprise bientôt."}
@@ -189,7 +180,6 @@ export function Radio() {
         {/* ⚠️ `preload="none"` : sans lui, Safari ouvre le flux au rendu de la
             page — l'auditeur paie de la donnée pour une radio qu'il n'a pas
             lancée. Le `src` n'est posé qu'au clic, pour la même raison. */}
-        <audio ref={audio} preload="none" onEnded={() => setJoue(false)} />
       </section>
 
       <section className="page-panel">
