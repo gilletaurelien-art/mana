@@ -168,6 +168,27 @@ function SvgFleche() {
   );
 }
 
+function SvgBouclier() {
+  return (
+    <svg className="cp-picto-grand" viewBox="0 0 24 24" aria-hidden="true"
+         fill="none" stroke="currentColor" strokeWidth="1.6"
+         strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3l7 3v5.5c0 4.2-2.9 7.6-7 9.5-4.1-1.9-7-5.3-7-9.5V6z" />
+    </svg>
+  );
+}
+
+function SvgFeuille() {
+  return (
+    <svg className="cp-picto-grand" viewBox="0 0 24 24" aria-hidden="true"
+         fill="none" stroke="currentColor" strokeWidth="1.6"
+         strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 4c0 8-5 12-11 12-2 0-4-1-4-1S6 4 20 4z" />
+      <path d="M4 20c2-5 5-8 9-10" />
+    </svg>
+  );
+}
+
 function SvgBotte() {
   return (
     <svg className="cp-botte" viewBox="0 0 24 24" aria-hidden="true"
@@ -577,81 +598,7 @@ export function Composer() {
             </p>
           )}
 
-          {touchees && touchees.actives.length > 0 && (
-            <div className="page-note" role="status">
-              <p>
-                <strong>
-                  {touchees.actives.length} secteur{touchees.actives.length > 1 ? "s" : ""} du
-                  sentier côtier {touchees.actives.length > 1 ? "sont fermés" : "est fermé"} par arrêté.
-                </strong>{" "}
-                Les boucles ne les empruntent pas.
-              </p>
-              {/* 🔴 LE FAIT RESTE À L'ÉCRAN, LE DÉTAIL SE REPLIE — et les deux
-                  moitiés sont nécessaires. « Éviter ne suffit pas, il faut le
-                  dire » : qui a décidé, pourquoi, et où lire la décision.
-                  Mais déplié, ce bloc occupait tout le premier écran : quatre
-                  arrêtés, quatre liens, quatre mentions de portée, avant
-                  même la question « combien de temps avez-vous ? ».
-                  ⭐ Une page entièrement faite d'avertissements n'avertit
-                     plus : elle se saute. Le nombre et la conséquence
-                     restent visibles sans un geste ; les quatre décisions
-                     sont à un tap, pas à une recherche.
-                  ⛔ Rien n'est retiré : ni l'autorité, ni la date, ni le lien,
-                     ni la mention « portée approximative ». */}
-              <details className="cp-arretes">
-                <summary>
-                  Voir {touchees.actives.length > 1 ? "les" : "le"} {touchees.actives.length}{" "}
-                  arrêté{touchees.actives.length > 1 ? "s" : ""}
-                </summary>
-                <ul>
-                  {touchees.actives.map((f) => (
-                    <li key={f.id}>
-                      {f.libelle} — {f.autorite}, {new Date(f.publie_le).toLocaleDateString("fr-FR")}.{" "}
-                      <a href={f.source} rel="noopener">la décision</a>
-                      {f.portee_approximative && " · portée approximative"}
-                    </li>
-                  ))}
-                </ul>
-              </details>
-            </div>
-          )}
-
-          {touchees && touchees.nonSituees.length > 0 && (
-            <div className="page-note" role="status">
-              {touchees.nonSituees.map((f) => (
-                <p key={f.id}>
-                  <strong>{f.libelle}.</strong> {f.motif}{" "}
-                  <a href={f.source} rel="noopener">{f.autorite}</a>
-                  {f.effet === "interdit" &&
-                    " — ce secteur est signalé mais n'a pas pu être situé sur la carte : il n'est donc pas évité par le calcul."}
-                </p>
-              ))}
-            </div>
-          )}
-
-          {/* ⭐ Dit une fois, la mesure est un argument ; répétée, c'est du décor. */}
-          {graphe && (
-            <p className="page-note">
-              Tout est calculé dans votre téléphone. Votre position ne part
-              nulle part.
-            </p>
-          )}
         </section>
-
-        {graphe && (
-          <section className="page-panel">
-            <p className="apercu-label">Une proposition, pas un programme</p>
-            {/* ⭐ CE PARAGRAPHE EST UNE FONCTION, PAS UN ORNEMENT. Tout ce qui
-                précède calcule UN parcours ; sans ces quelques lignes, l'objet
-                rendu se lit comme un itinéraire à exécuter — et alors couper,
-                s'arrêter ou changer d'avis devient un échec. Ce n'en est pas
-                un : c'est le propre de la flânerie. */}
-            <p className="page-texte">
-              Prenez-en la moitié. Coupez où vous voulez. Faites demi-tour
-              pour la lumière. Rien ici ne compte vos pas.
-            </p>
-          </section>
-        )}
 
         {/* ══ LE REFUS, QUAND ON VISAIT UN LIEU ═══════════════════════════
             🔴 C'EST LA PARTIE QUI COMPTE. Une boucle réussie se voit ; un
@@ -801,7 +748,24 @@ export function Composer() {
 
             <ul className="cp-cartes">
               {(() => { const noms = intitules(boucles.slice(0, 3)); return boucles.slice(0, 3).map((x, i) => {
-                const t = portrait(x.contour, 320, 190, 0.14);
+                /* ⚠️ LE PORTRAIT SE DESSINE AUX DIMENSIONS DE SA BOÎTE, pas
+                   à d'autres qu'on remet ensuite à l'échelle. `portrait()`
+                   applique UN SEUL facteur aux deux axes — c'est tout son
+                   objet, sans quoi les silhouettes s'étirent en rectangles
+                   identiques. Lui donner 320×190 pour l'afficher dans
+                   320×132 rend la main au navigateur : au mieux il centre et
+                   laisse du vide, au pire il déforme. On lui donne la boîte. */
+                /* 🔴 UNE BOÎTE DEBOUT, PAS COUCHÉE — et c'est une MESURE qui
+                   l'impose. Dans un bandeau 320×132, ces tracés occupaient
+                   76 % de la hauteur et 19 % de la largeur : un ruban perdu
+                   au milieu du vide. Les boucles de la presqu'île courent
+                   nord-sud, le long de la côte.
+                   ⭐ `portrait()` n'était pas en cause : il applique UN SEUL
+                      facteur aux deux axes, c'est tout son objet, et c'est
+                      ce qui empêche les 46 silhouettes de devenir des
+                      rectangles identiques. Quand une forme ne remplit pas
+                      sa boîte, on change la boîte — jamais la projection. */
+                const t = portrait(x.contour, 104, 132, 0.1);
                 return (
                   <li key={i}>
                     <button
@@ -812,10 +776,10 @@ export function Composer() {
                     >
                       <span className="cp-carte-trace" aria-hidden="true">
                         {t && (
-                          <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid meet">
-                            <path d={t.d} fill="none" strokeWidth="2.4"
+                          <svg viewBox="0 0 104 132" preserveAspectRatio="xMidYMid meet">
+                            <path d={t.d} fill="none" strokeWidth="2"
                                   strokeLinecap="round" strokeLinejoin="round" />
-                            <circle cx={t.depart[0]} cy={t.depart[1]} r="4.5" />
+                            <circle cx={t.depart[0]} cy={t.depart[1]} r="3.4" />
                           </svg>
                         )}
                       </span>
@@ -1004,6 +968,7 @@ export function Composer() {
               </section>
             )}
 
+
             <section className="page-panel">
               <p className="page-note">
                 Chemins et lieux d'après{" "}
@@ -1015,6 +980,94 @@ export function Composer() {
           </>
         )}
       </div>
+        {/* ══ E · CONDITIONS ET SÉCURITÉ ═══════════════════════════════════
+            🔴 CE BLOC FAISAIT 862 px, DONT 462 POUR LES SECTEURS NON SITUÉS,
+            dépliés en permanence — avant même qu'on ait composé quoi que ce
+            soit. ⭐ Une page entièrement faite d'avertissements n'avertit
+            plus : elle se saute, et le jour où l'avertissement compte, il a
+            la même tête que les cent fois où il ne comptait pas.
+            ⛔ RIEN N'EST RETIRÉ. Le NOMBRE et la CONSÉQUENCE restent à
+               l'écran sans un geste — y compris la conséquence la plus dure,
+               celle des secteurs qu'on n'a pas pu situer et que le calcul
+               n'évite donc PAS. Les arrêtés, les autorités, les dates, les
+               liens et les mentions « portée approximative » sont à un tap.
+            ⚠️ Et la carte est AVANT la signature, donc avant de partir : le
+               brief l'exige, et c'est aussi le bon sens. */}
+        {graphe && (
+          <section className="cp-securite">
+            <div className="cp-securite-bloc">
+              <SvgBouclier />
+              <div>
+                <p className="cp-securite-titre">Conditions et sécurité</p>
+                {touchees && touchees.actives.length > 0 ? (
+                  <p className="cp-securite-dire">
+                    {touchees.actives.length} secteur{touchees.actives.length > 1 ? "s" : ""} du
+                    sentier côtier (GR34) {touchees.actives.length > 1 ? "sont fermés" : "est fermé"} par
+                    arrêté. Les boucles ne les empruntent pas.
+                  </p>
+                ) : (
+                  <p className="cp-securite-dire">
+                    Aucune fermeture connue sur ce territoire aujourd'hui.
+                  </p>
+                )}
+                {touchees && touchees.nonSituees.some((f) => f.effet === "interdit") && (
+                  <p className="cp-securite-dire cp-securite-dur">
+                    ⚠️ {touchees.nonSituees.filter((f) => f.effet === "interdit").length} secteur
+                    {touchees.nonSituees.filter((f) => f.effet === "interdit").length > 1 ? "s" : ""} signalé
+                    {touchees.nonSituees.filter((f) => f.effet === "interdit").length > 1 ? "s" : ""} n'
+                    {touchees.nonSituees.filter((f) => f.effet === "interdit").length > 1 ? "ont" : "a"} pas
+                    pu être situé sur la carte : le calcul ne l'évite pas.
+                  </p>
+                )}
+                {touchees && (touchees.actives.length > 0 || touchees.nonSituees.length > 0) && (
+                  <details className="cp-arretes">
+                    <summary>En savoir plus</summary>
+                    <ul>
+                      {touchees.actives.map((f) => (
+                        <li key={f.id}>
+                          {f.libelle} — {f.autorite},{" "}
+                          {new Date(f.publie_le).toLocaleDateString("fr-FR")}.{" "}
+                          <a href={f.source} rel="noopener">la décision</a>
+                          {f.portee_approximative && " · portée approximative"}
+                        </li>
+                      ))}
+                      {touchees.nonSituees.map((f) => (
+                        <li key={f.id}>
+                          <strong>{f.libelle}.</strong> {f.motif}{" "}
+                          <a href={f.source} rel="noopener">{f.autorite}</a>
+                          {f.effet === "interdit" &&
+                            " — signalé mais non situé sur la carte : le calcul ne l'évite pas."}
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+              </div>
+            </div>
+            <div className="cp-securite-bloc">
+              <SvgFeuille />
+              <p className="cp-securite-dire">
+                Tout est calculé dans votre téléphone. Votre position ne part
+                nulle part.
+              </p>
+            </div>
+          </section>
+        )}
+
+        {/* ⭐ LA SIGNATURE. Elle n'est pas un ornement : tout ce qui précède
+            calcule UN parcours, et sans elle l'objet rendu se lit comme un
+            itinéraire à exécuter — alors couper, s'arrêter ou changer d'avis
+            devient un échec. Ce n'en est pas un : c'est le propre de la
+            flânerie. */}
+        {graphe && (
+          <>
+            <p className="cp-signature">Une proposition, pas un programme</p>
+            <p className="cp-flanerie">
+              Prenez-en la moitié. Coupez où vous voulez. Faites demi-tour
+              pour la lumière. Rien ici ne compte vos pas.
+            </p>
+          </>
+        )}
     </main>
   );
 }
