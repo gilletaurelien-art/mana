@@ -435,8 +435,21 @@ export function Composer() {
             <div className="est-actions" style={{ marginBottom: "var(--sp-2)" }}>
               <label className="filtre">
                 {heures} h de marche
+                {/* 🔴 CETTE LIGNE PROMETTAIT CE QUE LA DONNÉE NE PEUT PAS
+                    TENIR — corrigé le 1/11. « Plus le terrain monte, plus la
+                    boucle sera courte » décrit la règle de Naismith, que
+                    `distanceRessentie()` applique fidèlement… à un dénivelé
+                    qui vaut `null` sur les 36 989 arêtes des deux graphes.
+                    `graphe-signaux.py` le dit et l'assume : « Nous n'avons
+                    pas de modèle d'altitude. Mettre un zéro serait affirmer
+                    du plat. »
+                    ⭐ LA DONNÉE ÉTAIT HONNÊTE, L'ÉCRAN NE L'ÉTAIT PAS. Le
+                       moteur refuse d'inventer une altitude ; l'interface
+                       promettait d'en tenir compte. C'est exactement
+                       l'inverse qu'il faut dire — et le dire ne coûte rien
+                       qu'un peu de fierté. */}
                 <span className="page-note">
-                  {" "}— plus le terrain monte, plus la boucle sera courte
+                  {" "}— à plat : nous n'avons pas de relevé d'altitude
                 </span>
                 <input type="range" min={1} max={5} step={0.5} value={heures}
                        onChange={(e) => setHeures(Number(e.target.value))} />
@@ -610,6 +623,21 @@ export function Composer() {
               <h2 className="section-title" style={{ marginBottom: "var(--sp-2)" }}>
                 {walk.distanceKm} km · environ {walk.dureeEstimeeH} h
               </h2>
+              {/* ⚠️ LA DURÉE EST CALCULÉE À PLAT, ET ON LE DIT ICI plutôt que
+                  de laisser « environ » porter seul le doute. Sur la
+                  presqu'île, l'Office déclare jusqu'à +310 m sur 14 km :
+                  à 3 km/h, Naismith y ajouterait près de 40 minutes. Un
+                  promeneur qui part sur une estimation basse, sur un sentier
+                  de falaise, arrive à la nuit.
+                  ⛔ On ne corrige pas en gonflant la durée « par prudence » :
+                     ce serait inventer dans l'autre sens. On dit ce qu'on
+                     sait, et ce qu'on ne sait pas. */}
+              <p className="page-note">
+                Durée calculée <strong>à plat</strong> — nous n'avons pas de
+                relevé d'altitude sur ces chemins. Le terrain monte&nbsp;:
+                comptez davantage. Les circuits balisés de l'Office, eux,
+                portent le dénivelé qu'il a mesuré.
+              </p>
               <p className="page-note">
                 {FORME[formeDeLaBoucle(b.etalement)]}
                 {formeDeLaBoucle(b.etalement) === "aller-retour" &&

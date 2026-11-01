@@ -1,4 +1,4 @@
-import { readdirSync } from "node:fs";
+import { readdirSync, readFileSync, existsSync } from "node:fs";
 import { describe, it, expect } from "vitest";
 import { indexer, composer, composerVers, fondreRencontres, ECART_MAX_M, metres, noeudLePlusProche, traits, distanceRessentie, COUT_MONTEE, etalementDe, formeDeLaBoucle, SOURCE_MAREES, cheminDeRetour } from "./composition";
 import type { Graphe } from "./composition";
@@ -641,5 +641,70 @@ describe("fondre le lieu visé dans ce qu'on croisera", () => {
     expect(r.length).toBe(2);
     expect(r.find((x) => x.nom === "Plage")!.libelle).toBe("");
     expect(r.find((x) => x.nom === "Sainte-Anne")!.libelle).toBe("Chapelle");
+  });
+});
+
+describe("ce qu'on affiche sur le relief", () => {
+  /* 🔴 LA DONNÉE ÉTAIT HONNÊTE, L'ÉCRAN NE L'ÉTAIT PAS — trouvé le 1/11 en
+     mesurant 48 compositions sur le vrai graphe : D+ = 0 m, les 48 fois.
+     Cause : `graphe-signaux.py` laisse le dénivelé à `null` À DESSEIN
+     (« Nous n'avons pas de modèle d'altitude. Mettre un zéro serait
+     affirmer du plat »), et `distanceRessentie()` n'a donc rien à ajouter.
+     Le moteur refusait d'inventer ; l'interface, elle, annonçait « plus le
+     terrain monte, plus la boucle sera courte ».
+
+     ⭐ CE TEST SE RETOURNE TOUT SEUL LE JOUR OÙ L'ALTITUDE ARRIVE. Il ne dit
+        pas « ne parle jamais du relief » : il dit « n'en parle que si tu en
+        as ». Un graphe qui porterait du dénivelé rendrait la promesse
+        légitime, et l'interdiction tomberait d'elle-même. */
+  /* 🔴 PAS DE `try/catch` ICI, ET C'EST LE CORRECTIF. La première version
+     enveloppait la lecture dans un `catch { return null }` « au cas où le
+     graphe local serait absent » — et elle a avalé une ReferenceError :
+     `readFileSync` n'était pas importé dans ce fichier. Le garde ne
+     s'exécutait donc JAMAIS, et il était vert.
+     ⭐ UN `catch` MUET TRANSFORME UN GARDE CASSÉ EN GARDE VERT. Il ne dit
+        pas « rien à vérifier », il dit « je n'ai pas pu », et les deux se
+        ressemblent exactement. On teste donc l'ABSENCE du fichier
+        explicitement, et toute autre faute remonte. */
+  const CHEMIN_GRAPHE = "public/bretagne/g/presquile.json";
+  const grapheReel = () =>
+    existsSync(CHEMIN_GRAPHE) ? JSON.parse(readFileSync(CHEMIN_GRAPHE, "utf8")) : null;
+
+  it("⛔ l'écran ne promet pas de tenir compte d'un relief qu'on n'a pas", () => {
+    const g = grapheReel();
+    if (!g) return;   // ⚠️ graphe local absent (ignoré par git) : rien à dire
+    const avecDenivele = g.a.filter((a: unknown[]) => a[6] != null).length;
+
+    const ecran = readFileSync("src/Composer.tsx", "utf8")
+      .replace(/\{?\/\*[\s\S]*?\*\/\}?/g, "");   // ⚠️ hors commentaires
+
+    if (avecDenivele === 0) {
+      /* la promesse exacte qui était affichée, et toute sa famille */
+      expect(ecran, "l'écran promet un calcul qui tient compte du relief")
+        .not.toMatch(/plus le terrain monte/);
+      /* et il DOIT dire que la durée est calculée à plat */
+      /* ⚠️ « à plat » apparaît TROIS fois dans cet écran : muter une seule
+         laissait le garde au vert. On vise la phrase de la fiche — celle
+         que lit quelqu'un qui part marcher —, pas n'importe laquelle. */
+      expect(ecran, "la fiche ne dit pas que la durée est calculée à plat")
+        .toMatch(/Durée calculée <strong>à plat<\/strong>/);
+    } else {
+      expect(avecDenivele / g.a.length,
+             "du dénivelé existe : il doit couvrir l'essentiel du réseau")
+        .toBeGreaterThan(0.5);
+    }
+  });
+
+  it("le moteur n'invente pas d'altitude quand il n'en a pas", () => {
+    /* ⛔ `montee` doit rester à 0 — pas une estimation, pas une moyenne.
+       Un zéro ASSUMÉ vaut mieux qu'un chiffre fabriqué ; c'est l'écran qui
+       doit le dire, pas le moteur qui doit le combler. */
+    const { g, cible } = grilleRare();          // aucune arête ne porte de dz
+    const b = composer(g, indexer(g), 0, cible);
+    expect(b.length).toBeGreaterThan(0);
+    for (const x of b) {
+      expect(x.montee).toBe(0);
+      expect(x.ressentie).toBe(x.metres);       // Naismith n'ajoute rien
+    }
   });
 });
