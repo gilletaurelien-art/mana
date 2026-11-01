@@ -798,7 +798,21 @@
         bout » — qui n'a de sens que sur un bouton pleine largeur. En retirant
         la largeur, on retire la raison du `1fr` : les trois colonnes se
         mesurent désormais sur ce qu'elles portent. */
-  display: inline-grid; grid-template-columns: auto auto auto; align-items: center;
+  /* 🔴 LA GRILLE SUIT SES ENFANTS, elle ne les attend plus — 1/11. Elle
+     déclarait TROIS colonnes depuis l'époque où le bouton portait une
+     flèche. La flèche est partie ; la troisième colonne est restée, mesurée
+     à 0 px — invisible, et pourtant facturée : le `gap` qui la sépare de sa
+     voisine, lui, s'applique.
+     ⭐ Une colonne vide ne coûte rien ; l'espace qui la sépare de sa voisine,
+        si. Dix pixels par bouton, pour tenir une place que plus personne
+        n'occupe. Sur l'accueil, à 375 px, il en manquait SEPT pour que
+        « BALADES » et « CARTE » tiennent sur une ligne — ils s'empilaient.
+     ⚠️ Et on ne remplace pas « trois » par « deux » : ce serait le même
+        nombre écrit à la main, faux au prochain picto ajouté ou retiré. Le
+        flux en colonnes compte les enfants qui existent. */
+  display: inline-grid;
+  grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: auto;
+  align-items: center;
   width: fit-content; max-width: 100%;
   gap: var(--sp-2);
   /* la serif du titre, comme tous les boutons depuis le 31/10 */

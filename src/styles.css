@@ -2510,7 +2510,11 @@ body:has(.jeu) { padding-bottom: 0; }
    ⚠️ Et le picto repasse en blanc avec lui : en or sur l'or, il disparaît.
       Il était en `--bulle-action` tant que le bouton était du verre. */
 .inv-balade-actions .inv-primaire {
-  padding: 10px var(--sp-3) 10px var(--sp-2);
+  /* ⭐ PADDING SYMÉTRIQUE depuis que la flèche est partie. Les 24 px de
+     droite contre 16 à gauche tenaient l'air autour d'une flèche qui
+     n'existe plus : même cause que la colonne fantôme ci-dessus, même
+     reste. */
+  padding: 10px var(--sp-2);
   min-height: 52px; gap: 10px;
   background: var(--action);
   border: 0;
