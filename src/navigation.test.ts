@@ -203,7 +203,13 @@ describe("de la carte au compositeur", () => {
         faut y penser. */
   it("chaque refus du moteur a sa phrase à l'écran", () => {
     const moteur = nu("./composition.ts");
-    const bloc = moteur.match(/export type Visee =([\s\S]*?);\n/);
+    /* ⚠️ LA FENÊTRE VA JUSQU'À LA DÉCLARATION SUIVANTE, pas jusqu'au premier
+       `;` — vécu le 1/11 : en ajoutant un champ au variant `ok`, le `;` de
+       ce champ a coupé la fenêtre, le garde n'a plus vu qu'un état, et il a
+       crié alors que rien n'avait perdu sa phrase. ⭐ Un garde dont la
+       fenêtre se ferme sur un caractère que la cible peut contenir mesure
+       la forme du code, pas la règle. */
+    const bloc = moteur.match(/export type Visee =([\s\S]*?)\nexport /);
     expect(bloc, "le type Visee").not.toBeNull();
     const etats = [...bloc![1].matchAll(/etat: "([a-z-]+)"/g)].map((m) => m[1]);
     expect(etats.length).toBeGreaterThanOrEqual(5);

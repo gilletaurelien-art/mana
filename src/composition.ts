@@ -591,7 +591,17 @@ export function composer(
  *    « Je ne peux pas » n'est pas une réponse.
  */
 export type Visee =
-  | { etat: "ok"; boucles: Boucle[]; metresAller: number; ecart: number }
+  | {
+      etat: "ok"; boucles: Boucle[]; metresAller: number; ecart: number;
+      /** ⭐ Parallèle à `boucles` : où, le long de chacune, on passe au plus
+       *  près du point visé — et à combien de mètres. Sans ça, l'écran
+       *  intitule « Aller vers le menhir » une fiche dont la liste « ce que
+       *  vous croiserez » ne nomme PAS le menhir : trois lieux de la carte sur
+       *  quatre ne sont accrochés à aucune arête, donc la boucle ne peut pas
+       *  les citer d'elle-même. Un titre que le contenu ne confirme pas est
+       *  la même faute qu'une liste triée autrement qu'elle ne s'annonce. */
+      approches: { ordre: number; metres: number }[];
+    }
   | { etat: "ecarte"; ecart: number }
   | { etat: "ferme"; ecart: number }
   | { etat: "hors-reseau"; ecart: number }
@@ -695,22 +705,28 @@ export function composerVers(
           CONTOUR de la boucle rendue, après coup, et il ne dépend d'aucune
           hypothèse sur la façon dont elle a été construite. */
     const approche = (b: Boucle) => {
-      let d = Infinity;
-      for (const p of b.contour) {
+      let d = Infinity, i = 0;
+      b.contour.forEach((p, k) => {
         const m = metres(cible, p);
-        if (m < d) d = m;
-      }
-      return d;
+        if (m < d) { d = m; i = k; }
+      });
+      /* ⚠️ `ordre` EST UNE CLÉ D'ORDRE, JAMAIS UNE DISTANCE — même convention
+         que `LieuVu.ordre`, et pour la même raison : la fraction d'un indice
+         de contour n'est pas la fraction d'un kilométrage, mais l'ORDRE de
+         rencontre qu'elle donne est exact, et c'est tout ce dont la liste a
+         besoin. */
+      return { metres: Math.round(d), ordre: i / Math.max(b.contour.length - 1, 1) };
     };
     const tenues = brutes
-      .map((b) => ({ b, d: approche(b) }))
-      .filter((x) => x.d <= SEUIL_PROCHES);
+      .map((b) => ({ b, a: approche(b) }))
+      .filter((x) => x.a.metres <= SEUIL_PROCHES);
     if (tenues.length) {
       return {
         etat: "ok",
         boucles: tenues.map((x) => x.b),
+        approches: tenues.map((x) => x.a),
         metresAller: aPortee,
-        ecart: Math.round(Math.min(...tenues.map((x) => x.d))),
+        ecart: Math.min(...tenues.map((x) => x.a.metres)),
       };
     }
     return { etat: "aucune-boucle", metresAller: aPortee, ecart: e };

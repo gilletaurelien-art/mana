@@ -297,11 +297,35 @@ export function Composer() {
       dureeEstimeeH: Math.round((b.ressentie / 1000 / ALLURE_KMH) * 2) / 2,
       boucle: true, osmUrl: "https://www.openstreetmap.org/copyright", osmRef: "",
       points: t.flat(), traits: t,
-      etapes: b.lieux.map((l, i) => ({
-        nom: l.nom, categorie: l.categorie, pos: i, lat: l.position[1], lon: l.position[0],
-      })),
+      /* 🔴 LE LIEU VISÉ S'INSÈRE DANS LA LISTE, À SA PLACE DANS LA MARCHE.
+         Sans ça, l'écran s'intitule « Aller vers le Menhir de Crozon » et la
+         liste « ce que vous croiserez » ne le nomme pas — parce qu'il n'est
+         accroché à aucune arête du graphe (trois lieux de la carte sur quatre
+         sont dans ce cas). Vérifié en production le 1/11 : la boucle passait
+         bien à 40 m, et la fiche citait l'église, pas le menhir.
+         ⭐ Un titre que le contenu ne confirme pas est la même faute qu'une
+            liste triée autrement qu'elle ne s'annonce : elle ne se signale
+            jamais, elle se découvre en marchant.
+         ⚠️ Il entre par son ORDRE, comme les autres — pas en tête parce
+            qu'il est le motif du départ. */
+      etapes: (() => {
+        const dessus = b.lieux.map((l) => ({
+          ordre: l.ordre, nom: l.nom, categorie: l.categorie,
+          lat: l.position[1], lon: l.position[0],
+        }));
+        if (cible && visee?.etat === "ok") {
+          const a = visee.approches[choisie];
+          if (a) dessus.push({
+            ordre: a.ordre, nom: cible.nom,
+            categorie: a.metres > 0 ? `à ${a.metres} m du chemin` : "sur le chemin",
+            lat: cible.g[1], lon: cible.g[0],
+          });
+        }
+        return dessus.sort((x, y) => x.ordre - y.ordre)
+          .map(({ ordre, ...e }, i) => (void ordre, { ...e, pos: i }));
+      })(),
     };
-  }, [graphe, b]);
+  }, [graphe, b, cible, visee, choisie]);
 
   return (
     <main className="page">
