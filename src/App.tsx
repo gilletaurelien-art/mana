@@ -4,6 +4,7 @@ import { usePath, baseUrl, routePromenade, routeEnChemin, routeRencontres, route
 import {
   GlyphRadio,
   GlyphRecherche,
+  GlyphEtincelles,
   GlyphReglages,
   GlyphNavigation,
   GlyphSecurite,
@@ -188,9 +189,17 @@ export default function App() {
               <GlyphRecherche />
               <span className="sr-only">Rechercher un lieu</span>
             </a>
-            <a href={`${B}/carte`} aria-current={path === "/carte" && !cherche ? "page" : undefined}>
-              <GlyphCarte />
-              <span className="sr-only">La carte</span>
+            {/* ⭐ DES ÉTINCELLES, PLUS UNE CARTE — 1/11, demande du fondateur.
+                Elle mène à `/promenades`, qui s'intitule « Les sentiers » :
+                7 itinéraires tracés d'après OpenStreetMap et les 46 circuits
+                de l'Office. ⚠️ PAS à `/carte` — l'icône n°1 y mène déjà, et
+                deux portes voisines vers la même page ne se distinguent que
+                par leur dessin. C'est la troisième fois en deux jours que ce
+                doublon-là se présente ; il se vérifie maintenant en lisant
+                les `href`, jamais les libellés. */}
+            <a href={`${B}/promenades`} aria-current={path === "/promenades" ? "page" : undefined}>
+              <GlyphEtincelles />
+              <span className="sr-only">Les sentiers</span>
             </a>
             {/* ⚠️ « MANA » seul ICI, « MANA.bzh » dans le pied : ce n'est pas
                 une incohérence. Le pied est l'endroit où l'on signe. */}

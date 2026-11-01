@@ -2487,51 +2487,49 @@ body:has(.jeu) { padding-bottom: 0; }
    `nowrap` ne renonce à rien : les deux se déclaraient incompressibles et
    `wrap` a fait la seule chose qu'il pouvait. Avec `flex: 1 1 0`, la base est
    ZÉRO et le partage se fait vraiment — moitié-moitié. */
-/* Les deux portes, maintenant DANS la fiche. */
-.inv-balade-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
-/* ⭐ TRANSLUCIDES DANS LA BULLE — 1/11, demande du fondateur. Dorés pleins,
-   ils faisaient deux pastilles massives sur une carte qui est elle-même du
-   verre : deux matières dans un objet qui n'en a qu'une.
-   ⚠️ UNE SURFACE TRANSLUCIDE A LA COULEUR DE CE QU'ELLE RECOUVRE, et ce
-      qu'elle recouvre ici est la carte, qui recouvre elle-même une image qui
-      TOURNE. Le plancher se mesure donc sur le pire cas — du blanc sous la
-      carte : 0,92 × bulle-creux + 0,08 × blanc = (69,65,46), puis 14 % de
-      craie par-dessus = (93,89,70). La craie y vaut **5,5**.
-   ⛔ L'or ne peut pas porter le texte ici : sur ce ton, `--bulle-action` sert
-      aux PICTOGRAMMES (une forme, seuil 3), jamais aux lettres. */
+/* ⭐ ÉCARTÉES AUX DEUX BORDS — 1/11, demande du fondateur : « balades » à
+   gauche, « carte » à droite. `space-between` plutôt qu'un `flex: 1` : les
+   deux gardent la largeur de leur mot, et c'est l'ESPACE entre elles qui
+   s'étire. ⚠️ Les étirer à parts égales aurait rempli « CARTE » de vide —
+   et un bouton à moitié vide se lit comme un bouton qui attend quelque
+   chose. Ici ils restent denses, et l'écart les sépare.
+   ⚠️ `flex-wrap` reste : sur une colonne plus étroite que prévu, deux
+      boutons qui se chevauchent valent moins que deux boutons empilés. */
+.inv-balade-actions {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 8px; margin-top: 12px; flex-wrap: wrap;
+}
+/* 🔴 RETOUR AU DORÉ PLEIN — 1/11, décision du fondateur, après un passage
+   par le verre. Le verre fondait les deux portes dans la carte : sur une
+   bulle translucide posée sur une image qui tourne, une pastille
+   translucide de plus n'est plus un bouton, c'est une nuance.
+   ⭐ CE QUI REVIENT AVEC LE FOND PLEIN : l'appariement blanc-sur-`--action`,
+      4,55, mesuré et employé partout dans l'application. Le doré plein ne
+      dépend PAS de ce qu'il recouvre — c'est sa qualité première ici, sur un
+      écran dont le fond change toutes les dix secondes.
+   ⚠️ Et le picto repasse en blanc avec lui : en or sur l'or, il disparaît.
+      Il était en `--bulle-action` tant que le bouton était du verre. */
 .inv-balade-actions .inv-primaire {
-  padding: 10px var(--sp-2) 10px var(--sp-2);
-  min-height: 48px; gap: 10px;
-  background: color-mix(in srgb, var(--craie) 14%, transparent);
-  border: 1px solid var(--bulle-trait-fort);
-  color: var(--bulle-texte);
-  box-shadow: none;
+  padding: 10px var(--sp-3) 10px var(--sp-2);
+  min-height: 52px; gap: 10px;
+  background: var(--action);
+  border: 0;
+  color: var(--action-texte);
 }
-.inv-balade-actions .inv-primaire:hover {
-  background: color-mix(in srgb, var(--craie) 22%, transparent);
-  border-color: var(--bulle-action);
-}
-/* ⭐ Le picto et la flèche gardent l'or : ils sont le seul rappel de l'action
-   maintenant que le fond ne l'est plus. */
-.inv-balade-actions .inv-pin,
-.inv-balade-actions .inv-fleche { color: var(--bulle-action); }
-/* ⭐ EN CAPITALES, DANS LA SERIF DU TITRE — 1/11, demande du fondateur.
-   ⚠️ La serif était DÉJÀ celle du titre (`.inv-primaire` la pose) : ce qui
-      change vraiment, ce sont les capitales. Et des capitales sans
-      interlettrage se referment — une serif de titrage est dessinée pour des
-      bas-de-casse, ses capitales ont besoin d'air pour rester lisibles à
-      petite taille. 0,07 em, mesuré à l'œil sur « LES BALADES ».
-   ⚠️ Et la taille DESCEND d'un cran : une capitale occupe plus de place
-      qu'un bas-de-casse à corps égal, et « LA CARTE » en `--t-m` débordait
-      la carte sur une colonne de 440. */
+.inv-balade-actions .inv-primaire:hover { background: var(--action-survol); }
+.inv-balade-actions .inv-pin { color: var(--action-texte); }
+
+/* ⭐ LES FLÈCHES SONT PARTIES. Elles disaient « ceci mène ailleurs » — ce
+   qu'un bouton doré plein dit déjà. Deux signes pour une seule idée, dans
+   une carte où chaque pixel se dispute : le mot grandit de ce que la flèche
+   libère. */
 .inv-balade-actions .inv-primaire-mot {
-  font-size: var(--t-s);
+  font-size: var(--t-m);
   text-transform: uppercase;
   letter-spacing: 0.07em;
   font-weight: 400;
 }
-.inv-balade-actions .inv-fleche { width: 22px; height: 22px; }
-.inv-balade-actions .inv-fleche svg { width: 18px; height: 18px; }
+
 /* ⭐ LA FICHE CHANGE SANS CLIGNOTER. Elle tourne avec l'image de fond : un
    remplacement sec ferait sauter la carte toutes les dix secondes, et le saut
    attirerait l'œil plus que le contenu. */

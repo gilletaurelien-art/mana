@@ -185,3 +185,24 @@ export function GlyphReglages({ size = 24 }: GlyphProps) {
     </svg>
   );
 }
+
+/**
+ * ÉTINCELLES — « ce qu'il y a à découvrir ».
+ *
+ * ⭐ TROIS ÉCLATS, DE TAILLES DIFFÉRENTES. Trois identiques forment un motif
+ *    régulier qu'on lit comme un symbole abstrait ; trois inégaux, posés hors
+ *    axe, se lisent comme une scintillation. C'est la différence entre un
+ *    pictogramme et une impression.
+ * ⚠️ Chaque éclat est une étoile à quatre branches CONCAVES, pas une croix :
+ *    à 28,8 px une croix droite redevient un « + », et « ajouter » n'est pas
+ *    ce qu'on veut dire.
+ */
+export function GlyphEtincelles({ size = 24 }: GlyphProps) {
+  return (
+    <svg {...base} width={size} height={size} className="m-icone" aria-hidden="true">
+      <path d="M10 3.2c0 3.1 1.3 4.4 4.4 4.4-3.1 0-4.4 1.3-4.4 4.4 0-3.1-1.3-4.4-4.4-4.4 3.1 0 4.4-1.3 4.4-4.4z" />
+      <path d="M17.4 11.6c0 2.2.9 3.1 3.1 3.1-2.2 0-3.1.9-3.1 3.1 0-2.2-.9-3.1-3.1-3.1 2.2 0 3.1-.9 3.1-3.1z" />
+      <path d="M7.6 15.4c0 1.6.7 2.3 2.3 2.3-1.6 0-2.3.7-2.3 2.3 0-1.6-.7-2.3-2.3-2.3 1.6 0 2.3-.7 2.3-2.3z" />
+    </svg>
+  );
+}

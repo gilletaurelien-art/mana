@@ -232,9 +232,18 @@ describe("le jeu de cartes des balades", () => {
     const inv = readFileSync(new URL("./InvitationBalade.tsx", import.meta.url), "utf8");
     const net = inv.replace(/\/\*[\s\S]*?\*\//g, "")
       .split("\n").filter((l) => !/^\s*(\/\/|\*)/.test(l)).join("\n");
+    /* ⛔ LE CRÉDIT DE L'OFFICE RESTE, ET IL EST UN LIEN. Le nom du circuit,
+       la durée et le dénivelé affichés sur l'accueil sont LEUR donnée : une
+       carte qui les montre sans les nommer devient une fiche MANA au premier
+       coup d'œil. C'est aussi le seul chemin vers leur fiche depuis là. */
     expect(net).toMatch(/Office de tourisme/);
-    expect(net).toMatch(/ATTRIBUTION\[/);
-    expect(net).toMatch(/chiffres déclarés/);
+    expect(net).toMatch(/href=\{w\?\.source/);
+    /* ⭐ LES ATTRIBUTIONS DE CARTE, ELLES, N'Y SONT PLUS — et c'est juste :
+       cette bulle n'affiche AUCUNE cartographie, ni tuile ni tracé. Créditer
+       OpenStreetMap et l'IGN sous un bloc qui ne montre pas leur travail
+       dilue la mention là où elle compte, sur les fiches de balade — qui la
+       portent toutes, et un test le tient plus haut. */
+    expect(net).not.toMatch(/ATTRIBUTION\[/);
     expect(net).not.toMatch(/chargerLieux|lieuxProches/);
     // ⛔ et aucun libellé qui promette une rotation qu'on ne fait pas
     expect(net).not.toMatch(/balade du jour|coup de c(œ|oe)ur|sélection/i);
@@ -449,5 +458,40 @@ describe("le carnet, vu du jeu", () => {
     expect(() => lireCarnet()).not.toThrow();
     expect(lireCarnet()).toEqual([]);
     expect(() => ajouterAuCarnet("x")).not.toThrow();
+  });
+});
+
+describe("la barre du bas", () => {
+  const app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
+  const barre = app.slice(app.indexOf('<nav className="nav">'), app.indexOf("</nav>"));
+
+  /**
+   * 🔴 TROISIÈME DOUBLON D'URL EN DEUX JOURS, ET C'EST LE FONDATEUR QUI LES A
+   *    VUS LES TROIS. « Voir les balades » et « Voir sur la carte » pointaient
+   *    `/carte` ; « En savoir plus » et le crédit pointaient la fiche de
+   *    l'Office ; et l'icône des étincelles a failli pointer `/carte` comme sa
+   *    voisine. ⭐ Deux contrôles voisins se comparent par leur DESSIN ou leur
+   *    LIBELLÉ, jamais par leur URL — c'est ce qui rend ce doublon invisible à
+   *    la relecture. Ce test lit les `href`.
+   */
+  it("les cinq entrées mènent à cinq endroits", () => {
+    /* 🔴 ET ON COMPARE LES CHEMINS, PAS LES URL. Première version : elle
+       comparait `href` entier — donc `/carte?vue=carte&chercher=1` et
+       `/carte` comptaient pour deux. La mutation (étincelles ramenées sur
+       `/carte`) est PASSÉE : deux icônes vers la même page, et le garde
+       content. ⭐ Un garde qui compare des chaînes là où le sujet est une
+       DESTINATION laisse passer exactement le cas qu'il devait attraper —
+       une requête suffit à déguiser un doublon. */
+    const liens = [...barre.matchAll(/href=\{`\$\{B\}([^`]*)`\}/g)].map((m) => m[1]);
+    const chemins = liens.map((h) => h.split("?")[0]);
+    expect(liens.length).toBe(5);
+    expect(new Set(chemins).size, `doublon parmi ${chemins.join(" · ")}`).toBe(5);
+  });
+
+  /** ⭐ L'ordre est une décision du fondateur (1/11), pas une mise en page. */
+  it("garde l'ordre : rechercher · sentiers · MANA · radio · réglages", () => {
+    const ordre = [...barre.matchAll(/<Glyph(\w+)|className="brand"/g)]
+      .map((m) => m[1] ?? "MANA");
+    expect(ordre).toEqual(["Recherche", "Etincelles", "MANA", "Radio", "Reglages"]);
   });
 });

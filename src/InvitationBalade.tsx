@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { ecouter } from "./horloge-fond";
 import { chargerOT, PRATIQUE, type ItineraireOT } from "./ot";
-import { ATTRIBUTION, lireFond } from "./carte-fond";
 
 /**
  * UNE BALADE SUR L'ACCUEIL — la même fiche que l'écran du territoire, avec
@@ -126,18 +125,26 @@ export function InvitationBalade({ base }: { base: string }) {
         )}
       </p>
 
-      {/* ⛔ LES MENTIONS VOYAGENT AVEC LA FICHE, pas avec l'écran. Elles sont
-          les mêmes ici que sur le territoire : qui a balisé, qui a déclaré les
-          chiffres, d'où vient le fond. Une fiche qui se déplace sans elles
-          devient une fiche MANA au premier coup d'œil. */}
+      {/* 🔴 LES ATTRIBUTIONS DE CARTE SONT PARTIES D'ICI — 1/11.
+          ⭐ CETTE BULLE N'AFFICHE AUCUNE CARTOGRAPHIE : ni tuile, ni tracé.
+             Créditer OpenStreetMap et l'IGN sous un bloc qui ne montre pas
+             leur travail, c'est du bruit, pas de la rigueur — et ça dilue la
+             mention là où elle compte vraiment, sur les fiches de balade, qui
+             la portent toutes.
+          ⛔ MAIS LE CRÉDIT DE L'OFFICE RESTE, et il n'est pas négociable :
+             le nom du circuit, la durée et le dénivelé affichés ici sont LEUR
+             donnée. Une carte qui montre leurs chiffres sans les nommer
+             devient une fiche MANA au premier coup d'œil — et l'accord de
+             reprise se négocie dans cinq jours.
+          ⚠️ C'est aussi le seul chemin vers leur fiche depuis l'accueil. */}
       <p className="jeu-provenance">
-        <a href={w?.source ?? "https://www.crozon-tourisme.bzh/"} target="_blank" rel="noreferrer" className="jeu-source">
+        <a href={w?.source ?? "https://www.crozon-tourisme.bzh/"}
+           target="_blank" rel="noreferrer" className="jeu-source">
           Office de tourisme
           <svg className="jeu-source-icone" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M14 4h6v6M20 4 11 13" />
           </svg>
         </a>
-        {" · chiffres déclarés · "}{ATTRIBUTION[lireFond()]}
       </p>
 
       {/* ⭐ LES DEUX PORTES SONT DANS LA FICHE — 1/11, demande du fondateur.
@@ -152,18 +159,12 @@ export function InvitationBalade({ base }: { base: string }) {
             <circle cx="12" cy="10" r="2.6" />
           </svg>
           <span className="inv-primaire-mot">Balades</span>
-          <span className="inv-fleche" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M5 12h12" /><path d="m12 6 6 6-6 6" /></svg>
-          </span>
         </a>
         <a className="inv-primaire" href={`${base}/carte?vue=carte`}>
           <svg className="m-icone inv-pin" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M9 4 3 6.5v13L9 17l6 3 6-2.5v-13L15 7z" /><path d="M9 4v13M15 7v13" />
           </svg>
           <span className="inv-primaire-mot">Carte</span>
-          <span className="inv-fleche" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M5 12h12" /><path d="m12 6 6 6-6 6" /></svg>
-          </span>
         </a>
       </nav>
     </article>
