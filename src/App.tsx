@@ -3,7 +3,6 @@ import { useEffect, useRef, useLayoutEffect } from "react";
 import { usePath, baseUrl, routePromenade, routeEnChemin, routeRencontres, routeComplet } from "./router";
 import {
   GlyphRadio,
-  GlyphRecherche,
   GlyphEtincelles,
   GlyphReglages,
   GlyphNavigation,
@@ -82,20 +81,11 @@ const MODULES = [
 
 export default function App() {
   const path = usePath();
-  /**
-   * ⚠️ « RECHERCHER » ET « LA CARTE » MÈNENT À LA MÊME PAGE, par deux portes.
-   *    L'une l'ouvre sur le jeu de fiches, l'autre sur la carte du territoire
-   *    avec la recherche prête. Sans ce drapeau, les deux icônes
-   *    s'allumeraient ensemble sur `/carte` — et deux repères allumés pour un
-   *    seul endroit ne disent plus où l'on est. ⭐ Même piège que les deux
-   *    portes de l'accueil, qui pointaient la même URL : ici la destination
-   *    est bien la même page, c'est l'ÉTAT qui diffère, donc c'est l'état qui
-   *    doit distinguer le repère.
-   */
-  const cherche = (() => {
-    try { return new URLSearchParams(window.location.search).get("chercher") === "1"; }
-    catch { return false; }
-  })();
+  /* ⭐ LE DRAPEAU `cherche` EST PARTI AVEC LA SECONDE ICÔNE DE CARTE. Il
+     n'existait que pour distinguer deux repères qui s'allumaient ensemble sur
+     `/carte` ; il n'y a plus qu'une porte vers cette page. Un drapeau qui
+     survit à ce qu'il départageait devient une condition que personne ne sait
+     plus relire. */
 
   /**
    * 🔴 LA BARRE DIT ELLE-MÊME LA PLACE QU'ELLE PREND.
@@ -172,7 +162,7 @@ export default function App() {
       <header className="site-header" ref={barreRef}>
         <div className="wrap">
           {/* ⭐ CINQ ENTRÉES, DANS CET ORDRE — 1/11/2026, décision du
-              fondateur : rechercher · carte · MANA · radio · réglages.
+              fondateur : carte · sentiers · MANA · radio · réglages.
               La marque est au CENTRE, et les quatre fonctions se répartissent
               deux à deux autour d'elle. ⚠️ Ce n'est pas qu'une symétrie
               d'allure : au pouce, le centre d'une barre est le point le plus
@@ -184,10 +174,19 @@ export default function App() {
               tiennent pas. Chacun garde son nom en `.sr-only` — ce qui est
               retiré, c'est le texte À L'ÉCRAN, pas le nom de la commande. */}
           <nav className="nav">
-            <a href={`${B}/carte?vue=carte&chercher=1`}
-               aria-current={path === "/carte" && cherche ? "page" : undefined}>
-              <GlyphRecherche />
-              <span className="sr-only">Rechercher un lieu</span>
+            {/* ⭐ UNE CARTE, PLUS UNE LOUPE — 1/11, demande du fondateur :
+                « car il mène vers carte ». L'icône disait « chercher » et
+                déposait sur la carte du territoire : le dessin promettait un
+                geste, la destination en donnait un autre.
+                ⚠️ ET LE COMPORTEMENT SUIT LE DESSIN, pas l'inverse : le
+                   `?chercher=1` qui ouvrait le clavier part avec la loupe.
+                   Garder le focus sous une icône de carte aurait déplacé
+                   l'incohérence au lieu de la corriger — on arriverait sur
+                   une carte avec un clavier qu'on n'a pas demandé. */}
+            <a href={`${B}/carte?vue=carte`}
+               aria-current={path === "/carte" ? "page" : undefined}>
+              <GlyphCarte />
+              <span className="sr-only">La carte du territoire</span>
             </a>
             {/* ⭐ DES ÉTINCELLES, PLUS UNE CARTE — 1/11, demande du fondateur.
                 Elle mène à `/promenades`, qui s'intitule « Les sentiers » :

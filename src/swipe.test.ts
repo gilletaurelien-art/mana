@@ -489,9 +489,29 @@ describe("la barre du bas", () => {
   });
 
   /** ⭐ L'ordre est une décision du fondateur (1/11), pas une mise en page. */
-  it("garde l'ordre : rechercher · sentiers · MANA · radio · réglages", () => {
+  it("garde l'ordre : carte · sentiers · MANA · radio · réglages", () => {
     const ordre = [...barre.matchAll(/<Glyph(\w+)|className="brand"/g)]
       .map((m) => m[1] ?? "MANA");
-    expect(ordre).toEqual(["Recherche", "Etincelles", "MANA", "Radio", "Reglages"]);
+    expect(ordre).toEqual(["Carte", "Etincelles", "MANA", "Radio", "Reglages"]);
+  });
+
+  /**
+   * ⛔ PLUS AUCUNE PORTE N'ÉMET `?chercher=1`, donc l'écran ne doit plus le
+   *    lire. ⭐ Un paramètre d'URL orphelin est pire qu'absent : il a l'air
+   *    d'une fonctionnalité, et le prochain qui le trouvera dans le code
+   *    croira qu'un lien l'utilise quelque part.
+   */
+  it("ne lit plus un paramètre que personne n'émet", () => {
+    /* ⚠️ ON DÉPOUILLE LES COMMENTAIRES D'ABORD. Première version : elle a
+       crié sur `?chercher=1` écrit dans la NOTE qui explique son retrait. ⭐ Un
+       commentaire répond à la place du code — troisième fois ce soir, et
+       c'est exactement le piège du `grep guardedAnswer` du dépôt principal. */
+    const nu = (f: string) =>
+      readFileSync(new URL(f, import.meta.url), "utf8")
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/\{\/\*[\s\S]*?\*\/\}/g, "")
+        .split("\n").filter((l) => !/^\s*(\/\/|\*)/.test(l)).join("\n");
+    expect(nu("./Territoire2030.tsx")).not.toMatch(/get\("chercher"\)/);
+    expect(nu("./App.tsx")).not.toMatch(/chercher=1/);
   });
 });
