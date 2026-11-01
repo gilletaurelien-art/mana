@@ -76,3 +76,59 @@ describe("la charte des surfaces", () => {
     }
   });
 });
+
+describe("l'écran de composition sur son sol ivoire", () => {
+  /* 🔴 UN RÔLE DE JETON S'INVERSE SANS BRUIT QUAND ON CHANGE LA SURFACE.
+     `--action` (#94702e) a été descendu pour qu'un BLANC tienne dessus —
+     4,55. C'est une couleur de FOND d'action. Posée comme couleur de TEXTE
+     sur l'ivoire de `/composer`, elle tombe à 3,80 : sous le seuil, sur
+     l'écran qui se lit dehors en plein jour.
+     ⭐ Mesuré sur la page déployée, pas déduit du code — et c'est bien la
+        mesure qui l'a trouvé : rien dans le CSS ne signalait l'inversion. */
+  const css = readFileSync("src/styles.css", "utf8");
+  /* ⚠️ HORS COMMENTAIRES — la première version découpait sur « } » et
+     attrapait le texte d'un commentaire comme s'il était un sélecteur.
+     Septième fois aujourd'hui qu'un commentaire répond à la place du code. */
+  const bloc = css.slice(css.indexOf("/composer — L'ÉCRAN DE COMPOSITION"))
+    .replace(/\/\*[\s\S]*?\*\//g, "");
+
+  const lum = (h: string) => {
+    const n = parseInt(h.slice(1), 16);
+    const v = [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+      .map((x) => { const y = x / 255; return y <= 0.03928 ? y / 12.92 : ((y + 0.055) / 1.055) ** 2.4; });
+    return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2];
+  };
+  const ratio = (a: string, b: string) => {
+    const x = lum(a), y = lum(b);
+    return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+  };
+
+  /** les jetons, lus dans tokens.css — jamais recopiés ici */
+  const jeton = (nom: string) => {
+    const m = readFileSync("src/tokens.css", "utf8").match(new RegExp(`--${nom}:\\s*(#[0-9a-f]{6})`, "i"));
+    expect(m, `le jeton --${nom}`).not.toBeNull();
+    return m![1];
+  };
+
+  it("⛔ la couleur de texte posée sur l'ivoire tient le seuil de 4,5", () => {
+    const ivoire = jeton("craie");
+    expect(ratio(jeton("or-profond"), ivoire)).toBeGreaterThanOrEqual(4.5);
+    /* ⚠️ et celle qu'on NE doit pas employer comme texte ici, pour mémoire :
+       si elle repassait un jour le seuil, ce test deviendrait faux et il
+       faudrait le relire plutôt que de le supprimer. */
+    expect(ratio(jeton("action"), ivoire)).toBeLessThan(4.5);
+  });
+
+  it("⛔ aucun texte de cet écran n'emploie --action sur l'ivoire", () => {
+    /* ⚠️ `color:` ET PAS `border-color:` — le premier motif attrapait les
+       deux, et une bordure dorée sur ivoire est parfaitement légitime : ce
+       n'est pas du texte, aucun seuil de lisibilité ne s'y applique. Un
+       garde qui ne distingue pas la propriété condamne le bon geste avec
+       le mauvais. */
+    const coupables = bloc.split("}")
+      .filter((r) => /(^|[^-\w])color:\s*var\(--action\)/.test(r))
+      .map((r) => r.split("{")[0].trim())
+      .filter(Boolean);
+    expect(coupables, `règles fautives : ${coupables.join(" / ")}`).toEqual([]);
+  });
+});

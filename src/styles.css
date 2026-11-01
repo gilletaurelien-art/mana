@@ -2706,7 +2706,7 @@ body:has(.jeu) { padding-bottom: 0; }
   display: flex; align-items: center; gap: var(--sp-0);
   margin: 0 0 var(--sp-0);
   font-size: var(--t-xs); letter-spacing: .12em; text-transform: uppercase;
-  color: var(--action); font-weight: 600;
+  color: var(--or-profond); font-weight: 600;
 }
 .cp-etincelle { width: 18px; height: 18px; flex: none; }
 .cp-question {
@@ -2766,7 +2766,7 @@ body:has(.jeu) { padding-bottom: 0; }
 .cp-lien {
   min-height: 44px; padding: 0 var(--sp-1);
   background: none; border: 0; cursor: pointer;
-  font-size: var(--t-s); color: var(--action);
+  font-size: var(--t-s); color: var(--or-profond);
   text-decoration: underline; text-underline-offset: 3px;
 }
 .cp-plus { margin-top: var(--sp-2); }
@@ -2816,7 +2816,7 @@ body:has(.jeu) { padding-bottom: 0; }
   margin-bottom: var(--sp-1);
   font-size: var(--t-s); color: var(--nuit); opacity: .8;
 }
-.cp-carte-faits .cp-alerte { color: var(--action); opacity: 1; font-weight: 600; }
+.cp-carte-faits .cp-alerte { color: var(--or-profond); opacity: 1; font-weight: 600; }
 .cp-carte-texte {
   display: block; font-size: var(--t-s); line-height: 1.5;
   color: var(--nuit); opacity: .82;
@@ -2880,17 +2880,28 @@ body:has(.jeu) { padding-bottom: 0; }
 .page-composer .apercu-label,
 .page-composer .section-title,
 .page-composer h1, .page-composer h2 { color: var(--nuit); }
-.page-composer .apercu-label { color: var(--action); }
 .page-composer .page-note { opacity: .82; }
 /* ⚠️ Les liens doivent rester visibles sur ivoire : `--craie` était leur
    couleur sur fond sombre, elle disparaîtrait ici. */
-.page-composer a { color: var(--action); }
 
 /* les arrêtés : le fait dehors, les quatre décisions à un tap */
 .cp-arretes > summary {
   min-height: 44px; display: flex; align-items: center;
-  cursor: pointer; color: var(--action);
+  cursor: pointer; color: var(--or-profond);
   text-decoration: underline; text-underline-offset: 3px;
 }
 .cp-arretes ul { margin: var(--sp-0) 0 0; padding-left: 1.2em; }
 .cp-arretes li { margin-bottom: var(--sp-0); }
+
+/* 🔴 L'OCRE D'ACTION NE SE LIT PAS SUR IVOIRE — 3,80, mesuré sur l'écran
+   déployé. `--action` (#94702e) a été descendu pour qu'un BLANC tienne
+   dessus (4,55) : c'est une couleur de FOND d'action, et je l'avais prise
+   pour une couleur de TEXTE d'action. ⭐ Un rôle de jeton s'inverse sans
+   bruit quand on change la surface sous lui — et cet écran se lit dehors,
+   en plein jour, là où un contraste faible ne pardonne pas.
+   ⚠️ `--or-profond` existe déjà : 5,19 sur ivoire. Aucune couleur neuve. */
+.page-composer .cp-sus,
+.page-composer .cp-lien,
+.page-composer .cp-arretes > summary,
+.page-composer .apercu-label,
+.page-composer a { color: var(--or-profond); }
