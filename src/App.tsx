@@ -3,6 +3,8 @@ import { useEffect, useRef, useLayoutEffect } from "react";
 import { usePath, baseUrl, routePromenade, routeEnChemin, routeRencontres, routeComplet } from "./router";
 import {
   GlyphRadio,
+  GlyphRecherche,
+  GlyphReglages,
   GlyphNavigation,
   GlyphSecurite,
   GlyphDecouverte,
@@ -11,6 +13,7 @@ import {
 } from "./Glyphs";
 import { Promenades } from "./Promenades";
 import { Invitation } from "./Invitation";
+import { Reglages } from "./Reglages";
 import { EcranTerritoire } from "./EcranTerritoire";
 import { Composer } from "./Composer";
 import { Radio } from "./Radio";
@@ -78,6 +81,20 @@ const MODULES = [
 
 export default function App() {
   const path = usePath();
+  /**
+   * ⚠️ « RECHERCHER » ET « LA CARTE » MÈNENT À LA MÊME PAGE, par deux portes.
+   *    L'une l'ouvre sur le jeu de fiches, l'autre sur la carte du territoire
+   *    avec la recherche prête. Sans ce drapeau, les deux icônes
+   *    s'allumeraient ensemble sur `/carte` — et deux repères allumés pour un
+   *    seul endroit ne disent plus où l'on est. ⭐ Même piège que les deux
+   *    portes de l'accueil, qui pointaient la même URL : ici la destination
+   *    est bien la même page, c'est l'ÉTAT qui diffère, donc c'est l'état qui
+   *    doit distinguer le repère.
+   */
+  const cherche = (() => {
+    try { return new URLSearchParams(window.location.search).get("chercher") === "1"; }
+    catch { return false; }
+  })();
 
   /**
    * 🔴 LA BARRE DIT ELLE-MÊME LA PLACE QU'ELLE PREND.
@@ -153,40 +170,40 @@ export default function App() {
       <div className="app-colonne">
       <header className="site-header" ref={barreRef}>
         <div className="wrap">
+          {/* ⭐ CINQ ENTRÉES, DANS CET ORDRE — 1/11/2026, décision du
+              fondateur : rechercher · carte · MANA · radio · réglages.
+              La marque est au CENTRE, et les quatre fonctions se répartissent
+              deux à deux autour d'elle. ⚠️ Ce n'est pas qu'une symétrie
+              d'allure : au pouce, le centre d'une barre est le point le plus
+              difficile à atteindre d'une main — c'est donc la place de ce qui
+              se touche le moins, et « revenir à l'accueil » se touche moins
+              qu'« ouvrir la carte ».
+              ⚠️ ET LES LIBELLÉS SONT PARTIS avec le passage à cinq : à
+              28,8 px d'icône et 440 px de colonne, cinq paires icône+mot ne
+              tiennent pas. Chacun garde son nom en `.sr-only` — ce qui est
+              retiré, c'est le texte À L'ÉCRAN, pas le nom de la commande. */}
           <nav className="nav">
-            {/* ⚠️ « ici » n'est pas « cette URL exactement ». Une fiche de
-                promenade (`/promenade/anse-saint-nicolas`) est DANS la section
-                Promenades : l'or doit y rester allumé, sinon il s'éteint
-                précisément au moment où l'on s'enfonce dans la section. */}
-            <a href={`${B}/radio`} aria-current={path === "/radio" ? "page" : undefined}>
-              {/* ⚠️ Pas de `size` : la taille vient de `--barre-icone` (voir styles.css).
-                  Deux valeurs liées par un calcul ne peuvent pas vivre dans deux
-                  fichiers dont l'un ne lit pas l'autre. */}
-              <GlyphRadio />
-              <span>Radio</span>
+            <a href={`${B}/carte?vue=carte&chercher=1`}
+               aria-current={path === "/carte" && cherche ? "page" : undefined}>
+              <GlyphRecherche />
+              <span className="sr-only">Rechercher un lieu</span>
             </a>
-            {/* La barre du bas garde Radio et la Carte, de part et d'autre
-                de la marque.
-                ⭐ LA CARTE REMPLACE LES PROMENADES — 31/10/2026. La boussole
-                qui occupait cette place menait à la LISTE ; la carte, elle,
-                est le geste qu'on fait debout, dehors, avec le pouce. Et le
-                bouton « Explorer la carte » de l'accueil part avec ce
-                changement : une fonction à deux endroits, dont l'un est
-                permanent, est une fonction dupliquée.
-                ⚠️ `/promenades` n'est pas orpheline pour autant : elle reste
-                dans le pied, sur toutes les pages, et c'est la seule chose
-                qui comptait.
-                ⚠️ « MANA » seul ICI, « MANA.bzh » dans le pied : ce n'est pas
+            <a href={`${B}/carte`} aria-current={path === "/carte" && !cherche ? "page" : undefined}>
+              <GlyphCarte />
+              <span className="sr-only">La carte</span>
+            </a>
+            {/* ⚠️ « MANA » seul ICI, « MANA.bzh » dans le pied : ce n'est pas
                 une incohérence. Le pied est l'endroit où l'on signe. */}
             <a className="brand" href={`${B}/`} aria-current={path === "/" ? "page" : undefined}>
               MANA
             </a>
-            <a
-              href={`${B}/carte`}
-              aria-current={path === "/carte" ? "page" : undefined}
-            >
-              <GlyphCarte />
-              <span>Carte</span>
+            <a href={`${B}/radio`} aria-current={path === "/radio" ? "page" : undefined}>
+              <GlyphRadio />
+              <span className="sr-only">MANAradio</span>
+            </a>
+            <a href={`${B}/reglages`} aria-current={path === "/reglages" ? "page" : undefined}>
+              <GlyphReglages />
+              <span className="sr-only">Réglages</span>
             </a>
           </nav>
         </div>
@@ -225,6 +242,8 @@ export default function App() {
         <EcranTerritoire base={B} />
       ) : path === "/territoire" ? (
         <Territoire />
+      ) : path === "/reglages" ? (
+        <Reglages base={B} />
       ) : path === "/mentions-legales" ? (
         <MentionsLegales />
       ) : path === "/contact" ? (

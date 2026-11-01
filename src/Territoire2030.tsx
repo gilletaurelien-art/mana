@@ -296,6 +296,24 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
    *     recliquer dans la liste ce qu'on vient de trouver. */
   /* ⚠️ UNE SEULE FOIS, À L'OUVERTURE. Sans le garde, le repère se reposerait
      à chaque rendu et effacerait ce que la personne vient de chercher. */
+  /**
+   * ⭐ « RECHERCHER » OUVRE LE CHAMP, il ne se contente pas d'y mener. Une
+   *    icône de loupe qui dépose devant un champ vide sans curseur demande un
+   *    geste de plus que celui qu'on vient de faire.
+   * ⚠️ `preventScroll` : sans lui, le navigateur fait remonter la page vers
+   *    le champ — or il est déjà à l'écran, et le saut se voit comme un défaut
+   *    d'affichage au moment précis où l'on arrive.
+   */
+  useEffect(() => {
+    try {
+      if (new URLSearchParams(window.location.search).get("chercher") !== "1") return;
+    } catch { return; }
+    const t = window.setTimeout(() => {
+      document.getElementById("terr-q")?.focus({ preventScroll: true });
+    }, 120);
+    return () => window.clearTimeout(t);
+  }, []);
+
   const repereFait = useRef(false);
   useEffect(() => {
     if (!centre || repereFait.current) return;

@@ -160,3 +160,28 @@ export function GlyphTerritoire({ size = 24 }: GlyphProps) {
   );
 }
 
+
+/**
+ * RÉGLAGES — trois curseurs, pas une roue dentée.
+ *
+ * 🔴 LA ROUE A ÉTÉ DESSINÉE D'ABORD, ET ELLE SE LISAIT COMME UN SOLEIL. À
+ *    28,8 px — la taille de la barre depuis la réduction du 31/10 — six
+ *    dents fines rayonnant d'un disque donnent exactement l'astre, pas
+ *    l'outil. Vu à l'écran, pas déduit.
+ * ⭐ UN SYMBOLE DOIT SURVIVRE À SA TAILLE D'EMPLOI, pas à celle de la
+ *    planche où on le dessine. Trois curseurs tiennent à toute taille : ce
+ *    sont des traits horizontaux, la forme la plus robuste qui soit en
+ *    petit, et ils disent « ce qui se règle » aussi bien qu'une roue.
+ * ⚠️ Les trois poignées sont DÉCALÉES les unes des autres : alignées, le
+ *    dessin redevient trois traits barrés — un menu, pas des réglages.
+ */
+export function GlyphReglages({ size = 24 }: GlyphProps) {
+  return (
+    <svg {...base} width={size} height={size} className="m-icone" aria-hidden="true">
+      <path d="M4 7h16M4 12h16M4 17h16" />
+      <circle cx="9" cy="7" r="2.1" />
+      <circle cx="15.5" cy="12" r="2.1" />
+      <circle cx="7.5" cy="17" r="2.1" />
+    </svg>
+  );
+}

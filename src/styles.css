@@ -2522,3 +2522,42 @@ body:has(.jeu) { padding-bottom: 0; }
   color: var(--texte-inverse-doux); line-height: 1.4;
 }
 .terr-vise-dire a { color: inherit; text-underline-offset: 3px; }
+
+/* ═══ RÉGLAGES ═══════════════════════════════════════════════════════════
+   ⭐ Une page de réglages est une page de COMPTES RENDUS : elle dit ce qui
+      est vrai, y compris quand la réponse est « rien ». D'où très peu de
+      commandes et beaucoup de phrases — l'inverse d'un panneau d'options. */
+.reg-bloc {
+  margin-top: var(--sp-4);
+  padding: var(--sp-3);
+  border-radius: var(--r-l);
+  background: var(--fond-surelevé);
+  border: 1px solid var(--trait);
+}
+.reg-titre {
+  margin: 0 0 var(--sp-1); font-family: var(--titre); font-size: var(--t-m);
+  line-height: 1.2;
+}
+.reg-mot { margin: 0; font-size: var(--t-s); line-height: 1.55; color: var(--texte); }
+.reg-fine { margin: var(--sp-1) 0 0; font-size: var(--t-2xs); color: var(--texte-doux); }
+.reg-choix { display: flex; gap: 8px; flex-wrap: wrap; margin-top: var(--sp-2); }
+.reg-opt {
+  padding: 10px 16px; min-height: 44px; border-radius: var(--r-rond);
+  border: 1px solid var(--trait-fort); background: transparent;
+  color: var(--texte); font: inherit; font-size: var(--t-xs); cursor: pointer;
+}
+.reg-opt:hover { border-color: var(--action); }
+.reg-opt:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.reg-opt-active { background: var(--action); border-color: var(--action); color: var(--action-texte); font-weight: 600; }
+.reg-sources { margin: var(--sp-2) 0 0; display: grid; gap: var(--sp-2); }
+.reg-sources dt { font-size: var(--t-xs); font-weight: 600; }
+.reg-sources dd { margin: 2px 0 0; font-size: var(--t-xs); color: var(--texte-doux); line-height: 1.5; }
+.reg-liste { margin: var(--sp-2) 0 0; padding-left: 1.1em; display: grid; gap: 6px; }
+.reg-liste li { font-size: var(--t-xs); line-height: 1.5; color: var(--texte-doux); }
+.reg-liens { display: flex; gap: 8px; flex-wrap: wrap; margin-top: var(--sp-4); }
+.reg-liens .m-action-fine { flex: 1 1 auto; text-align: center; display: grid; place-items: center; }
+
+/* ⚠️ CINQ ENTRÉES DANS LA BARRE depuis le 1/11 : les libellés visibles sont
+   partis, les icônes restent. Le rembourrage se resserre d'autant, mais la
+   CIBLE reste à 44 px — c'est elle qui ne se négocie pas. */
+.nav a > span.sr-only ~ svg, .nav a > svg { flex: none; }
