@@ -2200,25 +2200,12 @@ body:has(.jeu) { padding-bottom: 0; }
 .jeu-depart { fill: var(--craie); stroke: var(--ocre); stroke-width: 2.5; }
 .jeu-arrivee { fill: none; stroke: var(--craie); stroke-width: 2.5; }
 
-/* 🔴 LES DEUX VERDICTS PORTENT LEUR PROPRE SURFACE. En couleur sur la bulle
-   ils donnaient 3,14 (« Je garde », ocre clair) et 2,46 (« Passer », sauge).
-   ⭐ Sur un sol doré, l'or ne peut plus marquer l'action. Les deux reprennent
-      des appariements déjà mesurés : blanc sur `--action` (4,55) et craie sur
-      `--bulle-creux` (11,04). */
-.jeu-verdict {
-  position: absolute; top: 14%; z-index: 5;
-  padding: 8px 16px; border-radius: var(--r-m);
-  font-family: var(--titre); font-size: var(--t-m); line-height: 1;
-  border: 2px solid var(--trait-inverse); pointer-events: none;
-}
-.jeu-verdict-garde {
-  left: var(--sp-3); transform: rotate(-11deg);
-  background: var(--action); color: var(--action-texte); border-color: var(--ocre-clair);
-}
-.jeu-verdict-passe {
-  right: var(--sp-3); transform: rotate(11deg);
-  background: var(--bulle-creux); color: var(--bulle-texte);
-}
+/* ⛔ LES RÈGLES DES DEUX TAMPONS SONT PARTIES AVEC EUX (1/11). Elles
+   portaient trois mesures de contraste durement acquises — « Je garde » à
+   3,14 et « Passer » à 2,46 sur la bulle, corrigés en posant une surface
+   propre à chaque tampon. ⭐ On ne garde pas une règle morte « au cas où » :
+   la leçon vit dans le commit et dans tokens.css, pas dans du CSS que plus
+   rien n'atteint. */
 
 /* ── LA FEUILLE DU BAS ────────────────────────────────────────────────── */
 /* ⚠️ LA FEUILLE PARTAGE SA HAUTEUR AVEC LA CARTE, et chaque pixel qu'elle
@@ -2247,8 +2234,12 @@ body:has(.jeu) { padding-bottom: 0; }
   display: flex; gap: 6px; align-items: center; margin: 0 0 2px;
   white-space: nowrap; overflow: hidden;
 }
+.jeu-rang {
+  font-size: var(--t-2xs); color: var(--bulle-texte-doux);
+  font-variant-numeric: tabular-nums; margin-left: auto; flex: none;
+}
 .jeu-bandeau-lieu {
-  margin-left: auto; font-size: var(--t-xs); color: var(--bulle-texte-doux);
+  font-size: var(--t-xs); color: var(--bulle-texte-doux);
   overflow: hidden; text-overflow: ellipsis;
 }
 .jeu-pratique, .jeu-forme {
@@ -2350,6 +2341,11 @@ body:has(.jeu) { padding-bottom: 0; }
 }
 .jeu-bouton .m-icone { width: 26px; height: 26px; }
 .jeu-bouton:focus-visible { outline: 2px solid var(--ocre); outline-offset: 3px; }
+/* ⚠️ AUX DEUX BOUTS, LE BOUTON SE DÉSACTIVE AU LIEU DE NE RIEN FAIRE. Un
+   contrôle qui répond parfois et pas d'autres fois se lit comme une panne ;
+   un contrôle éteint dit qu'il n'y a rien derrière. */
+.jeu-bouton[disabled] { opacity: 0.38; cursor: default; }
+.jeu-bouton[disabled]:hover { border-color: var(--bulle-trait-fort); }
 /* ⚠️ Le bouton du milieu est plus petit À DESSEIN : voir le circuit sur la
    carte n'est pas un verdict, c'est un détour. Trois cercles identiques
    donneraient trois gestes de même poids. */

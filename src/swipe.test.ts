@@ -264,8 +264,47 @@ describe("le jeu de cartes des balades", () => {
     expect(barre).not.toMatch(/size=/);
   });
 
+  /**
+   * 🔴 LE CONTRAT DU GESTE A CHANGÉ LE 1/11, ET AUCUN TEST NE LE PORTAIT.
+   *    Les 190 tests sont passés au vert sur la bascule « trancher →
+   *    feuilleter » : ils vérifiaient le clavier, la provenance, le stockage —
+   *    jamais ce que le geste VEUT DIRE. ⭐ Une suite verte sur un changement
+   *    de contrat ne dit pas que le changement est bon : elle dit que le
+   *    contrat n'était pas tenu.
+   *
+   * ⛔ CET ÉCRAN N'ENREGISTRE PLUS RIEN. Le carnet se remplit depuis la fiche
+   *    de promenade ; ici, le cœur OUVRE. Si `ajouterAuCarnet` revenait, le
+   *    même dessin voudrait dire deux choses selon l'écran.
+   */
+  it("le geste feuillette, il ne tranche pas", () => {
+    expect(code).not.toMatch(/ajouterAuCarnet|basculerCarnet/);
+    expect(code).toMatch(/feuilleter\("suivante"\)/);
+    expect(code).toMatch(/feuilleter\("precedente"\)/);
+    // ⛔ et plus aucun tampon de jugement
+    expect(code).not.toMatch(/Je garde|jeu-verdict/);
+  });
+
+  /**
+   * ⭐ LES BORNES SONT DURES. Un carrousel qui boucle fait croire qu'on avance
+   *    alors qu'on repasse : on ne sait plus si l'on a tout vu. Le rang le dit
+   *    à la place de l'écran de fin, qui a disparu avec sa raison d'être.
+   */
+  it("ne boucle pas, et dit le rang", () => {
+    expect(code).toMatch(/vise < 0 \|\| vise >= jeu\.length/);
+    expect(code).not.toMatch(/% jeu\.length|%jeu\.length/);
+    expect(code).toMatch(/\{rang\}\/\{total\}/);
+    // ⛔ l'écran de fin promettait une fin qui n'arrive plus
+    expect(code).not.toMatch(/Vous avez tout vu|jeu-fin-titre/);
+  });
+
+  /** ⭐ Le cœur OUVRE la fiche de l'Office — il n'enregistre pas. */
+  it("le cœur central ouvre la fiche de l'Office", () => {
+    const bloc = code.slice(code.indexOf("jeu-commandes"), code.indexOf("</div>", code.indexOf("jeu-commandes")));
+    expect(bloc).toMatch(/jeu-garde[\s\S]*href=\{courante\.source\}/);
+  });
+
   /** ⭐ Un jeu de cartes qui ne répond qu'au doigt n'existe pas pour qui
-   *  navigue au clavier. Les flèches tranchent, et trois boutons doublent. */
+   *  navigue au clavier. Les flèches feuillettent, et trois boutons doublent. */
   it("se joue aussi au clavier", () => {
     expect(code).toMatch(/ArrowRight/);
     expect(code).toMatch(/ArrowLeft/);

@@ -1,17 +1,33 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { chargerOT, PRATIQUE, type ItineraireOT } from "./ot";
 import { portrait } from "./portrait";
-import { ajouterAuCarnet, lireCarnet } from "./carnet";
 import { ATTRIBUTION, lireFond, poserFond, type Fond } from "./carte-fond";
 import { chargerLieux, nommer, type Inventaire } from "./lieux";
 import { lieuxProches, SEUIL_PROCHES } from "./proches";
 
 /**
- * LE JEU DE CARTES DES BALADES — l'écran principal du territoire.
+ * LES FICHES DES BALADES — l'écran principal du territoire.
  *
  * ⭐ UNE CARTE = UNE FICHE PLEIN ÉCRAN : le fond OSM occupe tout le haut, la
- *    feuille du bas porte ce qu'on sait du circuit, et les trois commandes
- *    tranchent. On ne choisit pas dans une liste, on réagit à une fiche.
+ *    feuille du bas porte ce qu'on sait du circuit. On ne choisit pas dans une
+ *    liste, on feuillette.
+ *
+ * 🔴 LE GESTE A CHANGÉ DE NATURE LE 1/11/2026 — demande du fondateur. Il
+ *    TRANCHAIT (garder / passer) ; il NAVIGUE désormais : vers la droite la
+ *    fiche suivante, vers la gauche la précédente. Ce n'est pas un réglage
+ *    d'animation, c'est un autre contrat :
+ *    · plus aucune carte n'est CONSOMMÉE, donc il n'y a plus de fin de jeu —
+ *      un carrousel n'a pas d'écran « vous avez tout vu », il a un rang ;
+ *    · les deux tampons « Je garde » / « Passer » ont disparu : ils nommaient
+ *      un jugement qui n'existe plus. ⭐ Un décor qui survit à sa raison
+ *      devient un faux témoin, et celui-là aurait été lu comme une promesse ;
+ *    · le cœur n'ENREGISTRE plus, il OUVRE la fiche de l'Office.
+ *
+ * ⚠️ CE QUE ÇA DÉPLACE, ET IL FAUT LE DIRE : cet écran ne nourrit plus le
+ *    carnet. Le carnet n'est pas mort — il se remplit depuis la fiche de
+ *    promenade (`FichePromenade`), où le cœur a toujours voulu dire « je
+ *    garde », et se relit dans `Espace`. Mais depuis ici, plus rien ne
+ *    s'enregistre, et l'écran ne le promet donc plus nulle part.
  *
  * ⛔ CE SONT LES CIRCUITS DE L'OFFICE DE TOURISME. Aucune étoile, aucune
  *    note, aucun « recommandé » : MANA ne classe pas les itinéraires d'un
@@ -52,7 +68,8 @@ const CarteFondOT = lazy(() =>
   import("./CarteFondOT").then((m) => ({ default: m.CarteFondOT })),
 );
 
-type Verdict = "garde" | "passe";
+/** le sens du feuilletage */
+type Sens = "suivante" | "precedente";
 
 const DIFFICULTE: Record<string, string> = {
   facile: "Facile", moyen: "Moyen", difficile: "Difficile",
@@ -75,9 +92,8 @@ export function SwipeBalades({ surCarte }: { surCarte: (centre?: [number, number
      un geste. */
   const [famille, setFamille] = useState<ItineraireOT["pratique"] | "tout">("pied");
   const [i, setI] = useState(0);
-  const [carnet, setCarnet] = useState<string[]>([]);
   const [glisse, setGlisse] = useState(0);
-  const [envol, setEnvol] = useState<Verdict | null>(null);
+  const [envol, setEnvol] = useState<Sens | null>(null);
   const [inv, setInv] = useState<Inventaire | null>(null);
   const [requete, setRequete] = useState("");
   const [calquesOuverts, setCalquesOuverts] = useState(false);
@@ -86,8 +102,6 @@ export function SwipeBalades({ surCarte }: { surCarte: (centre?: [number, number
   const depart = useRef<{ x: number; y: number; id: number } | null>(null);
   const boite = useRef<HTMLDivElement>(null);
   const [largeur, setLargeur] = useState(360);
-
-  useEffect(() => { setCarnet(lireCarnet()); }, []);
 
   useEffect(() => {
     let vivant = true;
@@ -118,13 +132,21 @@ export function SwipeBalades({ surCarte }: { surCarte: (centre?: [number, number
 
   const courante = jeu[i] ?? null;
 
-  const trancher = useCallback((v: Verdict) => {
-    const w = jeu[i];
-    if (!w || envol) return;
-    if (v === "garde") setCarnet(ajouterAuCarnet(w.slug));
-    setEnvol(v);
-    window.setTimeout(() => { setEnvol(null); setGlisse(0); setI((n) => n + 1); }, 260);
-  }, [jeu, i, envol]);
+  /**
+   * FEUILLETER — et les bornes sont DURES, pas circulaires.
+   * ⭐ Un carrousel qui boucle fait croire qu'on avance encore alors qu'on
+   *    repasse : on ne sait plus si on a tout vu. Aux deux bouts, le geste ne
+   *    fait rien et le bouton correspondant est désactivé — l'écran dit où
+   *    l'on est par son rang, pas par une promesse de fin.
+   */
+  const feuilleter = useCallback((sens: Sens) => {
+    if (envol) return;
+    const pas = sens === "suivante" ? 1 : -1;
+    const vise = i + pas;
+    if (vise < 0 || vise >= jeu.length) { setGlisse(0); return; }
+    setEnvol(sens);
+    window.setTimeout(() => { setEnvol(null); setGlisse(0); setI(vise); }, 260);
+  }, [jeu.length, i, envol]);
 
   // ── LE GESTE ────────────────────────────────────────────────────────────
   // ⚠️ `setPointerCapture` : sans lui, un doigt qui sort de la carte ne rend
@@ -144,7 +166,7 @@ export function SwipeBalades({ surCarte }: { surCarte: (centre?: [number, number
     if (!d || d.id !== e.pointerId) return;
     depart.current = null;
     const dx = e.clientX - d.x;
-    if (Math.abs(dx) > largeur * SEUIL) trancher(dx > 0 ? "garde" : "passe");
+    if (Math.abs(dx) > largeur * SEUIL) feuilleter(dx > 0 ? "suivante" : "precedente");
     else setGlisse(0);
   };
 
@@ -155,12 +177,12 @@ export function SwipeBalades({ surCarte }: { surCarte: (centre?: [number, number
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const c = e.target as HTMLElement | null;
       if (c && (c.tagName === "INPUT" || c.tagName === "TEXTAREA")) return;
-      if (e.key === "ArrowRight") { e.preventDefault(); trancher("garde"); }
-      else if (e.key === "ArrowLeft") { e.preventDefault(); trancher("passe"); }
+      if (e.key === "ArrowRight") { e.preventDefault(); feuilleter("suivante"); }
+      else if (e.key === "ArrowLeft") { e.preventDefault(); feuilleter("precedente"); }
     };
     window.addEventListener("keydown", au);
     return () => window.removeEventListener("keydown", au);
-  }, [trancher]);
+  }, [feuilleter]);
 
   // ── LA RECHERCHE D'UN LIEU ──────────────────────────────────────────────
   // ⭐ Elle ne duplique pas celle de la carte : elle y MÈNE. Chercher un lieu,
@@ -173,7 +195,9 @@ export function SwipeBalades({ surCarte }: { surCarte: (centre?: [number, number
       .slice(0, 6);
   }, [inv, requete]);
 
-  const dx = envol ? (envol === "garde" ? largeur * 1.6 : -largeur * 1.6) : glisse;
+  // ⚠️ La carte sort DANS LE SENS DU DOIGT. La faire partir dans l'autre sens
+  //    donnerait l'impression d'un refus là où il n'y a qu'un feuilletage.
+  const dx = envol ? (envol === "suivante" ? largeur * 1.6 : -largeur * 1.6) : glisse;
   const part = Math.max(-1, Math.min(1, dx / (largeur * SEUIL || 1)));
 
   if (erreur) {
@@ -274,25 +298,12 @@ export function SwipeBalades({ surCarte }: { surCarte: (centre?: [number, number
       <div className="jeu-pile" ref={boite}>
         {!tout && <p className="jeu-vide" role="status">Lecture des circuits…</p>}
 
-        {tout && !courante && (
-          <div className="jeu-fin">
-            <p className="jeu-fin-titre">Vous avez tout vu.</p>
-            <p className="jeu-fin-mot">
-              {carnet.length === 0
-                ? "Rien de gardé — le carnet vous attend au prochain tour."
-                : `${carnet.length} balade${carnet.length > 1 ? "s" : ""} dans votre carnet, sur cet appareil et nulle part ailleurs.`}
-            </p>
-            <div className="jeu-fin-actions">
-              <button type="button" className="m-action" onClick={() => setI(0)}>
-                Revoir le jeu
-              </button>
-              <button type="button" className="m-action-fine" onClick={() => surCarte()}>
-                Ouvrir la carte
-              </button>
-            </div>
-          </div>
-        )}
-
+        {/* ⛔ PLUS D'ÉCRAN DE FIN. Il disait « Vous avez tout vu » et comptait
+            le carnet ; depuis que le geste feuillette au lieu de trancher,
+            aucune carte n'est consommée et rien ne s'enregistre ici. ⭐ Un
+            écran qui survit à sa raison ne devient pas inutile, il devient
+            FAUX : celui-là aurait annoncé une fin qui n'arrive plus et un
+            carnet que plus rien ne remplit. Le rang, lui, dit où l'on est. */}
         {/* ⚠️ De l'arrière vers l'avant : la carte du dessus est la dernière
             du flux — aucun `z-index` à tenir. */}
         {tout && jeu.slice(i, i + PILE + 1).reverse().map((w, rang, tab) => {
@@ -302,6 +313,7 @@ export function SwipeBalades({ surCarte }: { surCarte: (centre?: [number, number
             <Carte
               key={w.slug}
               w={w} inv={inv}
+              rang={i + 1} total={jeu.length}
               dessus={dessus}
               profondeur={profondeur}
               fond={profondeur < FONDS_VIVANTS}
@@ -322,29 +334,49 @@ export function SwipeBalades({ surCarte }: { surCarte: (centre?: [number, number
              endroit pendant que les cartes défilent. */}
       {tout && courante && (
         <div className="jeu-commandes">
-          <button type="button" className="jeu-bouton jeu-passe" onClick={() => trancher("passe")}>
-            <span className="sr-only">Passer cette balade</span>
+          {/* ⭐ LES TROIS COMMANDES DOUBLENT LE GESTE, elles ne le complètent
+              pas : ‹ et › font exactement ce que font les deux sens du doigt.
+              Un écran qui ne répond qu'au glissement n'existe pas pour qui
+              navigue au clavier ou vise mal. */}
+          <button
+            type="button" className="jeu-bouton jeu-passe"
+            disabled={i === 0}
+            onClick={() => feuilleter("precedente")}
+          >
+            <span className="sr-only">Fiche précédente</span>
             <svg className="m-icone" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M6 6l12 12M18 6L6 18" />
+              <path d="M15 5 8 12l7 7" />
             </svg>
           </button>
-          <button type="button" className="jeu-bouton jeu-ouvre" onClick={() => surCarte(courante.p[0])}>
-            <span className="sr-only">Voir ce circuit sur la carte</span>
-            <svg className="m-icone" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M9 4 3 6.5v13L9 17l6 3 6-2.5v-13L15 7z" />
-              <path d="M9 4v13M15 7v13" />
-            </svg>
-          </button>
-          <button type="button" className="jeu-bouton jeu-garde" onClick={() => trancher("garde")}>
-            <span className="sr-only">Garder cette balade dans mon carnet</span>
-            {/* ⭐ Un cœur, pas un marque-page : le geste dit « celle-là me
-                plaît », pas « je la range ». */}
+
+          {/* ⭐ LE CŒUR OUVRE LA FICHE DE L'OFFICE (1/11, décision du
+              fondateur). ⚠️ Il n'enregistre plus rien : le carnet se remplit
+              depuis la fiche de promenade, où le même dessin veut dire « je
+              garde ». Deux sens pour un cœur dans la même application, c'est
+              le genre d'écart qu'on écrit pour s'en souvenir. */}
+          <a
+            className="jeu-bouton jeu-garde"
+            href={courante.source} target="_blank" rel="noreferrer"
+          >
+            <span className="sr-only">Ouvrir la fiche de l’Office de tourisme</span>
             <svg className="m-icone" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M12 20.5 4.2 13a4.6 4.6 0 0 1 6.5-6.5l1.3 1.3 1.3-1.3A4.6 4.6 0 1 1 19.8 13z" />
+            </svg>
+          </a>
+
+          <button
+            type="button" className="jeu-bouton jeu-passe"
+            disabled={i >= jeu.length - 1}
+            onClick={() => feuilleter("suivante")}
+          >
+            <span className="sr-only">Fiche suivante</span>
+            <svg className="m-icone" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m9 5 7 7-7 7" />
             </svg>
           </button>
         </div>
       )}
+
     </main>
   );
 }
@@ -354,12 +386,12 @@ export function SwipeBalades({ surCarte }: { surCarte: (centre?: [number, number
 const L = 300, H = 330;   // le repère de la silhouette, en unités de `viewBox`
 
 function Carte({
-  w, inv, dessus, profondeur, fond, substrat, dx, part, envol, surCarte,
+  w, inv, rang, total, dessus, profondeur, fond, substrat, dx, part, envol, surCarte,
   surPrendre, surBouger, surLacher,
 }: {
-  w: ItineraireOT; inv: Inventaire | null;
+  w: ItineraireOT; inv: Inventaire | null; rang: number; total: number;
   dessus: boolean; profondeur: number; fond: boolean; substrat: Fond;
-  dx: number; part: number; envol: Verdict | null;
+  dx: number; part: number; envol: Sens | null;
   surCarte: (centre?: [number, number]) => void;
   surPrendre: (e: React.PointerEvent) => void;
   surBouger: (e: React.PointerEvent) => void;
@@ -457,12 +489,10 @@ function Carte({
         </svg>
       </div>
 
-      <span className="jeu-verdict jeu-verdict-garde" style={{ opacity: Math.max(0, part) }}>
-        Je garde
-      </span>
-      <span className="jeu-verdict jeu-verdict-passe" style={{ opacity: Math.max(0, -part) }}>
-        Passer
-      </span>
+      {/* ⛔ LES DEUX TAMPONS « Je garde » / « Passer » SONT PARTIS. Ils
+          nommaient un jugement que le geste ne porte plus : il feuillette.
+          ⭐ Un décor qui survit à sa raison devient un faux témoin — celui-là
+             aurait été lu comme une promesse d'enregistrement. */}
 
       {/* ── LA FEUILLE DU BAS ────────────────────────────────────────── */}
       <div className="jeu-feuille" ref={feuille}>
@@ -470,6 +500,11 @@ function Carte({
           <span className="jeu-pratique">{PRATIQUE[w.pratique]}</span>
           <span className="jeu-forme">{w.boucle ? "Boucle" : "Aller simple"}</span>
           {w.difficulte && <span className="jeu-forme">{DIFFICULTE[w.difficulte]}</span>}
+          {/* ⭐ LE RANG REMPLACE L'ÉCRAN DE FIN. Un carrousel n'a pas de fin à
+              annoncer ; il a une position à dire. Sans lui, on ne sait plus si
+              l'on a fait le tour — et c'est la seule chose que l'écran de fin
+              disait encore de vrai. */}
+          <span className="jeu-rang">{rang}/{total}</span>
           <span className="jeu-bandeau-lieu">
             {w.commune ?? w.depart ?? "Presqu’île de Crozon"}
           </span>
