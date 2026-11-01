@@ -25,6 +25,7 @@
  *    carte, cela faisait quatre décisions sur un écran qui en demande une.
  */
 import { useState } from "react";
+import { InvitationBalade } from "./InvitationBalade";
 
 export function Invitation({ base }: { base: string }) {
   const [motGps, setMotGps] = useState("");
@@ -87,11 +88,17 @@ export function Invitation({ base }: { base: string }) {
         </header>
 
         <div className="inv-dire">
+          {/* ⚠️ TEXTE ARRÊTÉ LE 1/11/2026 PAR LE FONDATEUR, sur maquette.
+              « Le monde commence ici » était une promesse de marque ; celle-ci
+              dit où l'on est et ce qu'on y fait. ⭐ Les deux retours à la ligne
+              sont VOULUS : ils tiennent la coupe du titre sur un téléphone,
+              là où `text-wrap: balance` la laisse flotter d'un rendu à
+              l'autre. */}
           <h1 id="inv-titre" className="inv-titre">
-            Le monde<br />commence ici.
+            Bienvenue<br />en Bretagne
           </h1>
           <p className="inv-sous">
-            Découvrez ce que vous<br />croiserez en chemin.
+            Explorez, découvrez, respirez…<br />avec MANA.
           </p>
         </div>
 
@@ -113,6 +120,13 @@ export function Invitation({ base }: { base: string }) {
 
           {motGps && <p className="inv-etat" role="status">{motGps}</p>}
         </div>
+
+        {/* ⭐ LA FICHE DU TERRITOIRE, SUR L'ACCUEIL. C'est la même feuille que
+            l'écran suivant — mêmes chiffres, mêmes mentions, même dessin : le
+            seul moyen que l'accueil ne promette pas autre chose que ce qu'on
+            trouvera. ⚠️ Elle arrive après le premier rendu et ne porte rien :
+            si `ot.json` n'arrive pas, l'accueil reste entier. */}
+        <InvitationBalade base={base} />
       </div>
     </section>
   );

@@ -2448,3 +2448,49 @@ body:has(.jeu) { padding-bottom: 0; }
 /* Le départ : le seul repère qui ne passe jamais sous un autre. */
 .ot-depart-halo { fill: rgb(13 16 12 / 42%); stroke: var(--craie); stroke-width: 2; }
 .ot-depart-coeur { fill: var(--craie); }
+
+/* ── LA FICHE DE BALADE SUR L'ACCUEIL ────────────────────────────────────
+   ⭐ Elle REPREND les classes de la feuille du territoire (`jeu-bandeau`,
+      `jeu-nom`, `jeu-faits`, `jeu-provenance`) plutôt que d'en recopier le
+      dessin. Deux feuilles qui se ressemblent par copie divergent à la
+      première correction ; celle-ci est la même, posée ailleurs.
+   ⚠️ Ne reste ici que ce qui change : la surface, et les deux actions. */
+.inv-balade {
+  margin-top: var(--sp-3);
+  padding: 16px 18px 14px;
+  border-radius: var(--r-xl);
+  /* la même matière que la feuille du territoire — un seul objet d'un écran
+     à l'autre, c'est ce que « liquid glass » veut dire ici */
+  background: color-mix(in srgb, var(--bulle-creux) 92%, transparent);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--bulle-trait);
+  box-shadow: var(--bulle-eclat), 0 16px 36px rgb(13 16 12 / 44%);
+  color: var(--bulle-texte);
+  display: grid; gap: 3px;
+  /* ⚠️ Les rôles du fond CLAIR sont redéfinis ici comme sur `.jeu` : un
+     `.m-action-fine` nomme `--texte` et `--trait-fort`, et sur cette surface
+     sombre il tomberait à 1,86 en thème clair. Même défaut, même remède —
+     c'est la troisième surface immersive à le demander. */
+  --texte: var(--bulle-texte);
+  --trait-fort: var(--bulle-trait-fort);
+  --texte-action: var(--bulle-action);
+}
+/* 🔴 `flex-wrap: wrap` AVEC `flex: 1 1 auto` A EMPILÉ LES DEUX BOUTONS. Mesuré :
+   chacun réclamait 344 px — toute la largeur — donc 696 px pour une ligne qui
+   en offre 344. ⭐ `auto` prend la base sur le CONTENU, et un contenu en
+   `nowrap` ne renonce à rien : les deux se déclaraient incompressibles et
+   `wrap` a fait la seule chose qu'il pouvait. Avec `flex: 1 1 0`, la base est
+   ZÉRO et le partage se fait vraiment — moitié-moitié. */
+.inv-balade-actions { display: flex; gap: 8px; margin-top: 10px; }
+.inv-balade-lien {
+  flex: 1 1 0; min-width: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 6px; min-height: 44px; font-size: var(--t-xs); white-space: nowrap;
+  padding-inline: 10px;
+  /* ⚠️ Pas de soulignement : ce sont des BOUTONS, et ils en ont l'allure.
+     Le soulignement vient de la règle générale des liens de cette surface —
+     juste pour un lien dans une phrase, faux pour une pastille d'action. */
+  text-decoration: none;
+}
+.inv-balade-lien .m-icone { width: 17px; height: 17px; flex: none; }
+.inv-balade-lien .inv-fleche svg { width: 16px; height: 16px; }

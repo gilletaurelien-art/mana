@@ -219,6 +219,27 @@ describe("le jeu de cartes des balades", () => {
     expect(bloc(".jeu-proches")).toMatch(/text-overflow: ellipsis/);
   });
 
+  /**
+   * ⛔ LA FICHE DE L'ACCUEIL PORTE LES MÊMES MENTIONS QUE CELLE DU TERRITOIRE.
+   *    Une fiche qui se déplace sans elles devient une fiche MANA au premier
+   *    coup d'œil — et c'est exactement ce qu'on s'interdit sur la donnée d'un
+   *    tiers, à cinq jours d'un rendez-vous où l'accord se négocie.
+   * ⚠️ Et elle ne charge PAS l'inventaire : la ligne « à moins de 150 m » vaut
+   *    ses 110 Ko sur un écran qu'on feuillette, pas sur une page d'accueil
+   *    qu'on traverse.
+   */
+  it("la fiche de l'accueil crédite l'Office et ne charge pas l'inventaire", () => {
+    const inv = readFileSync(new URL("./InvitationBalade.tsx", import.meta.url), "utf8");
+    const net = inv.replace(/\/\*[\s\S]*?\*\//g, "")
+      .split("\n").filter((l) => !/^\s*(\/\/|\*)/.test(l)).join("\n");
+    expect(net).toMatch(/Office de tourisme/);
+    expect(net).toMatch(/ATTRIBUTION\[/);
+    expect(net).toMatch(/chiffres déclarés/);
+    expect(net).not.toMatch(/chargerLieux|lieuxProches/);
+    // ⛔ et aucun libellé qui promette une rotation qu'on ne fait pas
+    expect(net).not.toMatch(/balade du jour|coup de c(œ|oe)ur|sélection/i);
+  });
+
   /** ⛔ « À proximité » n'est pas « sur le chemin » : le seuil est DIT. */
   it("dit le seuil quand il cite des sites proches", () => {
     expect(code).toMatch(/SEUIL_PROCHES/);
