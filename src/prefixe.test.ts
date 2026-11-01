@@ -123,6 +123,41 @@ describe("les titres de page", () => {
     expect(n).toMatch(/document\.title\s*=\s*titre/);
   });
 
+  /* 🔴 ET LES ROUTES DYNAMIQUES AUSSI — deux sur quatre n'en avaient pas.
+     Dont `/promenade/<slug>`, LA page qu'on partage : son résultat de
+     recherche disait exactement ce que dit l'accueil. Le défaut était
+     invisible depuis l'écran, où le titre d'onglet ne se regarde pas, et il
+     a survécu à tout le travail de titres de ce matin — parce que ce
+     travail-là ne regardait que la table.
+     ⭐ Un garde qui couvre une moitié d'une famille laisse l'autre moitié
+        exactement aussi exposée qu'avant, et donne l'impression du
+        contraire. */
+  it("chaque route dynamique pose son propre titre, TIRÉ DE SA DONNÉE", () => {
+    /* 🔴 CE TEST A ÉTÉ REFAIT APRÈS AVOIR ÉTÉ MUTÉ — la première version
+       exigeait seulement qu'un `document.title =` existe dans l'écran.
+       Deux mutations passaient : retirer le vrai titre laissait la LIGNE DE
+       RESTAURATION (`document.title = TITRE_DEFAUT`), qui suffisait à le
+       satisfaire ; et retirer un écran du routeur laissait le compte
+       au-dessus du seuil.
+       ⭐ Un garde satisfait par le ménage d'une règle ne tient pas la règle.
+          La règle est : chaque route qui porte un SLUG monte un écran dont
+          le titre est TIRÉ de la donnée que ce slug désigne. On part donc
+          des fonctions de routage — la source —, pas d'un compte. */
+    const fonctions = [...nu(lire("src/router.ts")).matchAll(/export function (route[A-Z][a-zA-Z]*)\(/g)]
+      .map((m) => m[1]);
+    expect(fonctions.length, "les routes à slug de router.ts").toBeGreaterThanOrEqual(4);
+
+    const nuApp = nu(app);
+    for (const fn of fonctions) {
+      const monte = nuApp.match(new RegExp(`<([A-Z][a-zA-Z]*)[^>]*slug=\\{${fn}\\(path\\)!\\}`));
+      expect(monte, `aucun écran n'est monté pour ${fn}`).not.toBeNull();
+      const ecran = nu(lire(`src/${monte![1]}.tsx`));
+      // ⛔ le titre doit DÉPENDRE de la donnée, pas être une constante
+      expect(ecran, `${monte![1]} ne tire pas son titre de la promenade`)
+        .toMatch(/document\.title\s*=\s*`[^`]*\$\{walk\.titre\}/);
+    }
+  });
+
   it("⛔ aucun titre n'est écrit deux fois — les pages statiques lisent la table", () => {
     /* ⚠️ Les titres vivaient dans les composants et ils avaient DÉJÀ divergé :
        deux restauraient « La porte d'entrée de l'écosystème MANA en
@@ -130,7 +165,8 @@ describe("les titres de page", () => {
        Personne n'avait menti — chaque copie était juste le jour de son
        écriture. ⛔ Les pages DYNAMIQUES gardent le leur : le titre d'une
        promenade est son nom, il ne tient pas dans une table. */
-    const dynamiques = ["src/Promenade.tsx", "src/EnChemin.tsx"];
+    const dynamiques = ["src/Promenade.tsx", "src/EnChemin.tsx",
+                        "src/FichePromenade.tsx", "src/Rencontres.tsx"];
     const ecrans = readdirSync("src")
       .filter((f) => f.endsWith(".tsx") && f !== "App.tsx")
       .map((f) => `src/${f}`)

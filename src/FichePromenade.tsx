@@ -21,6 +21,7 @@
  *    survit à la page.
  */
 import { lazy, useEffect, useState } from "react";
+import { TITRE_DEFAUT } from "./App";
 import { WALKS, effortLisible, MENTION } from "./walks";
 import type { Walk } from "./walks";
 import { Atlas } from "./Atlas";
@@ -50,6 +51,18 @@ const CarteReelle = lazy(() =>
 
 export function FichePromenade({ base, slug }: { base: string; slug: string }) {
   const walk = WALKS.find((w) => w.slug === slug);
+
+  /* ⭐ LE TITRE D'UNE PAGE DYNAMIQUE EST SON NOM — il ne peut pas tenir dans
+     la table de App.tsx, et c'est la seule raison pour laquelle il vit ici.
+     ⚠️ Posé le 1/11/2026 : cette page n'en avait JAMAIS eu. C'est pourtant
+        celle qu'on partage — l'adresse d'une balade — et son résultat de
+        recherche disait exactement ce que dit l'accueil. Le défaut était
+        invisible depuis l'écran, où le titre d'onglet ne se regarde pas. */
+  useEffect(() => {
+    if (!walk) return;
+    document.title = `${walk.titre} — Promenades MANA.bzh`;
+    return () => { document.title = TITRE_DEFAUT; };
+  }, [walk]);
   const [fermetures, setFermetures] = useState<Fermetures | null>(null);
   const [garde, setGarde] = useState(false);
 

@@ -17,6 +17,7 @@
  */
 import { useEffect, useState } from "react";
 import { WALKS } from "./walks";
+import { TITRE_DEFAUT } from "./App";
 import type { Etape } from "./walks";
 import { libelleCategorie } from "./categories";
 import { ILLUSTRATIONS } from "./illustrations";
@@ -47,6 +48,18 @@ type AvecDistance = Etape & { m: number | null };
 
 export function Rencontres({ base, slug }: { base: string; slug: string }) {
   const walk = WALKS.find((w) => w.slug === slug);
+
+  /* ⭐ LE TITRE D'UNE PAGE DYNAMIQUE EST SON NOM — il ne peut pas tenir dans
+     la table de App.tsx, et c'est la seule raison pour laquelle il vit ici.
+     ⚠️ Posé le 1/11/2026 : cette page n'en avait JAMAIS eu. C'est pourtant
+        celle qu'on partage — l'adresse d'une balade — et son résultat de
+        recherche disait exactement ce que dit l'accueil. Le défaut était
+        invisible depuis l'écran, où le titre d'onglet ne se regarde pas. */
+  useEffect(() => {
+    if (!walk) return;
+    document.title = `Ce que vous croiserez — ${walk.titre} — MANA.bzh`;
+    return () => { document.title = TITRE_DEFAUT; };
+  }, [walk]);
   const [pos, setPos] = useState<[number, number] | null>(null);
   const [motGps, setMotGps] = useState("");
   const [fermetures, setFermetures] = useState<Fermetures | null>(null);
