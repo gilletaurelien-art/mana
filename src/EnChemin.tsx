@@ -44,8 +44,24 @@ const lisible = (m: number) =>
   m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} km`;
 const km = (n: number) => n.toLocaleString("fr-FR", { maximumFractionDigits: 1 });
 
-export function EnChemin({ base, slug }: { base: string; slug: string }) {
-  const walk: Walk | undefined = WALKS.find((w) => w.slug === slug);
+/**
+ * ⭐ IL MARCHE AUSSI UNE BOUCLE QUI N'EST DANS AUCUN CATALOGUE — 2/11.
+ *    Aurélien : « à quoi sert "emporter le tracé (GPX)" alors qu'on veut
+ *    qu'ils utilisent MANA ? ». La question était juste, et elle pointait un
+ *    manque, pas un bouton de trop : le compositeur n'offrait QUE de partir
+ *    ailleurs, parce que cet écran-ci ne savait se monter que depuis un slug.
+ *    ⭐ Or il n'a jamais eu besoin que de six champs — `titre`, `points`,
+ *       `etapes`, `boucle`, `distanceKm`, `slug` — et une boucle composée les
+ *       a tous. Ce n'était pas une fonctionnalité à inventer : c'était une
+ *       dépendance à desserrer.
+ * ⚠️ `retour` remplace le lien de sortie quand il n'y a pas de fiche où
+ *    revenir : une promenade calculée il y a trois minutes n'a pas d'adresse.
+ */
+export function EnChemin(
+  { base, slug, walk: direct, retour }:
+  { base: string; slug?: string; walk?: Walk; retour?: () => void },
+) {
+  const walk: Walk | undefined = direct ?? WALKS.find((w) => w.slug === slug);
   const [moi, setMoi] = useState<WalkPoint | null>(null);
   const [gpsErreur, setGpsErreur] = useState("");
   const [suivi, setSuivi] = useState(true);
@@ -92,7 +108,14 @@ export function EnChemin({ base, slug }: { base: string; slug: string }) {
       ? walk.etapes.slice().sort((a, b) => metres(moi, a.lat, a.lon) - metres(moi, b.lat, b.lon))[0]
       : walk.etapes.filter((e) => e.pos > part + 0.005).sort((a, b) => a.pos - b.pos)[0];
 
-  const couverture = ILLUSTRATIONS[walk.slug]?.couverture;
+  /* ⛔ UNE BOUCLE COMPOSÉE N'EST DANS AUCUNE TABLE D'ILLUSTRATIONS, et il ne
+     faut surtout pas lui chercher une image « plausible » : c'est la règle
+     de ce dépôt depuis le début. Elle n'a pas non plus sa place dans
+     l'atlas du catalogue — l'y chercher par slug ne focaliserait rien et
+     montrerait les quatre promenades éditoriales à quelqu'un qui marche
+     tout autre chose. Son fond, c'est SON tracé. */
+  const duCatalogue = WALKS.some((w) => w.slug === walk.slug);
+  const couverture = duCatalogue ? ILLUSTRATIONS[walk.slug]?.couverture : undefined;
   const im = couverture ? image(couverture) : undefined;
 
   const sosHref = moi
@@ -112,19 +135,33 @@ export function EnChemin({ base, slug }: { base: string; slug: string }) {
           <Photo id={im.id} usage="evoque" alt="" sizes="100vw" priorite />
         ) : (
           <div className="ech-atlas">
-            <Atlas walks={WALKS} focus={walk.slug} cadrerSurFocus className="ech-atlas-svg" />
+            <Atlas walks={duCatalogue ? WALKS : [walk]} focus={walk.slug}
+                   cadrerSurFocus className="ech-atlas-svg" />
           </div>
         )}
       </div>
 
       {/* ── LA BARRE DU HAUT ────────────────────────────────────────────── */}
       <div className="ech-haut">
-        <a className="ech-rond" href={`${base}/promenade/${walk.slug}`}>
-          <span className="sr-only">Quitter la navigation et revenir à la fiche</span>
-          <svg className="m-icone" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="m6 6 12 12M18 6 6 18" />
-          </svg>
-        </a>
+        {/* ⚠️ UN LIEN QUAND IL Y A UNE FICHE OÙ REVENIR, UN BOUTON SINON.
+            Une promenade composée il y a trois minutes n'a pas d'adresse :
+            `/promenade/composee` n'existe pas, et un lien mort au milieu
+            d'un écran de marche est pire qu'une absence. */}
+        {retour ? (
+          <button className="ech-rond" onClick={retour}>
+            <span className="sr-only">Revenir aux propositions</span>
+            <svg className="m-icone" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m6 6 12 12M18 6 6 18" />
+            </svg>
+          </button>
+        ) : (
+          <a className="ech-rond" href={`${base}/promenade/${walk.slug}`}>
+            <span className="sr-only">Quitter la navigation et revenir à la fiche</span>
+            <svg className="m-icone" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m6 6 12 12M18 6 6 18" />
+            </svg>
+          </a>
+        )}
         <p className="ech-titre">{walk.titre}</p>
         <button
           type="button"

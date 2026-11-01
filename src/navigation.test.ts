@@ -248,3 +248,49 @@ describe("de la carte au compositeur", () => {
     }
   });
 });
+
+describe("ce qu'on fait d'une promenade composée", () => {
+  const compo = nu("./Composer.tsx");
+  const chemin = nu("./EnChemin.tsx");
+
+  /* 🔴 LA QUESTION D'AURÉLIEN, LE 2/11 : « à quoi sert "emporter le tracé
+     (GPX)" alors qu'on veut qu'ils utilisent MANA ? ». Elle était juste, et
+     elle pointait un MANQUE, pas un bouton de trop : le compositeur
+     n'offrait QUE de partir ailleurs, parce que l'écran de marche ne savait
+     se monter que depuis un slug de catalogue.
+     ⭐ Il n'a jamais eu besoin que de six champs, et une boucle composée les
+        a tous. Ce n'était pas une fonctionnalité à inventer, c'était une
+        dépendance à desserrer. */
+  it("on peut MARCHER une boucle qui n'est dans aucun catalogue", () => {
+    expect(chemin, "l'écran de marche n'accepte pas de promenade directe")
+      .toMatch(/walk: direct/);
+    expect(chemin).toMatch(/direct \?\? WALKS\.find/);
+    expect(compo, "le compositeur ne monte pas l'écran de marche")
+      .toMatch(/<EnChemin[\s\S]{0,200}walk=\{walk\}/);
+  });
+
+  /* ⛔ ET LE GPX RESTE. Une application qui garde ce qu'on y a fait n'est pas
+     celle qu'on veut écrire : ce qui est à vous est à vous, y compris quand
+     vous partez avec. Il descend au second rang — il ne disparaît pas.
+     ⭐ Ce test tient les DEUX bords : l'action principale doit être de
+        marcher, et la sortie doit exister. Un garde qui ne tiendrait que le
+        premier laisserait supprimer le second au nom de la même idée. */
+  it("⛔ « Partir » est l'action principale, et le GPX reste atteignable", () => {
+    const principal = compo.match(/className="cp-primaire"[\s\S]{0,220}?<\/button>/g) ?? [];
+    const partir = principal.find((x) => /setEnMarche\(true\)/.test(x));
+    expect(partir, "aucun bouton principal ne lance la marche").toBeTruthy();
+
+    // la sortie existe toujours, et elle emporte un VRAI fichier
+    expect(compo).toMatch(/enGpx\(walk\)/);
+    expect(compo).toMatch(/GPX/);
+  });
+
+  /* ⛔ UNE BOUCLE COMPOSÉE N'A NI PHOTOGRAPHIE NI PLACE DANS L'ATLAS du
+     catalogue : l'y chercher par slug ne focaliserait rien et montrerait les
+     promenades éditoriales à quelqu'un qui marche tout autre chose. */
+  it("⛔ et on ne lui cherche ni image ni voisine dans le catalogue", () => {
+    expect(chemin).toMatch(/const duCatalogue = WALKS\.some/);
+    expect(chemin).toMatch(/duCatalogue \? ILLUSTRATIONS/);
+    expect(chemin).toMatch(/duCatalogue \? WALKS : \[walk\]/);
+  });
+});

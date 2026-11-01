@@ -13,6 +13,13 @@ const CarteReelle = lazy(() =>
   import("./CarteReelle").then((m) => ({ default: m.CarteReelle }))
 );
 
+/* ⭐ L'ÉCRAN DE MARCHE, CHARGÉ À LA DEMANDE. Il porte le GPS, la boussole et
+   le SOS : du poids que personne n'a besoin de télécharger pour regarder
+   trois propositions depuis son canapé. */
+const EnChemin = lazy(() =>
+  import("./EnChemin").then((m) => ({ default: m.EnChemin }))
+);
+
 // Composer une promenade — « je suis ici, j'ai deux heures ».
 //
 // ⭐ TOUT LE CALCUL SE FAIT DANS CE NAVIGATEUR. La position ne part nulle
@@ -189,6 +196,15 @@ function SvgFeuille() {
   );
 }
 
+function SvgPartir() {
+  return (
+    <svg className="cp-picto" viewBox="0 0 24 24" aria-hidden="true"
+         fill="currentColor" stroke="none">
+      <path d="M8 5.2v13.6a.6.6 0 0 0 .92.5l10.2-6.8a.6.6 0 0 0 0-1l-10.2-6.8A.6.6 0 0 0 8 5.2z" />
+    </svg>
+  );
+}
+
 function SvgBotte() {
   return (
     <svg className="cp-botte" viewBox="0 0 24 24" aria-hidden="true"
@@ -246,6 +262,7 @@ export function Composer() {
   const [choisie, setChoisie] = useState(0);
   const [duree, setDuree] = useState(0);
   const [retour, setRetour] = useState<Retour | null>(null);
+  const [enMarche, setEnMarche] = useState(false);
   const [motRetour, setMotRetour] = useState("");
   const graine = useRef(1);
   // ⚠️ `undefined` = pas encore chargé · `null` = fichier absent ou illisible.
@@ -449,6 +466,20 @@ export function Composer() {
       })),
     };
   }, [graphe, b, rencontres]);
+
+  /* ⭐ MARCHER NE CHANGE PAS D'ADRESSE. Une boucle composée n'en a pas : elle
+     vit dans cet écran, avec sa graine et son point de départ. On remplace
+     donc le rendu plutôt que de naviguer — et le retour ramène exactement la
+     proposition qu'on avait sous les yeux, sans la recalculer. */
+  if (enMarche && walk) {
+    return (
+      <Suspense fallback={<main className="page"><div className="wrap">
+        <p className="page-note">Préparation de l'écran de marche…</p>
+      </div></main>}>
+        <EnChemin base={import.meta.env.BASE_URL.replace(/\/$/, "")} walk={walk} retour={() => setEnMarche(false)} />
+      </Suspense>
+    );
+  }
 
   return (
     <main className="page page-composer">
@@ -862,17 +893,33 @@ export function Composer() {
                   ⭐ Ce qu'on peut emporter POUR DE VRAI, c'est le fichier :
                      il entre dans n'importe quelle montre, il part hors
                      ligne, et il porte son attribution avec lui. */}
+              {/* ⭐ « PARTIR » EST L'ACTION PRINCIPALE — 2/11, après une
+                  question du fondateur : « à quoi sert emporter le tracé
+                  alors qu'on veut qu'ils utilisent MANA ? ». Elle était
+                  juste. Le GPX n'était pas un bouton de trop : c'était le
+                  SEUL, parce que l'écran de marche ne savait se monter que
+                  depuis un slug de catalogue. On a desserré la dépendance
+                  plutôt que de supprimer la sortie.
+                  ⛔ ET LE GPX RESTE. Il descend au second rang, il ne part
+                     pas : une application qui garde ce qu'on y a fait n'est
+                     pas celle qu'on veut écrire. Ce qui est à vous est à
+                     vous — y compris quand vous partez avec. */}
               <div className="cp-emporter">
-                <button
-                  className="cp-primaire"
-                  onClick={() => telecharger("promenade-mana.gpx", enGpx(walk), "application/gpx+xml")}
-                >
-                  <SvgTelecharger />Emporter le tracé (GPX)
+                <button className="cp-primaire" onClick={() => setEnMarche(true)}>
+                  <SvgPartir />Partir
                 </button>
                 <button className="cp-secondaire" onClick={autre}>
                   Autre promenade
                 </button>
               </div>
+              <p className="cp-second">
+                <button
+                  className="cp-lien"
+                  onClick={() => telecharger("promenade-mana.gpx", enGpx(walk), "application/gpx+xml")}
+                >
+                  <SvgTelecharger />Emporter le tracé (GPX)
+                </button>
+              </p>
               {/* ⚠️ LA DURÉE EST CALCULÉE À PLAT, ET ON LE DIT ICI plutôt que
                   de laisser « environ » porter seul le doute. Sur la
                   presqu'île, l'Office déclare jusqu'à +310 m sur 14 km :
