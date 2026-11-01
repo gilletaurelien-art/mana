@@ -147,3 +147,24 @@ describe("les cinq sections de l'accueil", () => {
     }
   });
 });
+
+describe("le titre de l'accueil", () => {
+  /* ⭐ UN TITRE ARRÊTÉ PAR LE FONDATEUR EST UNE RÈGLE DE PRODUIT, et une règle
+     de produit vaut mieux en test qu'en commentaire. Le texte précédent
+     (« Bienvenue en Bretagne ») portait au-dessus de lui un commentaire disant
+     « TEXTE ARRÊTÉ LE 1/11/2026 PAR LE FONDATEUR » : il n'a rien empêché, et
+     il ne pouvait rien empêcher. Celui-ci échoue.
+     ⚠️ Il tient le TEXTE et les DEUX LIGNES, pas la mise en forme : la coupe
+     manuelle est ce qui tient le titre sur un téléphone, là où
+     `text-wrap: balance` le laisse flotter d'un rendu à l'autre. */
+  const src = nu("./Invitation.tsx");
+
+  it("dit « Au cœur de la Bretagne », en deux lignes voulues", () => {
+    const h1 = src.match(/<h1[^>]*className="inv-titre"[^>]*>([\s\S]*?)<\/h1>/);
+    expect(h1, "le h1.inv-titre de l'accueil").not.toBeNull();
+    const brut = h1![1];
+    expect(brut).toMatch(/<br\s*\/?>/);
+    expect(brut.replace(/<br\s*\/?>/g, " ").replace(/\s+/g, " ").trim())
+      .toBe("Au cœur de la Bretagne");
+  });
+});

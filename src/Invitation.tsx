@@ -76,7 +76,7 @@ export function Invitation({ base }: { base: string }) {
               là où `text-wrap: balance` la laisse flotter d'un rendu à
               l'autre. */}
           <h1 id="inv-titre" className="inv-titre">
-            Bienvenue<br />en Bretagne
+            Au cœur<br />de la Bretagne
           </h1>
           <p className="inv-sous">
             Explorez, découvrez, respirez…<br />avec MANA.
