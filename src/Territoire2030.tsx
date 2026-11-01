@@ -30,7 +30,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DEFAUT, TERRITOIRES, territoireDe, urlGraphe } from "./territoires";
 import { chargerOT, type ItineraireOT } from "./ot";
-import { chargerLieux, type Inventaire } from "./lieux";
+import { chargerLieux, lienWiki, type Inventaire, type Lieu } from "./lieux";
 import { libelleCategorie } from "./categories";
 import { WALKS, VITRINE, effortLisible } from "./walks";
 import type { Walk } from "./walks";
@@ -82,7 +82,13 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
         coûte plus cher qu'un bouton absent : on appuie, rien ne bouge, et
         c'est l'application entière qu'on croit cassée. */
   const [requete, setRequete] = useState("");
-  const [vise, setVise] = useState<{ nom: string; detail: string; g: [number, number] } | null>(null);
+  const [vise, setVise] = useState<{
+    nom: string; detail: string; g: [number, number];
+    /** ce que la donnée dit EN PLUS, quand elle le dit — 75 lieux sur 624 */
+    desc?: string;
+    /** l'article, quand OSM le référence — 45 lieux sur 624 */
+    wiki?: string;
+  } | null>(null);
   const [calquesOuverts, setCalquesOuverts] = useState(false);
   const [calques, setCalques] = useState({
     lieux: true, littoral: true, promenades: true, balises: true, sites: true,
@@ -102,6 +108,27 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
    *     feraient saccader un canvas qui, lui, se redessine en 20 ms. React ne
    *     voit que le compteur `vueTic`, poussé une fois par image. */
   const vue = useRef({ k: 1, px: 0, py: 0 });
+  /**
+   * 🔴 LA PROJECTION DU DERNIER RENDU, pour pouvoir viser ce qui est DESSINÉ.
+   * ⭐ ON NE RECOPIE PAS LA FORMULE. Elle dépend de l'emprise du graphe, du
+   *    cosinus à la latitude moyenne, de l'échelle, des marges ET de l'état
+   *    de la vue : une seconde version, écrite à côté pour le pointage,
+   *    tomberait juste aujourd'hui et faux au premier changement de cadrage —
+   *    et le décalage serait de quelques pixels, donc invisible jusqu'à ce
+   *    qu'on clique à côté d'un menhir sans comprendre pourquoi.
+   *    Le dessin dépose donc SA projection ici, et le clic s'en sert.
+   */
+  const proj = useRef<{ X: (lon: number) => number; Y: (lat: number) => number } | null>(null);
+  /**
+   * 🔴 ET L'INVENTAIRE AUSSI PASSE PAR UNE RÉFÉRENCE. L'effet qui pose les
+   *    écouteurs de pointeur ne tourne QU'UNE FOIS (`[]`) : un gestionnaire
+   *    qui lirait `sitesIci` directement capturerait le tableau VIDE du
+   *    premier rendu, et le pointage ne trouverait jamais rien.
+   * ⭐ Le défaut serait MUET — pas une erreur, juste un clic qui ne fait
+   *    rien, exactement comme avant la correction. Un bug qui ressemble à
+   *    l'absence de la fonctionnalité qu'on vient d'ajouter.
+   */
+  const vivant = useRef<{ sites: Lieu[]; inv: Inventaire | null }>({ sites: [], inv: null });
   const [vueTic, setVueTic] = useState(0);
   const [vueBougee, setVueBougee] = useState(false);
   const ZOOM_MIN = 1, ZOOM_MAX = 12;
@@ -129,6 +156,10 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
     [inv, terr],
   );
   useEffect(() => { chargerOT().then((r) => setOt(r.itineraires)).catch(() => setOt([])); }, []);
+  /* ⚠️ Tenue à jour À CHAQUE RENDU : c'est ce qui permet aux écouteurs posés
+     une seule fois de lire l'inventaire d'aujourd'hui. */
+  vivant.current = { sites: sitesIci, inv };
+
   const otIci = useMemo(
     () => ot.filter((i) => {
       const [lo, la] = i.p[0];
@@ -200,7 +231,13 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
    */
   type Resultat =
     | { genre: "promenade"; nom: string; detail: string; slug: string; g: [number, number] }
-    | { genre: "lieu"; nom: string; detail: string; g: [number, number] };
+    /* ⚠️ `desc` et `wiki` VOYAGENT AVEC LE RÉSULTAT. Sans eux, le même lieu
+       rendait une fiche riche au clic et une fiche nue à la recherche : deux
+       chemins vers le même endroit, deux niveaux de détail, et rien pour le
+       dire. ⭐ Une donnée attachée à un lieu doit suivre le lieu, pas la
+       façon dont on l'a trouvé. */
+    | { genre: "lieu"; nom: string; detail: string; g: [number, number];
+        desc?: string; wiki?: string };
 
   const resultats = useMemo<Resultat[]>(() => {
     const q = plat(requete.trim());
@@ -234,6 +271,7 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
       .map((l) => ({
         genre: "lieu" as const, nom: l.n!,
         detail: inv?.libelles[l.c] ?? l.c, g: l.g,
+        desc: l.desc, wiki: l.wiki,
       }));
 
     /* ⚠️ Dédoublonnage par NOM + POSITION ARRONDIE, pas par nom seul : il y a
@@ -266,7 +304,10 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
   }, [centre]);
 
   const choisir = (r: Resultat) => {
-    setVise({ nom: r.nom, detail: r.detail, g: r.g });
+    setVise({
+      nom: r.nom, detail: r.detail, g: r.g,
+      ...(r.genre === "lieu" ? { desc: r.desc, wiki: r.wiki } : {}),
+    });
     if (r.genre === "promenade") { setChoisie(r.slug); setFeuille("deploye"); }
   };
 
@@ -352,8 +393,10 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
       e.preventDefault();
       zoomer(Math.exp(-e.deltaY * 0.0015), e.clientX, e.clientY);
     };
+    const depart = new Map<number, { x: number; y: number }>();
     const bas = (e: PointerEvent) => {
       doigts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      depart.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (doigts.size === 2) {
         const [a, c] = [...doigts.values()];
         ecart0 = Math.hypot(a.x - c.x, a.y - c.y); k0 = vue.current.k;
@@ -385,17 +428,91 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
       setVueBougee(vue.current.k !== 1 || vue.current.px !== 0 || vue.current.py !== 0);
       setVueTic((n) => n + 1);
     };
-    const haut = (e: PointerEvent) => { doigts.delete(e.pointerId); if (doigts.size < 2) ecart0 = 0; };
+    /**
+     * ⭐ UN CLIC VISE LE LIEU LE PLUS PROCHE — et c'est un CLIC, pas la fin
+     *    d'un déplacement. On mémorise le point de départ et on ne vise que
+     *    si le doigt a bougé de moins de 5 px : sans ce seuil, chaque
+     *    glissement se terminerait par un lieu visé au hasard.
+     * ⚠️ 16 px de tolérance, pas 2,6 (le rayon du point dessiné) : on vise
+     *    avec un doigt, pas avec un curseur. Et on prend le PLUS PROCHE dans
+     *    ce rayon, jamais le premier trouvé — sur la presqu'île les sites se
+     *    touchent, et « le premier » dépend de l'ordre du fichier.
+     * ⛔ Les lieux SANS NOM ne sont pas visables : annoncer « Fortification »
+     *    sans rien d'autre n'apprend rien, et il y en a 734.
+     */
+    const viser = (e: PointerEvent) => {
+      const d = depart.get(e.pointerId);
+      if (!d || Math.hypot(e.clientX - d.x, e.clientY - d.y) > 5) return;
+      const P = proj.current;
+      const inv = vivant.current.inv;
+      if (!P || !inv) return;
+      const r = b.getBoundingClientRect();
+      const cx = e.clientX - r.left, cy = e.clientY - r.top;
+      let meilleur: { l: Lieu; d2: number } | null = null;
+      for (const l of vivant.current.sites) {
+        if (!l.n) continue;
+        const dxp = P.X(l.g[0]) - cx, dyp = P.Y(l.g[1]) - cy;
+        const d2 = dxp * dxp + dyp * dyp;
+        if (d2 <= 16 * 16 && (!meilleur || d2 < meilleur.d2)) meilleur = { l, d2 };
+      }
+      if (meilleur) {
+        const nom = meilleur.l.n!;
+        setRequete("");
+        /* ⭐ LA FICHE DIT CE QUE LA DONNÉE DIT, ET RIEN DE PLUS. 75 lieux sur
+           624 portent une description, 45 un article : les champs
+           apparaissent quand ils existent et disparaissent sinon. ⛔ Aucun
+           texte de remplissage — « Un site remarquable de la presqu'île »
+           sous un menhir serait une phrase que personne n'a écrite. */
+        setVise({
+          nom, detail: inv.libelles[meilleur.l.c] ?? meilleur.l.c, g: meilleur.l.g,
+          desc: meilleur.l.desc, wiki: meilleur.l.wiki,
+        });
+      }
+    };
+    /**
+     * ⭐ LE CURSEUR DIT QU'UN POINT EST CLIQUABLE. Sans lui, la fonction
+     *    existe et personne ne la trouve : rien à l'écran ne distingue un
+     *    point de 2,6 px d'un trait de chemin. ⚠️ C'est la question que le
+     *    fondateur a posée en premier — « les points sont cliquables ? » — et
+     *    la réponse ne doit pas être « essayez ».
+     * ⚠️ Ne tourne QUE si aucun doigt n'est posé : pendant un déplacement, le
+     *    curseur doit rester `grabbing`, et 825 distances à chaque image de
+     *    glissement seraient payées pour rien.
+     */
+    const survol = (e: PointerEvent) => {
+      if (doigts.size > 0) return;
+      const P = proj.current;
+      if (!P) { b.style.cursor = ""; return; }
+      const r = b.getBoundingClientRect();
+      const cx = e.clientX - r.left, cy = e.clientY - r.top;
+      let sur = false;
+      for (const l of vivant.current.sites) {
+        if (!l.n) continue;
+        const dxp = P.X(l.g[0]) - cx, dyp = P.Y(l.g[1]) - cy;
+        if (dxp * dxp + dyp * dyp <= 16 * 16) { sur = true; break; }
+      }
+      b.style.cursor = sur ? "pointer" : "";
+    };
+
+    const haut = (e: PointerEvent) => {
+      if (doigts.size === 1) viser(e);
+      doigts.delete(e.pointerId); depart.delete(e.pointerId);
+      if (doigts.size < 2) ecart0 = 0;
+    };
 
     b.addEventListener("wheel", molette, { passive: false });
     b.addEventListener("pointerdown", bas);
     b.addEventListener("pointermove", bouge, { passive: false });
+    b.addEventListener("pointermove", survol, { passive: true });
     b.addEventListener("pointerup", haut);
     b.addEventListener("pointercancel", haut);
     return () => {
       b.removeEventListener("wheel", molette);
       b.removeEventListener("pointerdown", bas);
       b.removeEventListener("pointermove", bouge);
+      // ⚠️ Deux écouteurs posés sur le même événement : deux à retirer. Un
+      //    seul oubli laisse un gestionnaire vivant sur un nœud mort.
+      b.removeEventListener("pointermove", survol);
       b.removeEventListener("pointerup", haut);
       b.removeEventListener("pointercancel", haut);
     };
@@ -443,6 +560,8 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
         cxv + ((dx + (lon - loMin) * R_LAT * kLon * ech) - cxv) * k + px;
       const Y = (lat: number) =>
         cyv + ((dy + (laMax - lat) * R_LAT * ech) - cyv) * k + py;
+      // ⭐ Déposée à CHAQUE rendu : le pointage vise toujours l'image qu'on voit.
+      proj.current = { X, Y };
 
       /* ⭐ LA CARTE PUISE DANS LES RÔLES, PAS DANS LES MATIÈRES. Lire `--kaki`
          ici fige la carte en clair : le thème sombre redéfinit les rôles, pas
@@ -718,10 +837,23 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
 
         {motGps && <p className="terr-gps" role="status">{motGps}</p>}
         {vise && (
-          <p className="terr-vise" role="status">
-            <strong>{vise.nom}</strong> · {vise.detail}
-            {" — "}situé sur la carte.
-          </p>
+          <div className="terr-vise" role="status">
+            <p className="terr-vise-nom">
+              <strong>{vise.nom}</strong> · {vise.detail}
+            </p>
+            {vise.desc && <p className="terr-vise-dire">{vise.desc}</p>}
+            {/* ⛔ LE LIEN WIKIPÉDIA EST CONSTRUIT À PARTIR DE CE QU'OSM ÉCRIT
+                — « fr:Ménez Hom » —, langue comprise. Supposer `fr` ferait
+                tomber les articles d'une autre langue sur une page absente,
+                et un lien mort est pire qu'un lien manquant. */}
+            {vise.wiki && (
+              <p className="terr-vise-dire">
+                <a href={lienWiki(vise.wiki)} target="_blank" rel="noreferrer">
+                  Lire l’article
+                </a>
+              </p>
+            )}
+          </div>
         )}
       </div>
 

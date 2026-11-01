@@ -44,3 +44,22 @@ export function chargerLieux(): Promise<Inventaire> {
  *  ⚠️ Jamais la clé technique : « megalithe » ne se montre pas à l'écran. */
 export const nommer = (l: Lieu, libelles: Record<string, string>) =>
   l.n ?? libelles[l.c] ?? l.c;
+
+/**
+ * L'ADRESSE DE L'ARTICLE, à partir de ce qu'OpenStreetMap écrit.
+ *
+ * ⛔ LA LANGUE EST DANS LA DONNÉE, ON NE LA SUPPOSE PAS. OSM écrit
+ *    « fr:Ménez Hom », « br:Menez Hom », « en:… » : partir du principe que
+ *    c'est du français ferait tomber les autres sur une page absente, et un
+ *    lien mort est pire qu'un lien manquant — il donne l'air d'avoir cherché.
+ * ⚠️ Les espaces deviennent des tirets bas, et le reste est encodé : un
+ *    article nommé « Pointe de Pen-Hir » ne s'écrit pas comme il se lit.
+ * ⚠️ Sans préfixe, on retombe sur `fr` — c'est le cas de l'immense majorité
+ *    des 45 lieux concernés, et c'est dit ici plutôt que supposé ailleurs.
+ */
+export function lienWiki(wiki: string): string {
+  const i = wiki.indexOf(":");
+  const lg = i > 0 ? wiki.slice(0, i) : "fr";
+  const art = i > 0 ? wiki.slice(i + 1) : wiki;
+  return `https://${lg}.wikipedia.org/wiki/${encodeURIComponent(art.replace(/ /g, "_"))}`;
+}

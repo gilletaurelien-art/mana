@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
 import inventaire from "./lieux.json";
 import type { Inventaire } from "./lieux";
-import { nommer } from "./lieux";
+import { nommer, lienWiki } from "./lieux";
 
 const inv = inventaire as unknown as Inventaire;
 
@@ -58,5 +59,99 @@ describe("l'inventaire des sites remarquables", () => {
   it("l'attribution ODbL voyage avec l'inventaire", () => {
     expect(inv.attribution).toMatch(/OpenStreetMap/);
     expect(inv.attribution).toMatch(/ODbL/);
+  });
+});
+
+describe("le lien vers l'article", () => {
+  /**
+   * ⛔ LA LANGUE EST DANS LA DONNÉE. Supposer « fr » ferait tomber les
+   *    articles bretons ou anglais sur une page absente — et un lien mort est
+   *    pire qu'un lien manquant : il donne l'air d'avoir cherché.
+   */
+  it("respecte la langue qu'OSM écrit", () => {
+    expect(lienWiki("fr:Pointe de Pen-Hir")).toBe("https://fr.wikipedia.org/wiki/Pointe_de_Pen-Hir");
+    expect(lienWiki("br:Menez Hom")).toBe("https://br.wikipedia.org/wiki/Menez_Hom");
+    expect(lienWiki("en:Crozon")).toBe("https://en.wikipedia.org/wiki/Crozon");
+  });
+
+  it("retombe sur le français quand le préfixe manque", () => {
+    expect(lienWiki("Crozon")).toBe("https://fr.wikipedia.org/wiki/Crozon");
+  });
+
+  /** ⚠️ Un article nommé « Cap de la Chèvre » ne s'écrit pas comme il se lit. */
+  it("encode ce qui doit l'être", () => {
+    expect(lienWiki("fr:Cap de la Chèvre")).toBe(
+      "https://fr.wikipedia.org/wiki/Cap_de_la_Ch%C3%A8vre",
+    );
+  });
+
+  /**
+   * 🔴 LES 45 LIENS DE L'INVENTAIRE SONT CONSTRUITS, PAS SUPPOSÉS. Ce test
+   *    les passe tous : un seul `wiki` d'une forme imprévue produirait une
+   *    adresse muette, et personne ne clique assez pour s'en apercevoir.
+   */
+  it("tient sur les 45 articles réels de l'inventaire", () => {
+    const avec = inv.lieux.filter((l) => l.wiki);
+    expect(avec.length).toBeGreaterThan(20);
+    for (const l of avec) {
+      const u = lienWiki(l.wiki!);
+      expect(u, `${l.n} → ${l.wiki}`).toMatch(/^https:\/\/[a-z-]{2,10}\.wikipedia\.org\/wiki\/.+/);
+      expect(u, `${l.n}`).not.toMatch(/\s|undefined|wiki\/$/);
+    }
+  });
+});
+
+describe("viser un lieu sur la carte du territoire", () => {
+  const src = readFileSync(new URL("./Territoire2030.tsx", import.meta.url), "utf8");
+
+  /**
+   * 🔴 LE POINTAGE DOIT EMPLOYER LA PROJECTION QUI A DESSINÉ L'IMAGE.
+   *    Elle dépend de l'emprise du graphe, du cosinus à la latitude moyenne,
+   *    de l'échelle, des marges ET de l'état de la vue. Une seconde version
+   *    écrite à côté pour le pointage tomberait juste aujourd'hui et faux au
+   *    premier changement de cadrage — et le décalage serait de quelques
+   *    pixels, donc invisible jusqu'à ce qu'on clique à côté d'un menhir.
+   * ⭐ Le dessin DÉPOSE donc sa projection ; le clic s'en sert.
+   */
+  it("le clic réutilise la projection du dernier rendu", () => {
+    expect(src).toMatch(/proj\.current = \{ X, Y \}/);
+    expect(src).toMatch(/const P = proj\.current/);
+  });
+
+  /**
+   * ⚠️ L'EFFET QUI POSE LES ÉCOUTEURS NE TOURNE QU'UNE FOIS. Un gestionnaire
+   *    lisant `sitesIci` directement capturerait le tableau VIDE du premier
+   *    rendu — et le défaut serait MUET : un clic qui ne fait rien, exactement
+   *    comme avant qu'on ajoute la fonction.
+   */
+  it("le pointage lit l'inventaire d'aujourd'hui, pas celui du premier rendu", () => {
+    expect(src).toMatch(/vivant\.current = \{ sites: sitesIci, inv \}/);
+    expect(src).toMatch(/for \(const l of vivant\.current\.sites\)/);
+  });
+
+  /**
+   * ⛔ 734 lieux n'ont pas de nom : les viser n'apprendrait rien.
+   * 🔴 ET LA PREMIÈRE VERSION DE CE TEST LISAIT DEUX FONCTIONS. Elle
+   *    découpait de `const viser` à `const haut` — or `const survol` se
+   *    glisse entre les deux, et il porte le MÊME `if (!l.n) continue`.
+   *    Retiré de `viser`, celui de `survol` répondait à sa place : la
+   *    mutation n'a pas fait échouer le test. ⭐ Un garde dont la fenêtre
+   *    contient un second bloc semblable ne peut pas dire lequel il a
+   *    vérifié — c'est « la règle qui gagne » transposée au découpage de
+   *    source. La fenêtre s'arrête donc à `const survol`.
+   */
+  it("ne vise que les lieux nommés", () => {
+    const viser = src.slice(src.indexOf("const viser ="), src.indexOf("const survol ="));
+    expect(viser.length, "la fenêtre de lecture est vide").toBeGreaterThan(200);
+    expect(viser).not.toContain("const survol");
+    expect(viser).toMatch(/if \(!l\.n\) continue/);
+    // ⭐ et le PLUS PROCHE, jamais le premier trouvé : sur la presqu'île les
+    //    sites se touchent, et « le premier » dépend de l'ordre du fichier.
+    expect(viser).toMatch(/d2 < meilleur\.d2/);
+  });
+
+  /** ⚠️ Un glissement ne doit pas se terminer par un lieu visé au hasard. */
+  it("distingue un clic d'un déplacement", () => {
+    expect(src).toMatch(/Math\.hypot\(e\.clientX - d\.x, e\.clientY - d\.y\) > 5/);
   });
 });

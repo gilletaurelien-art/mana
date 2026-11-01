@@ -2514,3 +2514,11 @@ body:has(.jeu) { padding-bottom: 0; }
    longue laisserait un vide dans l'autre, et un bouton à moitié vide se lit
    comme un bouton qui attend quelque chose. */
 .inv-portes .inv-primaire { padding-right: var(--sp-2); }
+
+/* Le lieu visé sur la carte du territoire : nom, puis ce que la donnée dit. */
+.terr-vise-nom { margin: 0; }
+.terr-vise-dire {
+  margin: 4px 0 0; font-size: var(--t-2xs);
+  color: var(--texte-inverse-doux); line-height: 1.4;
+}
+.terr-vise-dire a { color: inherit; text-underline-offset: 3px; }
