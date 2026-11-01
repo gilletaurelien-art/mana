@@ -168,3 +168,49 @@ describe("le titre de l'accueil", () => {
       .toBe("Au cœur de la Bretagne");
   });
 });
+
+describe("de la carte au compositeur", () => {
+  /* ⭐ LE PONT EST UNE RÈGLE, PAS UN FICHIER. Ce qui doit rester vrai : d'un
+     lieu désigné sur la carte du territoire, on peut demander une balade qui
+     y mène — et ce qui voyage est une POSITION, pas une clé de catalogue.
+     ⚠️ La distinction n'est pas cosmétique : mesuré le 1/11, 139 des 583
+        lieux nommés de la carte seulement (24 %) sont accrochés à une arête
+        du graphe. Un lien qui passerait une clé refuserait trois lieux sur
+        quatre, et le refus aurait l'air d'un défaut du moteur. Une position
+        s'accroche à l'exécution et porte 80 % sous la règle des 150 m. */
+  const carte = nu("./Territoire2030.tsx");
+  const compo = nu("./Composer.tsx");
+
+  it("la carte propose d'aller vers le lieu désigné, en lui passant sa position", () => {
+    const lien = carte.match(/\/composer\?vers=[^`]*/);
+    expect(lien, "aucun lien « vers » depuis la fiche d'un lieu").not.toBeNull();
+    // ⛔ la position du LIEU, jamais un identifiant de catalogue
+    expect(lien![0]).toMatch(/vise\.g\[0\][\s\S]*vise\.g\[1\]/);
+  });
+
+  it("le compositeur lit cette position et vise avec", () => {
+    expect(compo).toMatch(/p\.get\("vers"\)/);
+    expect(compo).toMatch(/composerVers\(/);
+  });
+
+  /* 🔴 LE GARDE QUI COMPTE. `composerVers` rend six états, dont cinq sont des
+     refus — et un refus muet ressemble à une absence. Chacun doit avoir son
+     texte à l'écran, sinon l'écran reste vide et personne ne sait lequel des
+     cinq gestes faire. Ce test compte les états du type et exige qu'ils
+     soient TOUS nommés dans l'écran.
+     ⭐ Il se met à jour tout seul : ajouter un état au moteur sans lui écrire
+        sa phrase fait tomber ce test, et c'est exactement le moment où il
+        faut y penser. */
+  it("chaque refus du moteur a sa phrase à l'écran", () => {
+    const moteur = nu("./composition.ts");
+    const bloc = moteur.match(/export type Visee =([\s\S]*?);\n/);
+    expect(bloc, "le type Visee").not.toBeNull();
+    const etats = [...bloc![1].matchAll(/etat: "([a-z-]+)"/g)].map((m) => m[1]);
+    expect(etats.length).toBeGreaterThanOrEqual(5);
+    for (const e of etats) {
+      if (e === "ok") continue;
+      expect(compo, `l'état « ${e} » n'a aucune phrase à l'écran`)
+        .toContain(`visee.etat === "${e}"`);
+    }
+  });
+});

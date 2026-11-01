@@ -1,6 +1,6 @@
 import { readdirSync } from "node:fs";
 import { describe, it, expect } from "vitest";
-import { indexer, composer, noeudLePlusProche, traits, distanceRessentie, COUT_MONTEE, etalementDe, formeDeLaBoucle, SOURCE_MAREES, cheminDeRetour } from "./composition";
+import { indexer, composer, composerVers, ECART_MAX_M, metres, noeudLePlusProche, traits, distanceRessentie, COUT_MONTEE, etalementDe, formeDeLaBoucle, SOURCE_MAREES, cheminDeRetour } from "./composition";
 import type { Graphe } from "./composition";
 
 // Une grille 6×6 à Crozon, maille ~200 m. Deux colonnes sont des « routes »
@@ -400,5 +400,201 @@ describe("le dépôt se construit ailleurs que sur cette machine", () => {
       parMinuscule.set(k, [...(parMinuscule.get(k) ?? []), n]);
     }
     expect([...parMinuscule.values()].filter((l) => l.length > 1)).toEqual([]);
+  });
+});
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   COMPOSER VERS UN LIEU DÉSIGNÉ
+   ════════════════════════════════════════════════════════════════════════ */
+
+const cle = (c: string, n: string) => `${c}|${n}`;
+const porte = (b: { lieux: { categorie: string; nom: string }[] }, k: string) =>
+  b.lieux.map((l) => cle(l.categorie, l.nom)).includes(k);
+
+/* 🔴 CES FIXTURES EXISTENT PARCE QUE LES PREMIÈRES NE MORDAIENT PAS.
+   Validés par mutation le 1/11, deux des tests ci-dessous passaient sur du
+   code mutilé :
+     · supprimer le ciblage ne changeait rien — `grilleRare` ne porte QU'UN
+       lieu, donc « tous les lieux » et « ce lieu » désignent le même
+       ensemble. C'est mot pour mot la leçon déjà écrite en haut de ce fichier
+       le 28/10, sur la grille 6×6. ⭐ Un fixture trop pauvre rend le test vrai
+       pour une raison qui n'est pas celle qu'on croit ;
+     · rétablir le repli « couronne nue » ne changeait rien non plus — le
+       pré-contrôle de distance de `composerVers` rendait « trop loin » AVANT
+       d'appeler `composer`, si bien que le chemin de repli n'était jamais
+       emprunté par le test. ⭐ Un garde amont peut masquer l'absence d'un
+       garde aval : le test vert mesurait le premier et croyait voir le second.
+   D'où : une grille à DEUX lieux, et une grille où le lieu est à portée MAIS
+   sans boucle possible — pour que le repli ait une occasion de mentir. */
+
+/** Deux lieux à des rayons comparables, aux antipodes l'un de l'autre. */
+function grilleDeuxLieux() {
+  const { g, cible } = grilleRare();
+  const loin = g.a.findIndex(([a, b]) => a === 9 * G + 9 && b === 9 * G + 10);
+  g.l.push({ a: loin, f: 0.5, c: "chapelle", n: "La chapelle d'en face",
+             g: g.n[9 * G + 9], d: 10 });
+  return { g, cible };
+}
+
+/** Un lieu À PORTÉE du Dijkstra, mais trop loin pour qu'une boucle du budget
+ *  demandé l'atteigne et revienne — le seul régime où le repli « couronne
+ *  nue » a l'occasion de fabriquer une boucle de consolation. */
+function grilleSansBoucle() {
+  const { g } = grilleRare();
+  const arete = g.a.findIndex(([a, b]) => a === 10 * G + 0 && b === 10 * G + 1);
+  g.l.push({ a: arete, f: 0.5, c: "fontaine", n: "La fontaine du fond",
+             g: g.n[10 * G], d: 10 });
+  return { g, cible: 3200, point: g.n[10 * G] as [number, number] };
+}
+
+/** La grille rare, plus deux lieux hors d'atteinte : une île (composante
+ *  détachée) et un lieu à l'autre bout. */
+function grilleAvecRefus() {
+  const { g, cible } = grilleRare();
+  const i0 = g.n.length;
+  g.n.push([-4.60, 48.30], [-4.601, 48.301]);
+  const ileArete = g.a.length;
+  g.a.push([i0, i0 + 1, 200, 200, [i0, i0 + 1]]);
+  g.l.push({ a: ileArete, f: 0.5, c: "ile", n: "Le rocher sans pont",
+             g: g.n[i0], d: 10 });
+  return { g, cible, ile: g.n[i0] as [number, number],
+           loin: g.n[13 * G + 12] as [number, number] };
+}
+
+describe("composer VERS un lieu désigné", () => {
+  const MENHIR = cle("megalithe", "Le seul menhir");
+  /** la position du menhir sur la grille rare */
+  const ouEstLeMenhir = (g: Graphe) =>
+    g.l.find((L) => cle(L.c, L.n) === MENHIR)!.g;
+
+  it("passe devant le lieu demandé, PAS devant l'autre", () => {
+    const { g, cible } = grilleDeuxLieux();
+    const r = composerVers(g, indexer(g), 0, cible, ouEstLeMenhir(g));
+    expect(r.etat).toBe("ok");
+    if (r.etat !== "ok") return;
+    expect(r.boucles.length).toBeGreaterThan(0);
+    /* ⭐ LA PROMESSE EST MÉTRIQUE, LE TEST AUSSI. Exiger que `b.lieux`
+       contienne le menhir mesurerait l'ACCROCHAGE de la moisson, pas le
+       parcours — et trois lieux de la carte sur quatre ne sont accrochés à
+       rien. Ce qu'on doit au promeneur, c'est « vous passerez à moins de
+       150 m de ce point » ; c'est ce qu'on vérifie. */
+    const ou = ouEstLeMenhir(g);
+    for (const b of r.boucles) {
+      expect(Math.min(...b.contour.map((p) => metres(ou, p)))).toBeLessThanOrEqual(ECART_MAX_M);
+    }
+    expect(r.ecart).toBeLessThanOrEqual(ECART_MAX_M);
+  });
+
+  /**
+   * 🔴 LE DÉFAUT QUE CE TEST TIENT, ET C'EST LE SEUL QUI COMPTE VRAIMENT.
+   *    `composer()` porte un repli : si viser ne donne rien, il rabat sur la
+   *    « couronne nue » — une boucle de la bonne longueur, sans prétexte. Ce
+   *    repli est JUSTE pour « surprends-moi » et MENSONGER pour « emmène-moi
+   *    au phare » : il rendrait une jolie boucle qui ne passe pas devant,
+   *    sous un titre qui le promet.
+   *    ⭐ Un repli ne se juge pas à sa qualité, mais à la demande qu'il sert.
+   *       Celui-ci sert l'autre demande — et c'est ce qui le rend invisible.
+   */
+  /* ⚠️ DEUX GARDES SE COUVRENT L'UN L'AUTRE ICI, ET AUCUN N'EST MORT.
+     Mutés séparément le 1/11, ni la suppression du repli « couronne nue »
+     quand on vise, ni celle du filtre métrique à 150 m ne faisaient échouer
+     un test — chacun rattrape l'autre. Mutés ENSEMBLE, ce test tombe.
+     ⭐ Un garde qu'une mutation isolée ne fait pas tomber n'est pas forcément
+        décoratif : il peut être le second d'une paire. La distinction se
+        tranche en mutant les deux, jamais en déduisant du test vert que l'un
+        des deux ne sert à rien — c'est ainsi qu'on retire le filet qui
+        tenait. */
+  it("⛔ ne rabat JAMAIS sur une boucle qui ne passe pas devant", () => {
+    const { g, cible, point } = grilleSansBoucle();
+    const r = composerVers(g, indexer(g), 0, cible, point);
+    // le lieu est À PORTÉE : le refus vient d'ici, pas du pré-contrôle
+    expect(r.etat, "sinon ce test ne teste rien").toBe("aucune-boucle");
+  });
+
+  /**
+   * 🔴 LE REFUS POUR CAUSE DE PROXIMITÉ. La couronne [0,72 ; 1,12] × demi
+   *    choisit un point de demi-tour au bon rayon — un critère de SÉLECTION
+   *    entre prétextes équivalents, sans objet quand quelqu'un désigne son
+   *    lieu. Appliquée quand même, elle rendait « aucune boucle » pour un
+   *    calvaire visible à 800 m sur la carte : un refus qui ne s'explique à
+   *    personne.
+   * ⭐ Le budget devient alors un PLAFOND, plus une cible : refuser une
+   *    balade de 50 min vers le lieu demandé, c'est refuser pour excès de
+   *    bonne nouvelle.
+   */
+  it("un lieu tout proche donne une balade courte, pas un refus", () => {
+    const { g, cible } = grilleRare();
+    const pres = g.a.findIndex(([a, b]) => a === 2 * G + 2 && b === 2 * G + 3);
+    const CALVAIRE = cle("calvaire", "Le calvaire d'à côté");
+    g.l.push({ a: pres, f: 0.5, c: "calvaire", n: "Le calvaire d'à côté",
+               g: g.n[2 * G + 2], d: 10 });
+    const r = composerVers(g, indexer(g), 0, cible, g.n[2 * G + 2]);
+    expect(r.etat, "un lieu proche n'est pas un empêchement").toBe("ok");
+    if (r.etat !== "ok") return;
+    for (const b of r.boucles) {
+      expect(Math.min(...b.contour.map((p) => metres(g.n[2 * G + 2], p))))
+        .toBeLessThanOrEqual(ECART_MAX_M);
+      expect(b.ressentie).toBeLessThan(cible * 0.8);      // plus courte : c'est le but
+      expect(b.ressentie).toBeLessThanOrEqual(cible * 1.15); // jamais plus longue
+    }
+    void CALVAIRE; void porte;
+  });
+
+  /**
+   * 🔴 LA RÈGLE DE PRODUIT, TENUE PAR LE MOTEUR. Au-delà de 150 m, le chemin
+   *    le plus proche ne passe pas DEVANT le lieu, il passe à côté. Mener
+   *    quelqu'un là en intitulant la balade « vers la Baie de Dinan », c'est
+   *    présenter un lieu qui demande un détour comme étant sur le parcours —
+   *    ce que le dépôt s'interdit.
+   * ⚠️ Et le seuil est CELUI DE `proches.ts`, réexporté, jamais recopié :
+   *    deux nombres écrits séparément divergent, et la divergence rend l'une
+   *    des deux surfaces menteuse sans rien signaler.
+   */
+  it("⛔ refuse un point qu'aucun chemin n'approche à moins de 150 m", () => {
+    const { g, cible } = grilleRare();
+    // plein milieu d'une maille 200 × 200 : ~100 m, donc accepté
+    const dedans: [number, number] = [g.n[0][0] + 0.00135, g.n[0][1] + 0.0009];
+    expect(composerVers(g, indexer(g), 0, cible, dedans).etat).not.toBe("ecarte");
+    // 1 km au large : aucun chemin n'en approche
+    const dehors: [number, number] = [g.n[0][0] - 0.02, g.n[0][1]];
+    const r = composerVers(g, indexer(g), 0, cible, dehors);
+    expect(r.etat).toBe("ecarte");
+    if (r.etat === "ecarte") expect(r.ecart).toBeGreaterThan(ECART_MAX_M);
+  });
+
+  it("dit « trop loin » avec un plancher de distance, pas une estimation", () => {
+    const { g, cible, loin } = grilleAvecRefus();
+    const r = composerVers(g, indexer(g), 0, cible, loin);
+    expect(r.etat).toBe("trop-loin");
+    if (r.etat !== "trop-loin") return;
+    // ⭐ un aller-retour à plat : la montée ne peut qu'AJOUTER, jamais retrancher
+    expect(r.metresMinimum).toBe(2 * r.metresAller);
+    expect(r.metresMinimum).toBeGreaterThan(cible);
+  });
+
+  it("distingue « aucun chemin connu » de « trop loin »", () => {
+    const { g, cible, ile } = grilleAvecRefus();
+    expect(composerVers(g, indexer(g), 0, cible, ile).etat).toBe("hors-reseau");
+  });
+
+  it("distingue « sous arrêté » de « écarté »", () => {
+    const { g, cible } = grilleRare();
+    const ou = ouEstLeMenhir(g);
+    const { dedans } = { dedans: g.a.map((_, i) => i).filter((i) =>
+      g.a[i][4].some((pi) => Math.abs(g.n[pi][0] - ou[0]) < 0.003
+                          && Math.abs(g.n[pi][1] - ou[1]) < 0.002)) };
+    const r = composerVers(g, indexer(g, new Set(dedans)), 0, cible, ou);
+    expect(r.etat, "une fermeture n'est pas un éloignement").toBe("ferme");
+  });
+
+  it("⛔ « autour de moi » garde son repli — l'extension n'a rien retiré", () => {
+    /* ⚠️ Le même interrupteur sert aux deux demandes. En posant le garde
+       ci-dessus, il serait facile de supprimer la couronne nue POUR TOUT LE
+       MONDE : « surprends-moi » rendrait alors le vide là où il rendait une
+       boucle. Ce test tient l'autre bord. */
+    const g = grille();   // aucun lieu du tout
+    expect(composer(g, indexer(g), 0, 2000).length,
+           "sans aucun lieu, la couronne nue doit encore répondre").toBeGreaterThan(0);
   });
 });

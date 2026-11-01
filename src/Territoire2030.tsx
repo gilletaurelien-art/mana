@@ -859,6 +859,26 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
                 </a>
               </p>
             )}
+            {/* ⭐ LE GESTE QUI MANQUAIT. Jusqu'ici, voir un lieu sur cette
+                carte ne permettait RIEN d'en faire : il fallait quitter
+                l'écran, ouvrir le compositeur, et espérer que la boucle passe
+                à côté. La donnée existait, le graphe savait router, le pont
+                n'existait pas.
+                ⚠️ On n'envoie que la POSITION du lieu, pas une clé de
+                   catalogue : trois lieux nommés sur quatre que cette carte
+                   affiche ne sont accrochés à aucune arête par la moisson
+                   (139 sur 583, mesuré le 1/11). Le compositeur accroche à
+                   l'exécution, sur l'arête la plus proche — ce qui fait
+                   passer la couverture à 80 %, et laisse le refus honnête
+                   pour les 20 % restants. */}
+            <p className="terr-vise-dire">
+              <a
+                className="m-action-fine terr-bouton"
+                href={`${base}/composer?vers=${vise.g[0].toFixed(5)},${vise.g[1].toFixed(5)}&nom=${encodeURIComponent(vise.nom)}`}
+              >
+                Composer une balade vers ce lieu
+              </a>
+            </p>
           </div>
         )}
       </div>

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
-import { indexer, composer, noeudLePlusProche, traits, formeDeLaBoucle, SOURCE_MAREES, cheminDeRetour, composanteAtteint } from "./composition";
-import type { Graphe, Boucle, Retour } from "./composition";
+import { indexer, composer, composerVers, ECART_MAX_M, noeudLePlusProche, traits, formeDeLaBoucle, SOURCE_MAREES, cheminDeRetour, composanteAtteint } from "./composition";
+import type { Graphe, Boucle, Retour, Visee } from "./composition";
 import { DEFAUT, territoireDe, urlGraphe } from "./territoires";
 import type { Walk } from "./walks";
 import { WalkMap } from "./WalkMap";
@@ -93,6 +93,25 @@ export function Composer() {
     return Number.isFinite(lon) && Number.isFinite(lat) && (lon !== 0 || lat !== 0)
       ? [lon, lat] : null;
   };
+  /**
+   * ⭐ « VERS CE LIEU » ARRIVE PAR L'URL, comme la position — et pour la même
+   *    raison : la carte du territoire est l'endroit où l'on VOIT le menhir,
+   *    donc l'endroit où l'envie naît. Le geste doit partir de là, pas d'un
+   *    formulaire où il faudrait retrouver le nom qu'on vient de lire.
+   * ⚠️ `lon`/`lat` disent d'où l'on PART ; `vers` dit où l'on VA. Les deux ne
+   *    se confondent jamais : le point de départ reste le promeneur.
+   */
+  const cibleURL = (): { g: [number, number]; nom: string } | null => {
+    const p = new URLSearchParams(window.location.search);
+    const v = p.get("vers");
+    if (!v) return null;
+    const [lo, la] = v.split(",").map(Number);
+    if (!Number.isFinite(lo) || !Number.isFinite(la)) return null;
+    return { g: [lo, la], nom: p.get("nom") || "ce lieu" };
+  };
+  const [cible] = useState(cibleURL);
+  const [visee, setVisee] = useState<Visee | null>(null);
+
   const recue = depuisURL();
   const [position, setPosition] = useState<[number, number]>(recue ?? CROZON);
   const [situe, setSitue] = useState(recue !== null);
@@ -204,9 +223,15 @@ export function Composer() {
     if (!graphe || !ix) return;
     const t0 = performance.now();
     const depart = noeudLePlusProche(graphe, ix, position[0], position[1]);
-    const b = composer(graphe, ix, depart, budget(heures), { graine: graine.current });
+    if (cible) {
+      const v = composerVers(graphe, ix, depart, budget(heures), cible.g,
+                             { graine: graine.current });
+      setVisee(v);
+      setBoucles(v.etat === "ok" ? v.boucles : []);
+    } else {
+      setBoucles(composer(graphe, ix, depart, budget(heures), { graine: graine.current }));
+    }
     setDuree(Math.round(performance.now() - t0));
-    setBoucles(b);
     setChoisie(0);
   };
 
@@ -281,13 +306,26 @@ export function Composer() {
   return (
     <main className="page">
       <div className="wrap">
-        <p className="hero-label">Je suis ici, j'ai du temps</p>
-        <h1 className="page-titre"><span>Composer une promenade</span></h1>
+        <p className="hero-label">
+          {cible ? "J'ai repéré ça sur la carte" : "Je suis ici, j'ai du temps"}
+        </p>
+        <h1 className="page-titre">
+          <span>{cible ? `Aller vers ${cible.nom}` : "Composer une promenade"}</span>
+        </h1>
 
         <section className="page-panel">
           <p className="page-intro">
-            Une boucle depuis où vous êtes, par les chemins, qui passe
-            <strong> devant</strong> ce qu'il y a à voir.
+            {cible ? (
+              <>
+                Une boucle depuis où vous êtes qui passe <strong>devant</strong>{" "}
+                {cible.nom}, et vous ramène — avec ce qu'il y a à voir en chemin.
+              </>
+            ) : (
+              <>
+                Une boucle depuis où vous êtes, par les chemins, qui passe
+                <strong> devant</strong> ce qu'il y a à voir.
+              </>
+            )}
           </p>
           <p className="page-note">
             {erreur ? <strong>{erreur}</strong>
@@ -388,7 +426,7 @@ export function Composer() {
                 {situe ? "Me resituer" : "Partir d'où je suis"}
               </button>
               <button className="btn btn-primary" onClick={lancer}>
-                Composer
+                {cible ? `M'y emmener` : "Composer"}
               </button>
               {boucles && boucles.length > 1 && (
                 <button className="btn btn-ghost" onClick={autre}>Autre chose</button>
@@ -401,7 +439,87 @@ export function Composer() {
           </section>
         )}
 
-        {boucles && boucles.length === 0 && (
+        {/* ══ LE REFUS, QUAND ON VISAIT UN LIEU ═══════════════════════════
+            🔴 C'EST LA PARTIE QUI COMPTE. Une boucle réussie se voit ; un
+            refus mal fait ne se voit pas — il ressemble à une absence. Les
+            cinq façons d'échouer appellent cinq gestes différents : s'en
+            approcher autrement, choisir un autre jour, partir d'ailleurs,
+            prévoir plus de temps, ou renoncer. « Je ne peux pas » ne dit
+            lequel à personne.
+            ⚠️ Et aucun de ces textes n'affirme quoi que ce soit sur le MONDE :
+               ils disent ce que MANA sait. « Aucun chemin connu de nous » et
+               « il n'y a pas de chemin » ne sont pas la même phrase — le
+               graphe de la presqu'île porte 115 composantes, et son silence
+               mesure sa moisson, pas la Bretagne. */}
+        {cible && visee && visee.etat !== "ok" && (
+          <section className="page-panel">
+            {visee.etat === "ecarte" && (
+              <>
+                <p className="page-texte">
+                  <strong>Aucun chemin ne passe devant {cible.nom}.</strong>{" "}
+                  Le plus proche en reste à {visee.ecart} m — au-delà des{" "}
+                  {ECART_MAX_M} m à partir desquels on peut dire « vous passez
+                  devant ».
+                </p>
+                <p className="page-texte">
+                  Ce n'est pas un manque de données : les baies, les caps, les
+                  îles et les épaves se regardent plus qu'ils ne se longent.
+                  MANA ne vous y mènera pas en prétendant le contraire.
+                </p>
+              </>
+            )}
+            {visee.etat === "ferme" && (
+              <p className="page-texte">
+                <strong>Le chemin qui mène à {cible.nom} est fermé par
+                arrêté.</strong> Ce n'est pas la durée, et ce n'est pas la
+                distance : ce passage-là est interdit. Les arrêtés en vigueur
+                sont rappelés plus haut.
+              </p>
+            )}
+            {visee.etat === "hors-reseau" && (
+              <p className="page-texte">
+                <strong>Aucun chemin connu de MANA ne relie votre point de
+                départ à {cible.nom}.</strong> Il est peut-être de l'autre côté
+                de l'eau, ou hors de la zone que nous avons cartographiée —
+                nous ne savons pas dire lequel, et nous ne le devinerons pas à
+                votre place.
+              </p>
+            )}
+            {visee.etat === "trop-loin" && (
+              <>
+                <p className="page-texte">
+                  <strong>{cible.nom} est trop loin pour {heures} h.</strong>{" "}
+                  Le chemin le plus court y mène en{" "}
+                  {(visee.metresAller / 1000).toFixed(1)} km — comptez{" "}
+                  <strong>au moins{" "}
+                  {Math.ceil((visee.metresMinimum / 1000 / ALLURE_KMH) * 2) / 2} h</strong>{" "}
+                  pour l'aller-retour.
+                </p>
+                <p className="page-note">
+                  « Au moins », pas « environ » : ce calcul est à plat, et le
+                  terrain ne fait qu'ajouter. Donnez-vous plus de temps
+                  ci-dessus, ou partez d'un point plus proche.
+                </p>
+              </>
+            )}
+            {visee.etat === "aucune-boucle" && (
+              <p className="page-texte">
+                <strong>{cible.nom} est à portée, mais aucune boucle n'en
+                revient autrement.</strong> Y aller demanderait de repasser par
+                le même chemin — ce que MANA ne propose pas sous le nom de
+                balade. Essayez depuis un autre point de départ, ou avec plus
+                de temps.
+              </p>
+            )}
+            <p className="est-actions" style={{ marginTop: "var(--sp-3)" }}>
+              <a className="btn btn-ghost" href={window.location.pathname}>
+                Composer une boucle autour de moi
+              </a>
+            </p>
+          </section>
+        )}
+
+        {!cible && boucles && boucles.length === 0 && (
           <section className="page-panel">
             {departCoupe ? (
               <>

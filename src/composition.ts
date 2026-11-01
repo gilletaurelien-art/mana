@@ -371,7 +371,8 @@ function remonter(prec: Map<number, [number, number]>, source: number, cible: nu
  */
 export function composer(
   g: Graphe, ix: Index, depart: number, cibleM: number,
-  { candidats = 8, graine = 1 } = {}
+  { candidats = 8, graine = 1, vise }:
+    { candidats?: number; graine?: number; vise?: ReadonlySet<number> } = {}
 ): Boucle[] {
   const demi = cibleM / 2;
   const { lon: lonAller, prec: precAller } = dijkstra(g, ix, depart, null, cibleM * 0.68);
@@ -385,14 +386,34 @@ export function composer(
   //       premier bout, TRAVERSER l'arête porteuse, revenir depuis l'autre
   //       bout. La traversée est une donnée de la construction, pas un espoir.
   const parLieu: [number, number, number][] = [];   // [arête, entrée, sortie]
-  for (const [ei, lieux] of ix.lieuxParArete) {
-    if (!lieux.length) continue;
+  /* ⭐ VISER L'ARÊTE QU'ON DÉSIGNE, ET PAS SEULEMENT CELLES QUI PORTENT UN
+     LIEU. Sans `vise`, les prétextes possibles sont les arêtes qui portent
+     un lieu, et le compositeur choisit parmi elles. Avec `vise`, c'est
+     quelqu'un qui a choisi — et ce qu'il a désigné sur la carte n'est pas
+     forcément accroché à une arête par la moisson.
+     🔴 MESURÉ LE 1/11, ET C'EST CE QUI A CHANGÉ CETTE API : sur les 583 lieux
+        nommés que la carte affiche, **139 seulement (24 %)** sont accrochés à
+        une arête du graphe. En accrochant à l'exécution — l'arête la plus
+        proche du point —, **469 (80 %)** tombent sous la règle des 150 m.
+        Viser par clé aurait refusé trois lieux sur quatre, et le refus aurait
+        eu l'air d'un défaut du moteur. */
+  for (const ei of vise ?? ix.lieuxParArete.keys()) {
+    if (vise === undefined && !(ix.lieuxParArete.get(ei)?.length)) continue;
     const [x, y] = [g.a[ei][0], g.a[ei][1]];
     const lx = lonAller.get(x), ly = lonAller.get(y);
     // on entre par le bout le plus proche, on ressort par l'autre
     const paires: [number, number, number | undefined][] = [[x, y, lx], [y, x, ly]];
     for (const [entree, sortie, L] of paires) {
-      if (L !== undefined && L >= demi * 0.72 && L <= demi * 1.12) {
+      /* 🔴 LA COURONNE NE S'APPLIQUE QU'À « SURPRENDS-MOI ». Elle choisit un
+         point de demi-tour au bon rayon pour que la boucle fasse la longueur
+         demandée — c'est un critère de SÉLECTION parmi des prétextes
+         équivalents. Quand quelqu'un désigne SON lieu, il n'y a plus de
+         sélection à faire : le lieu est à la distance où il est.
+         ⚠️ Avec la couronne, viser un calvaire à 300 m rendait « aucune
+            boucle » — un refus pour cause de proximité, que rien n'explique
+            à qui regarde la carte et le voit juste là. */
+      const dansLaCouronne = L !== undefined && L >= demi * 0.72 && L <= demi * 1.12;
+      if (vise !== undefined ? L !== undefined : dansLaCouronne) {
         parLieu.push([ei, entree, sortie]);
         break;
       }
@@ -405,8 +426,16 @@ export function composer(
   //    ⭐ Une dépendance absente doit DÉGRADER, pas éteindre — et c'est vrai
   //       aussi d'une dépendance PRÉSENTE qui n'aboutit pas.
   const couronneNue: number[] = [];
-  for (const [n, L] of lonAller) {
-    if (L >= demi * 0.85 && L <= demi * 1.1) couronneNue.push(n);
+  // 🔴 ⛔ PAS DE REPLI QUAND ON VISE. La couronne nue est le bon repli pour
+  //    « surprends-moi » — une boucle sans prétexte vaut mieux que le vide.
+  //    Elle serait un MENSONGE pour « emmène-moi au menhir » : on rendrait
+  //    une boucle qui ne passe pas devant, sous un titre qui le promet.
+  //    ⭐ Un repli n'est légitime que s'il sert encore la demande. Celui-ci
+  //       sert l'autre demande — et c'est exactement ce qui le rend invisible.
+  if (vise === undefined) {
+    for (const [n, L] of lonAller) {
+      if (L >= demi * 0.85 && L <= demi * 1.1) couronneNue.push(n);
+    }
   }
 
   // Mélange déterministe : une même position rend la même proposition, ce qui
@@ -513,7 +542,15 @@ export function composer(
       parcouru += ar[2];
       nAvant = aLEndroit ? ar[1] : ar[0];
     }
-    if (ressentie < cibleM * 0.8 || ressentie > cibleM * 1.15) continue;
+    /* ⭐ QUAND ON VISE, LE BUDGET DEVIENT UN PLAFOND, PLUS UNE CIBLE. « Deux
+       heures » dit alors « pas plus de deux heures » : c'est le LIEU qui est
+       la demande, la durée n'était qu'une enveloppe. Rendre le vide parce
+       qu'une boucle vers le calvaire ne dure que 50 minutes, c'est refuser
+       pour cause d'excès de bonne nouvelle.
+       ⚠️ Le plafond haut, lui, ne bouge pas : dépasser le temps annoncé n'est
+          pas une bonne nouvelle, c'est quelqu'un surpris par la nuit. */
+    const planchier = vise === undefined ? 0.8 : 0.4;
+    if (ressentie < cibleM * planchier || ressentie > cibleM * 1.15) continue;
     vues.add(cle);
     boucles.push({
       aretes: total, metres: m, agrement, partRepetee, bordDeMer, montee, ressentie,
@@ -527,6 +564,176 @@ export function composer(
    }
   }
   return boucles.sort((a, b) => b.score - a.score);
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   COMPOSER *VERS* UN LIEU — « j'ai repéré le menhir, emmène-moi »
+   ════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * ⭐ DEUX DEMANDES OPPOSÉES, UN SEUL MOTEUR. « Autour de moi » dit : je suis
+ *    ici, j'ai deux heures, surprends-moi. « Vers ce lieu » dit : j'ai vu ça
+ *    sur la carte, emmène-moi. La première laisse le prétexte au calcul ; la
+ *    seconde le reçoit de quelqu'un. Le reste — traverser l'arête porteuse,
+ *    revenir par ailleurs, compter la montée dans le sens de marche — ne
+ *    change pas d'un mot, parce que c'était déjà le bon geste.
+ *
+ * 🔴 ET CE QUI COMPTE ICI N'EST PAS LA BOUCLE, C'EST LE REFUS. Une boucle
+ *    réussie se voit ; un refus mal fait ne se voit pas — il ressemble à une
+ *    boucle. Les façons d'échouer sont donc NOMMÉES et SÉPARÉES, parce
+ *    qu'elles appellent des gestes différents :
+ *      · `ecarte`      — aucun chemin ne passe assez près : on y mène du
+ *                        regard, pas du pied (une baie, un cap, une épave)
+ *      · `ferme`       — le chemin qui y mène est sous arrêté municipal
+ *      · `hors-reseau` — aucun chemin CONNU DE NOUS n'y relie le départ
+ *      · `trop-loin`   — il y mène, mais pas dans le temps demandé
+ *      · `aucune-boucle` — à portée, mais aucune boucle valide n'en sort
+ *    « Je ne peux pas » n'est pas une réponse.
+ */
+export type Visee =
+  | { etat: "ok"; boucles: Boucle[]; metresAller: number; ecart: number }
+  | { etat: "ecarte"; ecart: number }
+  | { etat: "ferme"; ecart: number }
+  | { etat: "hors-reseau"; ecart: number }
+  | { etat: "trop-loin"; metresAller: number; metresMinimum: number; ecart: number }
+  | { etat: "aucune-boucle"; metresAller: number; ecart: number };
+
+/**
+ * ⚠️ LE MÊME 150 m QUE `proches.ts`, ET CE N'EST PAS UNE COÏNCIDENCE À
+ *    ENTRETENIR À LA MAIN. La règle produit est unique : « si c'est listé, on
+ *    passe devant » — un lieu qu'on annonce sur le parcours est un lieu qu'on
+ *    croise, pas un lieu qu'on devine au loin. Deux nombres écrits séparément
+ *    divergeraient, et la divergence rendrait l'une des deux surfaces
+ *    menteuse sans que rien ne le signale.
+ */
+export { SEUIL_PROCHES as ECART_MAX_M } from "./proches";
+import { SEUIL_PROCHES } from "./proches";
+
+/** Toutes les arêtes qui passent à moins de `ECART_MAX_M` du point, la plus
+ *  proche en tête — et l'écart de cette première. */
+function aretesAutour(g: Graphe, cible: [number, number]) {
+  let ecart = Infinity;
+  const dedans: number[] = [];
+  for (let ei = 0; ei < g.a.length; ei++) {
+    let d = Infinity;
+    for (const pi of g.a[ei][4]) {
+      const m = metres(cible, g.n[pi]);
+      if (m < d) d = m;
+    }
+    if (d < ecart) ecart = d;
+    if (d <= SEUIL_PROCHES) dedans.push(ei);
+  }
+  return { dedans, ecart };
+}
+
+/**
+ * ⚠️ `lieuxParArete` EST BÂTI SANS LES FERMETURES — volontairement : un lieu
+ *    reste un lieu quand le chemin qui y mène ferme. C'est ici qu'il faut
+ *    donc redemander si l'arête est encore sur la carte d'adjacence, sinon on
+ *    confondrait « sous arrêté » et « introuvable », qui ne se disent pas
+ *    pareil au promeneur.
+ */
+function areteOuverte(g: Graphe, ix: Index, ei: number): boolean {
+  return (ix.adj.get(g.a[ei][0]) ?? []).some(([e]) => e === ei);
+}
+
+export function composerVers(
+  g: Graphe, ix: Index, depart: number, cibleM: number, cible: [number, number],
+  { candidats = 8, graine = 1 } = {}
+): Visee {
+  const { dedans, ecart } = aretesAutour(g, cible);
+
+  /* 🔴 LE PREMIER REFUS EST LE PLUS IMPORTANT, ET C'EST UNE RÈGLE DE PRODUIT,
+     pas une limite technique. Au-delà de 150 m, le chemin le plus proche ne
+     passe pas DEVANT le lieu — il passe à côté. Y mener quelqu'un en disant
+     « votre balade vers la Baie de Dinan », c'est exactement ce que le dépôt
+     s'interdit : présenter un lieu qui demande un détour comme étant sur le
+     parcours.
+     ⚠️ Et ces lieux-là ne sont pas des accidents de donnée : mesuré le 1/11,
+        les 114 lieux nommés au-delà de 150 m sont des baies, des caps, des
+        îles, des épaves — des choses qu'on REGARDE. Le refus dit donc ce
+        qu'il en est, il ne s'excuse pas. */
+  if (!dedans.length) return { etat: "ecarte", ecart: Math.round(ecart) };
+
+  const ouvertes = new Set(dedans.filter((ei) => areteOuverte(g, ix, ei)));
+  if (!ouvertes.size) return { etat: "ferme", ecart: Math.round(ecart) };
+
+  /* ⭐ LA MESURE DE L'ÉLOIGNEMENT SE PAIE SEULEMENT QUAND ON REFUSE. Le
+     premier Dijkstra porte le plafond habituel : s'il atteint le lieu, on
+     compose et on n'explore rien de plus. Le second, large, ne tourne que
+     pour répondre « à quelle distance, alors ? » — une question qu'on ne pose
+     qu'après avoir échoué, et jamais plus d'une fois par clic.
+     ⚠️ Sans ce second passage, « trop loin » et « hors réseau » rendraient le
+        même silence : le promeneur ne saurait pas s'il doit prévoir plus de
+        temps ou renoncer. */
+  const plusCourt = (lon: Map<number, number>) => {
+    let m: number | undefined;
+    for (const ei of ouvertes) {
+      for (const n of [g.a[ei][0], g.a[ei][1]]) {
+        const L = lon.get(n);
+        if (L !== undefined && (m === undefined || L < m)) m = L;
+      }
+    }
+    return m;
+  };
+
+  const e = Math.round(ecart);
+  const aPortee = plusCourt(dijkstra(g, ix, depart, null, cibleM * 0.68).lon);
+  if (aPortee !== undefined) {
+    const brutes = composer(g, ix, depart, cibleM, { candidats, graine, vise: ouvertes });
+
+    /* 🔴 LA PROMESSE EST MÉTRIQUE, DONC ON LA VÉRIFIE AU MÈTRE — et ce n'est
+       pas une ceinture de plus : viser une ARÊTE ne suffit pas quand le point
+       tombe sur une JONCTION. Toutes les arêtes qui s'y rejoignent sont alors
+       « à moins de 150 m », le parcours en traverse une, et la construction
+       est satisfaite — sans que rien ne garantisse qu'on soit passé près du
+       point. C'est le même défaut que ce fichier documente depuis le 28/10
+       (« on vise l'arête, pas le nœud »), revenu par la porte de
+       l'accrochage à l'exécution.
+       ⭐ Le seul énoncé qui ne puisse pas glisser est celui du promeneur :
+          « je passerai à moins de 150 m de ce point ». Il se mesure sur le
+          CONTOUR de la boucle rendue, après coup, et il ne dépend d'aucune
+          hypothèse sur la façon dont elle a été construite. */
+    const approche = (b: Boucle) => {
+      let d = Infinity;
+      for (const p of b.contour) {
+        const m = metres(cible, p);
+        if (m < d) d = m;
+      }
+      return d;
+    };
+    const tenues = brutes
+      .map((b) => ({ b, d: approche(b) }))
+      .filter((x) => x.d <= SEUIL_PROCHES);
+    if (tenues.length) {
+      return {
+        etat: "ok",
+        boucles: tenues.map((x) => x.b),
+        metresAller: aPortee,
+        ecart: Math.round(Math.min(...tenues.map((x) => x.d))),
+      };
+    }
+    return { etat: "aucune-boucle", metresAller: aPortee, ecart: e };
+  }
+
+  const loin = plusCourt(dijkstra(g, ix, depart, null, Math.max(cibleM * 4, 30000)).lon);
+
+  /* 🔴 « HORS RÉSEAU » NE DIT PAS « IL N'Y A PAS DE CHEMIN » — il dit « nous
+     n'en connaissons pas ». Mesuré le 1/11 : le graphe de la presqu'île porte
+     **115 composantes**, celle de Crozon en fait 10 595 nœuds, et 34 lieux
+     nommés vivent dans d'autres — dont 25 dans une composante de 1 349 nœuds
+     à 16-19 km, de l'autre côté de l'eau.
+     ⭐ Un graphe ne distingue pas « la route n'existe pas » de « la route est
+        hors de ce que j'ai moissonné ». Le texte montré au promeneur doit
+        donc porter NOTRE limite, jamais une affirmation sur le monde. */
+  if (loin === undefined) return { etat: "hors-reseau", ecart: e };
+
+  /* ⚠️ `metresMinimum` EST UN PLANCHER, PAS UNE ESTIMATION. C'est l'aller-
+     retour à plat par le plus court chemin : le vrai parcours montera, et une
+     montée ne fait qu'AJOUTER (règle de Naismith, voir `distanceRessentie`).
+     On annonce donc « au moins », jamais « environ » — un promeneur qui part
+     sur une estimation basse arrive à la nuit. */
+  return { etat: "trop-loin", metresAller: loin, metresMinimum: 2 * loin, ecart: e };
 }
 
 /**
