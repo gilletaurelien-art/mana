@@ -617,8 +617,14 @@ export function Composer() {
                 {formeDeLaBoucle(b.etalement) === "aller-retour" &&
                   " — on revient par un chemin voisin, pas par une autre boucle"}
                 {" · "}
+                {/* ⚠️ « CROISÉS », PAS « SUR LE CHEMIN ». Vu en production le
+                    1/11 : « 2 lieux sur le chemin », et juste en dessous
+                    « Menhir de Crozon · à 76 m du chemin ». Le résumé
+                    contredisait sa propre liste. ⭐ Un décompte qui qualifie
+                    ses éléments doit tenir pour TOUS — sinon il faut qu'il
+                    les compte sans les qualifier. */}
                 {rencontres.length > 0
-                  ? `${rencontres.length} lieu${rencontres.length > 1 ? "x" : ""} sur le chemin`
+                  ? `${rencontres.length} lieu${rencontres.length > 1 ? "x" : ""} croisé${rencontres.length > 1 ? "s" : ""}`
                   : "Aucun lieu remarquable sur ce parcours — c'est la marche qui compte"}
                 {b.montee >= 40 && ` · ${Math.round(b.montee)} m de montée`}
                 {b.bordDeMer > 300 &&
