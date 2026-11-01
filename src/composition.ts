@@ -817,3 +817,58 @@ export function cheminDeRetour(
 export function traits(g: Graphe, b: Boucle): [number, number][][] {
   return b.aretes.map((e) => g.a[e][4].map((p) => g.n[p]));
 }
+
+/**
+ * 🔴 FONDRE LE LIEU VISÉ DANS CE QU'ON CROISERA — et c'est une fonction PURE
+ *    parce que, tant qu'elle vivait dans le composant, aucune mutation ne
+ *    pouvait la faire tomber. Mesuré le 1/11 : supprimer l'insertion laissait
+ *    les 230 tests au vert. ⭐ Une règle logée dans un rendu n'est pas tenue,
+ *    elle est espérée.
+ *
+ * ⚠️ TROIS SURFACES LA LISENT — le décompte, la liste numérotée, les étapes
+ *    posées sur la carte. Vérifié en production ce jour-là : le lieu visé
+ *    inséré dans UNE des trois donnait un écran intitulé « Aller vers le
+ *    Menhir de Crozon » dont la liste citait l'église Saint-Pierre.
+ *
+ * ⭐ ET IL ENTRE PAR SON ORDRE, pas en tête. Il est le motif du départ, pas la
+ *    première chose qu'on croise : le mettre en tête serait le même mensonge
+ *    discret qu'une liste « ce que vous croiserez » triée par proximité au
+ *    chemin — elle ne se signale jamais, elle se vérifie en marchant.
+ */
+export interface Rencontre {
+  ordre: number;
+  nom: string;
+  anonyme: boolean;
+  /** ce qu'on écrit après le nom — vide pour un lieu anonyme */
+  libelle: string;
+  lat: number;
+  lon: number;
+}
+
+export function fondreRencontres(
+  lieux: readonly LieuVu[],
+  libelleDe: (categorie: string) => string,
+  visee?: { nom: string; g: [number, number]; approche?: { ordre: number; metres: number } },
+): Rencontre[] {
+  const l: Rencontre[] = lieux.map((x) => ({
+    ordre: x.ordre, nom: x.nom, anonyme: x.anonyme,
+    libelle: x.anonyme ? "" : libelleDe(x.categorie),
+    lat: x.position[1], lon: x.position[0],
+  }));
+  if (visee?.approche) {
+    /* ⚠️ L'ÉCART MESURÉ PLUTÔT QUE « SUR LE CHEMIN » QUAND IL NE L'EST PAS.
+       À 90 m, le lieu est sous la règle des 150 m — on passe bien devant —
+       mais écrire « sur le chemin » laisserait croire qu'on le touche. Le
+       nombre dit ce qu'il en est sans rien promettre. */
+    l.push({
+      ordre: visee.approche.ordre,
+      nom: visee.nom,
+      anonyme: false,
+      libelle: visee.approche.metres > 0
+        ? `à ${visee.approche.metres} m du chemin`
+        : "sur le chemin",
+      lat: visee.g[1], lon: visee.g[0],
+    });
+  }
+  return l.sort((x, y) => x.ordre - y.ordre);
+}

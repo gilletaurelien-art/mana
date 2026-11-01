@@ -193,6 +193,34 @@ describe("de la carte au compositeur", () => {
     expect(compo).toMatch(/composerVers\(/);
   });
 
+  /* 🔴 TROIS SURFACES DISENT CE QU'ON CROISERA — le décompte, la liste
+     numérotée, les étapes sur la carte. Le 1/11, le lieu visé a été inséré
+     dans UNE des trois : vérifié en production, le titre disait « Aller vers
+     le Menhir de Crozon » et la liste citait l'église Saint-Pierre.
+     ⭐ Trois porteuses d'une même règle divergent le jour où l'on en corrige
+        une. Ce test exige qu'aucune surface d'affichage ne relise `b.lieux` :
+        elles dérivent toutes du même tableau, et le lieu visé y entre une
+        seule fois. */
+  it("les trois surfaces de « ce qu'on croisera » dérivent d'un seul calcul", () => {
+    /* ⚠️ DEUX FOIS DE SUITE CE GARDE A NOMMÉ UNE FORME AU LIEU D'UNE RÈGLE.
+       D'abord il interdisait `b.lieux` PARTOUT, y compris dans le calcul
+       commun — le seul endroit où il doit être lu ; il ne pouvait pas passer.
+       Puis il cherchait `const rencontres = useMemo(() => {` et il est tombé
+       quand la même fonction est passée en forme d'expression, alors que
+       RIEN n'avait changé de ce qu'il protégeait.
+       ⭐ La règle, elle, ne bouge pas : `b.lieux` ne se lit qu'UNE fois dans
+          cet écran, et ce qu'on en tire est ce que les trois surfaces
+          affichent. C'est ce qu'on écrit. */
+    expect([...compo.matchAll(/b\.lieux/g)].length,
+           "b.lieux doit se lire exactement une fois dans l'écran").toBe(1);
+    expect(compo, "et cette lecture alimente la fusion commune")
+      .toMatch(/fondreRencontres\(\s*\n?\s*b\.lieux/);
+    // les trois surfaces lisent le résultat, jamais la source
+    for (const surface of ["rencontres.length > 0", "rencontres.map(", "etapes: rencontres"]) {
+      expect(compo, `la surface « ${surface} » ne lit pas la fusion`).toContain(surface);
+    }
+  });
+
   /* 🔴 LE GARDE QUI COMPTE. `composerVers` rend six états, dont cinq sont des
      refus — et un refus muet ressemble à une absence. Chacun doit avoir son
      texte à l'écran, sinon l'écran reste vide et personne ne sait lequel des

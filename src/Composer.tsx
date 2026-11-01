@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
-import { indexer, composer, composerVers, ECART_MAX_M, noeudLePlusProche, traits, formeDeLaBoucle, SOURCE_MAREES, cheminDeRetour, composanteAtteint } from "./composition";
+import { indexer, composer, composerVers, fondreRencontres, ECART_MAX_M, noeudLePlusProche, traits, formeDeLaBoucle, SOURCE_MAREES, cheminDeRetour, composanteAtteint } from "./composition";
 import type { Graphe, Boucle, Retour, Visee } from "./composition";
 import { DEFAUT, territoireDe, urlGraphe } from "./territoires";
 import type { Walk } from "./walks";
@@ -282,6 +282,29 @@ export function Composer() {
 
   const b = boucles?.[choisie] ?? null;
 
+  /**
+   * 🔴 CE QU'ON CROISERA — CALCULÉ UNE FOIS, LU PARTOUT. Trois surfaces le
+   *    disent : le décompte « n lieux sur le chemin », la liste numérotée, et
+   *    les étapes posées sur la carte. Le 1/11, j'ai inséré le lieu visé dans
+   *    UNE des trois — les étapes — et vérifié en production : le titre disait
+   *    « Aller vers le Menhir de Crozon », la liste citait l'église.
+   *    ⭐ Trois porteuses d'une même règle divergent le jour où l'on en corrige
+   *       une. La règle n'habite plus l'écran, elle habite ce tableau.
+   * ⚠️ Le lieu visé entre par son ORDRE, comme les autres — pas en tête parce
+   *    qu'il est le motif du départ — et porte l'écart MESURÉ au chemin plutôt
+   *    que « sur le chemin » quand il ne l'est pas.
+   */
+  const rencontres = useMemo(
+    () => (!b ? [] : fondreRencontres(
+      b.lieux,
+      (c) => LIBELLE[c] ?? c,
+      cible && visee?.etat === "ok"
+        ? { nom: cible.nom, g: cible.g, approche: visee.approches[choisie] }
+        : undefined,
+    )),
+    [b, cible, visee, choisie],
+  );
+
   // La carte attend un `Walk` : on lui en fabrique un, avec les TRAITS
   // séparés — jamais une ligne unique (voir Walk.traits).
   const walk: Walk | null = useMemo(() => {
@@ -297,35 +320,11 @@ export function Composer() {
       dureeEstimeeH: Math.round((b.ressentie / 1000 / ALLURE_KMH) * 2) / 2,
       boucle: true, osmUrl: "https://www.openstreetmap.org/copyright", osmRef: "",
       points: t.flat(), traits: t,
-      /* 🔴 LE LIEU VISÉ S'INSÈRE DANS LA LISTE, À SA PLACE DANS LA MARCHE.
-         Sans ça, l'écran s'intitule « Aller vers le Menhir de Crozon » et la
-         liste « ce que vous croiserez » ne le nomme pas — parce qu'il n'est
-         accroché à aucune arête du graphe (trois lieux de la carte sur quatre
-         sont dans ce cas). Vérifié en production le 1/11 : la boucle passait
-         bien à 40 m, et la fiche citait l'église, pas le menhir.
-         ⭐ Un titre que le contenu ne confirme pas est la même faute qu'une
-            liste triée autrement qu'elle ne s'annonce : elle ne se signale
-            jamais, elle se découvre en marchant.
-         ⚠️ Il entre par son ORDRE, comme les autres — pas en tête parce
-            qu'il est le motif du départ. */
-      etapes: (() => {
-        const dessus = b.lieux.map((l) => ({
-          ordre: l.ordre, nom: l.nom, categorie: l.categorie,
-          lat: l.position[1], lon: l.position[0],
-        }));
-        if (cible && visee?.etat === "ok") {
-          const a = visee.approches[choisie];
-          if (a) dessus.push({
-            ordre: a.ordre, nom: cible.nom,
-            categorie: a.metres > 0 ? `à ${a.metres} m du chemin` : "sur le chemin",
-            lat: cible.g[1], lon: cible.g[0],
-          });
-        }
-        return dessus.sort((x, y) => x.ordre - y.ordre)
-          .map(({ ordre, ...e }, i) => (void ordre, { ...e, pos: i }));
-      })(),
+      etapes: rencontres.map((r, i) => ({
+        nom: r.nom, categorie: r.libelle, pos: i, lat: r.lat, lon: r.lon,
+      })),
     };
-  }, [graphe, b, cible, visee, choisie]);
+  }, [graphe, b, rencontres]);
 
   return (
     <main className="page">
@@ -618,8 +617,8 @@ export function Composer() {
                 {formeDeLaBoucle(b.etalement) === "aller-retour" &&
                   " — on revient par un chemin voisin, pas par une autre boucle"}
                 {" · "}
-                {b.lieux.length > 0
-                  ? `${b.lieux.length} lieu${b.lieux.length > 1 ? "x" : ""} sur le chemin`
+                {rencontres.length > 0
+                  ? `${rencontres.length} lieu${rencontres.length > 1 ? "x" : ""} sur le chemin`
                   : "Aucun lieu remarquable sur ce parcours — c'est la marche qui compte"}
                 {b.montee >= 40 && ` · ${Math.round(b.montee)} m de montée`}
                 {b.bordDeMer > 300 &&
@@ -701,17 +700,17 @@ export function Composer() {
               </section>
             )}
 
-            {b.lieux.length > 0 && (
+            {rencontres.length > 0 && (
               <section className="page-panel">
                 <p className="apercu-label">Ce que vous croiserez</p>
                 {/* ⭐ DANS L'ORDRE DE MARCHE. Un classement qui porte un titre
                     de séquence et trie par autre chose est un mensonge qui ne
                     se signale jamais : il se vérifie en marchant. */}
                 <ol className="page-texte" style={{ paddingLeft: "1.2em" }}>
-                  {b.lieux.map((l, i) => (
+                  {rencontres.map((l, i) => (
                     <li key={`${l.nom}-${i}`} style={{ marginBottom: ".4em" }}>
                       {l.nom}
-                      {l.anonyme ? "" : <span className="page-note"> · {LIBELLE[l.categorie] ?? l.categorie}</span>}
+                      {l.libelle && <span className="page-note"> · {l.libelle}</span>}
                     </li>
                   ))}
                 </ol>

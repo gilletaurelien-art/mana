@@ -1,6 +1,6 @@
 import { readdirSync } from "node:fs";
 import { describe, it, expect } from "vitest";
-import { indexer, composer, composerVers, ECART_MAX_M, metres, noeudLePlusProche, traits, distanceRessentie, COUT_MONTEE, etalementDe, formeDeLaBoucle, SOURCE_MAREES, cheminDeRetour } from "./composition";
+import { indexer, composer, composerVers, fondreRencontres, ECART_MAX_M, metres, noeudLePlusProche, traits, distanceRessentie, COUT_MONTEE, etalementDe, formeDeLaBoucle, SOURCE_MAREES, cheminDeRetour } from "./composition";
 import type { Graphe } from "./composition";
 
 // Une grille 6×6 à Crozon, maille ~200 m. Deux colonnes sont des « routes »
@@ -596,5 +596,50 @@ describe("composer VERS un lieu désigné", () => {
     const g = grille();   // aucun lieu du tout
     expect(composer(g, indexer(g), 0, 2000).length,
            "sans aucun lieu, la couronne nue doit encore répondre").toBeGreaterThan(0);
+  });
+});
+
+describe("fondre le lieu visé dans ce qu'on croisera", () => {
+  /* 🔴 CETTE FONCTION A ÉTÉ EXTRAITE D'UN COMPOSANT LE 1/11 PARCE QU'AUCUNE
+     MUTATION NE LA FAISAIT TOMBER. Supprimer purement et simplement
+     l'insertion du lieu visé laissait les 230 tests au vert : la règle vivait
+     dans un rendu, donc hors de portée. ⭐ Une règle logée dans un rendu
+     n'est pas tenue, elle est espérée. */
+  const LIEUX = [
+    { categorie: "chapelle", nom: "Sainte-Anne", anonyme: false,
+      position: [-4.5, 48.2] as [number, number], ordre: 0.2 },
+    { categorie: "plage", nom: "Plage", anonyme: true,
+      position: [-4.52, 48.21] as [number, number], ordre: 0.8 },
+  ];
+  const lib = (c: string) => ({ chapelle: "Chapelle", plage: "Plage" }[c] ?? c);
+
+  it("insère le lieu visé À SA PLACE dans la marche, pas en tête", () => {
+    const r = fondreRencontres(LIEUX, lib, {
+      nom: "Le menhir", g: [-4.51, 48.205],
+      approche: { ordre: 0.5, metres: 40 },
+    });
+    expect(r.map((x) => x.nom)).toEqual(["Sainte-Anne", "Le menhir", "Plage"]);
+    /* ⭐ Il est le MOTIF du départ, pas la première chose qu'on croise. Le
+       mettre en tête serait le même mensonge discret qu'une liste « ce que
+       vous croiserez » triée par proximité au chemin. */
+    expect(r[0].nom).not.toBe("Le menhir");
+  });
+
+  it("dit l'écart mesuré plutôt que « sur le chemin » quand il ne l'est pas", () => {
+    const loin = fondreRencontres([], lib, {
+      nom: "Le menhir", g: [-4.51, 48.205], approche: { ordre: 0.5, metres: 90 },
+    });
+    expect(loin[0].libelle).toBe("à 90 m du chemin");
+    const dessus = fondreRencontres([], lib, {
+      nom: "Le menhir", g: [-4.51, 48.205], approche: { ordre: 0.5, metres: 0 },
+    });
+    expect(dessus[0].libelle).toBe("sur le chemin");
+  });
+
+  it("n'ajoute rien quand on n'a visé personne, et tait le libellé d'un anonyme", () => {
+    const r = fondreRencontres(LIEUX, lib);
+    expect(r.length).toBe(2);
+    expect(r.find((x) => x.nom === "Plage")!.libelle).toBe("");
+    expect(r.find((x) => x.nom === "Sainte-Anne")!.libelle).toBe("Chapelle");
   });
 });
