@@ -251,8 +251,15 @@ describe("le jeu de cartes des balades", () => {
    *    une adresse (`?vue=carte`), sans quoi on ne pouvait pas y mener.
    */
   it("les deux portes de l'accueil mènent à deux endroits", () => {
-    const inv = readFileSync(new URL("./Invitation.tsx", import.meta.url), "utf8");
-    const net = inv.replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
+    /* ⚠️ TROISIÈME FOIS QU'UN GARDE NOMME UN FICHIER PLUTÔT QU'UNE RÈGLE.
+       Il lisait `Invitation.tsx` ; les deux portes ont déménagé dans la fiche
+       le 1/11 et il a crié « 0 porte ». ⭐ Ce qui doit rester vrai, c'est que
+       L'ACCUEIL offre deux portes vers deux endroits — pas qu'un fichier
+       donné les contienne. On lit donc l'accueil ET ce qu'il rend. */
+    const net = ["./Invitation.tsx", "./InvitationBalade.tsx"]
+      .map((f) => readFileSync(new URL(f, import.meta.url), "utf8"))
+      .join("\n")
+      .replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
     const liens = [...net.matchAll(/href=\{`\$\{base\}([^`]*)`\}/g)].map((m) => m[1]);
     const portes = liens.filter((h) => h.startsWith("/carte"));
     expect(portes.length).toBe(2);
@@ -262,6 +269,39 @@ describe("le jeu de cartes des balades", () => {
     // ⭐ et l'écran sait entrer par cette adresse, sinon le lien ment
     const ecran = readFileSync(new URL("./EcranTerritoire.tsx", import.meta.url), "utf8");
     expect(ecran).toMatch(/get\("vue"\) === "carte"/);
+  });
+
+  /**
+   * ⭐ UNE SEULE HORLOGE. La fiche de l'accueil change EN MÊME TEMPS que
+   *    l'image de fond — pas « toutes les dix secondes elle aussi ». Deux
+   *    minuteries de même durée ne donnent pas la même heure : elles donnent
+   *    deux heures qui se ressemblent de moins en moins, parce que l'onglet
+   *    caché gèle l'une et pas l'autre, qu'un rendu redémarre l'une, et que
+   *    le navigateur étale les réveils.
+   * ⛔ La fiche ne doit donc posséder AUCUNE minuterie de rotation : elle
+   *    s'abonne au battement de `Fond`.
+   */
+  it("la fiche de l'accueil tourne sur l'horloge du fond, pas sur la sienne", () => {
+    const f = readFileSync(new URL("./InvitationBalade.tsx", import.meta.url), "utf8");
+    const net = f.replace(/\/\*[\s\S]*?\*\//g, "").split("\n")
+      .filter((l) => !/^\s*(\/\/|\*)/.test(l)).join("\n");
+    expect(net).toMatch(/ecouter\(/);
+    expect(net).not.toMatch(/setInterval|setTimeout/);
+    // et c'est bien `Fond` qui diffuse, à l'instant où l'image change
+    const fond = readFileSync(new URL("./Fond.tsx", import.meta.url), "utf8");
+    expect(fond).toMatch(/diffuserBattement\(n \+ 1\)/);
+  });
+
+  /**
+   * 🔴 UN GEL QUI NE TIENT QUE PAR LE SURVOL NE PROTÈGE PERSONNE SUR UN
+   *    TÉLÉPHONE — c'est-à-dire là où cette application se regarde. La
+   *    première version n'écoutait que `onPointerEnter`.
+   * ⭐ Un garde qui ne protège que la souris ne protège pas les marcheurs.
+   */
+  it("la rotation se gèle au doigt, pas seulement au survol", () => {
+    const f = readFileSync(new URL("./InvitationBalade.tsx", import.meta.url), "utf8");
+    expect(f).toMatch(/onPointerDown=\{\(\) => setFige\(true\)\}/);
+    expect(f).toMatch(/onFocusCapture=\{\(\) => setFige\(true\)\}/);
   });
 
   /** ⛔ « À proximité » n'est pas « sur le chemin » : le seuil est DIT. */

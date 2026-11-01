@@ -88,37 +88,9 @@ export function Invitation({ base }: { base: string }) {
             seul moyen que l'accueil ne promette pas autre chose que ce qu'on
             trouvera. ⚠️ Elle arrive après le premier rendu et ne porte rien :
             si `ot.json` n'arrive pas, l'accueil reste entier. */}
-        <InvitationBalade />
+        <InvitationBalade base={base} />
 
-        {/* ⭐ LES DEUX PORTES, CÔTE À CÔTE ET AU MÊME FORMAT — 1/11.
-            « Les balades » ouvre le jeu de fiches, « La carte » ouvre le
-            territoire. ⚠️ ELLES MENAIENT TOUTES DEUX À `/carte` jusqu'ici :
-            deux boutons voisins vers la même page, que seul le libellé
-            distinguait. La carte a désormais son adresse (`?vue=carte`), donc
-            les deux portes mènent vraiment à deux endroits.
-            ⚠️ Et elles vivent ICI, pas dans la fiche : la fiche dépend de
-               259 Ko chargés à la demande, les portes de l'accueil non. */}
-        <nav className="inv-portes" aria-label="Entrer">
-          <a className="inv-primaire" href={`${base}/carte`}>
-            <svg className="m-icone inv-pin" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z" />
-              <circle cx="12" cy="10" r="2.6" />
-            </svg>
-            <span className="inv-primaire-mot">Les balades</span>
-            <span className="inv-fleche" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M5 12h12" /><path d="m12 6 6 6-6 6" /></svg>
-            </span>
-          </a>
-          <a className="inv-primaire" href={`${base}/carte?vue=carte`}>
-            <svg className="m-icone inv-pin" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M9 4 3 6.5v13L9 17l6 3 6-2.5v-13L15 7z" /><path d="M9 4v13M15 7v13" />
-            </svg>
-            <span className="inv-primaire-mot">La carte</span>
-            <span className="inv-fleche" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M5 12h12" /><path d="m12 6 6 6-6 6" /></svg>
-            </span>
-          </a>
-        </nav>
+
       </div>
     </section>
   );

@@ -2456,7 +2456,13 @@ body:has(.jeu) { padding-bottom: 0; }
       première correction ; celle-ci est la même, posée ailleurs.
    ⚠️ Ne reste ici que ce qui change : la surface, et les deux actions. */
 .inv-balade {
-  margin-top: var(--sp-3);
+  /* ⭐ LA BULLE DESCEND AU BAS DE L'ÉCRAN — 1/11, demande du fondateur.
+     `margin-top: auto` dans la colonne flex de `.inv-contenu` : elle mange
+     tout l'espace libre au-dessus et vient se poser juste au-dessus de la
+     barre, dont la réserve est déjà prise par le rembourrage du conteneur.
+     ⚠️ `auto` plutôt qu'une position absolue : elle reste DANS le flux, donc
+        un texte plus long la pousse vers le haut au lieu de passer dessous. */
+  margin-top: auto;
   padding: 16px 18px 14px;
   border-radius: var(--r-xl);
   /* la même matière que la feuille du territoire — un seul objet d'un écran
@@ -2481,19 +2487,64 @@ body:has(.jeu) { padding-bottom: 0; }
    `nowrap` ne renonce à rien : les deux se déclaraient incompressibles et
    `wrap` a fait la seule chose qu'il pouvait. Avec `flex: 1 1 0`, la base est
    ZÉRO et le partage se fait vraiment — moitié-moitié. */
-/* ⚠️ UN SEUL BOUTON DEPUIS LE 1/11 — il s'ajuste donc à son contenu, comme
-   celui du hero. `flex: 1 1 0` sur un enfant unique lui donnait toute la
-   largeur : une pastille d'action devenue bandeau. */
-.inv-balade-actions { display: flex; gap: 8px; margin-top: 10px; }
-.inv-balade-lien {
-  flex: 0 0 auto; min-width: 0;
-  display: inline-flex; align-items: center; justify-content: center;
-  gap: 6px; min-height: 44px; font-size: var(--t-xs); white-space: nowrap;
-  padding-inline: 10px;
-  /* ⚠️ Pas de soulignement : ce sont des BOUTONS, et ils en ont l'allure.
-     Le soulignement vient de la règle générale des liens de cette surface —
-     juste pour un lien dans une phrase, faux pour une pastille d'action. */
-  text-decoration: none;
+/* Les deux portes, maintenant DANS la fiche. */
+.inv-balade-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+/* ⭐ TRANSLUCIDES DANS LA BULLE — 1/11, demande du fondateur. Dorés pleins,
+   ils faisaient deux pastilles massives sur une carte qui est elle-même du
+   verre : deux matières dans un objet qui n'en a qu'une.
+   ⚠️ UNE SURFACE TRANSLUCIDE A LA COULEUR DE CE QU'ELLE RECOUVRE, et ce
+      qu'elle recouvre ici est la carte, qui recouvre elle-même une image qui
+      TOURNE. Le plancher se mesure donc sur le pire cas — du blanc sous la
+      carte : 0,92 × bulle-creux + 0,08 × blanc = (69,65,46), puis 14 % de
+      craie par-dessus = (93,89,70). La craie y vaut **5,5**.
+   ⛔ L'or ne peut pas porter le texte ici : sur ce ton, `--bulle-action` sert
+      aux PICTOGRAMMES (une forme, seuil 3), jamais aux lettres. */
+.inv-balade-actions .inv-primaire {
+  padding: 10px var(--sp-2) 10px var(--sp-2);
+  min-height: 48px; gap: 10px;
+  background: color-mix(in srgb, var(--craie) 14%, transparent);
+  border: 1px solid var(--bulle-trait-fort);
+  color: var(--bulle-texte);
+  box-shadow: none;
+}
+.inv-balade-actions .inv-primaire:hover {
+  background: color-mix(in srgb, var(--craie) 22%, transparent);
+  border-color: var(--bulle-action);
+}
+/* ⭐ Le picto et la flèche gardent l'or : ils sont le seul rappel de l'action
+   maintenant que le fond ne l'est plus. */
+.inv-balade-actions .inv-pin,
+.inv-balade-actions .inv-fleche { color: var(--bulle-action); }
+/* ⭐ EN CAPITALES, DANS LA SERIF DU TITRE — 1/11, demande du fondateur.
+   ⚠️ La serif était DÉJÀ celle du titre (`.inv-primaire` la pose) : ce qui
+      change vraiment, ce sont les capitales. Et des capitales sans
+      interlettrage se referment — une serif de titrage est dessinée pour des
+      bas-de-casse, ses capitales ont besoin d'air pour rester lisibles à
+      petite taille. 0,07 em, mesuré à l'œil sur « LES BALADES ».
+   ⚠️ Et la taille DESCEND d'un cran : une capitale occupe plus de place
+      qu'un bas-de-casse à corps égal, et « LA CARTE » en `--t-m` débordait
+      la carte sur une colonne de 440. */
+.inv-balade-actions .inv-primaire-mot {
+  font-size: var(--t-s);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-weight: 400;
+}
+.inv-balade-actions .inv-fleche { width: 22px; height: 22px; }
+.inv-balade-actions .inv-fleche svg { width: 18px; height: 18px; }
+/* ⭐ LA FICHE CHANGE SANS CLIGNOTER. Elle tourne avec l'image de fond : un
+   remplacement sec ferait sauter la carte toutes les dix secondes, et le saut
+   attirerait l'œil plus que le contenu. */
+/* ⭐ LE NOM DU CIRCUIT MONTE D'UN CRAN sur l'accueil (1/11) : c'est la seule
+   ligne que l'œil cherche, et la carte lui laisse maintenant la place. */
+.inv-balade .jeu-nom { font-size: var(--t-xl); line-height: 1.08; }
+.inv-balade .jeu-nom,
+.inv-balade .jeu-faits,
+.inv-balade .jeu-bandeau,
+.inv-balade .jeu-provenance { transition: opacity 400ms ease; }
+@media (prefers-reduced-motion: reduce) {
+  .inv-balade .jeu-nom, .inv-balade .jeu-faits,
+  .inv-balade .jeu-bandeau, .inv-balade .jeu-provenance { transition: none; }
 }
 .inv-balade-lien .m-icone { width: 17px; height: 17px; flex: none; }
 .inv-balade-lien .inv-fleche { width: 22px; height: 22px; }

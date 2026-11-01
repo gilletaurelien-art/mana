@@ -28,6 +28,13 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import donnees from "./fonds/fonds.json";
+/* ⚠️ RENOMMÉ À L'IMPORT : la boucle de minuterie, juste en dessous, s'appelle
+   DÉJÀ `battre`. Sous le même nom, c'est la locale qui gagne — et l'appel
+   partait dans la boucle au lieu de l'horloge. TypeScript ne l'a vu que par
+   le NOMBRE D'ARGUMENTS ; avec la même signature, ça compilait et faisait
+   silencieusement autre chose. ⭐ Un import masqué par une locale homonyme ne
+   se signale pas : il se résout, simplement ailleurs. */
+import { battre as diffuserBattement } from "./horloge-fond";
 
 type Variante = { fichier: string; largeur: number; format: string; octets: number };
 type Fond = { id: string; variantes: Variante[] };
@@ -112,7 +119,14 @@ export function Fond() {
       id = window.setTimeout(() => {
         // ⚠️ Onglet caché : on ne tourne pas, et on ne télécharge pas.
         if (document.visibilityState === "visible") {
-          setI((n) => n + 1);
+          setI((n) => {
+            /* ⭐ LE BATTEMENT EST DIFFUSÉ ICI, à l'instant exact où l'image
+               change — pas une milliseconde avant, pas depuis une seconde
+               minuterie. C'est ce qui rend la synchronisation vraie par
+               construction plutôt que réglée à la main. */
+            diffuserBattement(n + 1);
+            return n + 1;
+          });
           setVisible((v) => 1 - v);
         }
         battre();
