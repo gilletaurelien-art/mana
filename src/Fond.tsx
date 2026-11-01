@@ -119,14 +119,7 @@ export function Fond() {
       id = window.setTimeout(() => {
         // ⚠️ Onglet caché : on ne tourne pas, et on ne télécharge pas.
         if (document.visibilityState === "visible") {
-          setI((n) => {
-            /* ⭐ LE BATTEMENT EST DIFFUSÉ ICI, à l'instant exact où l'image
-               change — pas une milliseconde avant, pas depuis une seconde
-               minuterie. C'est ce qui rend la synchronisation vraie par
-               construction plutôt que réglée à la main. */
-            diffuserBattement(n + 1);
-            return n + 1;
-          });
+          setI((n) => n + 1);
           setVisible((v) => 1 - v);
         }
         battre();
@@ -135,6 +128,22 @@ export function Fond() {
     battre();
     return () => { if (id) clearTimeout(id); };
   }, [sobre]);
+
+  /**
+   * 🔴 LE BATTEMENT SE DIFFUSE DANS UN EFFET, PAS DANS L'UPDATER D'ÉTAT.
+   *    Premier jet : `setI((n) => { diffuserBattement(n + 1); return n + 1 })`.
+   *    Un updater doit être PUR — React l'exécute pendant le rendu, et
+   *    prévenir les abonnés y revient à appeler leur `setState` au milieu
+   *    d'un rendu. React l'a dit en toutes lettres : « Cannot update a
+   *    component (Fond) while rendering a different component
+   *    (InvitationBalade) ».
+   * ⭐ Le symptôme n'était pas une erreur rouge à l'écran : c'était l'ACCUEIL
+   *    AMPUTÉ — zéro section rendue, 72 mots sur toute la page. Un rendu
+   *    interrompu ne se plaint pas, il livre moins.
+   * ⚠️ L'effet suit immédiatement le rendu : la synchronisation avec l'image
+   *    reste vraie à l'image près, ce qui est la seule précision qui compte.
+   */
+  useEffect(() => { if (i > 0) diffuserBattement(i); }, [i]);
 
   /* ⭐ Le remélange se fait À LA FIN DU TOUR, et il garantit que la première
      du nouveau tour n'est pas la dernière de l'ancien — sinon la seule

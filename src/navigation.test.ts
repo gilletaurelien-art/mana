@@ -84,3 +84,66 @@ describe("le poste de radio", () => {
     expect(poste).toMatch(/addEventListener\("pause"/);
   });
 });
+
+describe("les cinq sections de l'accueil", () => {
+  const app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
+
+  /**
+   * ⭐ CE QU'UN MOTEUR DE RÉPONSE SAIT EXTRAIRE, C'EST UNE PHRASE QUI RÉPOND.
+   *    « Une expérience unique au cœur de la Bretagne » n'est citable par
+   *    personne ; « 46 circuits balisés, 708 km, sur 11 communes » l'est.
+   *    Ce test tient le VOLUME — une section qui retombe à deux lignes a
+   *    perdu ce pour quoi elle a été écrite.
+   */
+  it("portent assez de matière pour être citées", () => {
+    const textes = [...app.matchAll(/texte:\s*\n?\s*"([^"]{40,})"/g)].map((m) => m[1]);
+    expect(textes.length).toBeGreaterThanOrEqual(4);
+    for (const t of textes) expect(t.split(/\s+/).length, t.slice(0, 40)).toBeGreaterThan(45);
+  });
+
+  /**
+   * ⛔ CHAQUE CHIFFRE A ÉTÉ COMPTÉ DANS L'ARTEFACT, PAS RAPPELÉ. Un nombre
+   *    écrit de mémoire sur une page d'accueil est le faux témoin le plus
+   *    coûteux qui soit : il est cité par des machines, et plus personne ne
+   *    remonte à la source.
+   * ⚠️ Ce test les RECOMPTE. S'il échoue, ce n'est pas lui qu'on corrige.
+   */
+  it("les chiffres cités correspondent aux artefacts", () => {
+    const ot = JSON.parse(readFileSync(new URL("./ot.json", import.meta.url), "utf8"));
+    const lx = JSON.parse(readFileSync(new URL("./lieux.json", import.meta.url), "utf8"));
+    const km = Math.round(ot.itineraires.reduce((s: number, x: { km: number }) => s + x.km, 0));
+    const communes = new Set(ot.itineraires.map((x: { commune?: string }) => x.commune).filter(Boolean));
+    const nommes = lx.lieux.filter((l: { n?: string }) => l.n).length;
+    const parCat = (nom: string) =>
+      lx.lieux.filter((l: { c: string }) => lx.libelles[l.c] === nom).length;
+
+    expect(app).toContain(`${ot.itineraires.length} circuits balisés`);
+    expect(app).toContain(`${km} km`);
+    expect(app).toContain(`${communes.size} communes`);
+    expect(app).toContain("1 358 sites");
+    expect(lx.lieux.length).toBe(1358);
+    expect(app).toContain(`${nommes} portent un nom`);
+    expect(app).toContain(`${parCat("Fortification")} fortifications`);
+    expect(app).toContain(`${parCat("Plage")} plages`);
+    expect(app).toContain(`${parCat("Mégalithe")} mégalithes`);
+  });
+
+  /**
+   * 🔴 CE FICHIER A ANNONCÉ PENDANT TROIS JOURS DES FILTRES RETIRÉS — et ils
+   *    avaient été retirés précisément pour que personne ne parte en
+   *    poussette sur un sentier de falaise. ⭐ Une suppression se fait dans le
+   *    code ET dans ce qui la promet.
+   */
+  it("ne promettent rien que l'application ne fasse", () => {
+    /* ⚠️ SUR LE CODE DÉPOUILLÉ, pas sur le fichier brut. Première version :
+       elle a crié sur « poussette » écrit dans le COMMENTAIRE qui raconte le
+       retrait — quatrième fois cette nuit qu'un commentaire répond à la
+       place du code. ⭐ Le helper `nu()` existait déjà en haut de ce
+       fichier : l'oublier une fois de plus n'est pas une étourderie, c'est
+       que le réflexe n'est pas encore pris. */
+    const net = nu("./App.tsx");
+    for (const mort of [/poussette/i, /\bPMR\b/, /accessible aux chiens/i, /temps réel/i]) {
+      expect(net, String(mort)).not.toMatch(mort);
+    }
+  });
+});

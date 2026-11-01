@@ -2610,3 +2610,25 @@ body:has(.jeu) { padding-bottom: 0; }
    partis, les icônes restent. Le rembourrage se resserre d'autant, mais la
    CIBLE reste à 44 px — c'est elle qui ne se négocie pas. */
 .nav a > span.sr-only ~ svg, .nav a > svg { flex: none; }
+
+/* ── LES FAITS DES SECTIONS DE L'ACCUEIL ─────────────────────────────────
+   ⭐ Trois affirmations closes par section, pour l'œil qui balaie comme pour
+      le moteur qui extrait. Le filet doré les rattache au texte sans en
+      faire un encadré de plus. */
+.section-accroche-courte {
+  margin: 0 0 var(--sp-1); font-family: var(--titre);
+  font-size: var(--t-m); line-height: 1.2; color: var(--bulle-action);
+}
+.section-faits {
+  margin: var(--sp-2) 0 0; padding-left: 12px; text-align: left;
+  border-left: 2px solid var(--bulle-trait-fort);
+  list-style: none; display: grid; gap: 7px;
+}
+.section-faits li {
+  font-size: var(--t-xs); line-height: 1.5; color: var(--bulle-texte-doux);
+  /* ⚠️ À GAUCHE, contre le centrage hérité de la section. Un filet posé sur
+     le bord gauche et un texte centré se contredisent : le filet dit « la
+     ligne commence ici », le centrage dit « elle commence ailleurs à chaque
+     ligne ». ⭐ Un repère d'alignement qui n'aligne rien est pire qu'absent. */
+  text-align: left;
+}
