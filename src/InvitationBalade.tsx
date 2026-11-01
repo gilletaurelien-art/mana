@@ -94,13 +94,19 @@ export function InvitationBalade({ base }: { base: string }) {
         {" · chiffres déclarés · "}{ATTRIBUTION[lireFond()]}
       </p>
 
+      {/* 🔴 « EN SAVOIR PLUS » EST PARTI — 1/11. Il menait à `w.source`, c'est-
+          à-dire EXACTEMENT où mène déjà le crédit « Office de tourisme ↗ »
+          deux lignes plus haut. Deux contrôles, une destination, sur une
+          fiche de cinq lignes.
+          ⭐ Le doublon n'était pas celui qu'on croyait : ce n'est pas « En
+             savoir plus » et « Voir sur la carte » qui se répétaient — elles
+             mènent à deux endroits différents, l'Office et notre territoire —
+             c'est « En savoir plus » et le CRÉDIT. Un bouton et un lien
+             discret se ressemblent si peu qu'on ne les compare pas ; seule
+             l'URL le dit.
+          ⚠️ Et c'est le bouton qui part, pas le crédit : le crédit est une
+             obligation, le bouton était un confort. */}
       <div className="inv-balade-actions">
-        <a className="m-action-fine inv-balade-lien" href={w.source} target="_blank" rel="noreferrer">
-          <svg className="m-icone" viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="12" cy="12" r="9" /><path d="M12 11v5" /><circle cx="12" cy="7.8" r="1" />
-          </svg>
-          En savoir plus
-        </a>
         <a className="m-action inv-balade-lien" href={`${base}/carte`}>
           <svg className="m-icone" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M9 4 3 6.5v13L9 17l6 3 6-2.5v-13L15 7z" /><path d="M9 4v13M15 7v13" />

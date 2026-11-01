@@ -787,7 +787,15 @@
 }
 
 .inv-primaire {
-  display: grid; grid-template-columns: auto 1fr auto; align-items: center;
+  /* ⭐ AJUSTÉ À SON CONTENU — 1/11, demande du fondateur. Il s'étirait sur
+     toute la colonne : `1fr` au milieu poussait la flèche contre le bord
+     droit, et le bouton barrait l'écran comme un bandeau.
+     ⚠️ Le `1fr` partait avec une intention — « que la flèche soit toujours au
+        bout » — qui n'a de sens que sur un bouton pleine largeur. En retirant
+        la largeur, on retire la raison du `1fr` : les trois colonnes se
+        mesurent désormais sur ce qu'elles portent. */
+  display: inline-grid; grid-template-columns: auto auto auto; align-items: center;
+  width: fit-content; max-width: 100%;
   gap: var(--sp-2);
   /* la serif du titre, comme tous les boutons depuis le 31/10 */
   font: 500 var(--t-m)/1.2 var(--titre); cursor: pointer; border: 0;
@@ -796,6 +804,11 @@
      une autre langue que les autres. */
   background: var(--action); color: var(--action-texte);
   border-radius: var(--r-rond);
+  /* ⚠️ DEUXIÈME FOIS AUJOURD'HUI : un <button> devenu <a> hérite du
+     soulignement des liens. Juste pour un lien dans une phrase, faux pour une
+     pastille d'action — et c'est le genre de détail qui ne se voit qu'à
+     l'écran, jamais dans le diff. */
+  text-decoration: none;
   padding: var(--sp-1) var(--sp-1) var(--sp-1) var(--sp-3);
   min-height: 60px;
   box-shadow: var(--ombre-levee);
@@ -805,12 +818,31 @@
 .inv-primaire:active { transform: translateY(1px); }
 .inv-primaire[disabled] { cursor: progress; opacity: 0.82; }
 .inv-primaire-mot { text-align: left; font-size: var(--t-m); }
-.inv-pin { color: var(--nuit); }
-/* la pastille ocre : l'action est là, et nulle part ailleurs sur l'écran */
+/* ⭐ LE PIN EN BLANC — 1/11, demande du fondateur. Il était en `--nuit`, un
+   reste de l'époque où ce bouton était en craie. Blanc sur `--action`
+   (#94702e) : **4,55**, l'appariement déjà mesuré et déjà posé partout. */
+.inv-pin { color: var(--action-texte); }
+
+/* 🔴 LA FLÈCHE EN BLANC AUSSI — ET LA PASTILLE A DÛ CHANGER DE TON.
+   Blanc sur `--ocre` (#c69a48) donne **2,59**. C'est exactement l'échec que
+   `tokens.css` documente déjà : « l'ocre doré EST clair, et rien de clair ne
+   se pose dessus » — la raison pour laquelle `--action` a été calculée.
+   ⭐ Repeindre la flèche sans toucher au sol, c'était rejouer un défaut que
+      ce projet a déjà payé une fois.
+   Quatre tons mesurés, et un seul tient les DEUX contraintes à la fois :
+     · le blanc dessus (≥ 4,5, c'est un glyphe qu'on doit lire)
+     · la pastille DISTINCTE du bouton doré (≥ 3, c'est une forme)
+       --ocre        2,59 / 1,76   ✗✗
+       --ocre-sombre 5,51 / 1,21   ✗ la pastille disparaît dans le bouton
+       --or-profond  5,83 / 1,28   ✗ idem
+       --kaki-sombre 14,01 / 3,08  ✅
+   ⚠️ Et `--kaki-sombre` n'est pas un choix esthétique de secours : son rôle
+      déclaré est « enfoncement · fond de barre ». Une pastille sertie dans un
+      bouton est exactement ça. */
 .inv-fleche {
   display: grid; place-items: center;
   width: 44px; height: 44px; border-radius: 50%;
-  background: var(--ocre); color: var(--nuit);
+  background: var(--kaki-sombre); color: var(--action-texte);
 }
 .inv-fleche svg {
   width: 22px; height: 22px; fill: none; stroke: currentColor;

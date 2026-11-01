@@ -24,39 +24,20 @@
  *    précédente : « Autour de moi », « ou », un champ, et un lien vers la
  *    carte, cela faisait quatre décisions sur un écran qui en demande une.
  */
-import { useState } from "react";
 import { InvitationBalade } from "./InvitationBalade";
 
 export function Invitation({ base }: { base: string }) {
-  const [motGps, setMotGps] = useState("");
-  const [cherche, setCherche] = useState(false);
-
-  /**
-   * ⚠️ LA PERMISSION SE DEMANDE OÙ LA QUESTION SE POSE. On ne renvoie pas
-   *    vers le compositeur pour qu'il redemande : on demande ici, et on
-   *    transmet le point.
-   * ⛔ Et un refus n'est pas une panne : on bascule vers la carte, qui marche
-   *    sans position, et on le dit — au lieu de laisser un bouton mort.
-   */
-  const autourDeMoi = () => {
-    if (!navigator.geolocation) {
-      setMotGps("Votre navigateur ne sait pas vous situer. La carte, elle, fonctionne sans position.");
-      return;
-    }
-    setCherche(true);
-    setMotGps("Recherche de votre position…");
-    navigator.geolocation.getCurrentPosition(
-      (p) => {
-        const { longitude: lon, latitude: lat } = p.coords;
-        window.location.assign(`${base}/composer?lon=${lon.toFixed(5)}&lat=${lat.toFixed(5)}`);
-      },
-      () => {
-        setCherche(false);
-        setMotGps("Position indisponible. Explorez la carte — elle fonctionne sans position.");
-      },
-      { enableHighAccuracy: true, timeout: 8000 },
-    );
-  };
+  /* 🔴 « AUTOUR DE MOI » EST PARTI LE 1/11/2026, sur demande du fondateur, et
+     sa géolocalisation avec lui. Elle demandait la position puis ouvrait le
+     compositeur avec le point dans l'URL.
+     ⚠️ VÉRIFIÉ AVANT DE LA RETIRER, PAS APRÈS : `/composer` demande la
+        position LUI-MÊME (deux appels à `navigator.geolocation` dans
+        `Composer.tsx`), et il reste atteignable depuis `/promenades`, qui est
+        liée depuis les sections de l'accueil et le pied. Ce qui disparaît est
+        un raccourci d'un clic, pas une fonction ni son seul chemin.
+     ⭐ Retirer un bouton sans chercher ce qu'il était seul à ouvrir, c'est
+        rendre un écran inatteignable sans que rien ne le dise — un écran
+        orphelin ne se plaint jamais. */
 
   return (
     <section className="inv" aria-labelledby="inv-titre">
@@ -103,22 +84,25 @@ export function Invitation({ base }: { base: string }) {
         </div>
 
         <div className="inv-gestes">
-          {/* ⚠️ Un <button>, pas un <a> : il demande une permission au
-              navigateur, il ne mène pas à une adresse. Un lien déguisé en
-              bouton casse le clic du milieu et la navigation au clavier. */}
-          <button type="button" className="inv-primaire" onClick={autourDeMoi} disabled={cherche}>
+          {/* ⭐ UN <a>, PLUS UN <button> — ET C'EST LA MÊME RÈGLE QU'AVANT,
+              retournée. Le commentaire d'hier disait « un <button>, pas un
+              <a> : il demande une permission, il ne mène pas à une adresse ».
+              Il mène désormais à une adresse : c'est donc un lien, et le clic
+              du milieu, « ouvrir dans un nouvel onglet » et la navigation au
+              clavier redeviennent possibles.
+              ⚠️ La règle ne change pas, c'est l'élément qui a changé de
+                 nature. Garder le <button> « parce qu'il a l'air d'un bouton »
+                 aurait cassé trois gestes que personne n'aurait signalés. */}
+          <a className="inv-primaire" href={`${base}/carte`}>
             <svg className="m-icone inv-pin" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z" />
               <circle cx="12" cy="10" r="2.6" />
             </svg>
-            <span className="inv-primaire-mot">{cherche ? "Recherche…" : "Autour de moi"}</span>
+            <span className="inv-primaire-mot">Voir les balades</span>
             <span className="inv-fleche" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M5 12h12" /><path d="m12 6 6 6-6 6" /></svg>
             </span>
-          </button>
-
-
-          {motGps && <p className="inv-etat" role="status">{motGps}</p>}
+          </a>
         </div>
 
         {/* ⭐ LA FICHE DU TERRITOIRE, SUR L'ACCUEIL. C'est la même feuille que

@@ -2481,9 +2481,12 @@ body:has(.jeu) { padding-bottom: 0; }
    `nowrap` ne renonce à rien : les deux se déclaraient incompressibles et
    `wrap` a fait la seule chose qu'il pouvait. Avec `flex: 1 1 0`, la base est
    ZÉRO et le partage se fait vraiment — moitié-moitié. */
+/* ⚠️ UN SEUL BOUTON DEPUIS LE 1/11 — il s'ajuste donc à son contenu, comme
+   celui du hero. `flex: 1 1 0` sur un enfant unique lui donnait toute la
+   largeur : une pastille d'action devenue bandeau. */
 .inv-balade-actions { display: flex; gap: 8px; margin-top: 10px; }
 .inv-balade-lien {
-  flex: 1 1 0; min-width: 0;
+  flex: 0 0 auto; min-width: 0;
   display: inline-flex; align-items: center; justify-content: center;
   gap: 6px; min-height: 44px; font-size: var(--t-xs); white-space: nowrap;
   padding-inline: 10px;
