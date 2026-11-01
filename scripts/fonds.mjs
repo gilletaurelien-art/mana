@@ -29,7 +29,11 @@ import { join } from "node:path";
 const SOURCE = process.argv[2];
 if (!SOURCE) { console.error('usage : fonds.mjs "<dossier>"'); process.exit(2); }
 
-const SORTIE = "public/fonds";
+/* ⚠️ « paysages », pas « fonds » — renommé le 1/11 : mana.bzh sert déjà un
+   dossier « fonds » (101 images de l'application historique), et un seul
+   dossier peut répondre à « /fonds/* ». Le dossier source, lui, s'appelle
+   comme on veut. */
+const SORTIE = "public/paysages";
 /* ⚠️ DEUX LARGEURS, PAS QUATRE. Un fond n'a pas de vignette ni de variante
    d'impression : il couvre l'écran, ou il ne sert pas. Multiplier les
    largeurs multiplierait le poids d'une bibliothèque déjà au-dessus du reste

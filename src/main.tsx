@@ -54,9 +54,25 @@ function tiedirLaCarte() {
 }
 window.addEventListener("load", tiedirLaCarte);
 
-if ("serviceWorker" in navigator && contexteSur) {
+/* 🔴 DEUX APPLICATIONS NE PEUVENT PAS POSSÉDER LE PÉRIMÈTRE « / » D'UNE MÊME
+   ORIGINE — et c'est la raison de ce drapeau, pas une préférence. Un service
+   worker s'enregistre pour un PÉRIMÈTRE : deux scripts de noms différents
+   posés à la racine se remplacent l'un l'autre. Sur mana.bzh, où 63 885 pages
+   d'agrégat ont déjà le leur, poser celui-ci les en priverait.
+   ⭐ Le hors-ligne n'est donc pas « oublié » sur ce build : il est RETIRÉ, en
+      le sachant, jusqu'à ce que l'arbitrage soit pris. Un drapeau explicite
+      dit cela ; une omission ne dit rien.
+
+   ⚠️ ET L'ADRESSE VIENT DE LA BASE, PLUS DU CHEMIN COURANT. `"./sw.js"` se
+      résout RELATIVEMENT à la page : sur « /promenade/forts-du-goulet » il
+      demandait « /promenade/sw.js », qui n'existe pas. Le hors-ligne ne
+      s'armait donc que depuis les pages de premier niveau — un défaut muet,
+      préexistant, trouvé en préparant cette bascule. */
+const SW_VOULU = import.meta.env.VITE_SW !== "0";
+
+if ("serviceWorker" in navigator && contexteSur && SW_VOULU) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js").catch(() => {
+    navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => {
       // échec silencieux : la vitrine reste utilisable en ligne
     });
   });

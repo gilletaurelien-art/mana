@@ -56,7 +56,13 @@ const FONDU_MS = 1000;
 const DUREE_MS = VISIBLE_MS + FONDU_MS;
 
 const FONDS: Fond[] = (donnees as { fonds: Fond[] }).fonds;
-const BASE = `${import.meta.env.BASE_URL}fonds/`;
+/* 🔴 « fonds » ÉTAIT DÉJÀ PRIS SUR mana.bzh — 101 images de l'application
+   historique, dans un dossier du même nom. Les fichiers ne portent pas les
+   mêmes noms, mais un seul dossier peut répondre à « /fonds/* » : servir
+   celui-ci priverait les 63 885 pages d'agrégat des leurs.
+   ⭐ Renommer coûte une ligne ici ; arbitrer un dossier partagé coûte à
+      chaque déploiement, des deux côtés, et le perdant est muet. */
+const BASE = `${import.meta.env.BASE_URL}paysages/`;
 
 /** Fisher-Yates — un vrai mélange, pas un tri sur une clé aléatoire. */
 function melanger<T>(src: T[]): T[] {
