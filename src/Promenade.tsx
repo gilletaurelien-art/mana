@@ -3,7 +3,6 @@ import { baseUrl } from "./router";
 import { WALKS, distAuTrace, distM, effortLisible, MENTION } from "./walks";
 import { chargerItineraire } from "./catalogue";
 import type { Walk } from "./walks";
-import { TITRE_DEFAUT } from "./App";
 import type { WalkPoint } from "./walks";
 import { WalkMap } from "./WalkMap";
 import { CarteOuSchema } from "./CarteOuSchema";
@@ -165,10 +164,18 @@ export function Promenade({ slug }: { slug: string }) {
 
   useEffect(() => {
     if (!walk) return;
+    /* 🔴 AUCUNE RESTAURATION, ET C'EST LE CORRECTIF. Cet effet rendait le
+       titre par défaut en se démontant — et cette restauration s'exécutait
+       APRÈS l'effet de App.tsx qui venait de poser le titre de la page
+       SUIVANTE. Mesuré en production le 1/11 : `/radio` affiche son titre à
+       froid, et retombe au titre d'accueil quand on y revient depuis une
+       fiche de balade.
+       ⭐ DEUX ÉCRIVAINS POUR UNE VALEUR, ET L'ORDRE NE NOUS APPARTIENT PAS.
+          C'est la leçon du Caddyfile du même jour, transposée à React : on
+          ne corrige pas en espérant un ordre, on retire le second écrivain.
+          La table de App.tsx repose le titre à CHAQUE changement d'adresse ;
+          il n'y a rien à restaurer. */
     document.title = `${walk.titre} — Promenades MANA.bzh`;
-    return () => {
-      document.title = TITRE_DEFAUT;
-    };
   }, [walk?.titre]);
 
   useEffect(() => {

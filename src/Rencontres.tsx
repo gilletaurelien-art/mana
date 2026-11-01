@@ -17,7 +17,6 @@
  */
 import { useEffect, useState } from "react";
 import { WALKS } from "./walks";
-import { TITRE_DEFAUT } from "./App";
 import type { Etape } from "./walks";
 import { libelleCategorie } from "./categories";
 import { ILLUSTRATIONS } from "./illustrations";
@@ -57,8 +56,18 @@ export function Rencontres({ base, slug }: { base: string; slug: string }) {
         invisible depuis l'écran, où le titre d'onglet ne se regarde pas. */
   useEffect(() => {
     if (!walk) return;
+    /* 🔴 AUCUNE RESTAURATION, ET C'EST LE CORRECTIF. Cet effet rendait le
+       titre par défaut en se démontant — et cette restauration s'exécutait
+       APRÈS l'effet de App.tsx qui venait de poser le titre de la page
+       SUIVANTE. Mesuré en production le 1/11 : `/radio` affiche son titre à
+       froid, et retombe au titre d'accueil quand on y revient depuis une
+       fiche de balade.
+       ⭐ DEUX ÉCRIVAINS POUR UNE VALEUR, ET L'ORDRE NE NOUS APPARTIENT PAS.
+          C'est la leçon du Caddyfile du même jour, transposée à React : on
+          ne corrige pas en espérant un ordre, on retire le second écrivain.
+          La table de App.tsx repose le titre à CHAQUE changement d'adresse ;
+          il n'y a rien à restaurer. */
     document.title = `Ce que vous croiserez — ${walk.titre} — MANA.bzh`;
-    return () => { document.title = TITRE_DEFAUT; };
   }, [walk]);
   const [pos, setPos] = useState<[number, number] | null>(null);
   const [motGps, setMotGps] = useState("");

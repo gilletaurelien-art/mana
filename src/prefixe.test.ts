@@ -158,6 +158,24 @@ describe("les titres de page", () => {
     }
   });
 
+  /* 🔴 UN SEUL ÉCRIVAIN PAR TRANSITION. Les écrans dynamiques rendaient le
+     titre par défaut en se démontant, et cette restauration s'exécutait
+     APRÈS l'effet qui venait de poser le titre de la page suivante. Mesuré
+     en production : `/radio` affiche son titre à froid, et retombe au titre
+     d'accueil quand on y revient depuis une fiche de balade.
+     ⭐ Deux écrivains pour une valeur, et l'ordre ne nous appartient pas.
+        On ne corrige pas en espérant un ordre : on retire le second. */
+  it("⛔ aucun écran ne « restaure » le titre en se démontant", () => {
+    for (const f of readdirSync("src").filter((x) => x.endsWith(".tsx"))) {
+      const t = nu(lire(`src/${f}`));
+      expect(t, `${f} restaure un titre au démontage`)
+        .not.toMatch(/return \(\) =>[\s\S]{0,80}document\.title/);
+      if (f !== "App.tsx") {
+        expect(t, `${f} recopie le titre par défaut`).not.toMatch(/TITRE_DEFAUT/);
+      }
+    }
+  });
+
   it("⛔ aucun titre n'est écrit deux fois — les pages statiques lisent la table", () => {
     /* ⚠️ Les titres vivaient dans les composants et ils avaient DÉJÀ divergé :
        deux restauraient « La porte d'entrée de l'écosystème MANA en
