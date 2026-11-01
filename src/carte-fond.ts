@@ -11,7 +11,17 @@
  *    `CarteReelle.tsx`. Les tuiles, elles, restent relayées par mana.bzh en
  *    URLs absolues — c'est ce qui empêche l'IP du promeneur de sortir.
  */
-export const STYLE_CARTE = `${import.meta.env.BASE_URL}carte-style.json`;
+/* ⭐ LE NOM DU FICHIER EST SÉPARÉ DE SON ADRESSE — 1/11. L'adresse dépend du
+   préfixe de service (`/mana/` sur GitHub Pages, `/` sur mana.bzh) ; le NOM,
+   lui, ne dépend de rien, et trois autres endroits en ont besoin tel quel :
+   le bloc Caddy qui dit « ce fichier est à nous », le service worker qui le
+   garde, et le routeur. ⚠️ Les exporter permet de ne pas les RECOPIER là-bas
+   — un garde de ce dépôt refuse justement une seconde copie de cette
+   adresse, et il avait raison de crier. */
+export const NOM_STYLE_PLAN = "carte-style.json";
+export const NOM_STYLE_ORTHO = "carte-ortho.json";
+
+export const STYLE_CARTE = `${import.meta.env.BASE_URL}${NOM_STYLE_PLAN}`;
 
 /**
  * LE FOND AÉRIEN — l'orthophotographie de l'IGN, relayée par nous.
@@ -23,7 +33,7 @@ export const STYLE_CARTE = `${import.meta.env.BASE_URL}carte-style.json`;
  * ⛔ Aucun remplissage n'est conservé : on aurait payé une photographie
  *    aérienne pour la cacher sous un dessin.
  */
-export const STYLE_ORTHO = `${import.meta.env.BASE_URL}carte-ortho.json`;
+export const STYLE_ORTHO = `${import.meta.env.BASE_URL}${NOM_STYLE_ORTHO}`;
 
 export type Fond = "plan" | "ortho";
 

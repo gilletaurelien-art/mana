@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build:racine": "MANA_BASE=/ VITE_GRAPHE_BASE=/bretagne/g VITE_SW=0 vite build && rm -rf site/bretagne site/sw.js",
+    "caddy:bloc": "node scripts/caddy-bloc.mjs",
+    "build:racine": "MANA_BASE=/ VITE_GRAPHE_BASE=/bretagne/g vite build && rm -rf site/bretagne",
     "build": "npm run test && tsc -b && vite build",
     "test": "vitest run",
     "preview": "vite preview",

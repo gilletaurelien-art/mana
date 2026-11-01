@@ -1,0 +1,35 @@
+# ═══════════════════════════════════════════════════════════════════════
+# mana.bzh SERT CETTE APPLICATION — le fragment à poser dans le Caddyfile
+# du serveur, DANS le bloc « mana.bzh, mana.love, manafamily.org { … } ».
+# ═══════════════════════════════════════════════════════════════════════
+#
+# 🔴 CE FICHIER EST ENGENDRÉ PAR `npm run caddy:bloc` DEPUIS `src/routes.ts`.
+#    Ne pas l'écrire à la main : la liste des chemins vit à trois endroits —
+#    ici, dans le service worker, et dans le routeur — et un désaccord est
+#    MUET dans les trois sens.
+#
+# ⚠️ LE BLOC EST PARTAGÉ PAR TROIS DOMAINES. Le matcher porte `host mana.bzh` :
+#    sans lui, mana.love et manafamily.org recevraient cette application à la
+#    place de la leur.
+#
+# ⭐ C'EST UNE LISTE BLANCHE, PAS UNE EXCLUSION. Ce qui n'est pas nommé ici
+#    garde EXACTEMENT le comportement qu'il avait : les 63 885 pages
+#    d'agrégat, les 9 rubriques d'allée, /vivre-ici, les fiches, les
+#    missions, le relais de tuiles, les graphes.
+#
+# ⛔ ET L'ORDRE NE NOUS APPARTIENT PAS. Caddy trie les `handle` par
+#    spécificité, pas par position — c'est ce qui avait mis /carte/style.json
+#    en 404 le 31/10, donc aucune carte sur aucun site, sans la moindre
+#    erreur à l'écran. Rien ici ne repose sur la place de ce bloc.
+#
+# ⚠️ /carte est à l'application, /carte/* est au relais de tuiles : en Caddy,
+#    `/carte/*` n'attrape pas `/carte` nu. Vérifié par requête, pas déduit.
+@appbzh {
+    host mana.bzh
+    path / /carte /promenades /composer /territoire /reglages /contact /mentions-legales /espace /radio /promenade/* /app/* /paysages/* /images/* /carte-style.json /carte-ortho.json /fermetures.json /icon.svg /manifest.webmanifest /sw.js
+}
+handle @appbzh {
+    root * /srv/www/_app-bzh
+    try_files {path} {path}/index.html /index.html
+    file_server
+}

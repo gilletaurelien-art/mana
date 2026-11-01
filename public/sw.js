@@ -45,7 +45,45 @@
    caches déjà posés pointent vers des fichiers qui n'existent plus : les
    garder ne servirait à rien et occuperait la place. Le ménage d'activation
    les emporte avec l'ancienne clé. */
-const CACHE = "mana-bzh-v4";
+const CACHE = "mana-bzh-v6";
+
+/* ═══════════════════════════════════════════════════════════════════════
+   🔴 CE QUI EST À NOUS — COPIE DE `src/routes.ts`, TENUE PAR UN TEST.
+   ═══════════════════════════════════════════════════════════════════════
+   Sur mana.bzh, cette application partage l'origine avec 63 885 pages
+   d'agrégat servies par l'application historique. Sans cette liste, le
+   service worker :
+     · mettrait en cache CHAQUE navigation, y compris ces 63 885 pages et
+       les réponses en erreur ;
+     · et rendrait NOTRE coquille hors ligne à quelqu'un qui demandait
+       « les associations à Abbeville ».
+   ⭐ Le second défaut est le pire : il a l'air de marcher. Une page
+      s'affiche, elle est jolie, et elle ne répond pas à la question posée.
+      Hors de nos chemins, on préfère échouer franchement — le navigateur
+      dit « hors ligne », ce qui est la vérité.
+   ⚠️ Ce fichier est servi tel quel depuis `public/` : il ne peut pas
+      importer `src/routes.ts`. D'où la copie, et le test qui la tient. */
+const ROUTES_APP = [
+  "/", "/carte", "/promenades", "/composer", "/territoire",
+  "/reglages", "/contact", "/mentions-legales", "/espace", "/radio",
+];
+const PREFIXES_APP = ["/promenade/", "/app/", "/paysages/", "/images/"];
+const FICHIERS_APP = [
+  "/carte-style.json", "/carte-ortho.json", "/fermetures.json",
+  "/icon.svg", "/manifest.webmanifest", "/sw.js",
+];
+
+/** ⚠️ Le périmètre peut être « /mana/ » (GitHub Pages) ou « / » (mana.bzh) :
+ *  on compare le chemin RELATIF au périmètre, jamais le chemin absolu. */
+const BASE = new URL("./", self.location).pathname;
+const relatif = (pathname) =>
+  pathname.startsWith(BASE) ? pathname.slice(BASE.length - 1) : pathname;
+
+const estANous = (pathname) => {
+  const c = relatif(pathname);
+  return ROUTES_APP.includes(c) || FICHIERS_APP.includes(c)
+      || PREFIXES_APP.some((p) => c.startsWith(p));
+};
 
 /** Les origines dont on garde les biens. ⚠️ Liste BLANCHE explicite : un
  *  service worker qui mettrait en cache n'importe quelle origine garderait
@@ -68,7 +106,16 @@ const IMMUABLES = [
         divergent — c'est la seule chose qui tienne une recopie. */
   /\/app\//,
   /\/bretagne\/g\/.*\.json$/,   // le graphe d'un territoire
-  /\/carte\/style\.json$/,
+  /* 🔴 LES FEUILLES DE STYLE, PAR LEUR NOM RÉEL — corrigé le 1/11. Ce motif
+     disait `/carte/style.json`, qui est le chemin de l'application
+     HISTORIQUE. Celle-ci sert `/carte-style.json` et `/carte-ortho.json` :
+     le style n'était donc jamais gardé, et hors ligne la carte ne pouvait
+     même pas démarrer.
+     ⭐ Deuxième motif périmé de la journée, après `/assets/`, et exactement
+        la même cause : un chemin RECOPIÉ ici qui a changé ailleurs. D'où le
+        passage par `FICHIERS_APP`, la copie que le test tient déjà. */
+  new RegExp(`(${FICHIERS_APP.filter((f) => f.endsWith(".json") && f.includes("carte"))
+    .map((f) => f.replace(/[./]/g, "\\$&")).join("|")})$`),
   /* 🔴 `avif` AJOUTÉ LE 31/10/2026 — et son absence était une panne muette.
      La bibliothèque photographique sert de l'AVIF en premier choix (`<source
      type="image/avif">`) : sans cette extension, le navigateur recevait bien
@@ -117,11 +164,19 @@ self.addEventListener("fetch", (event) => {
 
   // ── 1. la coquille : réseau d'abord ───────────────────────────────────────
   if (memeOrigine && (req.mode === "navigate" || url.pathname.endsWith("index.html"))) {
+    /* ⛔ UNE NAVIGATION QUI N'EST PAS À NOUS N'EST PAS LA NÔTRE À SERVIR.
+       On ne la garde pas (elle remplirait le cache de pages d'agrégat), et
+       hors ligne on ne rend surtout pas notre coquille à sa place. */
+    if (!estANous(url.pathname)) return;
     event.respondWith(
       fetch(req)
         .then((res) => {
-          const copie = res.clone();
-          caches.open(CACHE).then((c) => c.put(req, copie));
+          /* ⚠️ `res.ok` : sans ce garde, un 404 ou un 502 se mettait en
+             cache et se resservait hors ligne comme s'il était la page. */
+          if (res.ok) {
+            const copie = res.clone();
+            caches.open(CACHE).then((c) => c.put(req, copie));
+          }
           return res;
         })
         .catch(() => caches.match(req).then((hit) => hit || caches.match("./index.html")))
