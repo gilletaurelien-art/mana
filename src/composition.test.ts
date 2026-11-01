@@ -804,10 +804,28 @@ describe("dire une boucle", () => {
     expect(d).toContain("2 lieux");
   });
 
-  it("dit la répétition et le bord de mer quand ils existent, et se tait sinon", () => {
+  it("dit la répétition quand elle existe, et se tait sinon", () => {
     expect(descriptif(b({ partRepetee: 0.3 }))).toContain("se parcourt deux fois");
     expect(descriptif(b({ partRepetee: 0.02 }))).not.toContain("deux fois");
-    expect(descriptif(b({ bordDeMer: 900 }))).toContain("0.9 km au bord de l'eau");
+  });
+
+  /* 🔴 CE TEST A ÉTÉ RETOURNÉ LE 1/11, PAS SUPPRIMÉ. Il exigeait que le
+     descriptif dise le bord de mer ; il l'exige maintenant de NE PAS le
+     dire. Ce n'est pas un renoncement : vu en production, la ligne de faits
+     annonçait « 610 m au bord de l'eau » et la phrase juste dessous
+     « 0.6 km au bord de l'eau » — le même fait, deux fois, dans deux
+     unités.
+     ⭐ Ce que le test protégeait — « quand il y a de la mer, on le dit » —
+        reste vrai, et c'est la ligne de faits qui le porte désormais, avec
+        son picto. Le second test ci-dessous le tient là où il vit. */
+  it("⛔ et il ne REDIT pas le bord de mer : la ligne de faits le porte", () => {
+    expect(descriptif(b({ bordDeMer: 900 }))).not.toContain("bord de l'eau");
     expect(descriptif(b({ bordDeMer: 100 }))).not.toContain("bord de l'eau");
+  });
+
+  it("la ligne de faits de l'écran, elle, dit la mer dès 300 m", () => {
+    const ecran = readFileSync("src/Composer.tsx", "utf8");
+    expect(ecran).toMatch(/x\.bordDeMer > 300 &&/);
+    expect(ecran).toMatch(/au bord de l'eau/);
   });
 });

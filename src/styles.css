@@ -2638,119 +2638,159 @@ body:has(.jeu) { padding-bottom: 0; }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   /composer — L'ÉCRAN DE COMPOSITION, refondu le 1/11/2026
+   /composer — L'ÉCRAN DE COMPOSITION, refondu le 1/11/2026 sur maquette
    ══════════════════════════════════════════════════════════════════════════
 
-   ⭐ AUCUNE COULEUR NEUVE. Tout vient des jetons posés dans `tokens.css` —
-      kaki, nuit, ocre, craie. Une palette qui s'étend à chaque écran cesse
-      d'être une identité ; celle-ci tient depuis le début et elle suffit.
+   ⭐ AUCUNE COULEUR NEUVE. Tout vient des jetons — kaki, nuit, ocre, craie,
+      or-profond. Une palette qui s'étend à chaque écran cesse d'être une
+      identité ; celle-ci tient depuis le début et elle suffit.
 
-   ⚠️ ET LES CIBLES RESTENT À 44 px AU MOINS. Cet écran se lit debout, dehors,
-      souvent avec une main. Le dessin ne gagne rien à les rétrécir, et un
-      doigt qui rate sa cible sur une falaise n'est pas un détail d'esthétique.
+   ⚠️ L'OCRE D'ACTION NE SE LIT PAS SUR IVOIRE — 3,80, mesuré sur la page
+      déployée. `--action` (#94702e) a été descendu pour qu'un BLANC tienne
+      dessus : c'est une couleur de FOND d'action, pas de texte. Sur ce sol
+      clair, c'est `--or-profond` (4,87). Un test tient la règle.
+
+   ⚠️ ET LES CIBLES RESTENT À 44 px AU MOINS. Cet écran se lit debout,
+      dehors, souvent d'une main.
+
+   🔴 PAS DE REQUÊTE DE MÉDIA : `--colonne` fige TOUTE l'application à
+      440 px. Une requête `min-width: 560px` ne se déclencherait jamais et
+      aurait pourtant l'air d'un dessin responsive — c'est le premier défaut
+      de cette session, et un test du dépôt les refuse.
    ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── le sol ivoire, et SEULEMENT sur cet écran ──────────────────────────────
+   ⛔ On ne redéfinit PAS `.page-panel` globalement : trois autres écrans
+      l'emploient, et une « petite » retouche de surface commune est
+      exactement la manière dont une identité se défait sans décision. */
+.page-composer {
+  position: relative; isolation: isolate; min-height: 100vh;
+  background: var(--craie); color: var(--nuit);
+}
+.page-composer .page-panel {
+  background: rgb(255 255 255 / 55%); color: var(--nuit);
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+  border: 1px solid rgb(25 43 67 / 9%);
+  box-shadow: 0 2px 14px rgb(25 43 67 / 6%);
+}
+.page-composer .page-note,
+.page-composer .page-texte,
+.page-composer .section-title,
+.page-composer h1, .page-composer h2 { color: var(--nuit); }
+.page-composer .page-note { opacity: .82; }
+.page-composer .apercu-label,
+.page-composer a { color: var(--or-profond); }
 
 /* ── A · l'entrée ───────────────────────────────────────────────────────── */
 .cp-entree {
-  position: relative;
-  margin: calc(var(--sp-3) * -1) calc(var(--sp-2) * -1) var(--sp-3);
-  padding: clamp(var(--sp-3), 9vw, 72px) var(--sp-2) clamp(var(--sp-3), 7vw, 56px);
-  overflow: hidden;
-  isolation: isolate;
+  position: relative; isolation: isolate; overflow: hidden;
+  margin: calc(var(--sp-6) * -1) calc(var(--sp-2) * -1) var(--sp-3);
+  padding: clamp(28px, 11vw, 64px) var(--sp-2) clamp(24px, 9vw, 52px);
+  min-height: 60vh; display: flex; align-items: center;
 }
-.cp-entree-fond {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  object-fit: cover; object-position: 70% 50%;
-  z-index: -2;
+.cp-entree-fond, .cp-entree-fond img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; object-position: 72% 50%; z-index: -2;
 }
-/* ⚠️ UN VOILE, PAS UN ASSOMBRISSEMENT UNIFORME. Le texte vit en haut à
-   gauche : c'est là que le voile est dense, et il s'efface vers l'image.
-   Un rectangle noir à 40 % éteindrait la photo pour protéger trois lignes. */
+/* ⭐ UN VOILE QUI LAISSE VOIR. Le texte vit à gauche : le voile y est dense
+   et s'efface vers la côte. Premier jet : un ivoire à 96 % sur toute la
+   largeur — il protégeait trois lignes en éteignant l'image, c'est-à-dire
+   en supprimant la seule raison d'avoir une image. */
 .cp-entree::before {
   content: ""; position: absolute; inset: 0; z-index: -1;
-  background: linear-gradient(105deg,
-    rgb(238 235 221 / 96%) 0%,
-    rgb(238 235 221 / 88%) 38%,
-    rgb(238 235 221 / 30%) 72%,
-    rgb(238 235 221 / 8%) 100%);
+  background: linear-gradient(100deg,
+    rgb(238 235 221 / 94%) 0%,
+    rgb(238 235 221 / 86%) 30%,
+    rgb(238 235 221 / 46%) 58%,
+    rgb(238 235 221 / 6%) 88%);
 }
-.cp-entree-dire { max-width: 34ch; }
+.cp-entree-dire { max-width: 30ch; }
+/* 🔴 `hyphens: manual`, ET CE N'EST PAS UN DÉTAIL DE GOÛT. Le `body` de
+   l'application porte `hyphens: auto` — justifié pour un paragraphe de
+   lecture, ravageur sur un titre : à 45 px dans une boîte de 224, le
+   navigateur rendait « Où vous mè- / neront / vos pas ? », et le chapo
+   « pour décou- / vrir ».
+   ⭐ Une propriété héritée ne se voit nulle part dans la règle qui souffre.
+      Celle-ci venait de deux fichiers plus haut, et seul l'écran l'a dit. */
 .cp-titre {
   margin: 0 0 var(--sp-2);
-  font: 400 clamp(2.1rem, 9vw, 3.4rem)/1.04 var(--titre);
-  color: var(--nuit);
-  text-wrap: balance;
+  font: 400 clamp(2rem, 9.6vw, 3.2rem)/1.04 var(--titre);
+  color: var(--nuit); letter-spacing: -.01em;
+  hyphens: manual; overflow-wrap: normal;
 }
 .cp-chapo {
   margin: 0 0 var(--sp-2);
-  font-size: var(--t-m); line-height: 1.5; color: var(--nuit);
-  max-width: 30ch;
+  font-size: var(--t-s); line-height: 1.55; color: var(--nuit);
+  hyphens: manual;
 }
 .cp-compte {
   display: flex; align-items: center; gap: var(--sp-1);
-  margin: 0; font-size: var(--t-s); color: var(--nuit); opacity: .78;
+  margin: 0; font-size: var(--t-xs); color: var(--nuit); opacity: .8;
 }
-.cp-botte { width: 26px; height: 26px; flex: none; opacity: .72; }
+.cp-botte { width: 30px; height: 30px; flex: none; opacity: .7; }
 
 /* ── B · combien de temps ───────────────────────────────────────────────── */
 .cp-feuille {
-  background: var(--craie);
+  background: rgb(250 248 240 / 96%);
   border: 1px solid rgb(25 43 67 / 8%);
-  border-radius: var(--r-l);
-  box-shadow: 0 2px 14px rgb(25 43 67 / 6%);
+  border-radius: var(--r-xl);
+  box-shadow: 0 6px 26px rgb(25 43 67 / 8%);
   padding: var(--sp-3) var(--sp-2);
   margin-bottom: var(--sp-3);
 }
 .cp-sus {
   display: flex; align-items: center; gap: var(--sp-0);
   margin: 0 0 var(--sp-0);
-  font-size: var(--t-xs); letter-spacing: .12em; text-transform: uppercase;
-  color: var(--or-profond); font-weight: 600;
+  font-size: var(--t-xs); letter-spacing: .14em; text-transform: uppercase;
+  color: var(--or-profond); font-weight: 700;
 }
 .cp-etincelle { width: 18px; height: 18px; flex: none; }
 .cp-question {
   margin: 0 0 var(--sp-2);
-  font: 400 clamp(1.4rem, 5.4vw, 1.9rem)/1.15 var(--titre);
-  color: var(--nuit);
-  text-wrap: balance;
+  font: 400 clamp(1.5rem, 6.4vw, 2.1rem)/1.12 var(--titre);
+  color: var(--nuit); text-wrap: balance;
 }
 
-/* 🔴 PAS DE REQUÊTE DE MÉDIA ICI — et c'est le premier défaut de cette
-   session qui l'interdit. `--colonne` fige TOUTE l'application à 440 px : une
-   requête `min-width: 560px` ne se déclencherait jamais, et elle aurait
-   pourtant l'air d'un dessin responsive. ⭐ Une requête de média mesure la
-   FENÊTRE, jamais le conteneur. Les trois choix s'empilent, et à 440 px
-   c'est de toute façon la bonne forme — trois cartes de 130 px ne se lisent
-   pas. Un test du dépôt refuse ces requêtes ; il a crié, il avait raison. */
-.cp-temps { display: grid; gap: var(--sp-1); margin-bottom: var(--sp-2); }
+/* ⭐ TROIS DE FRONT, comme la maquette — et sans requête de média : une
+   grille à trois fractions tient dans la colonne, à 97 px par carte. Le
+   picto passe AU-DESSUS du texte, parce qu'à cette largeur il n'y a pas la
+   place de le mettre à côté. */
+.cp-temps {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-1); margin-bottom: var(--sp-2);
+}
 .cp-temps-choix {
-  display: flex; flex-direction: column; gap: 2px;
-  min-height: 60px; padding: var(--sp-1) var(--sp-2);
-  text-align: left; cursor: pointer;
-  background: rgb(255 255 255 / 55%);
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  min-height: 92px; padding: var(--sp-1) 4px; cursor: pointer;
+  /* ⚠️ « Environ 6 km » à 14 px mesure 88 px pour 86 px utiles : le mot
+     « km » tombait à la ligne, sur la carte du milieu seulement — donc
+     une carte plus haute que ses deux voisines. Mesuré, pas deviné. */
+  text-align: center; hyphens: manual; text-wrap: nowrap;
+  background: rgb(255 255 255 / 70%);
   border: 1.5px solid rgb(25 43 67 / 10%);
-  border-radius: 14px;
+  border-radius: var(--r-m);
   transition: border-color var(--d-micro) var(--e-doux),
               background var(--d-micro) var(--e-doux);
 }
-.cp-temps-choix:hover { border-color: rgb(148 112 46 / 45%); }
-/* ⭐ L'ÉTAT CHOISI NE TIENT PAS À LA SEULE COULEUR : la bordure épaissit et
-   le fond change. Une bordure dorée seule disparaît pour qui distingue mal
-   les teintes — et `aria-pressed` le dit au lecteur d'écran. */
+.cp-temps-choix .cp-picto { width: 22px; height: 22px; opacity: .55; margin-bottom: 2px; }
+.cp-temps-choix:hover { border-color: rgb(127 96 39 / 45%); }
+/* ⭐ L'ÉTAT CHOISI NE TIENT PAS À LA SEULE COULEUR : la bordure épaissit, le
+   fond change, et `aria-pressed` le dit au lecteur d'écran. Une bordure
+   dorée seule disparaît pour qui distingue mal les teintes. */
 .cp-temps-choix.est-choisi {
   border-color: var(--action); border-width: 2px;
-  background: rgb(198 154 72 / 14%);
+  background: rgb(198 154 72 / 16%);
 }
-.cp-temps-h { font: 600 var(--t-m)/1.2 var(--corps, inherit); color: var(--nuit); }
-.cp-temps-km { font-size: var(--t-s); color: var(--nuit); opacity: .7; }
+.cp-temps-choix.est-choisi .cp-picto { opacity: .85; color: var(--or-profond); }
+.cp-temps-h { font: 700 var(--t-s)/1.2 inherit; color: var(--nuit); }
+.cp-temps-km { font-size: 12px; color: var(--nuit); opacity: .75; }
 
 .cp-actions { display: flex; margin-bottom: var(--sp-1); }
 .cp-primaire {
   display: inline-flex; align-items: center; justify-content: center;
   gap: var(--sp-1);
-  width: 100%; min-height: 56px; padding: 0 var(--sp-3);
-  font: 500 var(--t-m)/1.2 var(--titre);
+  width: 100%; min-height: 60px; padding: 0 var(--sp-3);
+  font: 400 var(--t-m)/1.2 var(--titre);
   color: var(--action-texte); background: var(--kaki);
   border: 0; border-radius: var(--r-rond); cursor: pointer;
   box-shadow: var(--ombre-levee);
@@ -2764,11 +2804,13 @@ body:has(.jeu) { padding-bottom: 0; }
 
 .cp-second { margin: 0 0 var(--sp-1); text-align: center; }
 .cp-lien {
+  display: inline-flex; align-items: center; gap: 6px;
   min-height: 44px; padding: 0 var(--sp-1);
   background: none; border: 0; cursor: pointer;
   font-size: var(--t-s); color: var(--or-profond);
-  text-decoration: underline; text-underline-offset: 3px;
+  text-decoration: underline; text-underline-offset: 4px;
 }
+.cp-lien .cp-picto { width: 17px; height: 17px; }
 .cp-plus { margin-top: var(--sp-2); }
 .cp-plus > summary {
   min-height: 44px; display: flex; align-items: center;
@@ -2777,114 +2819,76 @@ body:has(.jeu) { padding-bottom: 0; }
 
 /* ── C · les trois propositions ─────────────────────────────────────────── */
 .cp-propositions { margin-bottom: var(--sp-3); }
-.cp-cartes {
-  list-style: none; margin: 0; padding: 0;
-  display: grid; gap: var(--sp-2);
-}
+.cp-cartes { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-2); }
+
 .cp-carte {
-  display: flex; flex-direction: column; width: 100%; height: 100%;
-  padding: 0; overflow: hidden; text-align: left; cursor: pointer;
-  background: var(--craie);
+  position: relative; display: block; width: 100%; padding: 0;
+  overflow: hidden; text-align: left; cursor: pointer;
+  background: rgb(250 248 240 / 96%);
   border: 1.5px solid rgb(25 43 67 / 9%);
-  border-radius: var(--r-l);
-  box-shadow: 0 2px 14px rgb(25 43 67 / 6%);
+  border-radius: var(--r-xl);
+  box-shadow: 0 4px 18px rgb(25 43 67 / 7%);
   transition: border-color var(--d-micro) var(--e-doux),
               box-shadow var(--d-micro) var(--e-doux),
               transform var(--d-micro) var(--e-doux);
 }
-.cp-carte:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgb(25 43 67 / 12%); }
+.cp-carte:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgb(25 43 67 / 13%); }
 .cp-carte.est-choisie { border-color: var(--action); border-width: 2px; }
 
-/* ⛔ CE N'EST PAS UNE PHOTOGRAPHIE, C'EST LE TRACÉ. Le fond kaki le dit :
-   personne ne prend une silhouette dorée sur kaki pour une vue de la côte. */
-.cp-carte-trace {
-  display: block; background: var(--kaki);
-  padding: var(--sp-1) 0;
-}
+/* ⛔ CE N'EST PAS UNE PHOTOGRAPHIE, C'EST LE TRACÉ — et le fond kaki le dit :
+   personne ne prend une silhouette dorée sur kaki pour une vue de la côte.
+   La maquette demande « une photographie du paysage réellement traversé » :
+   nous n'en avons aucune, et cette boucle n'existait pas il y a trois
+   secondes. */
+.cp-carte-trace { display: block; background: var(--kaki); padding: var(--sp-1) 0; }
 .cp-carte-trace svg { display: block; width: 100%; height: auto; }
 .cp-carte-trace path { stroke: var(--ocre); }
 .cp-carte-trace circle { fill: var(--craie); }
 
-.cp-carte-dire { display: block; padding: var(--sp-2); }
+.cp-carte-dire { display: block; padding: var(--sp-2) 52px var(--sp-2) var(--sp-2); }
 .cp-carte-titre {
-  display: block; margin-bottom: var(--sp-0);
-  font: 400 clamp(1.15rem, 4.6vw, 1.35rem)/1.2 var(--titre);
-  color: var(--nuit);
+  display: block; margin-bottom: var(--sp-1);
+  font: 400 clamp(1.25rem, 5.4vw, 1.5rem)/1.16 var(--titre);
+  color: var(--nuit); text-wrap: balance;
 }
 .cp-carte-faits {
-  display: flex; flex-wrap: wrap; gap: var(--sp-0) var(--sp-1);
+  display: flex; flex-direction: column; gap: 5px;
   margin-bottom: var(--sp-1);
-  font-size: var(--t-s); color: var(--nuit); opacity: .8;
+  font-size: var(--t-s); color: var(--nuit); opacity: .85;
 }
+.cp-carte-faits > span { display: flex; align-items: center; gap: 7px; }
+.cp-carte-faits .cp-picto { width: 17px; height: 17px; opacity: .65; }
 .cp-carte-faits .cp-alerte { color: var(--or-profond); opacity: 1; font-weight: 600; }
+.cp-carte-faits .cp-alerte .cp-picto { opacity: 1; }
 .cp-carte-texte {
   display: block; font-size: var(--t-s); line-height: 1.5;
-  color: var(--nuit); opacity: .82;
+  color: var(--nuit); opacity: .78;
 }
+/* la flèche de la maquette : un repère de lecture, pas une seconde cible —
+   toute la carte est cliquable, elle n'est donc pas un bouton de plus */
+.cp-carte-fleche {
+  position: absolute; right: var(--sp-2); bottom: var(--sp-2);
+  width: 38px; height: 38px; border-radius: var(--r-rond);
+  display: flex; align-items: center; justify-content: center;
+  background: rgb(198 154 72 / 18%); color: var(--or-profond);
+}
+.cp-carte-fleche svg { width: 20px; height: 20px; }
+.cp-carte.est-choisie .cp-carte-fleche { background: var(--action); color: var(--action-texte); }
 
 /* ── D · ce qu'on emporte ───────────────────────────────────────────────── */
-.cp-emporter {
-  display: flex; flex-wrap: wrap; gap: var(--sp-1);
-  margin-top: var(--sp-2);
-}
-.cp-emporter .cp-primaire { width: auto; flex: 1 1 14rem; }
+.cp-emporter { display: flex; flex-wrap: wrap; gap: var(--sp-1); margin-top: var(--sp-2); }
+.cp-emporter .cp-primaire { width: auto; flex: 1 1 15rem; }
 .cp-secondaire {
-  flex: 1 1 10rem; min-height: 56px; padding: 0 var(--sp-2);
-  font: 500 var(--t-m)/1.2 var(--titre);
-  color: var(--nuit); background: none;
-  border: 1.5px solid rgb(25 43 67 / 18%); border-radius: var(--r-rond);
+  flex: 1 1 10rem; min-height: 60px; padding: 0 var(--sp-2);
+  font: 400 var(--t-m)/1.2 var(--titre);
+  color: var(--nuit); background: rgb(255 255 255 / 60%);
+  border: 1.5px solid rgb(25 43 67 / 16%); border-radius: var(--r-rond);
   cursor: pointer;
   transition: border-color var(--d-micro) var(--e-doux);
 }
 .cp-secondaire:hover { border-color: var(--nuit); }
 
-:where(.cp-temps-choix, .cp-carte, .cp-primaire, .cp-secondaire, .cp-lien):focus-visible {
-  outline: 2px solid var(--ocre); outline-offset: 3px;
-}
-/* ⚠️ Quelqu'un qui a demandé moins d'animation en a demandé MOINS, pas une
-   version plus rapide. On retire le mouvement, on garde l'état. */
-@media (prefers-reduced-motion: reduce) {
-  .cp-carte, .cp-primaire, .cp-temps-choix { transition: none; }
-  .cp-carte:hover { transform: none; }
-}
-
-/* ── LE SOL IVOIRE, ET SEULEMENT SUR CET ÉCRAN ──────────────────────────────
-   ⭐ La maquette demande un fond ivoire chaud. Le reste de l'application vit
-      sur le fond tournant, derrière des panneaux de verre — c'est son
-      identité, et le brief dit de ne pas toucher aux autres pages.
-   ⚠️ La classe est donc portée par le `<main>` de CE seul écran. Tout ce qui
-      suit est descendant de `.page-composer` : rien ne peut fuir ailleurs,
-      et c'est vérifiable d'un coup d'œil au sélecteur.
-   ⛔ On ne redéfinit PAS `.page-panel` globalement : trois autres écrans
-      l'emploient, et une « petite » retouche de surface commune est
-      exactement la manière dont une identité se défait sans que personne ne
-      l'ait décidé. */
-.page-composer {
-  position: relative;
-  background: var(--craie);
-  color: var(--nuit);
-  /* le fond tournant ne doit pas transparaître sous l'ivoire */
-  isolation: isolate;
-  min-height: 100vh;
-}
-.page-composer .page-panel {
-  background: rgb(255 255 255 / 55%);
-  color: var(--nuit);
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-  border: 1px solid rgb(25 43 67 / 9%);
-  box-shadow: 0 2px 14px rgb(25 43 67 / 6%);
-}
-.page-composer .page-note,
-.page-composer .page-texte,
-.page-composer .apercu-label,
-.page-composer .section-title,
-.page-composer h1, .page-composer h2 { color: var(--nuit); }
-.page-composer .page-note { opacity: .82; }
-/* ⚠️ Les liens doivent rester visibles sur ivoire : `--craie` était leur
-   couleur sur fond sombre, elle disparaîtrait ici. */
-
-/* les arrêtés : le fait dehors, les quatre décisions à un tap */
+/* les arrêtés : le fait dehors, les décisions à un tap */
 .cp-arretes > summary {
   min-height: 44px; display: flex; align-items: center;
   cursor: pointer; color: var(--or-profond);
@@ -2893,15 +2897,13 @@ body:has(.jeu) { padding-bottom: 0; }
 .cp-arretes ul { margin: var(--sp-0) 0 0; padding-left: 1.2em; }
 .cp-arretes li { margin-bottom: var(--sp-0); }
 
-/* 🔴 L'OCRE D'ACTION NE SE LIT PAS SUR IVOIRE — 3,80, mesuré sur l'écran
-   déployé. `--action` (#94702e) a été descendu pour qu'un BLANC tienne
-   dessus (4,55) : c'est une couleur de FOND d'action, et je l'avais prise
-   pour une couleur de TEXTE d'action. ⭐ Un rôle de jeton s'inverse sans
-   bruit quand on change la surface sous lui — et cet écran se lit dehors,
-   en plein jour, là où un contraste faible ne pardonne pas.
-   ⚠️ `--or-profond` existe déjà : 5,19 sur ivoire. Aucune couleur neuve. */
-.page-composer .cp-sus,
-.page-composer .cp-lien,
-.page-composer .cp-arretes > summary,
-.page-composer .apercu-label,
-.page-composer a { color: var(--or-profond); }
+:where(.cp-temps-choix, .cp-carte, .cp-primaire, .cp-secondaire, .cp-lien,
+       .cp-plus > summary, .cp-arretes > summary):focus-visible {
+  outline: 2px solid var(--ocre); outline-offset: 3px;
+}
+/* ⚠️ Quelqu'un qui a demandé moins d'animation en a demandé MOINS, pas une
+   version plus rapide. On retire le mouvement, on garde l'état. */
+@media (prefers-reduced-motion: reduce) {
+  .cp-carte, .cp-primaire, .cp-temps-choix { transition: none; }
+  .cp-carte:hover { transform: none; }
+}

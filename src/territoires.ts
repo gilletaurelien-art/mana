@@ -16,14 +16,23 @@
 export interface Territoire {
   /** le nom du fichier servi, sans extension */ slug: string;
   nom: string;
+  /** ⭐ L'ARTICLE VIT AVEC LE NOM, PAS DANS LA PHRASE QUI L'EMPLOIE.
+   *  « À la découverte de » + « Presqu'île de Crozon » donne « de Presqu'île
+   *  de Crozon » — vu en production le 1/11. Et aucune règle automatique ne
+   *  s'en sort : il faudrait « de la Presqu'île » mais « de l'Aulne », et
+   *  demain un territoire masculin voudra « du ». ⛔ Deviner le genre d'un
+   *  toponyme est une heuristique qui se trompe en silence. On l'écrit. */
+  avecArticle: string;
   /** [ouest, sud, est, nord] — l'emprise moissonnée */
   emprise: [number, number, number, number];
 }
 
 export const TERRITOIRES: Territoire[] = [
   { slug: "presquile", nom: "Presqu'île de Crozon",
+    avecArticle: "la presqu'île de Crozon",
     emprise: [-4.6240, 48.1673, -4.2554, 48.3374] },
   { slug: "aulne", nom: "Aulne maritime",
+    avecArticle: "l'Aulne maritime",
     emprise: [-4.3200, 48.1673, -4.0210, 48.3520] },
 ];
 

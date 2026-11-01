@@ -57,3 +57,21 @@ describe("le choix du territoire", () => {
       .toBe("https://mana.bzh/bretagne/g/presquile.json");
   });
 });
+
+describe("l'article du territoire", () => {
+  /* 🔴 « À la découverte de Presqu'île de Crozon » — vu en production le
+     1/11. L'écran concaténait « de » et le NOM, qui n'a pas d'article.
+     ⛔ Et aucune règle automatique ne s'en sort : « de la Presqu'île » mais
+     « de l'Aulne », et demain un territoire masculin voudra « du ». Deviner
+     le genre d'un toponyme est une heuristique qui se trompe en silence —
+     sur le nom d'un lieu, devant les gens qui y vivent. On l'écrit. */
+  it("chaque territoire porte son article, et il s'enchaîne après « de »", () => {
+    for (const t of TERRITOIRES) {
+      expect(t.avecArticle, `${t.slug} n'a pas d'article`).toBeTruthy();
+      // ⛔ un article, pas une recopie du nom
+      expect(t.avecArticle).not.toBe(t.nom);
+      expect(`À la découverte de ${t.avecArticle}`)
+        .toMatch(/de (la |le |l'|les )/);
+    }
+  });
+});

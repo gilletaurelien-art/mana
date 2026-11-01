@@ -110,6 +110,64 @@ function SvgTelecharger() {
   );
 }
 
+/* ⭐ LES PICTOS SONT DESSINÉS ICI, pas importés. Six traits chacun, aucune
+   bibliothèque d'icônes dans le paquet, et chacun dit exactement la mesure
+   qu'il accompagne — l'horloge le temps, la vague la mer, l'étincelle les
+   rencontres. ⚠️ Tous `aria-hidden` : ils doublent un texte, ils ne le
+   remplacent jamais. Un picto seul n'est lisible par personne. */
+function SvgHorloge() {
+  return (
+    <svg className="cp-picto" viewBox="0 0 24 24" aria-hidden="true"
+         fill="none" stroke="currentColor" strokeWidth="1.5"
+         strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 1.8" />
+    </svg>
+  );
+}
+
+function SvgBoussole() {
+  return (
+    <svg className="cp-picto" viewBox="0 0 24 24" aria-hidden="true"
+         fill="none" stroke="currentColor" strokeWidth="1.6"
+         strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="8.5" /><path d="M15.2 8.8l-2 4.4-4.4 2 2-4.4z" />
+    </svg>
+  );
+}
+
+function SvgRepere() {
+  return (
+    <svg className="cp-picto" viewBox="0 0 24 24" aria-hidden="true"
+         fill="none" stroke="currentColor" strokeWidth="1.6"
+         strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 21s6.5-6 6.5-10.5a6.5 6.5 0 1 0-13 0C5.5 15 12 21 12 21z" />
+      <circle cx="12" cy="10.2" r="2.4" />
+    </svg>
+  );
+}
+
+function SvgVague() {
+  return (
+    <svg className="cp-picto" viewBox="0 0 24 24" aria-hidden="true"
+         fill="none" stroke="currentColor" strokeWidth="1.6"
+         strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 9c2.2-2 4.3-2 6.5 0s4.3 2 6.5 0 4.3-2 6.5 0" />
+      <path d="M2 14c2.2-2 4.3-2 6.5 0s4.3 2 6.5 0 4.3-2 6.5 0" />
+      <path d="M2 19c2.2-2 4.3-2 6.5 0s4.3 2 6.5 0 4.3-2 6.5 0" />
+    </svg>
+  );
+}
+
+function SvgFleche() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true"
+         fill="none" stroke="currentColor" strokeWidth="1.8"
+         strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 12h13" /><path d="M13 7l5 5-5 5" />
+    </svg>
+  );
+}
+
 function SvgBotte() {
   return (
     <svg className="cp-botte" viewBox="0 0 24 24" aria-hidden="true"
@@ -384,16 +442,28 @@ export function Composer() {
                rotation toutes les trois secondes derrière un texte qu'on est
                en train de choisir est une distraction, pas une ambiance. */}
         <header className="cp-entree">
-          <img className="cp-entree-fond" src={`${import.meta.env.BASE_URL}paysages/fond-13-1280.webp`}
-               alt="" aria-hidden="true" decoding="async" />
+          {/* ⛔ C'EST UNE ILLUSTRATION, PAS UNE PHOTOGRAPHIE, et c'est pourquoi
+              elle passe par `paysages/` et non par `images/Photo.tsx` — dont
+              tout le contrat consiste à AFFIRMER un lieu. Elle évoque la
+              Bretagne ; elle ne documente aucun endroit, et rien ici ne
+              prétend le contraire.
+              ⚠️ `fond-07` plutôt que la première venue : la côte, le sentier
+                 d'ajoncs, l'anse. La veille j'avais pris `fond-13` — une
+                 rivière en sous-bois avec un chevreuil. Juste comme image,
+                 faux comme promesse : cet écran parle de marcher ici. */}
+          <picture className="cp-entree-fond">
+            <source srcSet={`${import.meta.env.BASE_URL}paysages/fond-07-1280.avif`} type="image/avif" />
+            <img src={`${import.meta.env.BASE_URL}paysages/fond-07-1280.webp`}
+                 alt="" aria-hidden="true" decoding="async" />
+          </picture>
           <div className="cp-entree-dire">
             <h1 className="cp-titre">
-              {cible ? <>Vers {cible.nom}</> : <>Où vous mèneront vos&nbsp;pas&nbsp;?</>}
+              {cible ? <>Vers {cible.nom}</> : <>Où vous mèneront<br />vos&nbsp;pas&nbsp;?</>}
             </h1>
             <p className="cp-chapo">
               {cible
                 ? <>Une promenade depuis où vous êtes qui passe <strong>devant</strong> ce lieu, et vous ramène.</>
-                : <>Une promenade depuis où vous êtes, par les chemins, pour découvrir ce qui se trouve sur votre route.</>}
+                : <>Une promenade depuis où vous êtes,<br />par les chemins, pour découvrir<br />ce qui se trouve sur votre route.</>}
             </p>
             {/* ⭐ LES DEUX NOMBRES SONT COMPTÉS DANS L'ARTEFACT CHARGÉ, jamais
                 écrits à la main : ils changent à chaque moisson, et une
@@ -401,8 +471,10 @@ export function Composer() {
             {graphe && (
               <p className="cp-compte">
                 <SvgBotte />
-                {graphe.a.length.toLocaleString("fr-FR")} tronçons de chemin
-                {" · "}{graphe.l.length} lieux remarquables
+                <span>
+                  {graphe.a.length.toLocaleString("fr-FR")} tronçons de chemin
+                  {" · "}{graphe.l.length} lieux remarquables
+                </span>
               </p>
             )}
           </div>
@@ -432,6 +504,7 @@ export function Composer() {
                   aria-pressed={heures === h}
                   onClick={() => setHeures(h)}
                 >
+                  <SvgHorloge />
                   <span className="cp-temps-h">{h} heure{h > 1 ? "s" : ""}</span>
                   <span className="cp-temps-km">
                     Environ {Math.round(budget(h) / 1000)} km
@@ -442,7 +515,7 @@ export function Composer() {
 
             <div className="cp-actions">
               <button className="cp-primaire" onClick={lancer} disabled={!ix}>
-                {cible ? "M'y emmener" : "Composer ma promenade"}
+                <SvgBoussole />{cible ? "M'y emmener" : "Composer ma promenade"}
               </button>
             </div>
 
@@ -451,6 +524,7 @@ export function Composer() {
                 part quand on ne le sait pas. */}
             <p className="cp-second">
               <button className="cp-lien" onClick={localiser}>
+                <SvgRepere />
                 {situe ? "Je préfère choisir un autre point de départ"
                        : "Partir d'où je suis"}
               </button>
@@ -718,7 +792,12 @@ export function Composer() {
         {boucles && boucles.length > 1 && (
           <section className="cp-propositions">
             <p className="cp-sus"><SvgEtincelle />Trois propositions</p>
-            <h2 className="cp-question">Trois façons de marcher autant</h2>
+            {/* ⭐ LE NOM VIENT DU TERRITOIRE CHARGÉ, pas d'une chaîne écrite
+                ici : c'est `territoires.ts` qui sait de quel graphe on
+                compose, et il le sait parce qu'il a tranché la couture. */}
+            <h2 className="cp-question">
+              À la découverte de {(territoireDe(position[0], position[1]) ?? DEFAUT).avecArticle}
+            </h2>
 
             <ul className="cp-cartes">
               {(() => { const noms = intitules(boucles.slice(0, 3)); return boucles.slice(0, 3).map((x, i) => {
@@ -742,12 +821,24 @@ export function Composer() {
                       </span>
                       <span className="cp-carte-dire">
                         <span className="cp-carte-titre">{noms[i]}</span>
+                        {/* ⚠️ CHAQUE LIGNE EST UNE MESURE, et son picto dit
+                            laquelle — la distance, les rencontres, la mer.
+                            Une ligne qui n'a rien à dire ne s'affiche pas :
+                            « 0 m au bord de l'eau » est du remplissage. */}
                         <span className="cp-carte-faits">
-                          <span>{(x.metres / 1000).toFixed(1)} km · {heuresDe(x)}</span>
-                          <span>{FORME[formeDeLaBoucle(x.etalement)]}</span>
-                          {x.marees > 0 && <span className="cp-alerte">un passage dépend de la marée</span>}
+                          <span><SvgRepere />{(x.metres / 1000).toFixed(1)} km · {heuresDe(x)}</span>
+                          <span><SvgEtincelle />{x.lieux.length} lieu{x.lieux.length > 1 ? "x" : ""} · {FORME[formeDeLaBoucle(x.etalement)]}</span>
+                          {x.bordDeMer > 300 && (
+                            <span><SvgVague />{Math.round(x.bordDeMer)} m au bord de l'eau</span>
+                          )}
+                          {x.marees > 0 && (
+                            <span className="cp-alerte"><SvgVague />un passage dépend de la marée</span>
+                          )}
                         </span>
                         <span className="cp-carte-texte">{descriptif(x)}</span>
+                      </span>
+                      <span className="cp-carte-fleche" aria-hidden="true">
+                        <SvgFleche />
                       </span>
                     </button>
                   </li>

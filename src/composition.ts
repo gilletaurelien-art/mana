@@ -962,9 +962,13 @@ export function descriptif(b: Boucle): string {
     bouts.push("Aucun lieu remarquable recensé sur ce tracé.");
   }
 
-  if (b.bordDeMer > 300) {
-    bouts.push(`${(b.bordDeMer / 1000).toFixed(1)} km au bord de l'eau.`);
-  }
+  /* 🔴 LE BORD DE MER N'EST PLUS DIT ICI — vu en production le 1/11 : la
+     ligne de faits annonçait « 610 m au bord de l'eau » et la phrase
+     juste dessous « 0.6 km au bord de l'eau ». Le même fait, deux fois,
+     dans deux unités. ⭐ C'est la faute de ce matin sous une autre forme :
+     un résumé qui redit son propre détail. La ligne de faits le porte,
+     avec son picto ; cette phrase dit ce qu'elle seule sait — les lieux
+     NOMMÉS, et la répétition d'un tronçon. */
   if (b.partRepetee > 0.1) {
     bouts.push("Une portion se parcourt deux fois.");
   }
