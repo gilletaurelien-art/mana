@@ -26,7 +26,7 @@ const DIFFICULTE: Record<string, string> = {
   facile: "Facile", moyen: "Moyen", difficile: "Difficile",
 };
 
-export function InvitationBalade({ base }: { base: string }) {
+export function InvitationBalade() {
   const [w, setW] = useState<ItineraireOT | null>(null);
 
   useEffect(() => {
@@ -94,29 +94,14 @@ export function InvitationBalade({ base }: { base: string }) {
         {" · chiffres déclarés · "}{ATTRIBUTION[lireFond()]}
       </p>
 
-      {/* 🔴 « EN SAVOIR PLUS » EST PARTI — 1/11. Il menait à `w.source`, c'est-
-          à-dire EXACTEMENT où mène déjà le crédit « Office de tourisme ↗ »
-          deux lignes plus haut. Deux contrôles, une destination, sur une
-          fiche de cinq lignes.
-          ⭐ Le doublon n'était pas celui qu'on croyait : ce n'est pas « En
-             savoir plus » et « Voir sur la carte » qui se répétaient — elles
-             mènent à deux endroits différents, l'Office et notre territoire —
-             c'est « En savoir plus » et le CRÉDIT. Un bouton et un lien
-             discret se ressemblent si peu qu'on ne les compare pas ; seule
-             l'URL le dit.
-          ⚠️ Et c'est le bouton qui part, pas le crédit : le crédit est une
-             obligation, le bouton était un confort. */}
-      <div className="inv-balade-actions">
-        <a className="m-action inv-balade-lien" href={`${base}/carte`}>
-          <svg className="m-icone" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M9 4 3 6.5v13L9 17l6 3 6-2.5v-13L15 7z" /><path d="M9 4v13M15 7v13" />
-          </svg>
-          Voir sur la carte
-          <span className="inv-fleche" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M5 12h12" /><path d="m12 6 6 6-6 6" /></svg>
-          </span>
-        </a>
-      </div>
+      {/* ⛔ LA FICHE NE PORTE PLUS D'ACTION — 1/11. Les deux boutons sont
+          remontés dans `Invitation`, juste en dessous.
+          ⭐ LA RAISON N'EST PAS LA MISE EN PAGE, C'EST LA ROBUSTESSE : cette
+             fiche n'apparaît qu'une fois `ot.json` arrivé (259 Ko, à la
+             demande). Des actions enfermées dedans faisaient dépendre LA
+             SEULE PORTE DE L'ACCUEIL d'un artefact qui peut ne pas arriver —
+             un accueil sans bouton, et rien pour le dire. Les boutons vivent
+             donc dans l'écran, la fiche les surmonte. */}
     </article>
   );
 }

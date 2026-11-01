@@ -83,34 +83,42 @@ export function Invitation({ base }: { base: string }) {
           </p>
         </div>
 
-        <div className="inv-gestes">
-          {/* ⭐ UN <a>, PLUS UN <button> — ET C'EST LA MÊME RÈGLE QU'AVANT,
-              retournée. Le commentaire d'hier disait « un <button>, pas un
-              <a> : il demande une permission, il ne mène pas à une adresse ».
-              Il mène désormais à une adresse : c'est donc un lien, et le clic
-              du milieu, « ouvrir dans un nouvel onglet » et la navigation au
-              clavier redeviennent possibles.
-              ⚠️ La règle ne change pas, c'est l'élément qui a changé de
-                 nature. Garder le <button> « parce qu'il a l'air d'un bouton »
-                 aurait cassé trois gestes que personne n'aurait signalés. */}
-          <a className="inv-primaire" href={`${base}/carte`}>
-            <svg className="m-icone inv-pin" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z" />
-              <circle cx="12" cy="10" r="2.6" />
-            </svg>
-            <span className="inv-primaire-mot">Voir les balades</span>
-            <span className="inv-fleche" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M5 12h12" /><path d="m12 6 6 6-6 6" /></svg>
-            </span>
-          </a>
-        </div>
-
         {/* ⭐ LA FICHE DU TERRITOIRE, SUR L'ACCUEIL. C'est la même feuille que
             l'écran suivant — mêmes chiffres, mêmes mentions, même dessin : le
             seul moyen que l'accueil ne promette pas autre chose que ce qu'on
             trouvera. ⚠️ Elle arrive après le premier rendu et ne porte rien :
             si `ot.json` n'arrive pas, l'accueil reste entier. */}
-        <InvitationBalade base={base} />
+        <InvitationBalade />
+
+        {/* ⭐ LES DEUX PORTES, CÔTE À CÔTE ET AU MÊME FORMAT — 1/11.
+            « Les balades » ouvre le jeu de fiches, « La carte » ouvre le
+            territoire. ⚠️ ELLES MENAIENT TOUTES DEUX À `/carte` jusqu'ici :
+            deux boutons voisins vers la même page, que seul le libellé
+            distinguait. La carte a désormais son adresse (`?vue=carte`), donc
+            les deux portes mènent vraiment à deux endroits.
+            ⚠️ Et elles vivent ICI, pas dans la fiche : la fiche dépend de
+               259 Ko chargés à la demande, les portes de l'accueil non. */}
+        <nav className="inv-portes" aria-label="Entrer">
+          <a className="inv-primaire" href={`${base}/carte`}>
+            <svg className="m-icone inv-pin" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z" />
+              <circle cx="12" cy="10" r="2.6" />
+            </svg>
+            <span className="inv-primaire-mot">Les balades</span>
+            <span className="inv-fleche" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M5 12h12" /><path d="m12 6 6 6-6 6" /></svg>
+            </span>
+          </a>
+          <a className="inv-primaire" href={`${base}/carte?vue=carte`}>
+            <svg className="m-icone inv-pin" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 4 3 6.5v13L9 17l6 3 6-2.5v-13L15 7z" /><path d="M9 4v13M15 7v13" />
+            </svg>
+            <span className="inv-primaire-mot">La carte</span>
+            <span className="inv-fleche" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M5 12h12" /><path d="m12 6 6 6-6 6" /></svg>
+            </span>
+          </a>
+        </nav>
       </div>
     </section>
   );

@@ -240,6 +240,30 @@ describe("le jeu de cartes des balades", () => {
     expect(net).not.toMatch(/balade du jour|coup de c(œ|oe)ur|sélection/i);
   });
 
+  /**
+   * 🔴 LES DEUX PORTES DE L'ACCUEIL MENAIENT AU MÊME ENDROIT. « Voir les
+   *    balades » et « Voir sur la carte » pointaient toutes deux `/carte` :
+   *    deux boutons voisins, une seule destination, que seul le libellé
+   *    distinguait. ⭐ Deux contrôles côte à côte se comparent par leur
+   *    LIBELLÉ, jamais par leur URL — c'est ce qui rend ce doublon-là
+   *    invisible, et c'est le fondateur qui l'a vu, pas les tests.
+   * ⚠️ La carte du territoire n'était qu'un ÉTAT interne : elle a désormais
+   *    une adresse (`?vue=carte`), sans quoi on ne pouvait pas y mener.
+   */
+  it("les deux portes de l'accueil mènent à deux endroits", () => {
+    const inv = readFileSync(new URL("./Invitation.tsx", import.meta.url), "utf8");
+    const net = inv.replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
+    const liens = [...net.matchAll(/href=\{`\$\{base\}([^`]*)`\}/g)].map((m) => m[1]);
+    const portes = liens.filter((h) => h.startsWith("/carte"));
+    expect(portes.length).toBe(2);
+    expect(new Set(portes).size, `les deux portes pointent ${portes[0]}`).toBe(2);
+    expect(portes).toContain("/carte?vue=carte");
+
+    // ⭐ et l'écran sait entrer par cette adresse, sinon le lien ment
+    const ecran = readFileSync(new URL("./EcranTerritoire.tsx", import.meta.url), "utf8");
+    expect(ecran).toMatch(/get\("vue"\) === "carte"/);
+  });
+
   /** ⛔ « À proximité » n'est pas « sur le chemin » : le seuil est DIT. */
   it("dit le seuil quand il cite des sites proches", () => {
     expect(code).toMatch(/SEUIL_PROCHES/);

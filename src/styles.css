@@ -2498,3 +2498,19 @@ body:has(.jeu) { padding-bottom: 0; }
 .inv-balade-lien .m-icone { width: 17px; height: 17px; flex: none; }
 .inv-balade-lien .inv-fleche { width: 22px; height: 22px; }
 .inv-balade-lien .inv-fleche svg { width: 18px; height: 18px; }
+
+/* ── LES DEUX PORTES DE L'ACCUEIL ────────────────────────────────────────
+   ⭐ Même format pour les deux : ce sont deux entrées de même rang, pas une
+      principale et une secondaire. Les distinguer par le dessin dirait une
+      hiérarchie qui n'existe pas. */
+.inv-portes {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  margin-top: var(--sp-3);
+}
+/* ⚠️ `.inv-primaire` s'ajuste à son contenu (`width: fit-content`) : les deux
+   portes n'ont donc PAS la même largeur — « Les balades » et « La carte »
+   n'ont pas le même nombre de lettres. ⭐ « Au même format » veut dire même
+   matière, même hauteur, même dessin — pas même largeur : égaliser à la plus
+   longue laisserait un vide dans l'autre, et un bouton à moitié vide se lit
+   comme un bouton qui attend quelque chose. */
+.inv-portes .inv-primaire { padding-right: var(--sp-2); }

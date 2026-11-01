@@ -19,7 +19,23 @@ const Territoire2030 = lazy(() =>
 );
 
 export function EcranTerritoire({ base }: { base: string }) {
-  const [vue, setVue] = useState<"jeu" | "carte">("jeu");
+  /**
+   * ⭐ LA CARTE DU TERRITOIRE A UNE ADRESSE — `?vue=carte` (1/11).
+   *    Elle n'était qu'un ÉTAT à l'intérieur de cet écran : on ne pouvait
+   *    donc pas y mener depuis ailleurs, et deux boutons posés côte à côte
+   *    sur l'accueil auraient abouti au même endroit sans qu'on le voie.
+   * ⚠️ C'est une lecture À L'OUVERTURE, pas une synchronisation : le bouton
+   *    de repli continue de changer la vue sans toucher à l'URL. Tenir les
+   *    deux en miroir demanderait une histoire de navigation que cet écran
+   *    n'a pas, et un retour arrière qui mentirait à moitié vaut moins
+   *    qu'une URL qui ne sert qu'à entrer.
+   */
+  const [vue, setVue] = useState<"jeu" | "carte">(() => {
+    try {
+      return new URLSearchParams(window.location.search).get("vue") === "carte"
+        ? "carte" : "jeu";
+    } catch { return "jeu"; }
+  });
   /** le point sur lequel la carte s'ouvre, quand on y arrive d'une balade */
   const [centre, setCentre] = useState<[number, number] | undefined>();
 
