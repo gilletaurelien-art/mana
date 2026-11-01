@@ -49,6 +49,20 @@ const SEUIL_RESEAU = 50;
 const BASE = import.meta.env.VITE_GRAPHE_BASE ?? "https://mana.bzh/bretagne/g";
 
 /** ⚠️ 3 km/h, pas 4. Une promenade s'arrête, regarde, revient sur ses pas. */
+/* 🔴 L'ALLURE N'EST PLUS UNE CIBLE — 2/11, arbitrage du fondateur :
+   « certains sont lents, certains marchent vite. La pertinence est la
+   distance. Ne pas surestimer ou sous-estimer la durée. »
+   ⭐ Et c'est la suite logique de ce qu'on a mesuré la veille : les 36 989
+      arêtes des deux graphes ne portent AUCUN dénivelé, donc la durée était
+      calculée à plat, donc fausse dès que ça monte. On annonçait un chiffre
+      qu'on ne savait pas faire. Un kilomètre, lui, est un kilomètre.
+   ⚠️ IL NE RESTE QU'UN USAGE, ET IL N'EST PAS AFFICHÉ : le type `Walk` exige
+      `dureeEstimeeH`, que cet écran ne montre nulle part. On le remplit
+      plutôt que de mentir avec un zéro — un zéro se lirait « instantané »
+      si un autre écran s'y fiait un jour.
+   ⛔ Et j'ai failli laisser ici un commentaire disant qu'il servait au
+      message « trop loin » : vrai dix minutes, faux dès la conversion de ce
+      message en kilomètres. Une note qui décrit un usage meurt avec lui. */
 const ALLURE_KMH = 3;
 
 /**
@@ -59,7 +73,12 @@ const ALLURE_KMH = 3;
  *    C'est le seul endroit où le dénivelé doit agir : il n'est pas un
  *    désagrément, c'est de l'effort. Le point de vue est en haut.
  */
-const budget = (heures: number) => heures * ALLURE_KMH * 1000;
+/** ⚠️ Accents et casse retirés : « ile vierge » doit trouver « Île Vierge ». */
+const plat = (x: string) =>
+  x.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+/** Les trois distances proposées, en kilomètres. */
+const DISTANCES = [3, 6, 9] as const;
 
 /**
  * ⭐ ON NOMME LA FORME, ON NE LA CACHE PAS. Un parcours peut ne répéter aucune
@@ -94,17 +113,6 @@ function SvgEtincelle() {
       <path d="M18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" />
     </svg>
   );
-}
-
-/** ⚠️ LA MÊME RÈGLE QUE LA FICHE, PAS UN SECOND CALCUL. La durée se tire de
- *  la distance RESSENTIE, à l'allure unique du produit — deux formules
- *  écrites séparément divergeraient, et c'est l'heure du retour qui en
- *  dépend. Arrondie au quart d'heure : « 2 h 15 » se lit, « 2,23 h » non. */
-function heuresDe(b: { ressentie: number }): string {
-  const q = Math.max(1, Math.round((b.ressentie / 1000 / ALLURE_KMH) * 4));
-  const h = Math.floor(q / 4), m = (q % 4) * 15;
-  if (h === 0) return `${m} min`;
-  return m === 0 ? `${h} h` : `${h} h ${m}`;
 }
 
 function SvgTelecharger() {
@@ -205,6 +213,28 @@ function SvgPartir() {
   );
 }
 
+function SvgLoupe() {
+  return (
+    <svg className="cp-picto" viewBox="0 0 24 24" aria-hidden="true"
+         fill="none" stroke="currentColor" strokeWidth="1.7"
+         strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="10.5" cy="10.5" r="6.5" /><path d="M15.4 15.4L20 20" />
+    </svg>
+  );
+}
+
+/** Le ruban du mètre : la distance, pas l'heure. */
+function SvgRuban() {
+  return (
+    <svg className="cp-picto" viewBox="0 0 24 24" aria-hidden="true"
+         fill="none" stroke="currentColor" strokeWidth="1.6"
+         strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2.5" y="8" width="19" height="8" rx="2" />
+      <path d="M7 8v3M12 8v4M17 8v3" />
+    </svg>
+  );
+}
+
 function SvgBotte() {
   return (
     <svg className="cp-botte" viewBox="0 0 24 24" aria-hidden="true"
@@ -219,7 +249,7 @@ function SvgBotte() {
 export function Composer() {
   const [graphe, setGraphe] = useState<Graphe | null>(null);
   const [erreur, setErreur] = useState("");
-  const [heures, setHeures] = useState(2);
+  const [km, setKm] = useState(6);
   /**
    * ⚠️ LA POSITION PEUT ARRIVER DE L'INVITATION. « Autour de moi » demande la
    *    permission LÀ OÙ LA QUESTION SE POSE, puis amène ici avec le point.
@@ -263,6 +293,44 @@ export function Composer() {
   const [duree, setDuree] = useState(0);
   const [retour, setRetour] = useState<Retour | null>(null);
   const [enMarche, setEnMarche] = useState(false);
+  const [requete, setRequete] = useState("");
+
+  /**
+   * ⭐ ON CHERCHE DANS LES LIEUX DU GRAPHE, PAS DANS UN ANNUAIRE. Chacun est
+   *    accroché à une arête : on peut vraiment en partir. Un répertoire
+   *    général rendrait des adresses d'où aucune boucle ne commence — et le
+   *    refus arriverait APRÈS le choix, ce qui est le pire moment.
+   * ⚠️ `plat()` retire les accents ET la casse : « île vierge » doit trouver
+   *    « Île Vierge ». Sans ça, la recherche ne marche que pour qui tape
+   *    déjà l'orthographe exacte, c'est-à-dire pour qui n'a pas besoin de
+   *    chercher.
+   * ⛔ Et seulement les lieux NOMMÉS : un anonyme porte sa catégorie comme
+   *    nom, et une liste de douze « Plage » ne se choisit pas.
+   */
+  const trouves = useMemo(() => {
+    const q = plat(requete.trim());
+    if (q.length < 2 || !graphe) return [];
+    const vus = new Set<string>();
+    const out: { c: string; n: string; g: [number, number] }[] = [];
+    for (const L of graphe.l) {
+      if (L.anonyme || !L.n) continue;
+      /* 🔴 LE DRAPEAU `anonyme` NE COUVRE PAS TOUT — vu en production : la
+         recherche proposait « Calvaire » comme point de départ, un nom qui
+         EST sa catégorie. Le drapeau n'est pas posé sur ces lieux-là, et
+         l'écran n'avait aucun moyen de le deviner... sauf celui-ci, qui est
+         vérifiable : un nom identique au libellé de sa catégorie ne nomme
+         rien. ⭐ Quand une donnée ne porte pas la distinction qu'on
+            cherche, on ne la suppose pas — on en dérive une qu'on peut
+            contrôler. */
+      if (plat(L.n) === plat(LIBELLE[L.c] ?? L.c)) continue;
+      const cle = `${L.c}|${L.n}`;
+      if (vus.has(cle) || !plat(L.n).includes(q)) continue;
+      vus.add(cle);
+      out.push({ c: L.c, n: L.n, g: L.g });
+      if (out.length >= 6) break;
+    }
+    return out;
+  }, [requete, graphe]);
   const [motRetour, setMotRetour] = useState("");
   const graine = useRef(1);
   // ⚠️ `undefined` = pas encore chargé · `null` = fichier absent ou illisible.
@@ -365,12 +433,12 @@ export function Composer() {
     const t0 = performance.now();
     const depart = noeudLePlusProche(graphe, ix, position[0], position[1]);
     if (cible) {
-      const v = composerVers(graphe, ix, depart, budget(heures), cible.g,
+      const v = composerVers(graphe, ix, depart, km * 1000, cible.g,
                              { graine: graine.current });
       setVisee(v);
       setBoucles(v.etat === "ok" ? v.boucles : []);
     } else {
-      setBoucles(composer(graphe, ix, depart, budget(heures), { graine: graine.current }));
+      setBoucles(composer(graphe, ix, depart, km * 1000, { graine: graine.current }));
     }
     setDuree(Math.round(performance.now() - t0));
     setChoisie(0);
@@ -539,28 +607,70 @@ export function Composer() {
             pour un dessin. Le curseur reste donc, replié : trois gestes
             courants devant, la finesse derrière un mot.
             ⚠️ « Environ 3 km » n'est pas une illustration : c'est
-               `budget(heures)`, la valeur que le moteur va réellement viser.
+               `km * 1000`, la valeur que le moteur va réellement viser.
                Deux nombres écrits séparément divergeraient au premier
                changement d'allure. */}
         {graphe && (
           <section className="cp-feuille">
             <p className="cp-sus">Votre promenade</p>
-            <h2 className="cp-question">Combien de temps avez-vous&nbsp;?</h2>
+            <h2 className="cp-question">D'où partez-vous&nbsp;?</h2>
 
-            <div className="cp-temps" role="group" aria-label="Durée de marche">
-              {[1, 2, 3].map((h) => (
+            {/* ══ LE POINT DE DÉPART ══════════════════════════════════════
+                ⭐ DEUX CHEMINS, PARCE QUE DEUX SITUATIONS. Dehors, on est
+                quelque part et on veut partir de là. Chez soi la veille, on
+                prépare — et le téléphone répondrait « vous êtes à Rennes ».
+                ⛔ LA POSITION SE DEMANDE LÀ OÙ LA QUESTION SE POSE, jamais
+                   d'avance, et elle ne part sur aucun serveur.
+                ⚠️ Et la recherche porte sur les lieux DU GRAPHE, pas sur un
+                   répertoire général : chacun est accroché à un chemin, donc
+                   on peut vraiment en partir. Chercher dans un annuaire
+                   rendrait des adresses d'où aucune boucle ne commence. */}
+            <div className="cp-depart">
+              <button className="cp-depart-ici" onClick={localiser}>
+                <SvgRepere />{situe ? "Me resituer" : "Partir d'où je suis"}
+              </button>
+              <div className="cp-depart-ou">ou</div>
+              <label className="cp-depart-champ">
+                <span className="sr-only">Chercher un lieu de départ</span>
+                <SvgLoupe />
+                <input
+                  type="search"
+                  value={requete}
+                  placeholder="un lieu, une plage, une chapelle…"
+                  onChange={(e) => setRequete(e.target.value)}
+                />
+              </label>
+              {trouves.length > 0 && (
+                <ul className="cp-depart-liste">
+                  {trouves.map((l) => (
+                    <li key={`${l.c}|${l.n}`}>
+                      <button onClick={() => { setPosition(l.g); setSitue(true); setRequete(""); setMotGps(`Départ : ${l.n}`); }}>
+                        {l.n}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <h2 className="cp-question cp-question-2">Quelle distance&nbsp;?</h2>
+            {/* 🔴 DES KILOMÈTRES, PAS DES HEURES — 2/11, arbitrage du
+                fondateur : « certains sont lents, certains marchent vite ».
+                Et nous n'avons aucun dénivelé sur les 36 989 arêtes : la
+                durée était calculée à plat, donc fausse dès que ça monte.
+                ⭐ On annonçait un chiffre qu'on ne savait pas faire. Un
+                   kilomètre, lui, est un kilomètre. */}
+            <div className="cp-temps" role="group" aria-label="Distance de marche">
+              {DISTANCES.map((d) => (
                 <button
-                  key={h}
+                  key={d}
                   type="button"
-                  className={`cp-temps-choix${heures === h ? " est-choisi" : ""}`}
-                  aria-pressed={heures === h}
-                  onClick={() => setHeures(h)}
+                  className={`cp-temps-choix${km === d ? " est-choisi" : ""}`}
+                  aria-pressed={km === d}
+                  onClick={() => setKm(d)}
                 >
-                  <SvgHorloge />
-                  <span className="cp-temps-h">{h} heure{h > 1 ? "s" : ""}</span>
-                  <span className="cp-temps-km">
-                    Environ {Math.round(budget(h) / 1000)} km
-                  </span>
+                  <SvgRuban />
+                  <span className="cp-temps-h">{d} km</span>
                 </button>
               ))}
             </div>
@@ -574,13 +684,7 @@ export function Composer() {
             {/* ⚠️ LE POINT DE DÉPART EST UNE DONNÉE PERSONNELLE : on le demande
                 LÀ OÙ LA QUESTION SE POSE, jamais d'avance, et on dit d'où l'on
                 part quand on ne le sait pas. */}
-            <p className="cp-second">
-              <button className="cp-lien" onClick={localiser}>
-                <SvgRepere />
-                {situe ? "Je préfère choisir un autre point de départ"
-                       : "Partir d'où je suis"}
-              </button>
-            </p>
+
             {motGps && <p className="page-note">{motGps}</p>}
             {/* ⛔ LA NOTE « par défaut, on part du bourg de Crozon » ET LE
                 CURSEUR REPLIÉ SONT PARTIS — 2/11, demande du fondateur.
@@ -679,17 +783,18 @@ export function Composer() {
             {visee.etat === "trop-loin" && (
               <>
                 <p className="page-texte">
-                  <strong>{cible.nom} est trop loin pour {heures} h.</strong>{" "}
+                  <strong>{cible.nom} est trop loin pour {km} km.</strong>{" "}
                   Le chemin le plus court y mène en{" "}
                   {(visee.metresAller / 1000).toFixed(1)} km — comptez{" "}
                   <strong>au moins{" "}
-                  {Math.ceil((visee.metresMinimum / 1000 / ALLURE_KMH) * 2) / 2} h</strong>{" "}
+                  {(visee.metresMinimum / 1000).toFixed(1)} km</strong>{" "}
                   pour l'aller-retour.
                 </p>
                 <p className="page-note">
-                  « Au moins », pas « environ » : ce calcul est à plat, et le
-                  terrain ne fait qu'ajouter. Donnez-vous plus de temps
-                  ci-dessus, ou partez d'un point plus proche.
+                  « Au moins », pas « environ » : c'est l'aller-retour par le
+                  plus court chemin, et le vrai parcours ne fait qu'ajouter.
+                  Choisissez une distance plus grande, ou partez d'un point
+                  plus proche.
                 </p>
               </>
             )}
@@ -852,7 +957,7 @@ export function Composer() {
                             Une ligne qui n'a rien à dire ne s'affiche pas :
                             « 0 m au bord de l'eau » est du remplissage. */}
                         <span className="cp-carte-faits">
-                          <span><SvgRepere />{(x.metres / 1000).toFixed(1)} km · {heuresDe(x)}</span>
+                          <span><SvgRepere />{(x.metres / 1000).toFixed(1)} km</span>
                           <span><SvgEtincelle />{x.lieux.length} lieu{x.lieux.length > 1 ? "x" : ""} · {FORME[formeDeLaBoucle(x.etalement)]}</span>
                           {x.bordDeMer > 300 && (
                             <span><SvgVague />{Math.round(x.bordDeMer)} m au bord de l'eau</span>
@@ -879,7 +984,7 @@ export function Composer() {
           <>
             <section className="page-panel">
               <h2 className="section-title" style={{ marginBottom: "var(--sp-2)" }}>
-                {walk.distanceKm} km · {heuresDe(b)}
+                {walk.distanceKm} km
               </h2>
 
               {/* ══ D · CE QU'ON EMPORTE ════════════════════════════════════

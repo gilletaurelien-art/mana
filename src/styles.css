@@ -2973,3 +2973,52 @@ body:has(.jeu) { padding-bottom: 0; }
   margin: 0 0 var(--sp-3); text-align: center;
   font-size: var(--t-xs); line-height: 1.5; color: var(--nuit); opacity: .72;
 }
+
+/* ── le point de départ : la position, ou un lieu qu'on cherche ────────────
+   ⭐ DEUX CHEMINS, PARCE QUE DEUX SITUATIONS. Dehors, on est quelque part.
+      Chez soi la veille, on prépare — et le téléphone répondrait « vous êtes
+      à Rennes ». ⚠️ La recherche porte sur les lieux DU GRAPHE : chacun est
+      accroché à un chemin, donc on peut vraiment en partir. */
+.cp-depart { margin-bottom: var(--sp-2); }
+.cp-depart-ici {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  width: 100%; min-height: 48px; padding: 0 var(--sp-2);
+  font-size: var(--t-s); font-weight: 600;
+  color: var(--nuit); background: rgb(255 255 255 / 70%);
+  border: 1.5px solid rgb(25 43 67 / 14%); border-radius: var(--r-rond);
+  cursor: pointer;
+}
+.cp-depart-ici:hover { border-color: var(--nuit); }
+.cp-depart-ou {
+  display: flex; align-items: center; gap: var(--sp-1);
+  margin: 10px 0; font-size: var(--t-xs); color: var(--nuit); opacity: .6;
+}
+.cp-depart-ou::before, .cp-depart-ou::after {
+  content: ""; height: 1px; flex: 1 1 0; background: rgb(25 43 67 / 14%);
+}
+.cp-depart-champ {
+  display: flex; align-items: center; gap: 8px;
+  min-height: 48px; padding: 0 var(--sp-1);
+  background: rgb(255 255 255 / 70%);
+  border: 1.5px solid rgb(25 43 67 / 14%); border-radius: var(--r-m);
+}
+.cp-depart-champ .cp-picto { opacity: .55; }
+.cp-depart-champ input {
+  flex: 1 1 auto; min-width: 0; border: 0; background: none;
+  font: inherit; font-size: var(--t-s); color: var(--nuit);
+}
+.cp-depart-champ input::placeholder { color: var(--nuit); opacity: .45; }
+.cp-depart-champ input:focus { outline: none; }
+.cp-depart-champ:focus-within { border-color: var(--action); }
+.cp-depart-liste { list-style: none; margin: 6px 0 0; padding: 0; }
+.cp-depart-liste button {
+  width: 100%; min-height: 44px; padding: 0 var(--sp-1);
+  text-align: left; cursor: pointer;
+  background: none; border: 0; border-bottom: 1px solid rgb(25 43 67 / 8%);
+  font-size: var(--t-s); color: var(--nuit);
+}
+.cp-depart-liste button:hover { background: rgb(198 154 72 / 12%); }
+.cp-question-2 { margin-top: var(--sp-2); }
+:where(.cp-depart-ici, .cp-depart-liste button):focus-visible {
+  outline: 2px solid var(--ocre); outline-offset: 2px;
+}

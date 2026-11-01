@@ -294,3 +294,47 @@ describe("ce qu'on fait d'une promenade composée", () => {
     expect(chemin).toMatch(/duCatalogue \? WALKS : \[walk\]/);
   });
 });
+
+describe("la distance, pas la durée", () => {
+  const compo = nu("./Composer.tsx");
+
+  /* 🔴 ARBITRAGE DU FONDATEUR, 2/11 : « certains sont lents, certains
+     marchent vite. La pertinence est la distance. Ne pas surestimer ou
+     sous-estimer la durée. »
+     ⭐ Et c'est la suite de ce qu'on avait mesuré la veille : les 36 989
+        arêtes des deux graphes ne portent AUCUN dénivelé. La durée était
+        donc calculée à plat, donc fausse dès que ça monte — on annonçait un
+        chiffre qu'on ne savait pas faire. Un kilomètre, lui, est un
+        kilomètre. */
+  it("⛔ l'écran n'annonce aucune durée de marche", () => {
+    /* ⚠️ On vise les FORMATS d'affichage, pas le mot « heure » : il reste
+       légitime dans une phrase (« donnez-vous plus de temps »). Ce qui est
+       interdit, c'est de RENDRE un nombre d'heures. */
+    for (const motif of [/\{heuresDe\(/, /dureeEstimeeH\}/, /\} h\b/, /heure\{/]) {
+      expect(compo, `l'écran affiche une durée : ${motif}`).not.toMatch(motif);
+    }
+    // et la cible du moteur est bien une distance choisie, pas un temps
+    expect(compo).toMatch(/const DISTANCES = \[/);
+    expect(compo).toMatch(/km \* 1000/);
+  });
+
+  /* 🔴 LA RECHERCHE PROPOSAIT « CALVAIRE » COMME POINT DE DÉPART — un nom
+     qui EST sa catégorie. Le drapeau `anonyme` du graphe n'est pas posé sur
+     ces lieux-là. ⭐ Quand une donnée ne porte pas la distinction qu'on
+     cherche, on ne la suppose pas : on en dérive une qu'on peut contrôler —
+     ici, l'égalité entre le nom et le libellé de la catégorie. */
+  it("⛔ on ne propose pas un lieu dont le nom est sa catégorie", () => {
+    expect(compo).toMatch(/plat\(L\.n\) === plat\(LIBELLE\[L\.c\]/);
+    expect(compo, "les lieux anonymes restent écartés aussi")
+      .toMatch(/if \(L\.anonyme \|\| !L\.n\) continue;/);
+  });
+
+  /* ⭐ DEUX CHEMINS VERS LE POINT DE DÉPART, parce que deux situations :
+     dehors on est quelque part, chez soi la veille on prépare. Retirer l'un
+     des deux ferme la moitié des usages. */
+  it("le point de départ se donne par la position OU par un lieu cherché", () => {
+    expect(compo).toMatch(/className="cp-depart-ici"[\s\S]{0,120}onClick=\{localiser\}/);
+    expect(compo).toMatch(/type="search"/);
+    expect(compo).toMatch(/setPosition\(l\.g\)/);
+  });
+});
