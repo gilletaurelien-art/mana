@@ -169,7 +169,6 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
     [ot, terr],
   );
 
-  useEffect(() => { document.title = "Le territoire — MANA"; }, []);
 
   useEffect(() => {
     let vivant = true;

@@ -29,9 +29,7 @@ const FACETTES = [
 
 export function Territoire() {
   useEffect(() => {
-    document.title = "Le territoire — MANA.bzh";
     return () => {
-      document.title = "MANA.bzh — La porte d'entrée de l'écosystème MANA en Bretagne";
     };
   }, []);
 

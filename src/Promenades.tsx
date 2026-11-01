@@ -83,9 +83,7 @@ export function Promenades() {
   }, []);
 
   useEffect(() => {
-    document.title = "Les sentiers — presqu'île de Crozon & Aulne maritime — MANA.bzh";
     return () => {
-      document.title = "MANA.bzh — Promenades & découvertes en Bretagne";
     };
   }, []);
 

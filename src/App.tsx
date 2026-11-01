@@ -126,6 +126,41 @@ const MODULES = [
   },
 ];
 
+/**
+ * 🔴 UN TITRE PAR ADRESSE — et une seule table pour tous. Posé le 1/11/2026,
+ *    le jour où mana.bzh a commencé à servir cette application.
+ *
+ * ⭐ UNE ADRESSE À SOI APPELLE UN TITRE À SOI. Cinq routes n'en avaient pas :
+ *    `/radio`, `/carte`, `/reglages`, `/espace`, `/contact`. Dans un résultat
+ *    de recherche, chacune disait exactement la même chose que l'accueil —
+ *    et `/radio` est une URL INDEXÉE, qui servait jusqu'à ce matin une page
+ *    intitulée « MANARADIO — l'antenne de MANA, en direct ». On reprend ses
+ *    mots : l'adresse change de contenu, elle ne doit pas changer de sens.
+ *
+ * ⚠️ ET C'EST UNE TABLE, PAS CINQ CORRECTIFS. Les titres vivaient dans les
+ *    composants, et ils avaient DÉJÀ divergé : deux d'entre eux restauraient
+ *    « La porte d'entrée de l'écosystème MANA en Bretagne », deux autres
+ *    « Promenades & découvertes en Bretagne ». Personne n'avait menti —
+ *    chaque copie était juste le jour de son écriture.
+ *
+ * ⛔ Les pages DYNAMIQUES gardent le leur : le titre d'une promenade est son
+ *    nom, il ne peut pas tenir dans une table. Un test tient la frontière.
+ */
+export const TITRE_DEFAUT = "MANA.bzh — Promenades & découvertes en Bretagne";
+
+export const TITRES: Record<string, string> = {
+  "/": TITRE_DEFAUT,
+  "/carte": "La carte du territoire — presqu'île de Crozon & Aulne maritime — MANA.bzh",
+  "/promenades": "Les sentiers — presqu'île de Crozon & Aulne maritime — MANA.bzh",
+  "/composer": "Composer une promenade — MANA.bzh",
+  "/radio": "MANARADIO — l'antenne de MANA, en direct — MANA.bzh",
+  "/territoire": "Le territoire — MANA.bzh",
+  "/reglages": "Réglages, sources et mentions — MANA.bzh",
+  "/espace": "Mon espace — MANA.bzh",
+  "/contact": "Contact — MANA.bzh",
+  "/mentions-legales": "Mentions légales — MANA.bzh",
+};
+
 export default function App() {
   const path = usePath();
   /* ⭐ LE DRAPEAU `cherche` EST PARTI AVEC LA SECONDE ICÔNE DE CARTE. Il
@@ -162,6 +197,10 @@ export default function App() {
   useLayoutEffect(() => {
     const immersif = path === "/" || /\/en-chemin\/?$/.test(path);
     document.documentElement.dataset.fond = immersif ? "immersif" : "lecture";
+    /* ⚠️ Seulement les adresses de la table : une page dynamique pose le sien
+       et ne doit pas se le faire écraser au prochain rendu. */
+    const titre = TITRES[path];
+    if (titre) document.title = titre;
   }, [path]);
 
   const barreRef = useRef<HTMLElement | null>(null);

@@ -146,8 +146,6 @@ export function Composer() {
   }, []);
 
   useEffect(() => {
-    document.title = "Composer une promenade — MANA.bzh";
-    return () => { document.title = "MANA.bzh — Promenades & découvertes en Bretagne"; };
   }, []);
 
   /* ⭐ LE GRAPHE SUIT LA POSITION, et c'est le sujet même de cet écran : on

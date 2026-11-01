@@ -3,6 +3,7 @@ import { baseUrl } from "./router";
 import { WALKS, distAuTrace, distM, effortLisible, MENTION } from "./walks";
 import { chargerItineraire } from "./catalogue";
 import type { Walk } from "./walks";
+import { TITRE_DEFAUT } from "./App";
 import type { WalkPoint } from "./walks";
 import { WalkMap } from "./WalkMap";
 import { CarteOuSchema } from "./CarteOuSchema";
@@ -166,7 +167,7 @@ export function Promenade({ slug }: { slug: string }) {
     if (!walk) return;
     document.title = `${walk.titre} — Promenades MANA.bzh`;
     return () => {
-      document.title = "MANA.bzh — Promenades & découvertes en Bretagne";
+      document.title = TITRE_DEFAUT;
     };
   }, [walk?.titre]);
 

@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { describe, it, expect } from "vitest";
 
 /* ════════════════════════════════════════════════════════════════════════
@@ -72,6 +72,77 @@ describe("le préfixe de service", () => {
       expect(texte, `${source} : le même attribut`).toMatch(/dataset\.fond/);
       expect(texte, `${source} : les mêmes deux valeurs`).toMatch(/"immersif"/);
       expect(texte, `${source} : les mêmes deux valeurs`).toMatch(/"lecture"/);
+    }
+  });
+});
+
+/* ════════════════════════════════════════════════════════════════════════
+   UN TITRE PAR ADRESSE
+   ════════════════════════════════════════════════════════════════════════ */
+describe("les titres de page", () => {
+  const app = lire("src/App.tsx");
+
+  /** Les adresses statiques que le routeur de App.tsx distingue. */
+  const routes = [...nu(app).matchAll(/path === "(\/[a-z-]*)"/g)]
+    .map((m) => m[1])
+    .filter((v, i, a) => a.indexOf(v) === i);
+
+  it("le routeur distingue bien une poignée d'adresses statiques", () => {
+    // garde-fou du garde : si l'extraction ne trouve plus rien, le test
+    // ci-dessous passerait sur une liste vide et ne dirait plus rien.
+    expect(routes.length).toBeGreaterThanOrEqual(8);
+    expect(routes).toContain("/radio");
+  });
+
+  /* 🔴 LE GARDE QUI COMPTE, ET IL SE MET À JOUR TOUT SEUL. Il ne récite pas
+     une liste : il LIT les adresses que le routeur distingue, et exige que
+     chacune ait son titre. Ajouter une route sans lui en écrire un fait
+     tomber ce test — exactement au moment où il faut y penser.
+     ⭐ Cinq routes n'en avaient pas le 1/11, dont `/radio`, une URL indexée
+        qui servait jusque-là une page intitulée « MANARADIO — l'antenne de
+        MANA, en direct ». Sans titre à elle, son résultat de recherche
+        aurait dit la même chose que l'accueil. */
+  it("chaque adresse du routeur a un titre à elle", () => {
+    const table = app.match(/export const TITRES[\s\S]*?\n\};/);
+    expect(table, "la table des titres").not.toBeNull();
+    const connus = new Set([...table![0].matchAll(/"(\/[a-z-]*)":/g)].map((m) => m[1]));
+    const orphelines = routes.filter((r) => !connus.has(r));
+    expect(orphelines, `adresses sans titre : ${orphelines.join(", ")}`).toEqual([]);
+    expect(connus.has("/"), "l'accueil").toBe(true);
+  });
+
+  /* ⚠️ UNE TABLE QUE PERSONNE NE LIT EST UNE LISTE DE SOUHAITS. Mutation du
+     1/11 : en remplaçant l'affectation par un `void`, les deux tests
+     ci-dessus restaient au vert — l'un vérifiait que la table est COMPLÈTE,
+     l'autre qu'aucun écran ne la contourne, et aucun que le titre atterrit
+     quelque part. ⭐ Vérifier qu'une règle est écrite n'est pas vérifier
+     qu'elle s'applique. */
+  it("et la table est bel et bien posée sur le document", () => {
+    const n = nu(app);
+    expect(n).toMatch(/TITRES\[path\]/);
+    expect(n).toMatch(/document\.title\s*=\s*titre/);
+  });
+
+  it("⛔ aucun titre n'est écrit deux fois — les pages statiques lisent la table", () => {
+    /* ⚠️ Les titres vivaient dans les composants et ils avaient DÉJÀ divergé :
+       deux restauraient « La porte d'entrée de l'écosystème MANA en
+       Bretagne », deux autres « Promenades & découvertes en Bretagne ».
+       Personne n'avait menti — chaque copie était juste le jour de son
+       écriture. ⛔ Les pages DYNAMIQUES gardent le leur : le titre d'une
+       promenade est son nom, il ne tient pas dans une table. */
+    const dynamiques = ["src/Promenade.tsx", "src/EnChemin.tsx"];
+    const ecrans = readdirSync("src")
+      .filter((f) => f.endsWith(".tsx") && f !== "App.tsx")
+      .map((f) => `src/${f}`)
+      .filter((f) => !dynamiques.includes(f));
+    for (const f of ecrans) {
+      expect(nu(lire(f)), `${f} pose un titre au lieu de lire la table`)
+        .not.toMatch(/document\.title\s*=/);
+    }
+    // et même les dynamiques ne recopient pas le titre de repli
+    for (const f of dynamiques) {
+      expect(nu(lire(f)), `${f} recopie le titre par défaut`)
+        .not.toMatch(/document\.title\s*=\s*"MANA\.bzh/);
     }
   });
 });

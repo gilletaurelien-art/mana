@@ -8,9 +8,7 @@ import { baseUrl } from "./router";
 
 export function MentionsLegales() {
   useEffect(() => {
-    document.title = "Mentions légales — MANA.bzh";
     return () => {
-      document.title = "MANA.bzh — La porte d'entrée de l'écosystème MANA en Bretagne";
     };
   }, []);
 
