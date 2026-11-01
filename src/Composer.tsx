@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
-import { indexer, composer, composerVers, fondreRencontres, ECART_MAX_M, noeudLePlusProche, traits, formeDeLaBoucle, SOURCE_MAREES, cheminDeRetour, composanteAtteint } from "./composition";
+import { indexer, composer, composerVers, fondreRencontres, intitules, descriptif, ECART_MAX_M, noeudLePlusProche, traits, formeDeLaBoucle, SOURCE_MAREES, cheminDeRetour, composanteAtteint } from "./composition";
+import { portrait } from "./portrait";
+import { enGpx, telecharger } from "./Promenade";
 import type { Graphe, Boucle, Retour, Visee } from "./composition";
 import { DEFAUT, territoireDe, urlGraphe } from "./territoires";
 import type { Walk } from "./walks";
@@ -73,6 +75,51 @@ const LIBELLE: Record<string, string> = {
   lieu_de_culte: "Édifice religieux", moulin: "Moulin", phare: "Phare",
   grotte: "Grotte", source: "Source", cascade: "Cascade", ruine: "Ruines",
 };
+
+/** ⭐ Dessiné ici plutôt qu'importé : un seul picto, 7 lignes, et aucune
+ *  bibliothèque d'icônes ne rentre dans le paquet pour ça. */
+function SvgEtincelle() {
+  return (
+    <svg className="cp-etincelle" viewBox="0 0 24 24" aria-hidden="true"
+         fill="none" stroke="currentColor" strokeWidth="1.6"
+         strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3l1.8 4.9L18.7 9.7l-4.9 1.8L12 16.4l-1.8-4.9L5.3 9.7l4.9-1.8z" />
+      <path d="M18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" />
+    </svg>
+  );
+}
+
+/** ⚠️ LA MÊME RÈGLE QUE LA FICHE, PAS UN SECOND CALCUL. La durée se tire de
+ *  la distance RESSENTIE, à l'allure unique du produit — deux formules
+ *  écrites séparément divergeraient, et c'est l'heure du retour qui en
+ *  dépend. Arrondie au quart d'heure : « 2 h 15 » se lit, « 2,23 h » non. */
+function heuresDe(b: { ressentie: number }): string {
+  const q = Math.max(1, Math.round((b.ressentie / 1000 / ALLURE_KMH) * 4));
+  const h = Math.floor(q / 4), m = (q % 4) * 15;
+  if (h === 0) return `${m} min`;
+  return m === 0 ? `${h} h` : `${h} h ${m}`;
+}
+
+function SvgTelecharger() {
+  return (
+    <svg className="cp-picto" viewBox="0 0 24 24" aria-hidden="true"
+         fill="none" stroke="currentColor" strokeWidth="1.7"
+         strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 4v10" /><path d="M8 11l4 4 4-4" /><path d="M5 19h14" />
+    </svg>
+  );
+}
+
+function SvgBotte() {
+  return (
+    <svg className="cp-botte" viewBox="0 0 24 24" aria-hidden="true"
+         fill="none" stroke="currentColor" strokeWidth="1.6"
+         strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 3v9l-2 3v4h15v-3l-4-2-2-3V3z" />
+      <path d="M5 17h15" />
+    </svg>
+  );
+}
 
 export function Composer() {
   const [graphe, setGraphe] = useState<Graphe | null>(null);
@@ -325,34 +372,119 @@ export function Composer() {
   }, [graphe, b, rencontres]);
 
   return (
-    <main className="page">
+    <main className="page page-composer">
       <div className="wrap">
-        <p className="hero-label">
-          {cible ? "J'ai repéré ça sur la carte" : "Je suis ici, j'ai du temps"}
-        </p>
-        <h1 className="page-titre">
-          <span>{cible ? `Aller vers ${cible.nom}` : "Composer une promenade"}</span>
-        </h1>
+        {/* ══ A · L'ENTRÉE ══════════════════════════════════════════════
+            ⛔ L'IMAGE EST UNE ILLUSTRATION, PAS UNE PHOTOGRAPHIE, et c'est
+            pourquoi elle passe par `paysages/` et non par `images/Photo.tsx`
+            — dont tout le contrat consiste à AFFIRMER un lieu. Elle évoque
+            la Bretagne ; elle ne documente aucun endroit, et rien ici ne
+            prétend le contraire.
+            ⚠️ Elle ne tourne pas : cet écran se lit, il ne s'habite pas. Une
+               rotation toutes les trois secondes derrière un texte qu'on est
+               en train de choisir est une distraction, pas une ambiance. */}
+        <header className="cp-entree">
+          <img className="cp-entree-fond" src={`${import.meta.env.BASE_URL}paysages/fond-13-1280.webp`}
+               alt="" aria-hidden="true" decoding="async" />
+          <div className="cp-entree-dire">
+            <h1 className="cp-titre">
+              {cible ? <>Vers {cible.nom}</> : <>Où vous mèneront vos&nbsp;pas&nbsp;?</>}
+            </h1>
+            <p className="cp-chapo">
+              {cible
+                ? <>Une promenade depuis où vous êtes qui passe <strong>devant</strong> ce lieu, et vous ramène.</>
+                : <>Une promenade depuis où vous êtes, par les chemins, pour découvrir ce qui se trouve sur votre route.</>}
+            </p>
+            {/* ⭐ LES DEUX NOMBRES SONT COMPTÉS DANS L'ARTEFACT CHARGÉ, jamais
+                écrits à la main : ils changent à chaque moisson, et une
+                valeur recopiée dans une page devient un faux témoin. */}
+            {graphe && (
+              <p className="cp-compte">
+                <SvgBotte />
+                {graphe.a.length.toLocaleString("fr-FR")} tronçons de chemin
+                {" · "}{graphe.l.length} lieux remarquables
+              </p>
+            )}
+          </div>
+        </header>
+
+        {/* ══ B · COMBIEN DE TEMPS AVEZ-VOUS ? ═══════════════════════════
+            ⭐ TROIS CARTES PLUTÔT QU'UN CURSEUR, parce que dehors, debout,
+            on choisit — on ne règle pas. Mais le moteur accepte 1 à 5 h par
+            demi-heures, et retirer cette étendue serait perdre une capacité
+            pour un dessin. Le curseur reste donc, replié : trois gestes
+            courants devant, la finesse derrière un mot.
+            ⚠️ « Environ 3 km » n'est pas une illustration : c'est
+               `budget(heures)`, la valeur que le moteur va réellement viser.
+               Deux nombres écrits séparément divergeraient au premier
+               changement d'allure. */}
+        {graphe && (
+          <section className="cp-feuille">
+            <p className="cp-sus">Votre promenade</p>
+            <h2 className="cp-question">Combien de temps avez-vous&nbsp;?</h2>
+
+            <div className="cp-temps" role="group" aria-label="Durée de marche">
+              {[1, 2, 3].map((h) => (
+                <button
+                  key={h}
+                  type="button"
+                  className={`cp-temps-choix${heures === h ? " est-choisi" : ""}`}
+                  aria-pressed={heures === h}
+                  onClick={() => setHeures(h)}
+                >
+                  <span className="cp-temps-h">{h} heure{h > 1 ? "s" : ""}</span>
+                  <span className="cp-temps-km">
+                    Environ {Math.round(budget(h) / 1000)} km
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            <div className="cp-actions">
+              <button className="cp-primaire" onClick={lancer} disabled={!ix}>
+                {cible ? "M'y emmener" : "Composer ma promenade"}
+              </button>
+            </div>
+
+            {/* ⚠️ LE POINT DE DÉPART EST UNE DONNÉE PERSONNELLE : on le demande
+                LÀ OÙ LA QUESTION SE POSE, jamais d'avance, et on dit d'où l'on
+                part quand on ne le sait pas. */}
+            <p className="cp-second">
+              <button className="cp-lien" onClick={localiser}>
+                {situe ? "Je préfère choisir un autre point de départ"
+                       : "Partir d'où je suis"}
+              </button>
+            </p>
+            {motGps && <p className="page-note">{motGps}</p>}
+            {!situe && !motGps && (
+              <p className="page-note">Par défaut, on part du bourg de Crozon.</p>
+            )}
+
+            <details className="cp-plus">
+              <summary>Plus longtemps, ou une demi-heure près</summary>
+              <label className="filtre">
+                {heures} h de marche
+                <span className="page-note">
+                  {" "}— à plat : nous n'avons pas de relevé d'altitude
+                </span>
+                <input type="range" min={1} max={5} step={0.5} value={heures}
+                       onChange={(e) => setHeures(Number(e.target.value))} />
+              </label>
+            </details>
+          </section>
+        )}
+
 
         <section className="page-panel">
-          <p className="page-intro">
-            {cible ? (
-              <>
-                Une boucle depuis où vous êtes qui passe <strong>devant</strong>{" "}
-                {cible.nom}, et vous ramène — avec ce qu'il y a à voir en chemin.
-              </>
-            ) : (
-              <>
-                Une boucle depuis où vous êtes, par les chemins, qui passe
-                <strong> devant</strong> ce qu'il y a à voir.
-              </>
-            )}
-          </p>
-          <p className="page-note">
-            {erreur ? <strong>{erreur}</strong>
-              : !graphe ? "Chargement des chemins…"
-              : `${graphe.a.length.toLocaleString("fr-FR")} tronçons de chemin · ${graphe.l.length} lieux remarquables`}
-          </p>
+          {/* ⚠️ LES COMPTEURS SONT DANS L'ENTÊTE, PAS ICI — ils y étaient
+              DEUX fois après la refonte, à trois centimètres d'écart. Il
+              reste l'état du chargement et l'erreur, qui sont les seules
+              choses que ce panneau doive encore dire. */}
+          {(erreur || !graphe) && (
+            <p className="page-note">
+              {erreur ? <strong>{erreur}</strong> : "Chargement des chemins…"}
+            </p>
+          )}
           {/* ── LES FERMETURES OFFICIELLES ────────────────────────────────
               🔴 ÉVITER NE SUFFIT PAS, IL FAUT LE DIRE. Un calcul qui contourne
               en silence laisse le marcheur libre d'y aller quand même, et sans
@@ -380,15 +512,33 @@ export function Composer() {
                 </strong>{" "}
                 Les boucles ne les empruntent pas.
               </p>
-              <ul>
-                {touchees.actives.map((f) => (
-                  <li key={f.id}>
-                    {f.libelle} — {f.autorite}, {new Date(f.publie_le).toLocaleDateString("fr-FR")}.{" "}
-                    <a href={f.source} rel="noopener">la décision</a>
-                    {f.portee_approximative && " · portée approximative"}
-                  </li>
-                ))}
-              </ul>
+              {/* 🔴 LE FAIT RESTE À L'ÉCRAN, LE DÉTAIL SE REPLIE — et les deux
+                  moitiés sont nécessaires. « Éviter ne suffit pas, il faut le
+                  dire » : qui a décidé, pourquoi, et où lire la décision.
+                  Mais déplié, ce bloc occupait tout le premier écran : quatre
+                  arrêtés, quatre liens, quatre mentions de portée, avant
+                  même la question « combien de temps avez-vous ? ».
+                  ⭐ Une page entièrement faite d'avertissements n'avertit
+                     plus : elle se saute. Le nombre et la conséquence
+                     restent visibles sans un geste ; les quatre décisions
+                     sont à un tap, pas à une recherche.
+                  ⛔ Rien n'est retiré : ni l'autorité, ni la date, ni le lien,
+                     ni la mention « portée approximative ». */}
+              <details className="cp-arretes">
+                <summary>
+                  Voir {touchees.actives.length > 1 ? "les" : "le"} {touchees.actives.length}{" "}
+                  arrêté{touchees.actives.length > 1 ? "s" : ""}
+                </summary>
+                <ul>
+                  {touchees.actives.map((f) => (
+                    <li key={f.id}>
+                      {f.libelle} — {f.autorite}, {new Date(f.publie_le).toLocaleDateString("fr-FR")}.{" "}
+                      <a href={f.source} rel="noopener">la décision</a>
+                      {f.portee_approximative && " · portée approximative"}
+                    </li>
+                  ))}
+                </ul>
+              </details>
             </div>
           )}
 
@@ -426,50 +576,6 @@ export function Composer() {
               Prenez-en la moitié. Coupez où vous voulez. Faites demi-tour
               pour la lumière. Rien ici ne compte vos pas.
             </p>
-          </section>
-        )}
-
-        {graphe && (
-          <section className="page-panel">
-            <p className="apercu-label">Votre promenade</p>
-            <div className="est-actions" style={{ marginBottom: "var(--sp-2)" }}>
-              <label className="filtre">
-                {heures} h de marche
-                {/* 🔴 CETTE LIGNE PROMETTAIT CE QUE LA DONNÉE NE PEUT PAS
-                    TENIR — corrigé le 1/11. « Plus le terrain monte, plus la
-                    boucle sera courte » décrit la règle de Naismith, que
-                    `distanceRessentie()` applique fidèlement… à un dénivelé
-                    qui vaut `null` sur les 36 989 arêtes des deux graphes.
-                    `graphe-signaux.py` le dit et l'assume : « Nous n'avons
-                    pas de modèle d'altitude. Mettre un zéro serait affirmer
-                    du plat. »
-                    ⭐ LA DONNÉE ÉTAIT HONNÊTE, L'ÉCRAN NE L'ÉTAIT PAS. Le
-                       moteur refuse d'inventer une altitude ; l'interface
-                       promettait d'en tenir compte. C'est exactement
-                       l'inverse qu'il faut dire — et le dire ne coûte rien
-                       qu'un peu de fierté. */}
-                <span className="page-note">
-                  {" "}— à plat : nous n'avons pas de relevé d'altitude
-                </span>
-                <input type="range" min={1} max={5} step={0.5} value={heures}
-                       onChange={(e) => setHeures(Number(e.target.value))} />
-              </label>
-            </div>
-            <div className="est-actions" style={{ marginBottom: 0 }}>
-              <button className="btn btn-ghost" onClick={localiser}>
-                {situe ? "Me resituer" : "Partir d'où je suis"}
-              </button>
-              <button className="btn btn-primary" onClick={lancer}>
-                {cible ? `M'y emmener` : "Composer"}
-              </button>
-              {boucles && boucles.length > 1 && (
-                <button className="btn btn-ghost" onClick={autre}>Autre chose</button>
-              )}
-            </div>
-            {motGps && <p className="page-note">{motGps}</p>}
-            {!situe && !motGps && (
-              <p className="page-note">Par défaut, on part du bourg de Crozon.</p>
-            )}
           </section>
         )}
 
@@ -585,44 +691,102 @@ export function Composer() {
           </section>
         )}
 
+        {/* ══ C · LES TROIS PROPOSITIONS ══════════════════════════════
+              🔴 TROIS, ET NON « LA MEILLEURE » — c'est une MESURE qui
+              l'impose. Sur une cible de 6 km, les deux meilleures boucles
+              étaient séparées de 4 points sur 138 — un écart dans le bruit —
+              et elles ne se ressemblaient pas du tout : l'une longeait la mer
+              sur 28 % de son parcours, l'autre sur 4 %.
+              ⭐ Les poids du score (14 par lieu, 220 pour la longueur) sont
+                 des opinions que personne n'a validées en marchant. Quand un
+                 classement ne sait pas trancher, il ne doit pas trancher : il
+                 doit PROPOSER — et c'est aussi l'argument de dispersion des
+                 flux, qui veut cinq promenades plutôt que la meilleure.
+
+              ⛔ ET LEUR IMAGE EST LEUR TRACÉ, PAS UNE PHOTOGRAPHIE. La
+                 maquette demande « une photographie du paysage réellement
+                 traversé » : nous n'en avons aucune, et nous ne pouvons pas
+                 en avoir — cette boucle n'existait pas il y a trois secondes.
+                 Mettre une jolie côte bretonne sous un parcours qui ne la
+                 longe pas est le mensonge documentaire que ce dépôt refuse
+                 pour les fiches de balade ; il ne devient pas acceptable
+                 parce qu'il est plus petit.
+              ⭐ LE VISAGE, C'EST LA SILHOUETTE. Chaque boucle en a une
+                 qu'aucune autre n'a, elle est VRAIE, elle se dessine depuis
+                 nos propres données, et aucun catalogue de photographies ne
+                 peut la copier. */}
         {boucles && boucles.length > 1 && (
-          <section className="page-panel">
-            <p className="apercu-label">Trois façons de marcher autant</p>
-            {/* 🔴 ON NE CHOISIT PAS À LA PLACE DU MARCHEUR, ET C'EST UNE
-                MESURE QUI L'IMPOSE. Sur une cible de 6 km, les deux
-                meilleures boucles étaient séparées de 4 points sur 138 — un
-                écart dans le bruit — et elles ne se ressemblaient pas du tout :
-                l'une longeait la mer sur 28 % de son parcours, l'autre sur 4 %.
-                ⭐ Les poids du score (14 par lieu, 220 pour la longueur) sont
-                   des opinions que personne n'a validées en marchant. Quand un
-                   classement ne sait pas trancher, il ne doit pas trancher :
-                   il doit PROPOSER — et c'est aussi l'argument de dispersion
-                   des flux, qui veut cinq promenades plutôt que la meilleure. */}
-            <div className="est-actions" style={{ marginBottom: 0, flexWrap: "wrap" }}>
-              {boucles.slice(0, 3).map((x, i) => (
-                <button
-                  key={i}
-                  className={i === choisie ? "btn btn-primary" : "btn btn-ghost"}
-                  onClick={() => setChoisie(i)}
-                >
-                  {(x.metres / 1000).toFixed(1)} km
-                  {` · ${FORME[formeDeLaBoucle(x.etalement)]}`}
-                  {x.montee >= 40 && ` · +${Math.round(x.montee)} m`}
-                  {x.marees > 0 && " · marée"}
-                  {x.bordDeMer > 300 && ` · ${(x.bordDeMer / 1000).toFixed(1)} km de mer`}
-                  {x.lieux.length > 0 && ` · ${x.lieux.length} lieu${x.lieux.length > 1 ? "x" : ""}`}
-                </button>
-              ))}
-            </div>
+          <section className="cp-propositions">
+            <p className="cp-sus"><SvgEtincelle />Trois propositions</p>
+            <h2 className="cp-question">Trois façons de marcher autant</h2>
+
+            <ul className="cp-cartes">
+              {(() => { const noms = intitules(boucles.slice(0, 3)); return boucles.slice(0, 3).map((x, i) => {
+                const t = portrait(x.contour, 320, 190, 0.14);
+                return (
+                  <li key={i}>
+                    <button
+                      type="button"
+                      className={`cp-carte${i === choisie ? " est-choisie" : ""}`}
+                      aria-pressed={i === choisie}
+                      onClick={() => setChoisie(i)}
+                    >
+                      <span className="cp-carte-trace" aria-hidden="true">
+                        {t && (
+                          <svg viewBox="0 0 320 190" preserveAspectRatio="xMidYMid meet">
+                            <path d={t.d} fill="none" strokeWidth="2.4"
+                                  strokeLinecap="round" strokeLinejoin="round" />
+                            <circle cx={t.depart[0]} cy={t.depart[1]} r="4.5" />
+                          </svg>
+                        )}
+                      </span>
+                      <span className="cp-carte-dire">
+                        <span className="cp-carte-titre">{noms[i]}</span>
+                        <span className="cp-carte-faits">
+                          <span>{(x.metres / 1000).toFixed(1)} km · {heuresDe(x)}</span>
+                          <span>{FORME[formeDeLaBoucle(x.etalement)]}</span>
+                          {x.marees > 0 && <span className="cp-alerte">un passage dépend de la marée</span>}
+                        </span>
+                        <span className="cp-carte-texte">{descriptif(x)}</span>
+                      </span>
+                    </button>
+                  </li>
+                );
+              }); })()}
+            </ul>
           </section>
+
         )}
 
         {b && walk && (
           <>
             <section className="page-panel">
               <h2 className="section-title" style={{ marginBottom: "var(--sp-2)" }}>
-                {walk.distanceKm} km · environ {walk.dureeEstimeeH} h
+                {walk.distanceKm} km · {heuresDe(b)}
               </h2>
+
+              {/* ══ D · CE QU'ON EMPORTE ════════════════════════════════════
+                  ⛔ PAS DE BOUTON « PARTIR » : il n'irait nulle part. L'écran
+                  de marche (`/promenade/<slug>/en-chemin`) se monte depuis un
+                  SLUG du catalogue, et une boucle composée il y a trois
+                  secondes n'en a pas. La maquette le demande ; le câbler
+                  voudrait dire inventer une fonctionnalité, ce que le brief
+                  interdit par ailleurs — et un bouton qui ne mène nulle part
+                  coûte plus cher qu'un bouton absent.
+                  ⭐ Ce qu'on peut emporter POUR DE VRAI, c'est le fichier :
+                     il entre dans n'importe quelle montre, il part hors
+                     ligne, et il porte son attribution avec lui. */}
+              <div className="cp-emporter">
+                <button
+                  className="cp-primaire"
+                  onClick={() => telecharger("promenade-mana.gpx", enGpx(walk), "application/gpx+xml")}
+                >
+                  <SvgTelecharger />Emporter le tracé (GPX)
+                </button>
+                <button className="cp-secondaire" onClick={autre}>
+                  Autre promenade
+                </button>
+              </div>
               {/* ⚠️ LA DURÉE EST CALCULÉE À PLAT, ET ON LE DIT ICI plutôt que
                   de laisser « environ » porter seul le doute. Sur la
                   presqu'île, l'Office déclare jusqu'à +310 m sur 14 km :

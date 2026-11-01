@@ -47,7 +47,11 @@ function messageGps(err: GeolocationPositionError): string {
   return "GPS indisponible.";
 }
 
-function enGpx(walk: (typeof WALKS)[number]): string {
+/* ⚠️ Le type s'élargit à `Walk` — le compositeur produit une promenade qui
+   n'est dans aucun catalogue, et elle a le même droit au GPX. Les trois
+   gardes de ce fichier (attribution DANS le fichier, aucune altitude
+   inventée, licence nommée) valent exactement pareil pour elle. */
+export function enGpx(walk: Walk): string {
   // ⛔ PAS DE <ele> : nous n'avons AUCUNE altitude. Un GPX qui en porterait
   //    une inventée tromperait la montre du promeneur, pas seulement l'écran.
   const pts = walk.points
@@ -77,7 +81,7 @@ ${pts}
 </gpx>`;
 }
 
-function telecharger(nom: string, contenu: string, type: string) {
+export function telecharger(nom: string, contenu: string, type: string) {
   const blob = new Blob([contenu], { type });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

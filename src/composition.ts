@@ -872,3 +872,101 @@ export function fondreRencontres(
   }
   return l.sort((x, y) => x.ordre - y.ordre);
 }
+
+/* ════════════════════════════════════════════════════════════════════════
+   DIRE UNE BOUCLE — un intitulé et une phrase, tirés de la mesure
+   ════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * 🔴 TOUT CE QUI EST ÉCRIT ICI EST UNE MESURE REFORMULÉE, JAMAIS UNE PROMESSE.
+ *    « Une boucle vers la mer » se dit parce que `bordDeMer` dépasse un
+ *    kilomètre, pas parce que ça sonne bien. « Un détour par les chemins » se
+ *    dit quand rien ne distingue ce parcours — et c'est une information, pas
+ *    un remplissage.
+ *
+ * ⛔ AUCUN ADJECTIF TOURISTIQUE. Pas de « magnifique », pas de
+ *    « incontournable », pas de « sauvage ». Nous n'avons pas marché ce
+ *    parcours : il a été calculé il y a trois secondes. Le qualifier serait
+ *    exactement la fabrication documentaire que ce dépôt s'interdit pour les
+ *    photographies — en plus discret, donc en pire.
+ *
+ * ⚠️ ET LES TROIS PROPOSITIONS DOIVENT SE DISTINGUER. Le rang entre dans le
+ *    choix : à égalité de traits mesurés, deux boucles porteraient le même
+ *    intitulé, et l'écran donnerait l'impression de proposer deux fois la
+ *    même chose alors qu'elles diffèrent.
+ */
+/* ⚠️ `candidats`, PAS `traits` — `traits()` existe déjà dans ce fichier et
+   découpe le tracé d'une boucle en segments. Deux fonctions du même nom
+   dans un module, c'est la seconde qui gagne en silence à l'exécution ;
+   TypeScript l'a refusé, et il a eu raison avant moi. */
+function candidatsIntitule(b: Boucle): string[] {
+  const forme = formeDeLaBoucle(b.etalement);
+  const c: string[] = [];
+  if (b.bordDeMer > 1000) c.push("Une boucle vers la mer");
+  if (forme === "aller-retour") c.push("Un aller et retour");
+  if (b.lieux.length >= 4) c.push("Un chemin de rencontres");
+  if (forme === "ample") c.push("Une boucle plus ample");
+  if (b.bordDeMer > 300) c.push("Un passage au bord de l'eau");
+  c.push("Une boucle par les chemins", "Un détour par les chemins", "Un autre tour");
+  return c;
+}
+
+/**
+ * 🔴 LES TROIS INTITULÉS SE CHOISISSENT ENSEMBLE, PAS CHACUN DE SON CÔTÉ.
+ *    Vu en production le 1/11 : deux propositions sur trois affichaient
+ *    « Un chemin de rencontres ». Elles différaient pourtant de 800 m et de
+ *    l'ordre des lieux — mais l'écran donnait l'impression de proposer deux
+ *    fois la même chose, ce qui est le contraire exact de ce que ces trois
+ *    cartes servent à dire.
+ * ⭐ Un intitulé calculé isolément décrit SA boucle ; trois intitulés
+ *    calculés ensemble décrivent le CHOIX. C'est le choix qu'on affiche.
+ * ⚠️ Chaque boucle prend son trait le plus distinctif encore libre — jamais
+ *    un trait qu'elle n'a pas : on descend sa propre liste, on ne pioche pas
+ *    dans celle d'une autre.
+ */
+export function intitules(bs: readonly Boucle[]): string[] {
+  const pris = new Set<string>();
+  return bs.map((b) => {
+    const choix = candidatsIntitule(b).find((t) => !pris.has(t)) ?? "Un autre tour";
+    pris.add(choix);
+    return choix;
+  });
+}
+
+/** Une seule boucle, hors contexte — le premier de ses traits. */
+export function intitule(b: Boucle): string {
+  return candidatsIntitule(b)[0];
+}
+
+/**
+ * La phrase sous l'intitulé : ce que la boucle TRAVERSE, dans l'ordre de
+ * marche, et rien d'autre.
+ *
+ * ⭐ ON NOMME LES LIEUX PLUTÔT QUE DE LES COMPTER quand ils sont peu
+ *    nombreux : « la chapelle, puis le calvaire » dit où l'on va ; « 2 lieux
+ *    remarquables » dit qu'on a compté. ⚠️ Au-delà de trois, l'énumération
+ *    devient une liste de courses : on compte.
+ * ⛔ Et un lieu ANONYME ne se nomme pas — son libellé est sa catégorie, donc
+ *    « Plage, puis Plage » serait le résultat. Ils se comptent.
+ */
+export function descriptif(b: Boucle): string {
+  const nommes = b.lieux.filter((l) => !l.anonyme).map((l) => l.nom);
+  const bouts: string[] = [];
+
+  if (nommes.length > 0 && nommes.length <= 3) {
+    bouts.push(nommes.length === 1 ? `Passe devant ${nommes[0]}.`
+      : `Passe devant ${nommes.slice(0, -1).join(", ")} et ${nommes[nommes.length - 1]}.`);
+  } else if (b.lieux.length > 0) {
+    bouts.push(`${b.lieux.length} lieux remarquables sur le chemin.`);
+  } else {
+    bouts.push("Aucun lieu remarquable recensé sur ce tracé.");
+  }
+
+  if (b.bordDeMer > 300) {
+    bouts.push(`${(b.bordDeMer / 1000).toFixed(1)} km au bord de l'eau.`);
+  }
+  if (b.partRepetee > 0.1) {
+    bouts.push("Une portion se parcourt deux fois.");
+  }
+  return bouts.join(" ");
+}

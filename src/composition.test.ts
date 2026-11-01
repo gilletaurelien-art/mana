@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync, existsSync } from "node:fs";
 import { describe, it, expect } from "vitest";
-import { indexer, composer, composerVers, fondreRencontres, ECART_MAX_M, metres, noeudLePlusProche, traits, distanceRessentie, COUT_MONTEE, etalementDe, formeDeLaBoucle, SOURCE_MAREES, cheminDeRetour } from "./composition";
+import { indexer, composer, composerVers, fondreRencontres, intitule, intitules, descriptif, ECART_MAX_M, metres, noeudLePlusProche, traits, distanceRessentie, COUT_MONTEE, etalementDe, formeDeLaBoucle, SOURCE_MAREES, cheminDeRetour } from "./composition";
 import type { Graphe } from "./composition";
 
 // Une grille 6×6 à Crozon, maille ~200 m. Deux colonnes sont des « routes »
@@ -706,5 +706,108 @@ describe("ce qu'on affiche sur le relief", () => {
       expect(x.montee).toBe(0);
       expect(x.ressentie).toBe(x.metres);       // Naismith n'ajoute rien
     }
+  });
+});
+
+describe("dire une boucle", () => {
+  const b = (o: Partial<{ etalement: number; bordDeMer: number; partRepetee: number;
+                          lieux: { nom: string; anonyme: boolean }[] }> = {}) => ({
+    aretes: [], metres: 6000, agrement: 100, partRepetee: 0, bordDeMer: 0,
+    montee: 0, ressentie: 6000, etalement: 0.3, marees: 0, contour: [],
+    lieux: [], score: 0, ...o,
+  }) as never;
+
+  /* 🔴 VU EN PRODUCTION LE 1/11 : deux propositions sur trois affichaient
+     « Un chemin de rencontres ». Elles différaient de 800 m et de l'ordre
+     des lieux — mais l'écran donnait l'impression de proposer deux fois la
+     même chose, ce qui est le contraire exact de ce que ces trois cartes
+     servent à dire. ⭐ Un intitulé calculé isolément décrit SA boucle ;
+     trois intitulés calculés ensemble décrivent le CHOIX. */
+  it("⛔ trois propositions ne portent jamais deux fois le même intitulé", () => {
+    const mer = b({ bordDeMer: 1400 });
+    const quatre = b({ lieux: Array(4).fill({ nom: "x", anonyme: false }) });
+    const paires: [string, unknown[]][] = [
+      ["deux fois le même trait", [quatre, quatre, quatre]],
+      ["traits mêlés", [mer, mer, b({ etalement: 0.6 })]],
+      ["rien de distinctif", [b(), b(), b()]],
+    ];
+    for (const [cas, bs] of paires) {
+      const noms = intitules(bs as never);
+      expect(new Set(noms).size, `${cas} : ${noms.join(" / ")}`).toBe(3);
+    }
+  });
+
+  it("et chacune garde un intitulé qu'elle MÉRITE", () => {
+    /* ⚠️ On descend la liste de SES traits ; on ne pioche jamais dans celle
+       d'une autre. Une boucle sans mer ne peut pas hériter de « vers la
+       mer » parce que la place était libre. */
+    const noms = intitules([b({ bordDeMer: 1400 }), b(), b()] as never);
+    expect(noms[0]).toBe("Une boucle vers la mer");
+
+    /* ⛔ LA RÈGLE EST « MÉRITÉ », PAS « DIFFÉRENT ». Première version de ce
+       test : elle vérifiait seulement que les suivantes n'héritaient pas de
+       « vers la mer ». Muté en « pioche dans une liste commune », le garde
+       restait vert : les deux boucles quelconques recevaient « Un aller et
+       retour » et « Un chemin de rencontres » — deux traits qu'elles n'ont
+       NI l'une NI l'autre, et le test ne regardait pas là.
+       ⭐ On énumère donc ce qu'une boucle quelconque ne peut PAS recevoir. */
+    const interdits = ["Une boucle vers la mer", "Un aller et retour",
+                       "Un chemin de rencontres", "Un passage au bord de l'eau",
+                       "Une boucle plus ample"];
+    for (const n of noms.slice(1)) {
+      expect(interdits, `« ${n} » n'est mérité par aucune boucle quelconque`)
+        .not.toContain(n);
+    }
+  });
+
+  it("l'intitulé vient d'un trait MESURÉ, pas d'une humeur", () => {
+    expect(intitule(b({ bordDeMer: 1400 }))).toBe("Une boucle vers la mer");
+    expect(intitule(b({ etalement: 0.05 }))).toBe("Un aller et retour");
+    expect(intitule(b({ lieux: Array(4).fill({ nom: "x", anonyme: false }) })))
+      .toBe("Un chemin de rencontres");
+    expect(intitule(b({ etalement: 0.6 }))).toBe("Une boucle plus ample");
+  });
+
+  /* ⛔ LE GARDE QUI COMPTE. Nous n'avons pas marché ce parcours : il a été
+     calculé il y a trois secondes. Le qualifier de « magnifique » ou de
+     « sauvage » serait exactement la fabrication documentaire que ce dépôt
+     s'interdit pour les photographies — en plus discret, donc en pire.
+     ⭐ Et ce test tient le CODE, pas une sortie : un adjectif ajouté demain
+        dans une branche que ce test n'exerce pas tomberait quand même. */
+  it("⛔ aucun adjectif touristique, nulle part dans la source", () => {
+    const src = readFileSync("src/composition.ts", "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, "")                       // hors commentaires
+      .split("\n").filter((l) => !/^\s*(\/\/|\*)/.test(l)).join("\n");
+    const fonctions = src.slice(src.indexOf("export function intitule"));
+    for (const mot of ["magnifique", "superbe", "incontournable", "sauvage",
+                       "authentique", "exceptionnel", "charmant", "pittoresque",
+                       "inoubliable", "secret", "préservé", "paradis"]) {
+      expect(fonctions.toLowerCase(), `« ${mot} » est une promesse, pas une mesure`)
+        .not.toContain(mot);
+    }
+  });
+
+  it("le descriptif NOMME les lieux quand ils sont peu, les COMPTE au-delà", () => {
+    const deux = descriptif(b({ lieux: [{ nom: "La chapelle", anonyme: false },
+                                        { nom: "Le calvaire", anonyme: false }] }));
+    expect(deux).toBe("Passe devant La chapelle et Le calvaire.");
+    const cinq = descriptif(b({ lieux: Array(5).fill({ nom: "x", anonyme: false }) }));
+    expect(cinq).toContain("5 lieux remarquables");
+  });
+
+  /* ⚠️ Un lieu ANONYME porte sa CATÉGORIE comme nom : « Plage, puis Plage »
+     serait le résultat si on les nommait. Ils se comptent. */
+  it("⛔ ne nomme jamais un lieu anonyme", () => {
+    const d = descriptif(b({ lieux: [{ nom: "Plage", anonyme: true },
+                                     { nom: "Plage", anonyme: true }] }));
+    expect(d).not.toContain("Passe devant");
+    expect(d).toContain("2 lieux");
+  });
+
+  it("dit la répétition et le bord de mer quand ils existent, et se tait sinon", () => {
+    expect(descriptif(b({ partRepetee: 0.3 }))).toContain("se parcourt deux fois");
+    expect(descriptif(b({ partRepetee: 0.02 }))).not.toContain("deux fois");
+    expect(descriptif(b({ bordDeMer: 900 }))).toContain("0.9 km au bord de l'eau");
+    expect(descriptif(b({ bordDeMer: 100 }))).not.toContain("bord de l'eau");
   });
 });
