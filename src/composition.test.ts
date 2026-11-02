@@ -825,7 +825,7 @@ describe("dire une boucle", () => {
 
   it("la ligne de faits de l'écran, elle, dit la mer dès 300 m", () => {
     const ecran = readFileSync("src/Composer.tsx", "utf8");
-    expect(ecran).toMatch(/x\.bordDeMer > 300 &&/);
+    expect(ecran).toMatch(/\.bordDeMer > 300 &&/);
     expect(ecran).toMatch(/au bord de l'eau/);
   });
 });

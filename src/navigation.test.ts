@@ -211,25 +211,46 @@ describe("de la carte au compositeur", () => {
        ⭐ La règle, elle, ne bouge pas : `b.lieux` ne se lit qu'UNE fois dans
           cet écran, et ce qu'on en tire est ce que les trois surfaces
           affichent. C'est ce qu'on écrit. */
-    expect([...compo.matchAll(/b\.lieux/g)].length,
-           "b.lieux doit se lire exactement une fois dans l'écran").toBe(1);
-    expect(compo, "et cette lecture alimente la fusion commune")
-      .toMatch(/fondreRencontres\(\s*\n?\s*b\.lieux/);
+    /* 🔴 ET UNE TROISIÈME FOIS LE 2/11 — mais pas pour la même raison. Cette
+       fois ce n'est pas la FORME qui a bougé, c'est la SOURCE : on lisait
+       `b.lieux`, les lieux que la moisson avait accrochés à une arête, et
+       cela sous-comptait de deux tiers (1,47 annoncé contre 4,20 mesurés à
+       moins de 150 m du tracé, et 27 % de « 0 lieu » tous faux). La mesure
+       se fait désormais sur le TRACÉ, contre l'inventaire entier.
+       ⭐ LA RÈGLE N'A PAS BOUGÉ D'UN MOT : un seul calcul, trois surfaces qui
+          en dérivent. C'est elle qu'on écrit, et c'est pour ça qu'elle a
+          survécu à trois changements de forme et à un changement de source. */
+    expect([...compo.matchAll(/rencontresLeLong\(/g)].length,
+           "la mesure doit se faire aux deux endroits qui en ont besoin — "
+           + "le parcours retenu et le décompte des propositions — et nulle part ailleurs")
+      .toBe(2);
+    expect(compo, "les lieux accrochés par la moisson ne doivent plus être la source")
+      .not.toMatch(/lieux\.length\} lieu/);
     // les trois surfaces lisent le résultat, jamais la source
     for (const surface of ["rencontres.length > 0", "rencontres.map(", "etapes: rencontres"]) {
-      expect(compo, `la surface « ${surface} » ne lit pas la fusion`).toContain(surface);
+      expect(compo, `la surface « ${surface} » ne lit pas le calcul commun`).toContain(surface);
     }
+    /* ⛔ ET LE SEUIL NE SE RECOPIE PAS. Il vit dans `proches.ts`, qui porte
+       la règle produit « si c'est listé, on passe devant ». Un 150 écrit en
+       dur dans l'écran divergerait le jour où la règle bouge. */
+    expect(compo, "un seuil de proximité est recopié dans l'écran")
+      .not.toMatch(/\b150\b/);
   });
 
-  /* 🔴 LE GARDE QUI COMPTE. `composerVers` rend six états, dont cinq sont des
-     refus — et un refus muet ressemble à une absence. Chacun doit avoir son
-     texte à l'écran, sinon l'écran reste vide et personne ne sait lequel des
-     cinq gestes faire. Ce test compte les états du type et exige qu'ils
-     soient TOUS nommés dans l'écran.
-     ⭐ Il se met à jour tout seul : ajouter un état au moteur sans lui écrire
-        sa phrase fait tomber ce test, et c'est exactement le moment où il
-        faut y penser. */
-  it("chaque refus du moteur a sa phrase à l'écran", () => {
+  /* 🔴 LE GARDE QUI COMPTE : UN REFUS MUET RESSEMBLE À UNE ABSENCE. Le
+     moteur porte maintenant DEUX vocabulaires de refus — `Visee` pour la
+     boucle, `Promenade` pour l'aller — et chacun de leurs états doit mener
+     quelque part à l'écran.
+     ⭐ CE GARDE A DÛ ÊTRE RETOURNÉ LE 2/11, ET IL AVAIT RAISON DE TOMBER. Il
+        exigeait `visee.etat === "<état>"` : la forme exacte du code d'hier,
+        quand la boucle était la promenade. Elle est devenue une option, le
+        A→B est devenu la forme principale, et le garde a crié sans qu'aucun
+        refus n'ait perdu sa phrase.
+     ⚠️ Et il n'exige plus une phrase PAR état, parce que ce serait faux :
+        certains refus sont AGRÉGÉS à dessein, et l'agrégation est une
+        décision de produit. Elle doit donc être écrite ICI, état par état —
+        ajouter un refus au moteur sans trancher fait tomber ce test. */
+  it("aucun refus du moteur ne reste muet", () => {
     const moteur = nu("./composition.ts");
     /* ⚠️ LA FENÊTRE VA JUSQU'À LA DÉCLARATION SUIVANTE, pas jusqu'au premier
        `;` — vécu le 1/11 : en ajoutant un champ au variant `ok`, le `;` de
@@ -237,15 +258,62 @@ describe("de la carte au compositeur", () => {
        crié alors que rien n'avait perdu sa phrase. ⭐ Un garde dont la
        fenêtre se ferme sur un caractère que la cible peut contenir mesure
        la forme du code, pas la règle. */
-    const bloc = moteur.match(/export type Visee =([\s\S]*?)\nexport /);
-    expect(bloc, "le type Visee").not.toBeNull();
-    const etats = [...bloc![1].matchAll(/etat: "([a-z-]+)"/g)].map((m) => m[1]);
-    expect(etats.length).toBeGreaterThanOrEqual(5);
-    for (const e of etats) {
-      if (e === "ok") continue;
-      expect(compo, `l'état « ${e} » n'a aucune phrase à l'écran`)
-        .toContain(`visee.etat === "${e}"`);
+    const etatsDe = (type: string) => {
+      const bloc = moteur.match(new RegExp(`export type ${type} =([\\s\\S]*?)\\nexport `));
+      expect(bloc, `le type ${type}`).not.toBeNull();
+      return [...bloc![1].matchAll(/etat: "([a-z-]+)"/g)].map((m) => m[1])
+        .filter((e) => e !== "ok");
+    };
+
+    /**
+     * LES REFUS AGRÉGÉS — chacun avec la raison de l'être.
+     *
+     * ⭐ Un refus se dit SÉPARÉMENT quand il appelle un geste PROPRE. Deux
+     *    refus qui appellent le même geste n'ont pas besoin de deux phrases :
+     *    les séparer ferait trois paragraphes pour une seule conduite à tenir,
+     *    et une page entièrement faite d'avertissements n'avertit plus.
+     */
+    const AGREGES: Record<string, string> = {
+      // `promenadeVers` tourne pour CHACUN des lieux de la bande, et ses refus
+      // n'ont pas de destinataire : personne n'a demandé ce lieu-là. Ils se
+      // comptent, et le total se dit — « aucun autre lieu remarquable entre
+      // 600 m et 4 km » — avec les deux nombres de la bande.
+      "ferme": "refus par proposition : agrégé dans « aucune proposition »",
+      "hors-reseau": "refus par proposition : agrégé dans « aucune proposition »",
+      "sur-place": "refus par proposition : agrégé dans « aucune proposition »",
+      // La boucle est une OPTION, et tous ses refus mènent au même geste :
+      // garder l'aller et revenir sur ses pas. Le bloc le dit, avec un texte
+      // distinct pour les deux cas fréquents et un repli pour les autres.
+      "trop-loin": "option boucle : repli commun « l'aller reste »",
+      /* ⭐ `ecarte` EST EMPÊCHÉ, PAS AFFICHÉ — et c'est mieux qu'une phrase.
+         Côté départ : l'écran refuse le lieu AVANT d'appeler le moteur, avec
+         l'écart mesuré (les deux `expect` en bas de ce test le tiennent).
+         Côté boucle : le lieu visé a déjà passé l'accrochage, et `aretesAutour`
+         mesure exactement comme lui — le moteur ne peut donc pas le trouver
+         écarté. ⚠️ Si ces deux mesures divergeaient un jour, ce serait un
+         défaut à part entière, et l'un des deux seuils serait faux. */
+      "ecarte": "empêché en amont : le départ est refusé avant tout calcul",
+    };
+
+    for (const type of ["Visee", "Promenade"]) {
+      const etats = etatsDe(type);
+      expect(etats.length, `${type} doit porter des refus nommés`).toBeGreaterThanOrEqual(3);
+      for (const e of etats) {
+        const dit = compo.includes(`"${e}"`);
+        expect(dit || e in AGREGES,
+          `l'état « ${e} » (${type}) n'est ni dit à l'écran ni déclaré agrégé ` +
+          `dans ce test — il faut trancher : une phrase, ou une raison`).toBe(true);
+      }
     }
+
+    /* ⛔ ET LE PREMIER REFUS RESTE LE PLUS IMPORTANT. Mesuré le 2/11 : 18 %
+       des lieux nommés de la presqu'île sont à plus de 150 m du chemin le
+       plus proche — des baies, des caps, des épaves. C'est le refus le plus
+       fréquent, il arrive AVANT tout calcul, et il DIT l'écart mesuré. */
+    expect(compo, "le lieu qu'aucun chemin n'approche n'est pas refusé avant calcul")
+      .toMatch(/if \(!accroche\(a\)\)/);
+    expect(compo, "ce refus ne dit pas l'écart mesuré")
+      .toMatch(/refusDepart\.a\.ecart/);
   });
 });
 
@@ -313,9 +381,29 @@ describe("la distance, pas la durée", () => {
     for (const motif of [/\{heuresDe\(/, /dureeEstimeeH\}/, /\} h\b/, /heure\{/]) {
       expect(compo, `l'écran affiche une durée : ${motif}`).not.toMatch(motif);
     }
-    // et la cible du moteur est bien une distance choisie, pas un temps
-    expect(compo).toMatch(/const DISTANCES = \[/);
-    expect(compo).toMatch(/km \* 1000/);
+    /* 🔴 ET CE GARDE A ÉTÉ RETOURNÉ DEUX FOIS EN UN JOUR, CE QUI EN DIT
+       LONG. Première version : il exigeait `const DISTANCES = [3, 6, 9]`, le
+       tableau des trois choix. Le fondateur a retiré le choix le 2/11 : le
+       tableau est devenu du code mort, et le garde PROTÉGEAIT ce code mort.
+       Deuxième version : il exigeait `km * 1000` et `KM_PAR_DEFAUT` — donc
+       qu'une distance soit choisie quelque part, par nous.
+       ⭐ LA RÈGLE A CHANGÉ, ET C'EST ELLE QU'ON GARDE : plus personne ne
+          choisit de distance, elle est la CONSÉQUENCE de deux lieux. Le seul
+          nombre qui reste est un RAPPORT — la cible de la boucle dérivée de
+          l'aller — et c'est ce qui a fait passer `composerVers` de 58 % à
+          plus de 90 % de réussite. Un garde qui exige un MOYEN interdit la
+          bonne solution ; celui-ci exige qu'aucune distance ne soit inventée. */
+    expect(compo, "la cible de la boucle n'est pas dérivée de l'aller")
+      .toMatch(/BOUCLE_PAR_ALLER/);
+    expect(compo, "la cible de la boucle doit se calculer sur des mètres MESURÉS")
+      .toMatch(/parcours\.metres \* BOUCLE_PAR_ALLER/);
+    /* ⛔ ET AUCUNE DISTANCE EN DUR. Un `6 * 1000` ou un `const KM_` qui
+       reviendrait serait le retour du nombre inventé — par commodité, et
+       sans que rien ne le signale. */
+    for (const motif of [/KM_PAR_DEFAUT/, /\bkm \* 1000\b/, /const DISTANCES/]) {
+      expect(compo, `une distance est de nouveau choisie en dur : ${motif}`)
+        .not.toMatch(motif);
+    }
   });
 
   /* 🔴 LA RECHERCHE PROPOSAIT « CALVAIRE » COMME POINT DE DÉPART — un nom
@@ -324,9 +412,15 @@ describe("la distance, pas la durée", () => {
      cherche, on ne la suppose pas : on en dérive une qu'on peut contrôler —
      ici, l'égalité entre le nom et le libellé de la catégorie. */
   it("⛔ on ne propose pas un lieu dont le nom est sa catégorie", () => {
-    expect(compo).toMatch(/plat\(L\.n\) === plat\(LIBELLE\[L\.c\]/);
-    expect(compo, "les lieux anonymes restent écartés aussi")
-      .toMatch(/if \(L\.anonyme \|\| !L\.n\) continue;/);
+    /* ⚠️ CE GARDE NOMMAIT L'EXPRESSION EXACTE — `plat(L.n) === plat(LIBELLE[
+       L.c]` — et il est tombé le 2/11 quand la source des lieux est passée du
+       graphe à l'inventaire : la variable a changé de nom, la règle n'avait
+       pas bougé. ⭐ Il nomme désormais la règle : le nom se compare au LIBELLÉ
+       DE SA CATÉGORIE, et l'égalité écarte. */
+    expect(compo, "le nom n'est pas comparé au libellé de sa catégorie")
+      .toMatch(/plat\([a-z]+\.n[!]?\) === plat\((?:[a-z]+\.)?libelles\[|plat\([a-z]+\.n[!]?\) === plat\(LIBELLE\[/);
+    expect(compo, "les lieux sans nom restent écartés aussi")
+      .toMatch(/if \(![a-z]+\.n\) return false;|[a-z]+\.anonyme \|\| ![a-z]+\.n/);
   });
 
   /* ⭐ DEUX CHEMINS VERS LE POINT DE DÉPART, parce que deux situations :
@@ -345,7 +439,13 @@ describe("la distance, pas la durée", () => {
     expect(compo, "aucun contrôle ne demande la position")
       .toMatch(/onClick=\{localiser\}/);
     expect(compo, "aucun champ de recherche").toMatch(/type="search"/);
+    /* ⚠️ ET IL A FALLU LE RETOURNER UNE FOIS DE PLUS le 2/11 : il nommait
+       `setPosition(l.g)`, le geste d'hier. Poser le départ veut dire
+       aujourd'hui CALCULER LES PROPOSITIONS, parce que choisir un lieu EST
+       l'action — il n'y a plus de bouton de confirmation. */
     expect(compo, "choisir un résultat ne pose pas le départ")
-      .toMatch(/setPosition\(l\.g\)/);
+      .toMatch(/onClick=\{\(\) => choisirSpot\(i\)\}/);
+    expect(compo, "le pin ne mène pas aux propositions, lui aussi")
+      .toMatch(/proposer\(accrocherUn\(/);
   });
 });

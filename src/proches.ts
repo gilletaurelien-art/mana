@@ -38,6 +38,60 @@ export function lieuxProches(
   lieux: Lieu[],
   max = 4,
 ): { l: Lieu; m: number }[] {
+  return proches(trace, lieux, max).map(({ l, m }) => ({ l, m }));
+}
+
+/**
+ * LES MÊMES, DANS L'ORDRE DE MARCHE — avec leur position le long du tracé.
+ *
+ * 🔴 CE QUI A IMPOSÉ CETTE FONCTION, LE 2/11, EST UN SOUS-COMPTAGE DE DEUX
+ *    TIERS SUR LA SEULE CHOSE QUE MANA APPORTE. L'écran lisait les lieux que
+ *    la MOISSON avait accrochés à une arête au moment de la construction du
+ *    graphe — 24 % des lieux nommés. Mesuré : **1,47** lieu annoncé par
+ *    promenade contre **4,20** réellement à moins de 150 m du tracé, et
+ *    **27 % des promenades annonçaient « 0 lieu »** alors qu'AUCUNE n'en avait
+ *    vraiment zéro.
+ *
+ * ⭐ Le bon instrument était là depuis le début : il mesure sur le TRACÉ,
+ *    contre l'inventaire ENTIER, au seuil que ce fichier porte déjà. Il
+ *    manquait seulement l'ORDRE — et l'ordre est ce qui rend la liste
+ *    honnête, parce qu'une liste intitulée « ce que vous croiserez » mais
+ *    triée par proximité au chemin est un mensonge qui ne se signale jamais :
+ *    il se vérifie en marchant.
+ *
+ * ⚠️ `ordre` EST UNE FRACTION DU PARCOURS, pas un rang. Deux lieux peuvent
+ *    partager un rang ; ils ne partagent pas une position.
+ */
+export function rencontresLeLong(
+  trace: [number, number][],
+  lieux: readonly Lieu[],
+  max = 12,
+): { l: Lieu; m: number; ordre: number }[] {
+  const trouves = proches(trace, lieux as Lieu[], max);
+  if (!trouves.length) return [];
+  /* Les longueurs cumulées, une fois pour tous les lieux. */
+  const cumul: number[] = [0];
+  for (let i = 1; i < trace.length; i++) {
+    const k = Math.cos((trace[i - 1][1] * Math.PI) / 180);
+    cumul.push(cumul[i - 1] + Math.hypot(
+      (trace[i][0] - trace[i - 1][0]) * k * R, (trace[i][1] - trace[i - 1][1]) * R));
+  }
+  const total = Math.max(cumul[cumul.length - 1], 1);
+  return trouves
+    .map(({ l, m, i }) => ({ l, m, ordre: cumul[i] / total }))
+    .sort((a, b) => a.ordre - b.ordre);
+}
+
+/** Le cœur commun : l'écart ET le segment qui le réalise.
+ *  ⚠️ `i` est l'indice du point de DÉBUT du segment le plus proche — c'est ce
+ *     qui permet de situer le lieu le long de la marche. Le laisser tomber
+ *     obligerait à refaire la boucle ailleurs, et deux parcours du même tracé
+ *     divergeraient le jour où l'un des deux change de seuil. */
+function proches(
+  trace: [number, number][],
+  lieux: Lieu[],
+  max: number,
+): { l: Lieu; m: number; i: number }[] {
   if (trace.length < 2) return [];
   let loMin = Infinity, loMax = -Infinity, laMin = Infinity, laMax = -Infinity;
   for (const [lo, la] of trace) {
@@ -48,20 +102,20 @@ export function lieuxProches(
   const dLo = dLa / Math.cos(((laMin + laMax) / 2 * Math.PI) / 180);
   loMin -= dLo; loMax += dLo; laMin -= dLa; laMax += dLa;
 
-  const trouves: { l: Lieu; m: number }[] = [];
+  const trouves: { l: Lieu; m: number; i: number }[] = [];
   for (const l of lieux) {
     // ⛔ Les lieux SANS NOM ne sont pas cités : « Fortification » sous un
     //    circuit n'apprend rien, et il y en a 734 dans l'inventaire.
     if (!l.n) continue;
     const [lo, la] = l.g;
     if (lo < loMin || lo > loMax || la < laMin || la > laMax) continue;
-    let d = Infinity;
+    let d = Infinity, oui = 0;
     for (let i = 1; i < trace.length; i++) {
       const x = versSegment(l.g, trace[i - 1], trace[i]);
-      if (x < d) d = x;
+      if (x < d) { d = x; oui = i - 1; }
       if (d <= 1) break;
     }
-    if (d <= SEUIL_M) trouves.push({ l, m: Math.round(d) });
+    if (d <= SEUIL_M) trouves.push({ l, m: Math.round(d), i: oui });
   }
   trouves.sort((a, b) => a.m - b.m);
   /* ⚠️ UN NOM NE SE CITE QU'UNE FOIS. « Chemins de l'écrivain » est un même

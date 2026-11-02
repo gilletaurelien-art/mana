@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
-import { indexer, composer, composerVers, fondreRencontres, intitules, descriptif, ECART_MAX_M, noeudLePlusProche, traits, formeDeLaBoucle, SOURCE_MAREES, cheminDeRetour, composanteAtteint } from "./composition";
+import { indexer, composerVers, metres, fondreRencontres, ECART_MAX_M, noeudLePlusProche, traits, formeDeLaBoucle, SOURCE_MAREES, cheminDeRetour, composanteAtteint, accrocherTous, accrocherUn, accroche, propositionsAutour, promenadeVers, AUTOUR_MIN_M, AUTOUR_MAX_M, BOUCLE_PAR_ALLER } from "./composition";
 import { portrait } from "./portrait";
 import { enGpx, telecharger } from "./Promenade";
-import type { Graphe, Boucle, Retour, Visee } from "./composition";
+import type { Graphe, Boucle, Retour, Visee, Parcours, Accroche, Proposition } from "./composition";
+import { chargerLieux, type Lieu, type Inventaire } from "./lieux";
+import { rencontresLeLong } from "./proches";
 import { DEFAUT, territoireDe, urlGraphe } from "./territoires";
 import type { Walk } from "./walks";
 import { WalkMap } from "./WalkMap";
@@ -77,8 +79,6 @@ const ALLURE_KMH = 3;
 const plat = (x: string) =>
   x.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
-/** Les trois distances proposées, en kilomètres. */
-const DISTANCES = [3, 6, 9] as const;
 
 /**
  * ⭐ ON NOMME LA FORME, ON NE LA CACHE PAS. Un parcours peut ne répéter aucune
@@ -130,16 +130,6 @@ function SvgTelecharger() {
    qu'il accompagne — l'horloge le temps, la vague la mer, l'étincelle les
    rencontres. ⚠️ Tous `aria-hidden` : ils doublent un texte, ils ne le
    remplacent jamais. Un picto seul n'est lisible par personne. */
-function SvgHorloge() {
-  return (
-    <svg className="cp-picto" viewBox="0 0 24 24" aria-hidden="true"
-         fill="none" stroke="currentColor" strokeWidth="1.5"
-         strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 1.8" />
-    </svg>
-  );
-}
-
 function SvgBoussole() {
   return (
     <svg className="cp-picto" viewBox="0 0 24 24" aria-hidden="true"
@@ -249,7 +239,40 @@ function SvgBotte() {
 export function Composer() {
   const [graphe, setGraphe] = useState<Graphe | null>(null);
   const [erreur, setErreur] = useState("");
-  const [km, setKm] = useState(6);
+  /**
+   * 🔴 PLUS PERSONNE NE CHOISIT LA DISTANCE — 2/11, arbitrage du fondateur,
+   *    et c'est le cœur de cette version.
+   *
+   *    Hier encore, le moteur réclamait une cible en mètres. Le curseur étant
+   *    parti, c'était NOUS qui la fournissions : six kilomètres, parce que
+   *    c'était la valeur du milieu. Un nombre inventé, écrit en commentaire
+   *    pour ne pas mentir à son sujet.
+   *
+   * ⭐ LE NOUVEAU PARCOURS LE SUPPRIME AU LIEU DE LE CACHER. La personne
+   *    choisit UN lieu ; on lui en propose TROIS autour ; elle en choisit un ;
+   *    la promenade est le déplacement entre les deux. La distance n'est plus
+   *    une question posée, c'est une CONSÉQUENCE de deux choix — et elle
+   *    s'allonge en composant de nouveau depuis le second point, autant de
+   *    fois qu'on en a envie.
+   *
+   * 🔴 ET LE MOTEUR S'EN TROUVE MIEUX, CE QUI N'ÉTAIT PAS PRÉVU. `composerVers`
+   *    mesurée à 58 % de réussite le 1/11 avec un budget décidé d'avance,
+   *    mesurée à plus de 90 % le 2/11 avec une cible DÉRIVÉE de l'aller. Même
+   *    code, même graphe. L'échec que j'avais porté au débit de la donnée
+   *    était causé par le paramètre que j'avais choisi moi-même.
+   */
+  /** Le lieu d'où l'on part — choisi, jamais supposé. */
+  const [spot, setSpot] = useState<{ i: number; lieu: Lieu } | null>(null);
+  /** Les trois lieux qu'on propose autour, chacun avec son trajet VRAI. */
+  const [props, setProps] = useState<Proposition<Lieu>[] | null>(null);
+  /**
+   * ⭐ LA BOUCLE EST UNE OPTION, PLUS LA FORME PAR DÉFAUT. Elle reste le
+   *    « coup d'après » du produit : le moteur qui la compose n'est pas
+   *    démonté, il est branché ici, en second.
+   */
+  const [enBoucle, setEnBoucle] = useState(false);
+  const [boucleVisee, setBoucleVisee] = useState<Visee | null>(null);
+  const [mot, setMot] = useState("");
   /**
    * ⚠️ LA POSITION PEUT ARRIVER DE L'INVITATION. « Autour de moi » demande la
    *    permission LÀ OÙ LA QUESTION SE POSE, puis amène ici avec le point.
@@ -282,57 +305,17 @@ export function Composer() {
     return { g: [lo, la], nom: p.get("nom") || "ce lieu" };
   };
   const [cible] = useState(cibleURL);
-  const [visee, setVisee] = useState<Visee | null>(null);
 
   const recue = depuisURL();
   const [position, setPosition] = useState<[number, number]>(recue ?? CROZON);
-  const [situe, setSitue] = useState(recue !== null);
   const [motGps, setMotGps] = useState("");
-  const [boucles, setBoucles] = useState<Boucle[] | null>(null);
   const [choisie, setChoisie] = useState(0);
   const [duree, setDuree] = useState(0);
   const [retour, setRetour] = useState<Retour | null>(null);
   const [enMarche, setEnMarche] = useState(false);
   const [requete, setRequete] = useState("");
 
-  /**
-   * ⭐ ON CHERCHE DANS LES LIEUX DU GRAPHE, PAS DANS UN ANNUAIRE. Chacun est
-   *    accroché à une arête : on peut vraiment en partir. Un répertoire
-   *    général rendrait des adresses d'où aucune boucle ne commence — et le
-   *    refus arriverait APRÈS le choix, ce qui est le pire moment.
-   * ⚠️ `plat()` retire les accents ET la casse : « île vierge » doit trouver
-   *    « Île Vierge ». Sans ça, la recherche ne marche que pour qui tape
-   *    déjà l'orthographe exacte, c'est-à-dire pour qui n'a pas besoin de
-   *    chercher.
-   * ⛔ Et seulement les lieux NOMMÉS : un anonyme porte sa catégorie comme
-   *    nom, et une liste de douze « Plage » ne se choisit pas.
-   */
-  const trouves = useMemo(() => {
-    const q = plat(requete.trim());
-    if (q.length < 2 || !graphe) return [];
-    const vus = new Set<string>();
-    const out: { c: string; n: string; g: [number, number] }[] = [];
-    for (const L of graphe.l) {
-      if (L.anonyme || !L.n) continue;
-      /* 🔴 LE DRAPEAU `anonyme` NE COUVRE PAS TOUT — vu en production : la
-         recherche proposait « Calvaire » comme point de départ, un nom qui
-         EST sa catégorie. Le drapeau n'est pas posé sur ces lieux-là, et
-         l'écran n'avait aucun moyen de le deviner... sauf celui-ci, qui est
-         vérifiable : un nom identique au libellé de sa catégorie ne nomme
-         rien. ⭐ Quand une donnée ne porte pas la distinction qu'on
-            cherche, on ne la suppose pas — on en dérive une qu'on peut
-            contrôler. */
-      if (plat(L.n) === plat(LIBELLE[L.c] ?? L.c)) continue;
-      const cle = `${L.c}|${L.n}`;
-      if (vus.has(cle) || !plat(L.n).includes(q)) continue;
-      vus.add(cle);
-      out.push({ c: L.c, n: L.n, g: L.g });
-      if (out.length >= 6) break;
-    }
-    return out;
-  }, [requete, graphe]);
   const [motRetour, setMotRetour] = useState("");
-  const graine = useRef(1);
   // ⚠️ `undefined` = pas encore chargé · `null` = fichier absent ou illisible.
   //    Les deux ne se confondent pas : une application qui calcule sans
   //    connaître les fermetures doit le DIRE, pas se taire.
@@ -412,39 +395,238 @@ export function Composer() {
   //    ⭐ Un message qui invente une cause est pire qu'un silence.
   const ixTout = useMemo(() => (graphe ? indexer(graphe) : null), [graphe]);
 
+  /**
+   * 🔴 LES SPOTS VIENNENT DE L'INVENTAIRE, PLUS DU GRAPHE — et c'est une
+   *    mesure qui l'impose, pas un goût.
+   *
+   *    Le code d'hier cherchait dans `graphe.l`, les lieux que la MOISSON a
+   *    accrochés à une arête, avec ce raisonnement écrit noir sur blanc :
+   *    « chacun est accroché à une arête, on peut vraiment en partir ».
+   *    Il était juste. Il ne l'est plus, parce que la prémisse a bougé :
+   *    `accrocherTous` accroche à L'EXÉCUTION, à l'arête la plus proche.
+   *
+   * ⭐ Mesuré le 2/11 : la moisson accroche 162 lieux nommés sur la presqu'île ;
+   *    l'accrochage à l'exécution en met **330** sur le réseau, soit le
+   *    double. Garder l'ancienne source aurait rendu invisibles au moteur la
+   *    moitié des lieux que la carte affiche — et le refus aurait eu l'air
+   *    d'un trou dans la donnée.
+   *
+   * ⚠️ `ecartSiLoin: false` : l'écart VRAI des lieux hors réseau coûte un
+   *    parcours de tous les nœuds par lieu — 1,1 s sur la presqu'île, 2,9 s
+   *    sur l'Aulne, parce que les lieux de l'autre territoire y passent tous.
+   *    On ne le paie qu'au moment d'expliquer un refus, sur un seul lieu.
+   */
+  const [inventaire, setInventaire] = useState<Inventaire | null>(null);
+  useEffect(() => { chargerLieux().then(setInventaire).catch(() => {}); }, []);
+
+  const spots = useMemo(() => {
+    if (!inventaire) return [];
+    /* ⛔ Les lieux SANS NOM ne se choisissent pas : une liste de douze
+       « Plage » ne se choisit pas, et il y en a 734 dans l'inventaire.
+       🔴 Et le drapeau `anonyme` NE COUVRE PAS TOUT — vu en production le
+          2/11 : la recherche proposait « Calvaire », un nom qui EST sa
+          catégorie. Quand une donnée ne porte pas la distinction qu'on
+          cherche, on ne la suppose pas : on en dérive une qu'on peut
+          contrôler. */
+    const vus = new Set<string>();
+    return inventaire.lieux.filter((l) => {
+      if (!l.n) return false;
+      if (plat(l.n) === plat(inventaire.libelles[l.c] ?? l.c)) return false;
+      if (vus.has(l.n)) return false;
+      vus.add(l.n); return true;
+    });
+  }, [inventaire]);
+
+  const positions = useMemo(
+    () => spots.map((l) => l.g as readonly [number, number]), [spots]);
+
+  const accroches = useMemo(
+    () => (graphe && ix && positions.length
+      ? accrocherTous(graphe, ix, positions, { ecartSiLoin: false })
+      : null),
+    [graphe, ix, positions],
+  );
+
+  /** Ceux d'où l'on peut PARTIR : sur le réseau, et dans ce territoire-ci. */
+  const praticables = useMemo(
+    () => (accroches ? spots.map((_, i) => i).filter((i) => accroche(accroches[i])) : []),
+    [accroches, spots],
+  );
+
+  /**
+   * CHERCHER SON SPOT.
+   *
+   * ⚠️ `plat()` retire les accents ET la casse : « île vierge » doit trouver
+   *    « Île Vierge ». Sans ça, la recherche ne marche que pour qui tape déjà
+   *    l'orthographe exacte — c'est-à-dire pour qui n'a pas besoin de chercher.
+   * ⭐ ON NE PROPOSE QUE DES LIEUX PRATICABLES, et le refus arrive donc AVANT
+   *    le choix, jamais après. Un lieu qu'aucun chemin n'approche se cherche
+   *    en vain plutôt que de se choisir puis d'être refusé — c'est le pire
+   *    moment pour dire non.
+   */
+  const trouves = useMemo(() => {
+    const q = plat(requete.trim());
+    if (q.length < 2 || !inventaire) return [];
+    const out: { i: number; lieu: Lieu }[] = [];
+    for (const i of praticables) {
+      if (!plat(spots[i].n!).includes(q)) continue;
+      out.push({ i, lieu: spots[i] });
+      if (out.length >= 6) break;
+    }
+    return out;
+  }, [requete, inventaire, praticables, spots]);
+
+  /**
+   * LE DÉPART — un lieu choisi, ou « où je suis ».
+   *
+   * ⭐ DEUX CHEMINS POUR UNE SEULE DÉCISION, et c'est pour ça que le pin et le
+   *    champ sont sur la même ligne. Le pin EST l'alternative au champ.
+   * ⚠️ Un départ n'est pas forcément un lieu de l'inventaire : « où vous êtes »
+   *    n'a pas de nom au catalogue, et ce n'est pas un défaut — c'est le cas
+   *    le plus fréquent quand on est déjà dehors.
+   */
+  const [depart, setDepart] = useState<{ a: Accroche; nom: string; g: [number, number] } | null>(null);
+  /** Le lieu choisi qu'aucun chemin n'approche — refusé AVANT tout calcul. */
+  const [refusDepart, setRefusDepart] = useState<{ nom: string; a: Accroche } | null>(null);
+
+  /** Remettre à zéro ce qui dépend du départ — jamais à moitié. */
+  const oublier = () => {
+    setProps(null); setChoisie(0); setEnBoucle(false);
+    setBoucleVisee(null); setRetour(null); setMotRetour("");
+  };
+
+  /**
+   * LES TROIS PROPOSITIONS AUTOUR D'UN DÉPART.
+   *
+   * ⛔ LE REFUS SE DIT, ET IL SE DIT EN CHIFFRES. Mesuré le 2/11 : 14 % des
+   *    lieux praticables de la presqu'île et 4 % de l'Aulne n'ont aucun voisin
+   *    dans la bande. Ce ne sont pas des trous de donnée — ce sont des pointes,
+   *    des îles, des bouts de presqu'île. « Je ne peux pas » ne dirait pas
+   *    lequel.
+   */
+  const proposer = (a: Accroche, nom: string, g: [number, number], sauf?: number) => {
+    if (!graphe || !ix || !accroches) return;
+    oublier();
+    /* 🔴 LE PREMIER REFUS EST LE PLUS FRÉQUENT, ET IL ARRIVE AVANT LE CALCUL.
+       Mesuré le 2/11 : 18 % des lieux nommés de la presqu'île sont à plus de
+       150 m du chemin le plus proche. Les faire passer par le compositeur
+       rendrait « aucune proposition » — un refus qui ressemble à un trou de
+       donnée alors que c'est une baie, un cap ou une épave. */
+    if (!accroche(a)) {
+      setRefusDepart({ nom, a });
+      setDepart(null); setProps(null);
+      return;
+    }
+    setRefusDepart(null);
+    const t0 = performance.now();
+    setDepart({ a, nom, g });
+    const p = propositionsAutour(graphe, ix, a, spots, positions, accroches, { sauf });
+    setProps(p);
+    setDuree(Math.round(performance.now() - t0));
+    setMot(
+      p.length === 0
+        ? `Aucun autre lieu remarquable entre ${AUTOUR_MIN_M} m et ${
+            (AUTOUR_MAX_M / 1000).toFixed(0)} km de là, par les chemins que MANA connaît.`
+        : p.length < 3
+          ? `${p.length} proposition${p.length > 1 ? "s" : ""} seulement : le réseau d'ici n'en porte pas trois dans cette bande.`
+          : "",
+    );
+  };
+
+  const choisirSpot = (i: number, sauf?: number) => {
+    if (!accroches) return;
+    setRequete("");
+    setPosition(spots[i].g);
+    proposer(accroches[i], spots[i].n!, spots[i].g, sauf);
+  };
+
   const localiser = () => {
     if (!navigator.geolocation) { setMotGps("Votre navigateur ne sait pas vous situer."); return; }
     setMotGps("Recherche de votre position…");
     navigator.geolocation.getCurrentPosition(
       (p) => {
-        setPosition([p.coords.longitude, p.coords.latitude]);
-        setSitue(true);
-        setMotGps("");
+        const g: [number, number] = [p.coords.longitude, p.coords.latitude];
+        setPosition(g); setMotGps("");
+        /* ⚠️ `accrocherUn` et pas la table : la table est accrochée SANS la
+           seconde passe, donc elle ne saurait pas dire à quelle distance du
+           chemin se trouve quelqu'un qui n'est pas dessus. Ici il faut le
+           dire — c'est précisément la personne qui attend une réponse. */
+        if (graphe && ix) proposer(accrocherUn(graphe, ix, g), "où vous êtes", g);
       },
       // ⭐ Un refus de localisation n'est pas une panne : la page reste
-      //    utilisable depuis le bourg de Crozon, et on le dit.
-      () => setMotGps("Position indisponible — on compose depuis le bourg de Crozon."),
+      //    utilisable en choisissant un lieu, et on le dit.
+      () => setMotGps("Position indisponible — choisissez un lieu dans le champ à côté."),
       { enableHighAccuracy: true, timeout: 8000 }
     );
   };
 
-  const lancer = () => {
-    if (!graphe || !ix) return;
-    const t0 = performance.now();
-    const depart = noeudLePlusProche(graphe, ix, position[0], position[1]);
+  /**
+   * ⭐ ON PROPOSE DÈS QUE C'EST PRÊT, pour que la carte ait quelque chose de
+   *    VRAI à montrer : elle ne sait dessiner qu'un parcours, et une carte
+   *    vide à la place d'une promenade pose la même question qu'un panneau
+   *    vide. Le départ par défaut est le lieu praticable le plus proche du
+   *    bourg de Crozon — un lieu NOMMÉ, pas un nœud au hasard.
+   * ⛔ ET SEULEMENT QUAND `ix` EXISTE, c'est-à-dire une fois les fermetures
+   *    connues. Proposer avant, c'est proposer un parcours qui traverse un
+   *    secteur sous arrêté : l'index EXCLUT les arêtes interdites, il ne les
+   *    pénalise pas, et cette garantie ne vaut que si on l'attend.
+   */
+  const dejaPropose = useRef(false);
+  useEffect(() => {
+    if (dejaPropose.current || !graphe || !ix || !accroches || !praticables.length) return;
+    dejaPropose.current = true;
+    /**
+     * ⭐ LE LIEU VU SUR LA CARTE DEVIENT LE DÉPART — et c'est un changement de
+     *    SENS, pas de code. Le paramètre s'appelle `vers` parce qu'il disait
+     *    « emmène-moi là » du temps où la boucle était la forme par défaut.
+     *    Depuis le 2/11, « j'aime ce coin » est le premier geste : le lieu
+     *    qu'on a repéré est celui d'où l'on part, et c'est MANA qui propose où
+     *    aller ensuite. Les liens existants continuent de marcher.
+     * ⚠️ On ne le cherche pas par son nom mais par sa POSITION : le nom qui
+     *    voyage dans l'URL est celui qu'affichait la carte, et rien ne garantit
+     *    qu'il soit écrit comme dans l'inventaire.
+     */
     if (cible) {
-      const v = composerVers(graphe, ix, depart, km * 1000, cible.g,
-                             { graine: graine.current });
-      setVisee(v);
-      setBoucles(v.etat === "ok" ? v.boucles : []);
-    } else {
-      setBoucles(composer(graphe, ix, depart, km * 1000, { graine: graine.current }));
+      let proche = -1, dp = Infinity;
+      spots.forEach((l, i) => {
+        const m = metres(cible.g, l.g);
+        if (m < dp) { dp = m; proche = i; }
+      });
+      if (proche >= 0 && dp < 60) { choisirSpot(proche); return; }
+      /* Rien d'assez proche dans l'inventaire : on accroche le point lui-même,
+         ce qui permet de refuser en DISANT l'écart au chemin. */
+      proposer(accrocherUn(graphe, ix, cible.g), cible.nom, cible.g);
+      return;
     }
-    setDuree(Math.round(performance.now() - t0));
-    setChoisie(0);
-  };
+    let meilleur = praticables[0], d = Infinity;
+    for (const i of praticables) {
+      const m = metres(position, spots[i].g);
+      if (m < d) { d = m; meilleur = i; }
+    }
+    choisirSpot(meilleur);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [graphe, ix, accroches, praticables]);
 
-  const autre = () => { graine.current = (graine.current * 7919 + 13) >>> 0; lancer(); };
+  /**
+   * ⭐ LA BOUCLE, EN OPTION — « ou revenir par un autre chemin ».
+   *
+   * 🔴 SA CIBLE EST DÉRIVÉE DE L'ALLER, JAMAIS CHOISIE. C'est toute la leçon
+   *    du 2/11 : `composerVers` réussissait 58 % du temps avec un budget décidé
+   *    d'avance et plus de 90 % avec `BOUCLE_PAR_ALLER × l'aller`. Le même
+   *    code, le même graphe — la différence était le nombre que j'avais
+   *    inventé.
+   * ⚠️ Et quand il n'y a pas de boucle, on le DIT et on reste sur l'aller :
+   *    une option absente n'est pas un échec, c'est une option absente.
+   */
+  const basculerBoucle = () => {
+    if (enBoucle) { setEnBoucle(false); return; }
+    const p = props?.[choisie];
+    if (!graphe || !ix || !depart || !p) return;
+    const v = composerVers(graphe, ix, depart.a.noeud,
+      Math.round(p.parcours.metres * BOUCLE_PAR_ALLER), positions[p.i] as [number, number]);
+    setBoucleVisee(v);
+    setEnBoucle(v.etat === "ok");
+  };
 
   /** Le point de départ est-il privé de chemin PAR UNE FERMETURE ? On le sait
    *  en comparant les deux index : le nœud le plus proche du réseau complet
@@ -473,13 +655,12 @@ export function Composer() {
    *    manque — une fonction de secours qui a besoin d'internet n'en est pas une.
    */
   const rentrer = () => {
-    if (!graphe || !ix) return;
+    if (!graphe || !ix || !depart) return;
     setMotRetour("Recherche de votre position…");
     navigator.geolocation?.getCurrentPosition(
       (p) => {
         const ici = noeudLePlusProche(graphe, ix, p.coords.longitude, p.coords.latitude);
-        const depart = noeudLePlusProche(graphe, ix, position[0], position[1]);
-        const r = cheminDeRetour(graphe, ix, ici, depart);
+        const r = cheminDeRetour(graphe, ix, ici, depart.a.noeud);
         if (!r) { setMotRetour("Aucun chemin cartographié ne relie votre position au départ."); return; }
         setRetour(r);
         setMotRetour("");
@@ -489,54 +670,97 @@ export function Composer() {
     );
   };
 
-  const b = boucles?.[choisie] ?? null;
+  /**
+   * LA PROPOSITION RETENUE, ET LE PARCOURS QU'ELLE DESSINE.
+   *
+   * ⭐ `Parcours` ET PAS `Boucle` : l'aller ne se referme pas, la boucle oui,
+   *    et tout ce qui se mesure — mètres, montée dans le sens de marche, bord
+   *    de mer, lieux croisés dans l'ordre — se mesure pareil. Ce qui ne se
+   *    mesure pareil (l'étalement, qui compare une aire à un périmètre) reste
+   *    sur `Boucle` et n'est lu que quand on tient une boucle.
+   */
+  const prop = props?.[choisie] ?? null;
+  const laBoucle: Boucle | null =
+    enBoucle && boucleVisee?.etat === "ok" ? boucleVisee.boucles[0] : null;
+  const b: Parcours | null = laBoucle ?? prop?.parcours ?? null;
+  /** Les mètres ANNONCÉS : réseau plus les deux bouts hors réseau. */
+  const metresDits = laBoucle
+    ? laBoucle.metres + (depart ? Math.round(depart.a.ecartNoeud) : 0)
+    : prop?.metres ?? 0;
 
   /**
-   * 🔴 CE QU'ON CROISERA — CALCULÉ UNE FOIS, LU PARTOUT. Trois surfaces le
-   *    disent : le décompte « n lieux sur le chemin », la liste numérotée, et
-   *    les étapes posées sur la carte. Le 1/11, j'ai inséré le lieu visé dans
-   *    UNE des trois — les étapes — et vérifié en production : le titre disait
-   *    « Aller vers le Menhir de Crozon », la liste citait l'église.
-   *    ⭐ Trois porteuses d'une même règle divergent le jour où l'on en corrige
-   *       une. La règle n'habite plus l'écran, elle habite ce tableau.
-   * ⚠️ Le lieu visé entre par son ORDRE, comme les autres — pas en tête parce
-   *    qu'il est le motif du départ — et porte l'écart MESURÉ au chemin plutôt
-   *    que « sur le chemin » quand il ne l'est pas.
+   * 🔴 CE QU'ON CROISERA — MESURÉ SUR LE TRACÉ, CALCULÉ UNE FOIS, LU PARTOUT.
+   *
+   *    Trois surfaces le disent : le décompte, la liste numérotée, les étapes
+   *    posées sur la carte. Le 1/11, le lieu visé a été inséré dans UNE des
+   *    trois — vérifié en production : le titre disait « Aller vers le Menhir
+   *    de Crozon », la liste citait l'église. ⭐ Trois porteuses d'une même
+   *    règle divergent le jour où l'on en corrige une.
+   *
+   * 🔴 ET LA SOURCE A CHANGÉ LE 2/11, PARCE QU'ELLE SOUS-COMPTAIT DE DEUX
+   *    TIERS LA SEULE CHOSE QUE MANA APPORTE. On lisait `parcours.lieux` —
+   *    les lieux que la MOISSON avait accrochés à une arête, soit 24 % des
+   *    lieux nommés. Mesuré : **1,47** lieu annoncé par promenade contre
+   *    **4,20** réellement à moins de 150 m du tracé, et **27 % des
+   *    promenades annonçaient « 0 lieu »** alors qu'aucune n'en avait zéro.
+   *    Face à un office de tourisme dont l'argument est précisément « nous
+   *    savons ce que vous croisez », c'était le pire endroit où se tromper.
+   *
+   * ⭐ `rencontresLeLong` mesure sur le TRACÉ, contre l'inventaire ENTIER, au
+   *    seuil que `proches.ts` porte déjà — un seul endroit pour les 150 m. Et
+   *    `fondreRencontres` devient inutile ici : elle existait pour INSÉRER le
+   *    lieu visé que la boucle ne savait pas citer. Mesuré sur le tracé, il se
+   *    cite tout seul. ⚠️ La fonction reste exportée et testée : c'est sa
+   *    nécessité qui a disparu, pas sa justesse.
    */
-  const rencontres = useMemo(
-    () => (!b ? [] : fondreRencontres(
-      b.lieux,
-      (c) => LIBELLE[c] ?? c,
-      cible && visee?.etat === "ok"
-        ? { nom: cible.nom, g: cible.g, approche: visee.approches[choisie] }
-        : undefined,
-    )),
-    [b, cible, visee, choisie],
-  );
+  const rencontres = useMemo(() => {
+    if (!graphe || !b || !inventaire) return [];
+    const trace = traits(graphe, b).flat();
+    return rencontresLeLong(trace, inventaire.lieux).map((r) => ({
+      nom: r.l.n ?? inventaire.libelles[r.l.c] ?? r.l.c,
+      libelle: inventaire.libelles[r.l.c] ?? r.l.c,
+      lon: r.l.g[0], lat: r.l.g[1], ecart: r.m,
+    }));
+  }, [graphe, b, inventaire]);
+
+  /**
+   * LE DÉCOMPTE DE CHAQUE PROPOSITION — même mesure, même seuil.
+   * ⚠️ Trois passes de plus à chaque choix de lieu. Elles sont bornées par le
+   *    pré-filtre de boîte de `proches.ts` : mesuré sous la milliseconde par
+   *    proposition, contre 86 ms pour le reste du calcul.
+   */
+  const comptes = useMemo(() => {
+    if (!graphe || !props || !inventaire) return [];
+    return props.map((p) =>
+      rencontresLeLong(traits(graphe, p.parcours).flat(), inventaire.lieux).length);
+  }, [graphe, props, inventaire]);
 
   // La carte attend un `Walk` : on lui en fabrique un, avec les TRAITS
   // séparés — jamais une ligne unique (voir Walk.traits).
   const walk: Walk | null = useMemo(() => {
-    if (!graphe || !b) return null;
+    if (!graphe || !b || !depart || !prop) return null;
     const t = traits(graphe, b).map((l) => l.map(([lon, lat]) => ({ lon, lat })));
     return {
       provenance: "compose" as const,
-      slug: "composee", titre: "Votre promenade", lieu: "Crozon", resume: "",
-      distanceKm: Math.round(b.metres / 100) / 10,
+      slug: "composee",
+      titre: laBoucle ? `Boucle par ${spots[prop.i].n}` : `Vers ${spots[prop.i].n}`,
+      lieu: depart.nom, resume: "",
+      distanceKm: Math.round(metresDits / 100) / 10,
       // ⚠️ La durée se calcule sur le RESSENTI, pas sur les kilomètres :
-      //    annoncer 2 h pour une boucle qui monte de 200 m, c'est promettre
+      //    annoncer 2 h pour un parcours qui monte de 200 m, c'est promettre
       //    ce qu'on ne tient pas.
       dureeEstimeeH: Math.round((b.ressentie / 1000 / ALLURE_KMH) * 2) / 2,
-      boucle: true, osmUrl: "https://www.openstreetmap.org/copyright", osmRef: "",
+      boucle: !!laBoucle,
+      osmUrl: "https://www.openstreetmap.org/copyright", osmRef: "",
       points: t.flat(), traits: t,
       etapes: rencontres.map((r, i) => ({
         nom: r.nom, categorie: r.libelle, pos: i, lat: r.lat, lon: r.lon,
       })),
     };
-  }, [graphe, b, rencontres]);
+  }, [graphe, b, depart, prop, laBoucle, metresDits, rencontres, spots]);
 
   /* ⭐ MARCHER NE CHANGE PAS D'ADRESSE. Une boucle composée n'en a pas : elle
-     vit dans cet écran, avec sa graine et son point de départ. On remplace
+     vit dans cet écran, avec son lieu de départ et son lieu d'arrivée. On remplace
      donc le rendu plutôt que de naviguer — et le retour ramène exactement la
      proposition qu'on avait sous les yeux, sans la recalculer. */
   if (enMarche && walk) {
@@ -578,26 +802,34 @@ export function Composer() {
                  alt="" aria-hidden="true" decoding="async" />
           </picture>
           <div className="cp-entree-dire">
-            <h1 className="cp-titre">{cible ? <>Vers {cible.nom}</> : "Promenade"}</h1>
+            <h1 className="cp-titre">Promenade</h1>
 
             {/* ⭐ UN SEUL NOMBRE, ET C'EST CELUI QU'ON VIENT CHERCHER. Les
                 tronçons de chemin disaient la taille de notre moisson ; les
-                lieux remarquables disent ce qu'il y a à voir. Le premier
-                nous flatte, le second renseigne. Compté dans l'artefact
-                chargé, jamais écrit à la main. */}
-            {graphe && (
+                lieux remarquables disent ce qu'il y a à voir. Le premier nous
+                flatte, le second renseigne.
+                🔴 ET C'EST DÉSORMAIS CELUI DES LIEUX PRATICABLES, pas celui de
+                   l'inventaire. On annonçait 495 — le compte du graphe — alors
+                   qu'on peut en proposer 330 sur ce territoire-ci : annoncer
+                   un nombre dont les deux tiers ne se choisissent pas, c'est
+                   compter ce qu'on a au lieu de ce qu'on donne. */}
+            {graphe && praticables.length > 0 && (
               <p className="cp-compte">
                 <SvgEtincelle />
-                <span>{graphe.l.length} lieux remarquables</span>
+                <span>{praticables.length} lieux d'où partir</span>
               </p>
             )}
 
-            {/* ══ LE DÉPART, EN UNE LIGNE ═════════════════════════════════
+            {/* ══ LE SPOT, EN UNE LIGNE ═══════════════════════════════════
                 ⭐ UN PIN ET UN CHAMP, CÔTE À CÔTE — 2/11, demande du
                 fondateur. C'était un bouton pleine largeur, un séparateur
                 « ou », puis un champ : trois objets empilés pour une seule
                 décision. Le pin EST l'alternative au champ ; les mettre sur
                 la même ligne le dit sans un mot.
+                🔴 ET IL N'Y A PLUS DE BOUTON « COMPOSER ». Choisir son lieu
+                   EST l'action : les trois propositions arrivent avec le
+                   choix. Un bouton de confirmation après un choix unique
+                   demande deux gestes pour une décision.
                 ⛔ LA POSITION SE DEMANDE LÀ OÙ LA QUESTION SE POSE, jamais
                    d'avance, et elle ne part sur aucun serveur.
                 ⚠️ Un bouton qui n'est qu'un picto a besoin d'un nom pour qui
@@ -608,13 +840,14 @@ export function Composer() {
                   <button
                     className="cp-pin"
                     onClick={localiser}
-                    aria-label={situe ? "Me resituer" : "Partir d'où je suis"}
-                    title={situe ? "Me resituer" : "Partir d'où je suis"}
+                    aria-label="Partir d'où je suis"
+                    title="Partir d'où je suis"
+                    disabled={!ix}
                   >
                     <SvgRepere />
                   </button>
                   <label className="cp-depart-champ">
-                    <span className="sr-only">Chercher un lieu de départ</span>
+                    <span className="sr-only">Chercher un lieu qui vous plaît</span>
                     <SvgLoupe />
                     <input
                       type="search"
@@ -626,50 +859,31 @@ export function Composer() {
                 </div>
                 {trouves.length > 0 && (
                   <ul className="cp-depart-liste">
-                    {trouves.map((l) => (
-                      <li key={`${l.c}|${l.n}`}>
-                        <button onClick={() => { setPosition(l.g); setSitue(true); setRequete(""); setMotGps(`Départ : ${l.n}`); }}>
-                          {l.n}
-                        </button>
+                    {trouves.map(({ i, lieu }) => (
+                      <li key={`${lieu.c}|${lieu.n}`}>
+                        <button onClick={() => choisirSpot(i)}>{lieu.n}</button>
                       </li>
                     ))}
                   </ul>
                 )}
                 {motGps && <p className="cp-depart-mot">{motGps}</p>}
-
-                <div className="cp-actions">
-                  <button className="cp-primaire" onClick={lancer} disabled={!ix}>
-                    <SvgBoussole />{cible ? "M'y emmener" : "Composer ma promenade"}
-                  </button>
-                </div>
+                {depart && (
+                  <p className="cp-depart-mot">
+                    Depuis <strong>{depart.nom}</strong>
+                    {/* ⚠️ LES MÈTRES QUI NE SONT PAS SUR LE TRACÉ SE DISENT.
+                        Le parcours commence au premier nœud du réseau, qui
+                        est à `ecartNoeud` du lieu choisi : médiane 30 m,
+                        jusqu'à 381 m. Les taire ferait commencer la promenade
+                        ailleurs qu'on ne l'a demandée. */}
+                    {depart.a.ecartNoeud > 60 &&
+                      ` · le chemin commence à ${Math.round(depart.a.ecartNoeud)} m`}
+                  </p>
+                )}
               </>
             )}
           </div>
         </header>
 
-        {/* ══ LA DISTANCE — ET C'EST SA PLACE QUE LA CARTE PRENDRA ═════════
-            ⭐ Tant que rien n'est composé, cette bulle demande la distance.
-            Dès qu'une boucle existe, la carte s'affiche ici même : le
-            même emplacement, la question puis sa réponse. */}
-        {graphe && !b && (
-          <section className="cp-feuille">
-            <p className="cp-distance-dire">Quelle distance&nbsp;?</p>
-            <div className="cp-temps" role="group" aria-label="Distance de marche">
-              {DISTANCES.map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  className={`cp-temps-choix${km === d ? " est-choisi" : ""}`}
-                  aria-pressed={km === d}
-                  onClick={() => setKm(d)}
-                >
-                  <SvgRuban />
-                  <span className="cp-temps-h">{d} km</span>
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
 
 
 
@@ -700,7 +914,7 @@ export function Composer() {
           {fermetures === null && (
             <p className="page-note" role="status">
               <strong>Fermetures officielles indisponibles.</strong>{" "}
-              Les boucles ne tiennent pas compte des arrêtés en cours.
+              Les promenades ne tiennent pas compte des arrêtés en cours.
               Vérifiez auprès de l'
               <a href="https://www.crozon-tourisme.bzh/trouver-son-activite/randonnee-velo-trail-2/"
                  rel="noopener">office de tourisme</a> avant de partir.
@@ -710,88 +924,40 @@ export function Composer() {
         </section>
         )}
 
-        {/* ══ LE REFUS, QUAND ON VISAIT UN LIEU ═══════════════════════════
-            🔴 C'EST LA PARTIE QUI COMPTE. Une boucle réussie se voit ; un
-            refus mal fait ne se voit pas — il ressemble à une absence. Les
-            cinq façons d'échouer appellent cinq gestes différents : s'en
-            approcher autrement, choisir un autre jour, partir d'ailleurs,
-            prévoir plus de temps, ou renoncer. « Je ne peux pas » ne dit
-            lequel à personne.
+        {/* ══ LES REFUS ═══════════════════════════════════════════════════
+            🔴 C'EST LA PARTIE QUI COMPTE. Une promenade réussie se voit ; un
+            refus mal fait ne se voit pas — il ressemble à une absence.
+            ⭐ ET ILS ONT CHANGÉ DE PLACE, PAS DISPARU. Hier ils portaient sur
+               le BUT d'une boucle ; aujourd'hui le but est un lieu que la
+               personne a choisi sur la carte, et c'est le DÉPART qui peut ne
+               pas tenir. Le refus le plus fréquent est donc devenu le premier :
+               18 % des lieux nommés ne sont approchés par aucun chemin.
             ⚠️ Et aucun de ces textes n'affirme quoi que ce soit sur le MONDE :
                ils disent ce que MANA sait. « Aucun chemin connu de nous » et
                « il n'y a pas de chemin » ne sont pas la même phrase — le
                graphe de la presqu'île porte 115 composantes, et son silence
                mesure sa moisson, pas la Bretagne. */}
-        {cible && visee && visee.etat !== "ok" && (
+        {refusDepart && (
           <section className="page-panel">
-            {visee.etat === "ecarte" && (
-              <>
-                <p className="page-texte">
-                  <strong>Aucun chemin ne passe devant {cible.nom}.</strong>{" "}
-                  Le plus proche en reste à {visee.ecart} m — au-delà des{" "}
-                  {ECART_MAX_M} m à partir desquels on peut dire « vous passez
-                  devant ».
-                </p>
-                <p className="page-texte">
-                  Ce n'est pas un manque de données : les baies, les caps, les
-                  îles et les épaves se regardent plus qu'ils ne se longent.
-                  MANA ne vous y mènera pas en prétendant le contraire.
-                </p>
-              </>
-            )}
-            {visee.etat === "ferme" && (
-              <p className="page-texte">
-                <strong>Le chemin qui mène à {cible.nom} est fermé par
-                arrêté.</strong> Ce n'est pas la durée, et ce n'est pas la
-                distance : ce passage-là est interdit. Les arrêtés en vigueur
-                sont rappelés plus haut.
-              </p>
-            )}
-            {visee.etat === "hors-reseau" && (
-              <p className="page-texte">
-                <strong>Aucun chemin connu de MANA ne relie votre point de
-                départ à {cible.nom}.</strong> Il est peut-être de l'autre côté
-                de l'eau, ou hors de la zone que nous avons cartographiée —
-                nous ne savons pas dire lequel, et nous ne le devinerons pas à
-                votre place.
-              </p>
-            )}
-            {visee.etat === "trop-loin" && (
-              <>
-                <p className="page-texte">
-                  <strong>{cible.nom} est trop loin pour {km} km.</strong>{" "}
-                  Le chemin le plus court y mène en{" "}
-                  {(visee.metresAller / 1000).toFixed(1)} km — comptez{" "}
-                  <strong>au moins{" "}
-                  {(visee.metresMinimum / 1000).toFixed(1)} km</strong>{" "}
-                  pour l'aller-retour.
-                </p>
-                <p className="page-note">
-                  « Au moins », pas « environ » : c'est l'aller-retour par le
-                  plus court chemin, et le vrai parcours ne fait qu'ajouter.
-                  Choisissez une distance plus grande, ou partez d'un point
-                  plus proche.
-                </p>
-              </>
-            )}
-            {visee.etat === "aucune-boucle" && (
-              <p className="page-texte">
-                <strong>{cible.nom} est à portée, mais aucune boucle n'en
-                revient autrement.</strong> Y aller demanderait de repasser par
-                le même chemin — ce que MANA ne propose pas sous le nom de
-                balade. Essayez depuis un autre point de départ, ou avec plus
-                de temps.
-              </p>
-            )}
-            <p className="est-actions" style={{ marginTop: "var(--sp-3)" }}>
-              <a className="btn btn-ghost" href={window.location.pathname}>
-                Composer une boucle autour de moi
-              </a>
+            <p className="page-texte">
+              <strong>Aucun chemin ne passe devant {refusDepart.nom}.</strong>{" "}
+              Le plus proche en reste à {Math.round(refusDepart.a.ecart)} m — au-delà
+              des {ECART_MAX_M} m à partir desquels on peut dire « vous passez
+              devant ».
+            </p>
+            <p className="page-texte">
+              Ce n'est pas un manque de données : les baies, les caps, les îles
+              et les épaves se regardent plus qu'ils ne se longent. MANA ne
+              vous y mènera pas en prétendant le contraire.
+            </p>
+            <p className="page-note">
+              Choisissez un lieu dans le champ ci-dessus — il ne propose que
+              des lieux d'où l'on peut partir.
             </p>
           </section>
         )}
 
-        {!cible && boucles && boucles.length === 0 && (
+        {depart && props && props.length === 0 && (
           <section className="page-panel">
             {departCoupe ? (
               <>
@@ -799,13 +965,13 @@ export function Composer() {
                   <strong>
                     Le sentier qui part d'ici est fermé par arrêté municipal.
                   </strong>{" "}
-                  Aucune boucle depuis ce point&nbsp;: l'accès ne rejoint plus
-                  le réseau.
+                  Aucune promenade depuis ce point&nbsp;: l'accès ne rejoint
+                  plus le réseau.
                 </p>
                 <p className="page-texte">
-                  Ce n'est pas la durée&nbsp;: c'est ce chemin-là qui est
-                  interdit. Éloignez-vous du trait de côte, ou partez
-                  d'un autre point.
+                  Ce n'est pas la distance&nbsp;: c'est ce chemin-là qui est
+                  interdit. Éloignez-vous du trait de côte, ou partez d'un
+                  autre lieu.
                 </p>
                 {touchees?.actives.map((f) => (
                   <p className="page-note" key={f.id}>
@@ -815,11 +981,35 @@ export function Composer() {
                 ))}
               </>
             ) : (
-              <p className="page-texte">
-                Aucune boucle de cette longueur ne part d'ici. Changez la
-                durée, ou rapprochez-vous d'un chemin.
-              </p>
+              <>
+                <p className="page-texte"><strong>{mot}</strong></p>
+                <p className="page-note">
+                  {/* ⭐ LE PLANCHER EST UNE PROMESSE, PAS UNE LIMITE TECHNIQUE,
+                      et il faut le dire plutôt que de laisser croire à un
+                      trou. Mesuré le 2/11 : un tiers des voisins immédiats de
+                      la presqu'île sont à moins de 500 m à pied. Les proposer
+                      serait proposer de traverser un parking. */}
+                  MANA ne propose pas de promenade de moins de {AUTOUR_MIN_M} m :
+                  en deçà, ce n'est pas une promenade. Essayez un lieu voisin.
+                </p>
+              </>
             )}
+          </section>
+        )}
+
+        {/* ⚠️ LA BOUCLE DEMANDÉE ET REFUSÉE SE DIT AUSSI — sinon le bouton
+            aurait l'air cassé. Une option absente n'est pas un échec. */}
+        {boucleVisee && boucleVisee.etat !== "ok" && prop && (
+          <section className="page-panel">
+            <p className="page-texte">
+              <strong>Pas de boucle par {spots[prop.i].n}.</strong>{" "}
+              {boucleVisee.etat === "aucune-boucle"
+                ? "Y aller et revenir autrement demanderait de repasser par le même chemin — ce que MANA ne propose pas sous le nom de boucle."
+                : boucleVisee.etat === "ferme"
+                  ? "Le chemin du retour est fermé par arrêté."
+                  : "Aucun second chemin connu de MANA n'en revient."}{" "}
+              L'aller reste&nbsp;: on revient sur ses pas, et c'est très bien.
+            </p>
           </section>
         )}
 
@@ -856,66 +1046,68 @@ export function Composer() {
         )}
 
         {/* ══ C · LES TROIS PROPOSITIONS ══════════════════════════════
-              🔴 TROIS, ET NON « LA MEILLEURE » — c'est une MESURE qui
-              l'impose. Sur une cible de 6 km, les deux meilleures boucles
-              étaient séparées de 4 points sur 138 — un écart dans le bruit —
-              et elles ne se ressemblaient pas du tout : l'une longeait la mer
-              sur 28 % de son parcours, l'autre sur 4 %.
-              ⭐ Les poids du score (14 par lieu, 220 pour la longueur) sont
-                 des opinions que personne n'a validées en marchant. Quand un
-                 classement ne sait pas trancher, il ne doit pas trancher : il
-                 doit PROPOSER — et c'est aussi l'argument de dispersion des
-                 flux, qui veut cinq promenades plutôt que la meilleure.
-
-              ⛔ ET LEUR IMAGE EST LEUR TRACÉ, PAS UNE PHOTOGRAPHIE. La
-                 maquette demande « une photographie du paysage réellement
-                 traversé » : nous n'en avons aucune, et nous ne pouvons pas
-                 en avoir — cette boucle n'existait pas il y a trois secondes.
-                 Mettre une jolie côte bretonne sous un parcours qui ne la
-                 longe pas est le mensonge documentaire que ce dépôt refuse
-                 pour les fiches de balade ; il ne devient pas acceptable
-                 parce qu'il est plus petit.
-              ⭐ LE VISAGE, C'EST LA SILHOUETTE. Chaque boucle en a une
-                 qu'aucune autre n'a, elle est VRAIE, elle se dessine depuis
-                 nos propres données, et aucun catalogue de photographies ne
-                 peut la copier. */}
-        {boucles && boucles.length > 1 && (
+              🔴 TROIS LIEUX, PLUS TROIS BOUCLES — 2/11. Hier le compositeur
+              rendait trois parcours vers un prétexte qu'il avait choisi ;
+              aujourd'hui la personne a choisi son coin, et ce qu'on lui
+              propose, c'est OÙ ALLER. Le choix porte donc sur une destination
+              qui a un nom, pas sur une silhouette qu'il faut déchiffrer.
+              ⭐ TROIS, ET NON « LA MEILLEURE » : mesuré le 2/11, les trois
+                 propositions s'écartent de 102° à 106° en médiane — elles
+                 partent vraiment dans des directions différentes. ⚠️ Mais pour
+                 10 % des lieux elles s'écartent de moins de 17°, et là le
+                 choix est largement illusoire ; c'est le prix du réseau, pas
+                 une qualité du produit.
+              ⛔ ET L'IMAGE EST LE TRACÉ, PAS UNE PHOTOGRAPHIE. Nous n'avons
+                 aucune photographie de ces parcours et nous ne pouvons pas en
+                 avoir — celui-ci n'existait pas il y a trois secondes. Mettre
+                 une jolie côte bretonne sous un chemin qui ne la longe pas est
+                 le mensonge documentaire que ce dépôt refuse pour les fiches
+                 de balade ; il ne devient pas acceptable parce qu'il est
+                 plus petit.
+              ⭐ LE VISAGE, C'EST LA SILHOUETTE. Elle est VRAIE, elle se
+                 dessine depuis nos propres données, et aucun catalogue de
+                 photographies ne peut la copier. */}
+        {props && props.length > 0 && (
           <section className="cp-propositions">
-            <p className="cp-sus"><SvgEtincelle />Trois propositions</p>
+            <p className="cp-sus"><SvgEtincelle />
+              {props.length > 1 ? `${props.length} lieux autour` : "Un lieu autour"}
+            </p>
             {/* ⭐ LE NOM VIENT DU TERRITOIRE CHARGÉ, pas d'une chaîne écrite
                 ici : c'est `territoires.ts` qui sait de quel graphe on
                 compose, et il le sait parce qu'il a tranché la couture. */}
             <h2 className="cp-question">
-              À la découverte de {(territoireDe(position[0], position[1]) ?? DEFAUT).avecArticle}
+              Où vont vos pas depuis {depart?.nom ?? (territoireDe(position[0], position[1]) ?? DEFAUT).avecArticle} ?
             </h2>
 
             <ul className="cp-cartes">
-              {(() => { const noms = intitules(boucles.slice(0, 3)); return boucles.slice(0, 3).map((x, i) => {
-                /* ⚠️ LE PORTRAIT SE DESSINE AUX DIMENSIONS DE SA BOÎTE, pas
-                   à d'autres qu'on remet ensuite à l'échelle. `portrait()`
-                   applique UN SEUL facteur aux deux axes — c'est tout son
-                   objet, sans quoi les silhouettes s'étirent en rectangles
-                   identiques. Lui donner 320×190 pour l'afficher dans
-                   320×132 rend la main au navigateur : au mieux il centre et
-                   laisse du vide, au pire il déforme. On lui donne la boîte. */
+              {props.map((x, i) => {
                 /* 🔴 UNE BOÎTE DEBOUT, PAS COUCHÉE — et c'est une MESURE qui
                    l'impose. Dans un bandeau 320×132, ces tracés occupaient
-                   76 % de la hauteur et 19 % de la largeur : un ruban perdu
-                   au milieu du vide. Les boucles de la presqu'île courent
+                   76 % de la hauteur et 19 % de la largeur : un ruban perdu au
+                   milieu du vide. Les chemins de la presqu'île courent
                    nord-sud, le long de la côte.
                    ⭐ `portrait()` n'était pas en cause : il applique UN SEUL
-                      facteur aux deux axes, c'est tout son objet, et c'est
-                      ce qui empêche les 46 silhouettes de devenir des
-                      rectangles identiques. Quand une forme ne remplit pas
-                      sa boîte, on change la boîte — jamais la projection. */
-                const t = portrait(x.contour, 104, 132, 0.1);
+                      facteur aux deux axes, c'est tout son objet, et c'est ce
+                      qui empêche les silhouettes de devenir des rectangles
+                      identiques. Quand une forme ne remplit pas sa boîte, on
+                      change la boîte — jamais la projection. */
+                const t = portrait(x.parcours.contour, 104, 132, 0.1);
+                const lieu = spots[x.i];
                 return (
-                  <li key={i}>
+                  <li key={x.i}>
                     <button
                       type="button"
                       className={`cp-carte${i === choisie ? " est-choisie" : ""}`}
                       aria-pressed={i === choisie}
-                      onClick={() => setChoisie(i)}
+                      onClick={() => {
+                        setChoisie(i);
+                        /* ⚠️ CHANGER DE DESTINATION ANNULE LA BOUCLE, et ne la
+                           recalcule pas en silence : la boucle d'avant menait
+                           ailleurs. Garder le bouton enfoncé afficherait un
+                           parcours qui ne correspond plus au lieu nommé
+                           au-dessus. */
+                        setEnBoucle(false); setBoucleVisee(null);
+                      }}
                     >
                       <span className="cp-carte-trace" aria-hidden="true">
                         {t && (
@@ -927,22 +1119,45 @@ export function Composer() {
                         )}
                       </span>
                       <span className="cp-carte-dire">
-                        <span className="cp-carte-titre">{noms[i]}</span>
+                        {/* ⭐ LE TITRE EST LE NOM DU LIEU. Il n'y a plus rien à
+                            inventer : la personne va QUELQUE PART, et cet
+                            endroit a un nom qu'OpenStreetMap porte. Les
+                            intitulés calculés servaient à nommer une boucle
+                            qui n'allait nulle part en particulier. */}
+                        <span className="cp-carte-titre">{lieu.n}</span>
                         {/* ⚠️ CHAQUE LIGNE EST UNE MESURE, et son picto dit
-                            laquelle — la distance, les rencontres, la mer.
-                            Une ligne qui n'a rien à dire ne s'affiche pas :
-                            « 0 m au bord de l'eau » est du remplissage. */}
+                            laquelle. Une ligne qui n'a rien à dire ne
+                            s'affiche pas : « 0 m au bord de l'eau » est du
+                            remplissage.
+                            🔴 LA DISTANCE EST CELLE DU CHEMIN, JAMAIS DU VOL
+                               D'OISEAU, et elle compte les deux bouts hors
+                               réseau. Mesuré le 2/11 : le détour médian est de
+                               ×1,27 et monte à ×2,9 sur ces propositions —
+                               annoncer la ligne droite enverrait quelqu'un
+                               pour trois fois moins que la marche. */}
                         <span className="cp-carte-faits">
-                          <span><SvgRepere />{(x.metres / 1000).toFixed(1)} km</span>
-                          <span><SvgEtincelle />{x.lieux.length} lieu{x.lieux.length > 1 ? "x" : ""} · {FORME[formeDeLaBoucle(x.etalement)]}</span>
-                          {x.bordDeMer > 300 && (
-                            <span><SvgVague />{Math.round(x.bordDeMer)} m au bord de l'eau</span>
+                          <span><SvgRuban />{(x.metres / 1000).toFixed(1)} km à pied</span>
+                          <span><SvgEtincelle />{comptes[i] ?? 0} lieu{(comptes[i] ?? 0) > 1 ? "x" : ""} sur le chemin · {inventaire?.libelles[lieu.c] ?? LIBELLE[lieu.c] ?? lieu.c}</span>
+                          {x.parcours.bordDeMer > 300 && (
+                            <span><SvgVague />{Math.round(x.parcours.bordDeMer)} m au bord de l'eau</span>
                           )}
-                          {x.marees > 0 && (
+                          {x.parcours.marees > 0 && (
                             <span className="cp-alerte"><SvgVague />un passage dépend de la marée</span>
                           )}
                         </span>
-                        <span className="cp-carte-texte">{descriptif(x)}</span>
+                        {/* ⚠️ « À » ET PAS « SUR » QUAND CE N'EST PAS SUR. Le
+                            tracé passe à `sortie` mètres du lieu : zéro quand
+                            il passe dessus, jusqu'à 150 m quand il passe
+                            devant. Les 150 m sont dits à l'écran parce que
+                            c'est ce qui autorise la phrase « vous passez
+                            devant ». */}
+                        <span className="cp-carte-texte">
+                          {x.sortie <= 20
+                            ? "Le chemin y passe."
+                            : `Le chemin passe à ${x.sortie} m — le lieu se voit depuis le sentier.`}
+                          {x.minimum > 0 && x.parcours.metres > x.minimum * 1.05 &&
+                            ` Un détour de ${Math.round(x.parcours.metres - x.minimum)} m pour un chemin plus agréable que le plus court.`}
+                        </span>
                       </span>
                       <span className="cp-carte-fleche" aria-hidden="true">
                         <SvgFleche />
@@ -950,18 +1165,29 @@ export function Composer() {
                     </button>
                   </li>
                 );
-              }); })()}
+              })}
             </ul>
           </section>
-
         )}
 
         {b && walk && (
           <>
             <section className="page-panel">
               <h2 className="section-title" style={{ marginBottom: "var(--sp-2)" }}>
-                {walk.distanceKm} km
+                {walk.distanceKm} km {laBoucle ? "en boucle" : `jusqu'à ${prop ? spots[prop.i].n : ""}`}
               </h2>
+              {/* ⚠️ ET ON DIT CE QUE « ALLER » VEUT DIRE. Sans cette ligne, un
+                  aller de 1,4 km se lit comme une promenade de 1,4 km ; le
+                  retour sur ses pas la double. Taire le facteur deux serait la
+                  sous-estimation que le fondateur a explicitement refusée le
+                  2/11 : « ne pas sur-estimer ou sous-estimer ». */}
+              {!laBoucle && (
+                <p className="page-note">
+                  C'est l'<strong>aller</strong>. Revenir sur ses pas en fait{" "}
+                  {(walk.distanceKm * 2).toFixed(1)} km — ou composez une
+                  nouvelle promenade en arrivant.
+                </p>
+              )}
 
               {/* ══ D · CE QU'ON EMPORTE ════════════════════════════════════
                   ⛔ PAS DE BOUTON « PARTIR » : il n'irait nulle part. L'écran
@@ -989,10 +1215,44 @@ export function Composer() {
                 <button className="cp-primaire" onClick={() => setEnMarche(true)}>
                   <SvgPartir />Partir
                 </button>
-                <button className="cp-secondaire" onClick={autre}>
-                  Autre promenade
+                {/* ⭐ LA BOUCLE EST UN INTERRUPTEUR, PAS UNE AUTRE PROMENADE.
+                    « Autre promenade » tirait une nouvelle graine au hasard :
+                    utile quand le compositeur choisissait le prétexte, vide de
+                    sens maintenant que la personne a choisi où aller. Ici le
+                    choix est clair — j'y vais et je reviens sur mes pas, ou je
+                    reviens par un autre chemin.
+                    🔴 ET LA CIBLE DE LA BOUCLE SE DÉRIVE DE L'ALLER : c'est ce
+                       qui fait passer `composerVers` de 58 % à plus de 90 % de
+                       réussite. Voir `basculerBoucle`. */}
+                <button
+                  className={`cp-secondaire${enBoucle ? " est-choisie" : ""}`}
+                  aria-pressed={enBoucle}
+                  onClick={basculerBoucle}
+                >
+                  {enBoucle ? "Revenir sur mes pas" : "Revenir par un autre chemin"}
                 </button>
               </div>
+              {/* ⭐ LE SECOND POINT EST UN NOUVEAU DÉPART — c'est ainsi que la
+                  promenade s'allonge, et c'est la personne qui décide, à
+                  l'arrivée, si elle en a encore envie. Aucune distance n'a
+                  jamais été demandée ni devinée : elle s'additionne par
+                  gestes. ⛔ Et rien ne s'empile en mémoire : la nouvelle
+                  proposition REMPLACE, elle ne se cumule pas — nous ne gardons
+                  pas la trace de ce que quelqu'un a marché. */}
+              {prop && !laBoucle && (
+                <p className="cp-second">
+                  <button className="cp-lien" onClick={() => {
+                    /* ⚠️ On passe le lieu QU'ON QUITTE pour qu'il ne revienne
+                       pas en première proposition — `venuDe`, un seul pas. */
+                    const j = prop.i;
+                    const nomDepart = depart?.nom;
+                    const dOu = spots.findIndex((l) => l.n === nomDepart);
+                    choisirSpot(j, dOu >= 0 ? dOu : undefined);
+                  }}>
+                    <SvgBoussole />Repartir depuis {spots[prop.i].n}
+                  </button>
+                </p>
+              )}
               <p className="cp-second">
                 <button
                   className="cp-lien"
@@ -1017,10 +1277,18 @@ export function Composer() {
                 portent le dénivelé qu'il a mesuré.
               </p>
               <p className="page-note">
-                {FORME[formeDeLaBoucle(b.etalement)]}
-                {formeDeLaBoucle(b.etalement) === "aller-retour" &&
-                  " — on revient par un chemin voisin, pas par une autre boucle"}
-                {" · "}
+                {/* ⛔ L'ÉTALEMENT NE SE LIT QUE SUR UNE BOUCLE. C'est un
+                    quotient isopérimétrique : il compare une aire à un
+                    périmètre, et appellerait « aller-retour » une ligne
+                    droite — un mot juste pour une boucle aplatie, faux pour
+                    un trajet d'un lieu à un autre. Le type le dit : `etalement`
+                    vit sur `Boucle`, pas sur `Parcours`. */}
+                {laBoucle && <>
+                  {FORME[formeDeLaBoucle(laBoucle.etalement)]}
+                  {formeDeLaBoucle(laBoucle.etalement) === "aller-retour" &&
+                    " — on revient par un chemin voisin, pas par une autre boucle"}
+                  {" · "}
+                </>}
                 {/* ⚠️ « CROISÉS », PAS « SUR LE CHEMIN ». Vu en production le
                     1/11 : « 2 lieux sur le chemin », et juste en dessous
                     « Menhir de Crozon · à 76 m du chemin ». Le résumé
@@ -1099,6 +1367,12 @@ export function Composer() {
                     <li key={`${l.nom}-${i}`} style={{ marginBottom: ".4em" }}>
                       {l.nom}
                       {l.libelle && <span className="page-note"> · {l.libelle}</span>}
+                      {/* ⚠️ « À 76 m DU CHEMIN », PAS « SUR LE CHEMIN ». Le
+                          seuil de 150 m autorise la phrase « vous passez
+                          devant » ; il n'autorise pas « c'est sur votre
+                          route ». L'écart est mesuré, donc il se dit. */}
+                      {l.ecart > 40 &&
+                        <span className="page-note"> · à {l.ecart} m du chemin</span>}
                     </li>
                   ))}
                 </ol>
@@ -1140,7 +1414,7 @@ export function Composer() {
                   <p className="cp-securite-dire">
                     {touchees.actives.length} secteur{touchees.actives.length > 1 ? "s" : ""} du
                     sentier côtier (GR34) {touchees.actives.length > 1 ? "sont fermés" : "est fermé"} par
-                    arrêté. Les boucles ne les empruntent pas.
+                    arrêté. Les promenades ne les empruntent pas.
                   </p>
                 ) : (
                   <p className="cp-securite-dire">

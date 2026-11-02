@@ -875,7 +875,16 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
                 className="m-action-fine terr-bouton"
                 href={`${base}/composer?vers=${vise.g[0].toFixed(5)},${vise.g[1].toFixed(5)}&nom=${encodeURIComponent(vise.nom)}`}
               >
-                Composer une balade vers ce lieu
+                {/* 🔴 LE SENS A CHANGÉ LE 2/11, ET LE LIBELLÉ DEVAIT SUIVRE.
+                    Ce bouton disait « vers ce lieu » du temps où la promenade
+                    était une boucle et le lieu son prétexte. Depuis
+                    l'arbitrage du fondateur, « j'aime ce coin » est le PREMIER
+                    geste : le lieu qu'on a repéré sur la carte est celui d'où
+                    l'on part, et MANA propose trois endroits où aller ensuite.
+                    ⭐ Le paramètre `vers` reste tel quel — les liens déjà
+                       partagés continuent de fonctionner — mais un libellé qui
+                       survit à sa cause est pire qu'une note : il promet. */}
+                Partir d'ici
               </a>
             </p>
           </div>

@@ -53,10 +53,22 @@ export interface LieuAccroche {
   /** écart au chemin, en mètres — pour le build, pas pour l'écran */ d: number;
 }
 
-export interface Boucle {
+/**
+ * CE QUI SE MESURE DE N'IMPORTE QUEL PARCOURS — une suite d'arêtes marchée
+ * depuis un nœud, qu'elle se referme ou non.
+ *
+ * ⭐ LA BOUCLE N'EST PLUS LA SEULE FORME DE PROMENADE (2/11, arbitrage du
+ *    fondateur) : on va d'un lieu à un autre, et la boucle devient l'option.
+ *    Tout ce qui se compte — les mètres, la montée dans le sens de marche, le
+ *    bord de mer, les lieux dans l'ordre où on les croise — se compte
+ *    identiquement dans les deux cas. Ce qui ne se compte pas pareil, c'est
+ *    ce qui PARLE de fermeture : il vit sur `Boucle`, pas ici.
+ */
+export interface Parcours {
   aretes: number[];
   metres: number;
   agrement: number;
+  /** part des mètres parcourus deux fois ou plus */
   partRepetee: number;
   /** mètres parcourus à moins de 60 m du trait de côte */
   bordDeMer: number;
@@ -64,13 +76,17 @@ export interface Boucle {
   montee: number;
   /** distance à plat équivalente, montée comprise (règle de Naismith) */
   ressentie: number;
-  /** quotient isopérimétrique : 1 = cercle, 0 = aller-retour aplati */
-  etalement: number;
-  /** mètres de passage dépendant de la marée — 0 si la boucle n'en a aucun */
+  /** mètres de passage dépendant de la marée — 0 s'il n'en a aucun */
   marees: number;
   /** les points du parcours, dans l'ordre de marche */
   contour: [number, number][];
   lieux: LieuVu[];
+}
+
+export interface Boucle extends Parcours {
+  /** quotient isopérimétrique : 1 = cercle, 0 = aller-retour aplati
+   *  ⛔ N'A DE SENS QUE FERMÉ : il compare une aire à un périmètre. */
+  etalement: number;
   score: number;
 }
 
@@ -356,6 +372,87 @@ function remonter(prec: Map<number, [number, number]>, source: number, cible: nu
 }
 
 /**
+ * MESURER UN PARCOURS — les mètres, la montée, le bord de mer, la marée, et
+ * les lieux dans l'ordre où on les croise.
+ *
+ * ⭐ PURE, ET C'EST TOUT L'OBJET. Ce calcul vivait dans la boucle de
+ *    sélection de `composer()` : pour l'éprouver il fallait composer une
+ *    boucle entière, donc disposer d'un graphe, d'un départ et d'une cible
+ *    cohérents. Ici une suite d'arêtes suffit, et une mutation du sens de
+ *    marche tombe sur un carré de quatre nœuds.
+ *
+ * ⚠️ `depart` N'EST PAS DÉCORATIF : il donne le SENS. La même suite d'arêtes
+ *    parcourue à l'envers n'a pas la même montée ni le même ordre de lieux.
+ *    C'est le nœud d'où l'on part, pas le premier bout de la première arête.
+ */
+export function mesurer(
+  g: Graphe, ix: Index, aretes: number[], depart: number,
+): Parcours {
+  const m = aretes.reduce((t, e) => t + g.a[e][2], 0);
+  /* ⚠️ DÉDOUBLONNÉ POUR LE BORD DE MER ET LA MARÉE, PAS POUR LES MÈTRES.
+     Marcher deux fois la même arête littorale ne met pas deux fois la mer à
+     côté de soi — mais ça fait bien deux fois les mètres. */
+  const uniques = [...new Set(aretes)];
+  const compte = new Map<number, number>();
+  for (const e of aretes) compte.set(e, (compte.get(e) ?? 0) + 1);
+  const mRepetee = aretes.reduce((t, e) => t + (compte.get(e)! > 1 ? g.a[e][2] : 0), 0);
+  const agrement = aretes.reduce((t, e) => t + g.a[e][3] * g.a[e][2], 0) / Math.max(m, 1);
+  const bordDeMer = uniques.reduce((t, e) => {
+    const d = g.a[e][5];
+    return t + (d != null && d <= BORD_DE_MER_M ? g.a[e][2] : 0);
+  }, 0);
+  const marees = uniques.reduce((t, e) => t + (g.a[e][7] === 1 ? g.a[e][2] : 0), 0);
+
+  // ⚠️ LA MONTÉE SE COMPTE DANS LE SENS DE MARCHE. Une arête prise à
+  //    l'envers descend ; sommer des valeurs absolues doublerait le
+  //    dénivelé d'une boucle, qui monte et redescend toujours autant.
+  let montee = 0;
+  let nMarche = depart;
+  const contour: [number, number][] = [];
+  for (const e of aretes) {
+    const ar = g.a[e];
+    const aLEndroit = ar[0] === nMarche;
+    const dz = ar[6];
+    if (dz != null) montee += Math.max(0, aLEndroit ? dz : -dz);
+    const suite = aLEndroit ? ar[4] : [...ar[4]].reverse();
+    for (const pt of suite) contour.push(g.n[pt]);
+    nMarche = aLEndroit ? ar[1] : ar[0];
+  }
+
+  // ⭐ ON SÉLECTIONNE PAR PRIORITÉ, ON AFFICHE DANS L'ORDRE DE MARCHE.
+  //    Deux étapes, jamais confondues. Une liste intitulée « ce que vous
+  //    croiserez » mais triée par proximité au chemin est un mensonge
+  //    discret : il ne se signale jamais, il se vérifie en marchant.
+  //    (Vécu le 27/10 : le menhir annoncé en tête se croisait au km 10,7
+  //    sur 12, et la batterie reléguée en 5ᵉ était le point de départ.)
+  const vusLieux = new Map<string, LieuVu>();
+  let parcouru = 0;
+  let nAvant = depart;
+  for (const e of aretes) {
+    const ar = g.a[e];
+    // sens de traversée : l'arête peut être prise dans un sens ou l'autre
+    const aLEndroit = ar[0] === nAvant;
+    for (const L of ix.lieuxParArete.get(e) ?? []) {
+      const cle = `${L.c}|${L.n}`;
+      if (vusLieux.has(cle)) continue;   // on garde la PREMIÈRE rencontre
+      const f = aLEndroit ? L.f : 1 - L.f;
+      vusLieux.set(cle, {
+        categorie: L.c, nom: L.n, anonyme: !!L.anonyme, position: L.g,
+        ordre: (parcouru + f * ar[2]) / Math.max(m, 1),
+      });
+    }
+    parcouru += ar[2];
+    nAvant = aLEndroit ? ar[1] : ar[0];
+  }
+
+  return {
+    aretes, metres: m, agrement, partRepetee: mRepetee / Math.max(m, 1),
+    bordDeMer, montee, ressentie: distanceRessentie(m, montee), marees, contour,
+    lieux: [...vusLieux.values()].sort((x, y) => x.ordre - y.ordre),
+  };
+}
+
+/**
  * 🔴 LE POINT LOINTAIN EST UN LIEU, PAS UN NŒUD AU HASARD — et c'est une
  *    mesure qui l'impose, pas un goût. À 4,5 km à pied du centre de Crozon,
  *    32 lieux sont atteignables, mais ils ne vivent que sur **36 arêtes sur
@@ -489,59 +586,18 @@ export function composer(
     const cle = uniques.join(",");
     if (vues.has(cle)) continue;
 
-    const compte = new Map<number, number>();
-    for (const e of total) compte.set(e, (compte.get(e) ?? 0) + 1);
-    const mRepetee = total.reduce((t, e) => t + (compte.get(e)! > 1 ? g.a[e][2] : 0), 0);
-    const partRepetee = mRepetee / Math.max(m, 1);
-    const agrement = total.reduce((t, e) => t + g.a[e][3] * g.a[e][2], 0) / Math.max(m, 1);
-    const bordDeMer = uniques.reduce((t, e) => {
-      const d = g.a[e][5];
-      return t + (d != null && d <= BORD_DE_MER_M ? g.a[e][2] : 0);
-    }, 0);
-    // ⚠️ LA MONTÉE SE COMPTE DANS LE SENS DE MARCHE. Une arête prise à
-    //    l'envers descend ; sommer des valeurs absolues doublerait le
-    //    dénivelé d'une boucle, qui monte et redescend toujours autant.
-    let montee = 0;
-    let nMarche = depart;
-    const contour: [number, number][] = [];
-    for (const e of total) {
-      const ar = g.a[e];
-      const aLEndroit = ar[0] === nMarche;
-      const dz = ar[6];
-      if (dz != null) montee += Math.max(0, aLEndroit ? dz : -dz);
-      const suite = aLEndroit ? ar[4] : [...ar[4]].reverse();
-      for (const pt of suite) contour.push(g.n[pt]);
-      nMarche = aLEndroit ? ar[1] : ar[0];
-    }
-    const ressentie = distanceRessentie(m, montee);
-    const etalement = etalementDe(contour, m);
-    const marees = uniques.reduce((t, e) => t + (g.a[e][7] === 1 ? g.a[e][2] : 0), 0);
-
-    // ⭐ ON SÉLECTIONNE PAR PRIORITÉ, ON AFFICHE DANS L'ORDRE DE MARCHE.
-    //    Deux étapes, jamais confondues. Une liste intitulée « ce que vous
-    //    croiserez » mais triée par proximité au chemin est un mensonge
-    //    discret : il ne se signale jamais, il se vérifie en marchant.
-    //    (Vécu le 27/10 : le menhir annoncé en tête se croisait au km 10,7
-    //    sur 12, et la batterie reléguée en 5ᵉ était le point de départ.)
-    const vusLieux = new Map<string, LieuVu>();
-    let parcouru = 0;
-    let nAvant = depart;
-    for (const e of total) {
-      const ar = g.a[e];
-      // sens de traversée : l'arête peut être prise dans un sens ou l'autre
-      const aLEndroit = ar[0] === nAvant;
-      for (const L of ix.lieuxParArete.get(e) ?? []) {
-        const cle = `${L.c}|${L.n}`;
-        if (vusLieux.has(cle)) continue;   // on garde la PREMIÈRE rencontre
-        const f = aLEndroit ? L.f : 1 - L.f;
-        vusLieux.set(cle, {
-          categorie: L.c, nom: L.n, anonyme: !!L.anonyme, position: L.g,
-          ordre: (parcouru + f * ar[2]) / Math.max(m, 1),
-        });
-      }
-      parcouru += ar[2];
-      nAvant = aLEndroit ? ar[1] : ar[0];
-    }
+    /* ⭐ LA MESURE EST SORTIE D'ICI — voir `mesurer()`. Tant qu'elle vivait
+       dans cette boucle de sélection, elle n'était pas vérifiable : aucune
+       mutation du comptage de la montée ou de l'ordre des lieux ne pouvait
+       tomber sans qu'une boucle entière soit composée d'abord. C'est la leçon
+       de `fondreRencontres` (1/11) appliquée une couche plus bas. */
+    const p = mesurer(g, ix, total, depart);
+    const { agrement, partRepetee, ressentie } = p;
+    /* ⛔ L'ÉTALEMENT, LUI, RESTE ICI. Il compare une aire à un périmètre :
+       il ne veut rien dire d'un trajet qui ne se referme pas, et
+       `formeDeLaBoucle()` appellerait « aller-retour » une ligne droite —
+       un mot juste pour une boucle aplatie, faux pour un A→B. */
+    const etalement = etalementDe(p.contour, m);
     /* ⭐ QUAND ON VISE, LE BUDGET DEVIENT UN PLAFOND, PLUS UNE CIBLE. « Deux
        heures » dit alors « pas plus de deux heures » : c'est le LIEU qui est
        la demande, la durée n'était qu'une enveloppe. Rendre le vide parce
@@ -553,10 +609,8 @@ export function composer(
     if (ressentie < cibleM * planchier || ressentie > cibleM * 1.15) continue;
     vues.add(cle);
     boucles.push({
-      aretes: total, metres: m, agrement, partRepetee, bordDeMer, montee, ressentie,
-      etalement, contour, marees,
-      lieux: [...vusLieux.values()].sort((x, y) => x.ordre - y.ordre),
-      score: agrement + 14 * vusLieux.size
+      ...p, etalement,
+      score: agrement + 14 * p.lieux.length
              - 220 * Math.abs(ressentie - cibleM) / cibleM
              - 200 * partRepetee,
     });
@@ -813,8 +867,11 @@ export function cheminDeRetour(
   return { aretes, metres: dist.get(vers) ?? 0, contour };
 }
 
-/** La géométrie à dessiner : un trait par arête, jamais une ligne unique. */
-export function traits(g: Graphe, b: Boucle): [number, number][][] {
+/** La géométrie à dessiner : un trait par arête, jamais une ligne unique.
+ *  ⭐ Prend un `Parcours`, pas une `Boucle` : la fonction ne lit que les
+ *     arêtes, et une promenade d'un lieu à un autre se dessine exactement
+ *     pareil. Exiger une boucle ici aurait interdit le A→B sans raison. */
+export function traits(g: Graphe, b: Parcours): [number, number][][] {
   return b.aretes.map((e) => g.a[e][4].map((p) => g.n[p]));
 }
 
@@ -973,4 +1030,472 @@ export function descriptif(b: Boucle): string {
     bouts.push("Une portion se parcourt deux fois.");
   }
   return bouts.join(" ");
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   LA PROMENADE D'UN LIEU À UN AUTRE — « j'aime ce coin, où va-t-on ? »
+   ════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * ⭐ QUATRE NOMBRES, ET AUCUN N'EST UN GOÛT — mesurés le 2/11 sur les deux
+ *    graphes réels, fermetures en vigueur, sur les 648 lieux NOMMÉS que la
+ *    carte affiche (et non les 273 accrochés au graphe).
+ *
+ * `AUTOUR_MIN_M` — ⛔ « les 3 plus proches » ne marche pas : un tiers des
+ *    voisins immédiats sont à moins de 500 m, soit la traversée d'un parking.
+ * `AUTOUR_MAX_M` — au-delà, « le spot d'à côté » est une heure de marche.
+ *    La bande 600–4 000 m donne 3 propositions à 83 % des spots de la
+ *    presqu'île et 88 % de l'Aulne, aucune à 15 % et 3 %.
+ * `DETOUR_MAX` — le genou de la courbe : +3 % de longueur pour +24 % de lieux
+ *    croisés et +27 % de bord de mer. À ×1,4 puis ×1,7, on ne gagne plus rien
+ *    (1,86 lieu dans les deux cas) et on marche plus loin pour rien.
+ * `BOUCLE_PAR_ALLER` — 95 % / 94 % de boucles trouvées. À ×2,2 on tombe à
+ *    68 %, à ×3 on gagne 3 points mais les boucles de l'Aulne passent à
+ *    5,5 km de médiane.
+ *
+ * 🔴 ET CE DERNIER NOMBRE EST LA LEÇON DU JOUR. La même fonction
+ *    `composerVers`, le même graphe, mesurée à **58 %** le 1/11 et à **95 %**
+ *    ici : la différence n'est pas le code, c'est que la cible se DÉRIVE
+ *    maintenant de l'aller au lieu d'être un budget décidé d'avance. Un échec
+ *    que j'avais porté au débit de la donnée était causé par un paramètre que
+ *    j'avais choisi moi-même.
+ */
+export const AUTOUR_MIN_M = 600;
+export const AUTOUR_MAX_M = 4000;
+export const DETOUR_MAX = 1.2;
+export const BOUCLE_PAR_ALLER = 2.6;
+
+/**
+ * OÙ UN POINT DU MONDE TOUCHE LE RÉSEAU.
+ *
+ * 🔴 L'ÉCART SE MESURE AU CHEMIN, PAS AU NŒUD — et l'écart entre les deux
+ *    mesures est énorme. Sur la presqu'île, l'écart médian d'un lieu au
+ *    NŒUD le plus proche est de 44 m mais son p90 de 305 m : un lieu posé au
+ *    milieu d'une arête de 2 km est à 1 km de ses deux bouts tout en étant
+ *    SUR le chemin. Trier par la distance au nœud écartait 22 % des lieux
+ *    nommés, dont beaucoup qu'on longe.
+ *
+ * ⚠️ `noeud` RESTE LE POINT DE MARCHE, parce qu'un graphe ne se parcourt que
+ *    de nœud en nœud — mais ce n'est pas lui qui décide si le lieu est
+ *    atteignable. Les deux rôles étaient confondus ; ils sont séparés ici.
+ */
+export interface Accroche {
+  /** le nœud d'où l'on part réellement marcher */
+  noeud: number;
+  /** distance du point au chemin le plus proche, en mètres */
+  ecart: number;
+  /**
+   * distance du point au NŒUD de marche — les mètres que la personne fait
+   * avant que le tracé ne commence.
+   *
+   * 🔴 DEUX ÉCARTS, PARCE QU'IL Y A DEUX EXIGENCES, ET LES CONFONDRE FAIT
+   *    MENTIR L'ÉCRAN. Être une DESTINATION demande qu'un chemin passe
+   *    devant (`ecart` ≤ 150 m) ; être un DÉPART demande de pouvoir
+   *    commencer à marcher (`ecartNoeud`). Mesuré le 2/11 : médiane 30 m,
+   *    p90 124 m, max 381 m — assez petit pour qu'on ne change pas
+   *    d'ancrage (le meilleur nœud possible ne descend qu'à 223 m), assez
+   *    grand pour qu'un parcours mesuré depuis le nœud rende 418 m là où la
+   *    bande en exigeait 600, et même des trajets PLUS COURTS que le vol
+   *    d'oiseau — ce qui est impossible et le disait.
+   */
+  ecartNoeud: number;
+  /** les arêtes à moins de `ECART_MAX_M` du point, la plus proche en tête */
+  aretes: number[];
+  /**
+   * l'écart de CHAQUE arête au point, dans le même ordre — parallèle à `aretes`.
+   *
+   * 🔴 SANS CE TABLEAU, LE TRACÉ PASSE LOIN D'UN LIEU DEVANT LEQUEL IL
+   *    POUVAIT PASSER. Mesuré le 2/11 : en choisissant la traversée qui
+   *    minimise la LONGUEUR, 78 % des propositions de la presqu'île passaient
+   *    plus de 20 m plus loin que nécessaire — écart médian réel 114 m quand
+   *    15 m était disponible, et 119 cas à plus de 60 m alors qu'un chemin
+   *    passait à moins de 30.
+   * ⭐ Le minimum global ne suffisait pas : il dit qu'UNE arête passe près,
+   *    pas LAQUELLE. Savoir laquelle est ce qui permet d'y aller.
+   */
+  ecarts: number[];
+}
+
+/** Le point est-il sur le réseau au sens de la règle produit ? */
+export const accroche = (a: Accroche) => a.ecart <= SEUIL_PROCHES && a.aretes.length > 0;
+
+/**
+ * ACCROCHER TOUT UN INVENTAIRE EN UNE PASSE.
+ *
+ * 🔴 UNE PASSE, ET PAS UNE PAR LIEU. Accrocher un seul point coûte un
+ *    parcours des 16 210 arêtes et de leurs ~78 000 points de forme ; le
+ *    faire pour les 407 lieux d'un territoire, c'est 32 millions de distances
+ *    — une à deux secondes à chaque clic. On range donc les lieux dans une
+ *    grille au pas du seuil, et chaque point de forme ne regarde que les neuf
+ *    cases autour de lui. Même résultat, une passe.
+ *
+ * ⚠️ LE PAS DE LA GRILLE EST LE SEUIL, ET C'EST CE QUI REND LES NEUF CASES
+ *    SUFFISANTES. Changer l'un sans l'autre ferait manquer des lieux en
+ *    silence — un voisin à 150 m tomberait deux cases plus loin.
+ */
+export function accrocherTous(
+  g: Graphe, ix: Index, points: readonly (readonly [number, number])[],
+  /**
+   * ⭐ L'ÉCART VRAI DES LIEUX HORS RÉSEAU SE PAIE SEULEMENT QUAND ON REFUSE —
+   *    comme le second Dijkstra de `composerVers`. Le calculer demande de
+   *    comparer le lieu à TOUS les nœuds de jonction : mesuré le 2/11, c'est
+   *    1,1 s sur la presqu'île et 2,9 s sur l'Aulne pour l'inventaire entier,
+   *    parce que les ~250 lieux de l'AUTRE territoire y passent tous. Sur le
+   *    fil principal, c'est l'écran qui se figent.
+   * ⚠️ Avec `false`, un lieu hors réseau garde `ecart: Infinity` : `accroche()`
+   *    le refuse correctement, mais on ne peut pas DIRE « à 400 m du chemin ».
+   *    Pour l'écrire, rappeler `accrocherUn` sur ce seul lieu — un point, un
+   *    parcours de nœuds, quelques millisecondes.
+   */
+  { ecartSiLoin = true } = {},
+): Accroche[] {
+  const res: Accroche[] = points.map(() =>
+    ({ noeud: -1, ecart: Infinity, ecartNoeud: Infinity, aretes: [], ecarts: [] }));
+  if (!points.length || !g.n.length) return res;
+
+  /* 🔴 UNE SEULE LATITUDE DE RÉFÉRENCE POUR TOUTE LA PROJECTION — et c'est le
+     défaut qui a mordu le 2/11. Première version : chaque point projetait sa
+     longitude avec le cosinus de SA latitude. À −4,5° de longitude, 0,1° de
+     latitude d'écart déplace la case de 660 m — plus que la case entière.
+     Le même lieu tombait donc dans des cases différentes selon le point de
+     forme qui le regardait, et 39 écarts sur 50 divergeaient de la force
+     brute. ⭐ Le symptôme était muet : la COUVERTURE restait juste (83 %),
+     seuls les écarts étaient faux. Un nombre d'ensemble peut rester vrai
+     pendant qu'on mesure mal chaque cas.
+     ⚠️ Les cases ne sont donc pas carrées en mètres — elles le sont en
+        degrés, à une latitude près. Le voisinage 3×3 couvre quand même plus
+        de 150 m dans les deux axes, ce que la dimension de la case garantit. */
+  const M_PAR_DEGRE_LAT = 111_320;
+  let laSomme = 0;
+  for (const [, la] of g.n) laSomme += la;
+  const latRef = laSomme / g.n.length;
+  const dLa = SEUIL_PROCHES / M_PAR_DEGRE_LAT;
+  const dLo = dLa / Math.max(Math.cos((latRef * Math.PI) / 180), 0.05);
+  const caseDe = (lo: number, la: number) =>
+    `${Math.floor(lo / dLo)}|${Math.floor(la / dLa)}`;
+
+  const grille = new Map<string, number[]>();
+  points.forEach(([lo, la], i) => {
+    const k = caseDe(lo, la);
+    const c = grille.get(k); if (c) c.push(i); else grille.set(k, [i]);
+  });
+
+  /* L'arête qui réalise l'écart minimal, par lieu — pour la mettre en tête. */
+  const meilleure = new Int32Array(points.length).fill(-1);
+
+  for (let ei = 0; ei < g.a.length; ei++) {
+    for (const pi of g.a[ei][4]) {
+      const [lo, la] = g.n[pi];
+      const cx = Math.floor(lo / dLo), cy = Math.floor(la / dLa);
+      for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+        for (const i of grille.get(`${cx + dx}|${cy + dy}`) ?? []) {
+          const d = metres(points[i] as [number, number], g.n[pi]);
+          if (d > SEUIL_PROCHES) continue;
+          const a = res[i];
+          /* ⚠️ ON COMPARE À CHAQUE POINT DE FORME, SANS COURT-CIRCUIT. La
+             première version inscrivait l'arête puis sautait ses points
+             suivants : l'écart retenu était celui du PREMIER point sous le
+             seuil, pas du plus proche. Le plus proche arrive souvent après. */
+          if (d < a.ecart) { a.ecart = d; meilleure[i] = ei; }
+          /* Les arêtes sont parcourues dans l'ordre : l'arête courante est
+             déjà inscrite si et seulement si elle est en queue de liste. */
+          if (a.aretes[a.aretes.length - 1] !== ei) { a.aretes.push(ei); a.ecarts.push(d); }
+          else if (d < a.ecarts[a.ecarts.length - 1]) a.ecarts[a.ecarts.length - 1] = d;
+        }
+      }
+    }
+  }
+
+  points.forEach((p, i) => {
+    const a = res[i];
+    if (a.aretes.length) {
+      /* La plus proche en tête — c'est elle que `promenadeVers` traverse en
+         premier choix et c'est son bout qui sert de point de marche. */
+      /* Trier ensemble, par écart croissant : la plus proche en tête, et
+         `ecarts[k]` reste bien l'écart de `aretes[k]`.
+         ⚠️ DEUX TABLEAUX PARALLÈLES SE DÉSALIGNENT DÈS QU'ON EN TRIE UN SEUL.
+            On trie donc les INDICES, et on reconstruit les deux. */
+      const ordre = a.aretes.map((_, k) => k).sort((x, y) => a.ecarts[x] - a.ecarts[y]);
+      a.aretes = ordre.map((k) => a.aretes[k]);
+      a.ecarts = ordre.map((k) => a.ecarts[k]);
+      const b = a.aretes[0];
+      a.noeud = bout(g, ix, b, p as [number, number]);
+      a.ecartNoeud = metres(p as [number, number], g.n[a.noeud]);
+      return;
+    }
+    /* Il faut pouvoir DIRE « à 400 m du chemin » : ces lieux sont 18 % sur
+       la presqu'île, et ce sont des baies, des caps, des épaves — des choses
+       qu'on regarde. Mais seulement quand quelqu'un en a choisi un. */
+    if (!ecartSiLoin) return;
+    let d = Infinity, n = -1;
+    for (const j of ix.adj.keys()) {
+      const m = metres(g.n[j], p as [number, number]);
+      if (m < d) { d = m; n = j; }
+    }
+    a.ecart = d; a.noeud = n; a.ecartNoeud = d;
+  });
+  return res;
+}
+
+/** Accrocher UN point — pour le pin de localisation, qui bouge. */
+export function accrocherUn(g: Graphe, ix: Index, point: [number, number]): Accroche {
+  return accrocherTous(g, ix, [point], { ecartSiLoin: true })[0];
+}
+
+/** Le bout de l'arête le plus proche du point : c'est de là qu'on marche. */
+function bout(g: Graphe, ix: Index, ei: number, p: [number, number]): number {
+  const [x, y] = [g.a[ei][0], g.a[ei][1]];
+  const dx = ix.adj.has(x) ? metres(g.n[x], p) : Infinity;
+  const dy = ix.adj.has(y) ? metres(g.n[y], p) : Infinity;
+  return dx <= dy ? x : y;
+}
+
+/** Dijkstra à COÛT NU — la longueur, point. Il sert à mesurer le plancher
+ *  d'un trajet avant d'autoriser un détour d'agrément au-dessus.
+ *  ⚠️ Jumeau de `dijkstra`, PAS une variante paramétrée : fondre les deux
+ *     derrière un drapeau mettrait le coût d'agrément et la longueur nue sous
+ *     le même nom, et c'est exactement la confusion que `cheminDeRetour`
+ *     documente — deux intentions opposées sur le même graphe. */
+function dijkstraNu(g: Graphe, ix: Index, source: number) {
+  const lon = new Map<number, number>([[source, 0]]);
+  const prec = new Map<number, [number, number]>();
+  const tas = new Tas();
+  tas.pousser(0, source);
+  for (;;) {
+    const t = tas.tirer();
+    if (!t) break;
+    const [d, n] = t;
+    if (d > (lon.get(n) ?? Infinity) + 1e-9) continue;
+    for (const [ei, suiv] of ix.adj.get(n) ?? []) {
+      const nd = d + g.a[ei][2];
+      if (nd < (lon.get(suiv) ?? Infinity)) {
+        lon.set(suiv, nd); prec.set(suiv, [ei, n]); tas.pousser(nd, suiv);
+      }
+    }
+  }
+  return { lon, prec };
+}
+
+export type Promenade =
+  | {
+      etat: "ok";
+      /** ce qui se marche SUR le réseau : c'est lui qu'on dessine */
+      parcours: Parcours;
+      /** le plus court chemin possible, pour situer le détour d'agrément */
+      minimum: number;
+      /** mètres du lieu de départ au début du tracé */
+      approche: number;
+      /** mètres de la fin du tracé au lieu visé */
+      sortie: number;
+      /**
+       * ⭐ LE TOTAL, ET C'EST LUI QU'ON AFFICHE. `parcours.metres` ne compte
+       *    que le réseau : annoncer ce nombre-là taisait jusqu'à 381 m de
+       *    marche d'un côté et 150 m de l'autre. Mesuré le 2/11, c'est ce qui
+       *    rendait des promenades de 418 m sous un plancher de 600 et, pire,
+       *    des trajets plus courts que le vol d'oiseau — une impossibilité
+       *    géométrique qui signalait la mesure, pas le moteur.
+       *    ⚠️ Avec les deux bouts, `metres ≥ vol d'oiseau` redevient un
+       *       INVARIANT (inégalité triangulaire), donc un test et non un espoir.
+       */
+      metres: number;
+    }
+  | { etat: "ecarte"; ecart: number }
+  | { etat: "ferme"; ecart: number }
+  | { etat: "hors-reseau"; ecart: number }
+  | { etat: "sur-place" };
+
+/**
+ * LA PROMENADE D'UN POINT À UN AUTRE.
+ *
+ * ⭐ C'EST LA FORME PRINCIPALE DEPUIS LE 2/11, et la boucle devient l'option.
+ *    Personne ne choisit plus la distance : deux lieux la déterminent. La
+ *    boucle reste disponible — `composerVers` avec une cible dérivée de
+ *    l'aller — mais ce n'est plus elle qu'on génère par défaut.
+ *
+ * 🔴 LE PARCOURS TRAVERSE L'ARÊTE DU LIEU, il ne rejoint pas son nœud. C'est
+ *    la même exigence que `composer` tient depuis le 28/10 et pour la même
+ *    raison : arriver au nœud au bout de l'arête porteuse ne garantit RIEN —
+ *    on peut y arriver et repartir ailleurs, donc passer À CÔTÉ du lieu. La
+ *    traversée est ici une donnée de la construction (on concatène l'arête),
+ *    et elle est VÉRIFIÉE AU MÈTRE ensuite, parce que la construction ne
+ *    suffit pas quand le point tombe sur une jonction.
+ *
+ * ⚠️ DEUX DIJKSTRA, ET LE PREMIER N'EST PAS DU LUXE. Le plus court donne le
+ *    PLANCHER ; le second cherche le plus agréable sous un plafond de
+ *    `DETOUR_MAX` fois ce plancher. Sans plancher, un plafond absolu serait un
+ *    nombre inventé — exactement ce que ce parcours vient de supprimer.
+ */
+export function promenadeVers(
+  g: Graphe, ix: Index, depuis: Accroche, vers: Accroche, point: [number, number],
+): Promenade {
+  const e = Math.round(vers.ecart);
+  if (!accroche(vers)) return { etat: "ecarte", ecart: e };
+  const ouvertes = vers.aretes.filter((ei) => areteOuverte(g, ix, ei));
+  if (!ouvertes.length) return { etat: "ferme", ecart: e };
+
+  /**
+   * LE MEILLEUR (ARÊTE, BOUT D'ENTRÉE) ATTEIGNABLE.
+   *
+   * 🔴 `parProximite` CHANGE LA PROMESSE, PAS LA PERFORMANCE. Mesuré le 2/11
+   *    en minimisant la seule LONGUEUR : 78 % des propositions de la
+   *    presqu'île et 83 % de l'Aulne passaient plus de 20 m plus loin que
+   *    nécessaire — médiane 114 m là où 15 m était disponible. La cause est
+   *    simple et muette : l'arête qu'on atteint le plus VITE n'est pas celle
+   *    qui passe DEVANT le lieu, et rien ne le signalait puisque les deux
+   *    restent sous les 150 m qui autorisent la phrase « vous passez devant ».
+   * ⭐ Le budget de détour tranche l'arbitrage sans qu'on ait à inventer un
+   *    poids : dans la longueur qu'on s'autorise DÉJÀ, on passe aussi près
+   *    que possible. Hors de ce budget, on ne paie pas la proximité.
+   */
+  const viser = (lon: Map<number, number>, parProximite: boolean) => {
+    let choix: { m: number; ei: number; entree: number; ecart: number } | null = null;
+    for (const ei of ouvertes) {
+      const ecart = vers.ecarts[vers.aretes.indexOf(ei)] ?? vers.ecart;
+      for (const entree of [g.a[ei][0], g.a[ei][1]]) {
+        const L = lon.get(entree);
+        if (L === undefined) continue;
+        const total = L + g.a[ei][2];
+        const mieux = !choix ? true
+          : parProximite
+            // ⚠️ L'écart se compare au MÈTRE PRÈS : départager deux arêtes
+            //    pour 40 cm d'écart ferait choisir au bruit de la donnée.
+            ? (Math.round(ecart) < Math.round(choix.ecart)
+               || (Math.round(ecart) === Math.round(choix.ecart) && total < choix.m))
+            : total < choix.m;
+        if (mieux) choix = { m: total, ei, entree, ecart };
+      }
+    }
+    return choix;
+  };
+
+  const nu = dijkstraNu(g, ix, depuis.noeud);
+  const plancher = viser(nu.lon, false);
+  if (!plancher) return { etat: "hors-reseau", ecart: e };
+
+  /* Le trajet d'agrément, plafonné. S'il n'atteint pas le lieu sous ce
+     plafond — le plus court est alors le seul chemin —, on garde le plus
+     court : il n'est jamais pire, et le refuser serait refuser pour cause
+     d'absence d'alternative. */
+  const ag = dijkstra(g, ix, depuis.noeud, null, plancher.m * DETOUR_MAX);
+  /* ⭐ La carte de longueurs du second passage est DÉJÀ bornée par le plafond :
+     tout candidat qu'on y trouve tient dans le budget, et on peut donc y
+     choisir le plus PROCHE du lieu sans arbitrage supplémentaire. */
+  const choisi = viser(ag.lon, true) ?? plancher;
+  const prec = choisi === plancher ? nu.prec : ag.prec;
+
+  const avant = remonter(prec, depuis.noeud, choisi.entree);
+  if (!avant) return { etat: "hors-reseau", ecart: e };
+  const aretes = [...avant, choisi.ei];
+  const parcours = mesurer(g, ix, aretes, depuis.noeud);
+  if (!parcours.metres) return { etat: "sur-place" };
+
+  /* 🔴 LA PROMESSE EST MÉTRIQUE, DONC ON LA VÉRIFIE AU MÈTRE. Voir
+     `composerVers` : quand le point tombe sur une JONCTION, toutes les arêtes
+     qui s'y rejoignent sont « à moins de 150 m », le parcours en traverse une,
+     et la construction est satisfaite sans qu'on soit passé près du point. */
+  let auPlusPres = Infinity;
+  for (const q of parcours.contour) {
+    const d = metres(point, q);
+    if (d < auPlusPres) auPlusPres = d;
+    if (auPlusPres <= 1) break;
+  }
+  if (auPlusPres > SEUIL_PROCHES) return { etat: "ecarte", ecart: Math.round(auPlusPres) };
+
+  const approche = Math.round(depuis.ecartNoeud);
+  const sortie = Math.round(auPlusPres);
+  return {
+    etat: "ok", parcours, minimum: Math.round(plancher.m),
+    approche, sortie, metres: approche + parcours.metres + sortie,
+  };
+}
+
+/** Une proposition de promenade : le spot visé et le trajet pour y aller. */
+export interface Proposition<T> {
+  spot: T;
+  /** l'index dans l'inventaire reçu — pour remonter au lieu */
+  i: number;
+  parcours: Parcours;
+  /** le plus court chemin possible, pour situer le détour d'agrément */
+  minimum: number;
+  /** ⭐ CE QU'ON AFFICHE : le réseau PLUS les deux bouts hors réseau */
+  metres: number;
+  approche: number;
+  sortie: number;
+}
+
+/**
+ * LES TROIS SPOTS QU'ON PROPOSE AUTOUR D'UN SPOT CHOISI.
+ *
+ * ⛔ PAS « LES TROIS PLUS PROCHES » — mesuré le 2/11 : un tiers des voisins
+ *    immédiats de la presqu'île sont à moins de 500 m à pied, et p10 tombe à
+ *    82 m à vol d'oiseau. Proposer ça, c'est proposer de traverser un
+ *    parking. La sélection se fait dans la bande `AUTOUR_MIN_M`–`AUTOUR_MAX_M`,
+ *    et le voisinage se mesure PAR LE CHEMIN, jamais à vol d'oiseau : le
+ *    détour médian est de ×1,27 mais il monte à ×16 — un spot à 200 m de
+ *    l'autre côté d'une anse coûte 3 km à pied.
+ *
+ * ⭐ LA DISTANCE RENDUE EST CELLE QU'ON MARCHERA, pas l'estimation qui a servi
+ *    à trier. La bande présélectionne sur la distance au NŒUD ; chaque
+ *    proposition retenue est ensuite composée pour de vrai, et c'est son
+ *    `parcours.metres` qu'on affiche. Deux nombres pour une même promesse
+ *    divergeraient, et l'écran annoncerait 1,2 km pour une marche de 1,4.
+ */
+export function propositionsAutour<T>(
+  g: Graphe, ix: Index,
+  depuis: Accroche,
+  spots: readonly T[], positions: readonly (readonly [number, number])[],
+  accroches: readonly Accroche[],
+  {
+    combien = 3, min = AUTOUR_MIN_M, max = AUTOUR_MAX_M,
+    /**
+     * ⭐ LE LIEU D'OÙ L'ON VIENT N'EST PAS UNE PROPOSITION. En chaînant une
+     *    promenade — A vers B, puis depuis B —, le premier voisin de B est
+     *    presque toujours A : c'est vrai, c'est à la bonne distance, et c'est
+     *    inutile, parce que « revenir sur ses pas » est déjà offert juste
+     *    au-dessus avec sa distance. Vérifié à l'écran le 2/11 : depuis le
+     *    Manoir de Goandour, la première carte proposait le Menhir de Crozon,
+     *    qu'on venait de quitter.
+     * ⛔ UN SEUL PAS EN ARRIÈRE, ET RIEN NE S'ACCUMULE. Garder tout l'
+     *    historique serait garder la trace de ce que quelqu'un a marché — ce
+     *    que cette application ne fait pas. Un pas suffit à retirer la
+     *    redondance ; au-delà, repasser par un lieu vu il y a une heure est un
+     *    choix légitime.
+     */
+    sauf,
+  }: { combien?: number; min?: number; max?: number; sauf?: number } = {},
+): Proposition<T>[] {
+  if (!accroche(depuis)) return [];
+  const { lon } = dijkstraNu(g, ix, depuis.noeud);
+
+  const bande: { i: number; estime: number }[] = [];
+  for (let i = 0; i < spots.length; i++) {
+    const a = accroches[i];
+    if (i === sauf) continue;
+    if (!accroche(a) || a.noeud === depuis.noeud) continue;
+    const L = lon.get(a.noeud);
+    if (L === undefined || L < min || L > max) continue;
+    bande.push({ i, estime: L });
+  }
+  bande.sort((x, y) => x.estime - y.estime);
+
+  /* ⚠️ ON EN COMPOSE PLUS QU'ON N'EN GARDE. Un spot de la bande peut être
+     refusé à la composition — son arête sous arrêté, ou la vérification
+     métrique qui tombe sur une jonction. S'arrêter aux trois premiers
+     rendrait alors deux propositions là où le territoire en portait trois. */
+  const out: Proposition<T>[] = [];
+  for (const { i } of bande) {
+    const p = promenadeVers(g, ix, depuis, accroches[i], positions[i] as [number, number]);
+    if (p.etat !== "ok") continue;
+    /* ⚠️ LA BANDE SE JUGE SUR LE TOTAL, PAS SUR LA PRÉSÉLECTION. Le filtre
+       d'au-dessus trie sur la distance au NŒUD, qui est une estimation ; le
+       plancher, lui, est une promesse — « ce n'est pas la traversée d'un
+       parking » — et une promesse se tient sur le nombre qu'on affiche. */
+    if (p.metres < min) continue;
+    out.push({
+      spot: spots[i], i, parcours: p.parcours, minimum: p.minimum,
+      metres: p.metres, approche: p.approche, sortie: p.sortie,
+    });
+    if (out.length >= combien) break;
+  }
+  return out;
 }
