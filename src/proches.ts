@@ -16,14 +16,27 @@ import type { Lieu } from "./lieux";
 const R = 111_320;
 const SEUIL_M = 150;
 
-/** Distance d'un point à un segment, en mètres, à la latitude locale. */
-function versSegment(p: [number, number], a: [number, number], b: [number, number]): number {
+/**
+ * Distance d'un point à un segment, en mètres, à la latitude locale — ET la
+ * fraction `t` du segment où tombe la projection.
+ *
+ * ⭐ `t` ÉTAIT DÉJÀ CALCULÉ ET JETÉ, et son absence rendait fausse une promesse
+ *    écrite juste à côté. Sans lui, un lieu est situé au DÉBUT du segment le
+ *    plus proche : tous ceux qui partagent un segment reçoivent la même
+ *    position, alors que la docstring de `rencontresLeLong` déclare
+ *    explicitement que deux lieux « ne partagent pas une position ». Les ex
+ *    aequo retombaient alors sur le tri amont — qui est celui de la PROXIMITÉ
+ *    AU CHEMIN, exactement la faute que cette fonction existe pour corriger.
+ */
+function versSegment(
+  p: [number, number], a: [number, number], b: [number, number],
+): { m: number; t: number } {
   const k = Math.cos((a[1] * Math.PI) / 180);
   const px = (p[0] - a[0]) * k * R, py = (p[1] - a[1]) * R;
   const dx = (b[0] - a[0]) * k * R, dy = (b[1] - a[1]) * R;
   const L2 = dx * dx + dy * dy;
   const t = L2 === 0 ? 0 : Math.max(0, Math.min(1, (px * dx + py * dy) / L2));
-  return Math.hypot(px - t * dx, py - t * dy);
+  return { m: Math.hypot(px - t * dx, py - t * dy), t };
 }
 
 /**
@@ -59,8 +72,19 @@ export function lieuxProches(
  *    triée par proximité au chemin est un mensonge qui ne se signale jamais :
  *    il se vérifie en marchant.
  *
- * ⚠️ `ordre` EST UNE FRACTION DU PARCOURS, pas un rang. Deux lieux peuvent
- *    partager un rang ; ils ne partagent pas une position.
+ * ⚠️ `ordre` EST UNE FRACTION DU PARCOURS, pas un rang — la position du lieu
+ *    PROJETÉ sur le tracé, cumul du segment plus la part parcourue dessus.
+ * ⚠️ ET DEUX LIEUX PEUVENT LÉGITIMEMENT LA PARTAGER : de part et d'autre du
+ *    chemin, ou groupés autour d'un même point, ils sont au même endroit DE LA
+ *    MARCHE. Mesuré le 2/11 : 20 % des paires voisines sont ex aequo, et
+ *    c'est juste.
+ *    ⭐ Cette ligne disait le contraire — « ils ne partagent pas une
+ *       position » — et elle avait raison contre le CODE de l'époque, qui
+ *       situait chaque lieu au DÉBUT de son segment : les ex aequo y étaient
+ *       une quantification, pas un fait. La promesse était écrite, le calcul
+ *       ne la tenait pas, et c'est la promesse qu'on a crue. Une fois le
+ *       calcul juste, c'est la promesse qui devient fausse : un ex aequo
+ *       n'est plus un défaut, c'est une information.
  */
 export function rencontresLeLong(
   trace: [number, number][],
@@ -78,7 +102,11 @@ export function rencontresLeLong(
   }
   const total = Math.max(cumul[cumul.length - 1], 1);
   return trouves
-    .map(({ l, m, i }) => ({ l, m, ordre: cumul[i] / total }))
+    /* La position VRAIE : le cumul jusqu'au début du segment, PLUS la part de
+       ce segment parcourue avant d'arriver au droit du lieu. */
+    .map(({ l, m, i, t }) => ({
+      l, m, ordre: (cumul[i] + t * (cumul[i + 1] - cumul[i])) / total,
+    }))
     .sort((a, b) => a.ordre - b.ordre);
 }
 
@@ -91,7 +119,7 @@ function proches(
   trace: [number, number][],
   lieux: Lieu[],
   max: number,
-): { l: Lieu; m: number; i: number }[] {
+): { l: Lieu; m: number; i: number; t: number }[] {
   if (trace.length < 2) return [];
   let loMin = Infinity, loMax = -Infinity, laMin = Infinity, laMax = -Infinity;
   for (const [lo, la] of trace) {
@@ -102,20 +130,22 @@ function proches(
   const dLo = dLa / Math.cos(((laMin + laMax) / 2 * Math.PI) / 180);
   loMin -= dLo; loMax += dLo; laMin -= dLa; laMax += dLa;
 
-  const trouves: { l: Lieu; m: number; i: number }[] = [];
+  const trouves: { l: Lieu; m: number; i: number; t: number }[] = [];
   for (const l of lieux) {
     // ⛔ Les lieux SANS NOM ne sont pas cités : « Fortification » sous un
     //    circuit n'apprend rien, et il y en a 734 dans l'inventaire.
     if (!l.n) continue;
     const [lo, la] = l.g;
     if (lo < loMin || lo > loMax || la < laMin || la > laMax) continue;
-    let d = Infinity, oui = 0;
+    let d = Infinity, oui = 0, part = 0;
     for (let i = 1; i < trace.length; i++) {
       const x = versSegment(l.g, trace[i - 1], trace[i]);
-      if (x < d) { d = x; oui = i - 1; }
+      if (x.m < d) { d = x.m; oui = i - 1; part = x.t; }
+      /* ⚠️ LE COURT-CIRCUIT GARDE LE SEGMENT QUI A RÉALISÉ LE MINIMUM, pas le
+         suivant : on sort APRÈS avoir enregistré, jamais avant. */
       if (d <= 1) break;
     }
-    if (d <= SEUIL_M) trouves.push({ l, m: Math.round(d), i: oui });
+    if (d <= SEUIL_M) trouves.push({ l, m: Math.round(d), i: oui, t: part });
   }
   trouves.sort((a, b) => a.m - b.m);
   /* ⚠️ UN NOM NE SE CITE QU'UNE FOIS. « Chemins de l'écrivain » est un même

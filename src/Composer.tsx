@@ -715,8 +715,23 @@ export function Composer() {
    */
   const rencontres = useMemo(() => {
     if (!graphe || !b || !inventaire) return [];
-    const trace = traits(graphe, b).flat();
-    return rencontresLeLong(trace, inventaire.lieux).map((r) => ({
+    /* 🔴 `b.contour`, ET SURTOUT PAS `traits(graphe, b).flat()` — défaut du
+       2/11, trouvé en relisant ce que l'écran donne à mesurer.
+       `traits()` rend la géométrie STOCKÉE de chaque arête, toujours dans le
+       sens a→b, et ne l'inverse JAMAIS. Or 52 % des arêtes d'une promenade
+       sont marchées dans l'autre sens : mis bout à bout, ces morceaux font un
+       zigzag — **89 % des tracés portaient un saut de plus de 120 m, le pire
+       de 1 053 m** — et ces sauts sont des segments droits QUI N'EXISTENT PAS,
+       qui frôlent des lieux qu'on annonçait ensuite « sur le chemin ».
+       Conséquences mesurées : **20 % des listes dans le mauvais ordre**, 4 %
+       des écarts sous-estimés.
+     ⭐ ET LA LEÇON EST DURE : j'ai écrit la règle du sens de marche dans
+        `mesurer()`, je l'ai validée par mutation le matin même — puis je l'ai
+        jetée trois lignes plus loin en recomposant le tracé autrement. Le
+        tracé juste était déjà sur l'objet, construit par `mesurer()` avec
+        `[...ar[4]].reverse()`. ⛔ Une règle tenue à un endroit ne protège pas
+        celui qui refabrique la même chose ailleurs. */
+    return rencontresLeLong(b.contour, inventaire.lieux).map((r) => ({
       nom: r.l.n ?? inventaire.libelles[r.l.c] ?? r.l.c,
       libelle: inventaire.libelles[r.l.c] ?? r.l.c,
       lon: r.l.g[0], lat: r.l.g[1], ecart: r.m,
@@ -731,8 +746,10 @@ export function Composer() {
    */
   const comptes = useMemo(() => {
     if (!graphe || !props || !inventaire) return [];
-    return props.map((p) =>
-      rencontresLeLong(traits(graphe, p.parcours).flat(), inventaire.lieux).length);
+    /* ⚠️ `contour` ici AUSSI : c'est la même mesure, et la même faute si on
+       la refait avec `traits()`. Le badge « N lieux sur le chemin » de chaque
+       carte en dépend. */
+    return props.map((p) => rencontresLeLong(p.parcours.contour, inventaire.lieux).length);
   }, [graphe, props, inventaire]);
 
   // La carte attend un `Walk` : on lui en fabrique un, avec les TRAITS
@@ -752,7 +769,14 @@ export function Composer() {
       dureeEstimeeH: Math.round((b.ressentie / 1000 / ALLURE_KMH) * 2) / 2,
       boucle: !!laBoucle,
       osmUrl: "https://www.openstreetmap.org/copyright", osmRef: "",
-      points: t.flat(), traits: t,
+      /* ⚠️ DEUX GÉOMÉTRIES, ET ELLES NE SONT PAS INTERCHANGEABLES.
+         `traits` = un trait PAR ARÊTE, dessiné séparément : le sens n'y change
+         rien, chaque morceau se trace pour lui-même.
+         `points` = la suite MARCHÉE, d'où les repères « Départ »/« Arrivée »
+         sont tirés (CarteReelle) et que le schéma hors ligne relie en UNE
+         ligne (WalkMap). Lui donner `t.flat()` posait les repères aux mauvais
+         bouts et faisait tracer des droites de plus d'un kilomètre. */
+      points: b.contour.map(([lon, lat]) => ({ lon, lat })), traits: t,
       etapes: rencontres.map((r, i) => ({
         nom: r.nom, categorie: r.libelle, pos: i, lat: r.lat, lon: r.lon,
       })),

@@ -235,6 +235,29 @@ describe("de la carte au compositeur", () => {
        dur dans l'écran divergerait le jour où la règle bouge. */
     expect(compo, "un seuil de proximité est recopié dans l'écran")
       .not.toMatch(/\b150\b/);
+
+    /* 🔴 ET ON MESURE SUR LE TRACÉ QU'ON MARCHE — le défaut du 2/11, le plus
+       coûteux de la journée. L'écran passait `traits(g, b).flat()` : la
+       géométrie STOCKÉE de chaque arête, toujours a→b, jamais inversée, alors
+       que 52 % des arêtes sont marchées à l'envers. 89 % des tracés portaient
+       un saut de plus de 120 m — des segments droits inexistants, qui frôlaient
+       des lieux ensuite annoncés « sur le chemin » — et 20 % des listes
+       sortaient dans le mauvais ordre.
+
+       ⚠️ CE GARDE NOMME UNE FORME, ET C'EST ASSUMÉ. `promenade.test.ts` tient
+          la PROPRIÉTÉ (« un tracé marché ne saute pas »), mais il la tient sur
+          `contour`, qui était déjà juste : il n'aurait rien vu. ⭐ Un garde
+          posé sur un objet ne dit rien de celui qui en refabrique un autre.
+          Celui-ci interdit donc la seule mauvaise fabrication connue, et il
+          dit pourquoi. */
+    for (const m of [...compo.matchAll(/rencontresLeLong\(([^,]+),/g)]) {
+      expect(m[1].trim(), `rencontresLeLong reçoit « ${m[1].trim()} » : ce doit ` +
+        `être le contour MARCHÉ, pas une géométrie recollée`).toMatch(/\.contour$/);
+    }
+    expect(compo, "traits() aplati sert de tracé quelque part — c'est le zigzag")
+      .not.toMatch(/traits\([^)]*\)\s*\.flat\(\)/);
+    expect(compo, "les points de la carte ne suivent pas l'ordre de marche")
+      .toMatch(/points: b\.contour/);
   });
 
   /* 🔴 LE GARDE QUI COMPTE : UN REFUS MUET RESSEMBLE À UNE ABSENCE. Le

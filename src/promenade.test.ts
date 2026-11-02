@@ -9,12 +9,13 @@
 import { existsSync, readFileSync } from "node:fs";
 import { describe, it, expect } from "vitest";
 import {
-  indexer, metres, mesurer, accrocherTous, accrocherUn, accroche,
+  indexer, metres, mesurer, traits, accrocherTous, accrocherUn, accroche,
   promenadeVers, propositionsAutour, composerVers,
   AUTOUR_MIN_M, AUTOUR_MAX_M, DETOUR_MAX, BOUCLE_PAR_ALLER, ECART_MAX_M,
   type Graphe,
 } from "./composition";
 import { aretesTouchees, type Fermetures } from "./fermetures";
+import { rencontresLeLong } from "./proches";
 
 /* ── Le fixture : UNE arête longue, et c'est tout l'intérêt ────────────────
    🔴 L'arête porte 21 points de forme sur 4 km. Un lieu posé en son milieu
@@ -286,6 +287,67 @@ describe.skipIf(!dispo)("sur le graphe réel de la presqu'île", () => {
           ensemble fabrique un garde qui crie sans défaut. */
     expect(plusGrandDetour).toBeGreaterThan(2);
   }, 60_000);
+
+  it("🔴 le tracé qu'on MESURE est celui qu'on MARCHE, sans saut inventé", () => {
+    /* LE DÉFAUT DU 2/11, ET LE PLUS COÛTEUX DE LA JOURNÉE.
+       L'écran donnait à mesurer `traits(g, b).flat()` — la géométrie STOCKÉE
+       de chaque arête, toujours dans le sens a→b, jamais inversée. Or 52 %
+       des arêtes d'une promenade sont marchées dans l'autre sens : mis bout à
+       bout, ces morceaux font un zigzag. Mesuré : **89 % des tracés portaient
+       un saut de plus de 120 m, le pire de 1 053 m**, et ces sauts sont des
+       segments droits QUI N'EXISTENT PAS — ils frôlent des lieux qu'on
+       annonçait ensuite « sur le chemin ». 20 % des listes sortaient dans le
+       mauvais ordre.
+
+       ⭐ LA RÈGLE DU SENS DE MARCHE ÉTAIT DÉJÀ TENUE — dans `mesurer()`, et
+          validée par mutation le matin même. Elle a été jetée trois lignes
+          plus loin, en refabriquant le tracé autrement. **Une règle tenue à un
+          endroit ne protège pas celui qui refait la même chose ailleurs.**
+
+       ⚠️ CE GARDE NE NOMME PAS `contour` : il énonce la propriété. Un tracé
+          marché ne saute jamais plus loin que le plus long segment droit de
+          ses propres arêtes. Toute autre façon de le fabriquer, aujourd'hui ou
+          demain, doit satisfaire ça. */
+    const { g, ix, pos, acc } = reel();
+    let n = 0, sautMax = 0, coupables = 0;
+    for (let i = 0; i < pos.length; i += 9) {
+      if (!accroche(acc[i])) continue;
+      for (const p of propositionsAutour(g, ix, acc[i], pos, pos, acc)) {
+        n++;
+        const c = p.parcours.contour;
+        /* le plus long segment droit LÉGITIME, pris dans les arêtes mêmes */
+        let legitime = 0;
+        for (const t of traits(g, p.parcours))
+          for (let k = 1; k < t.length; k++) {
+            const d = metres(t[k - 1], t[k]); if (d > legitime) legitime = d;
+          }
+        let saut = 0;
+        for (let k = 1; k < c.length; k++) {
+          const d = metres(c[k - 1], c[k]); if (d > saut) saut = d;
+        }
+        if (saut > legitime + 1) { coupables++; if (saut > sautMax) sautMax = saut; }
+      }
+    }
+    expect(n).toBeGreaterThan(30);
+    expect(coupables, `${coupables} tracés sautent — pire saut ${Math.round(sautMax)} m`).toBe(0);
+  }, 60_000);
+
+  it("⭐ deux lieux sur un même segment ne partagent PAS une position", () => {
+    /* Second défaut du 2/11 : `ordre` prenait la fraction du DÉBUT du segment
+       le plus proche, sans la projection du lieu dessus. Tous les lieux d'un
+       même segment recevaient donc la même position, et les ex aequo
+       retombaient sur le tri amont — celui de la PROXIMITÉ AU CHEMIN, la faute
+       exacte que `rencontresLeLong` existe pour corriger.
+       ⚠️ Le paramètre nécessaire était déjà calculé par `versSegment` et jeté. */
+    const trace: [number, number][] = [[-4.50, 48.2], [-4.49, 48.2]];
+    const r = rencontresLeLong(trace, [
+      { c: "megalithe", n: "au début", g: [-4.4990, 48.2], osm: "n1" },
+      { c: "megalithe", n: "à la fin", g: [-4.4910, 48.2], osm: "n2" },
+    ]);
+    expect(r).toHaveLength(2);
+    expect(r[0].l.n).toBe("au début");
+    expect(r[1].ordre - r[0].ordre).toBeGreaterThan(0.5);
+  });
 
   it("🔴 le tracé passe AUSSI PRÈS QUE POSSIBLE du lieu, pas seulement à portée", () => {
     /* Le défaut du 2/11, et il était muet parce que les deux cas restent
