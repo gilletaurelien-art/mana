@@ -956,6 +956,25 @@ export function fondreRencontres(
    découpe le tracé d'une boucle en segments. Deux fonctions du même nom
    dans un module, c'est la seconde qui gagne en silence à l'exécution ;
    TypeScript l'a refusé, et il a eu raison avant moi. */
+/**
+ * ⏸️ DORMANT DEPUIS LE 2/11, ET C'EST ÉCRIT PLUTÔT QUE SUPPRIMÉ.
+ *
+ *    `candidatsIntitule`, `intitules`, `intitule` et `descriptif` nommaient
+ *    une boucle qui n'allait nulle part en particulier. Depuis le pivot A→B,
+ *    l'écran nomme la promenade par le LIEU où elle mène : plus rien ne les
+ *    appelle, et neuf tests les gardent.
+ *
+ * ⛔ ON NE LES SUPPRIME PAS : le fondateur a tranché que le moteur de boucles
+ *    est « le coup d'après ». Le jour où la boucle redevient une forme à part
+ *    entière, elle aura besoin d'un intitulé, et celui-ci est mesuré et
+ *    éprouvé.
+ * ⚠️ MAIS DU CODE MORT NON DÉCLARÉ SE LIT COMME DU CODE VIVANT, et ses gardes
+ *    donnent l'impression de tenir l'écran. Les deux sont faux. C'est écrit
+ *    ici pour que la prochaine lecture le sache sans avoir à le mesurer.
+ * ⚠️ ET LE GARDE « AUCUN ADJECTIF TOURISTIQUE » A DÛ CHANGER DE CIBLE : il ne
+ *    lisait que ces fonctions-ci, donc il protégeait du dormant pendant que le
+ *    texte VIVANT de `Composer.tsx` n'était tenu par rien. Il lit les deux.
+ */
 function candidatsIntitule(b: Boucle): string[] {
   const forme = formeDeLaBoucle(b.etalement);
   const c: string[] = [];

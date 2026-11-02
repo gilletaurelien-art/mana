@@ -57,6 +57,23 @@ export function enGpx(walk: Walk): string {
   const pts = walk.points
     .map((p) => `      <trkpt lat="${p.lat}" lon="${p.lon}" />`)
     .join("\n");
+  /* ⚠️ DEUX MENTIONS QUI MENTAIENT POUR UNE PROMENADE COMPOSÉE — trouvées le
+     2/11, dans un fichier qui VOYAGE : il s'ouvre dans une montre six mois
+     plus tard, loin de la page qui pouvait le corriger.
+       · « Référence : . » — `osmRef` est vide pour un parcours composé, qui
+         n'est l'objet OSM de personne. Une référence vide se tait ; elle ne
+         s'écrit pas avec un point.
+       · « Le tracé sur OpenStreetMap » pointait sur la page de LICENCE, parce
+         que c'est ce que `osmUrl` vaut pour une composition. Le lien promettait
+         le tracé et donnait le texte juridique.
+     ⭐ L'attribution, elle, était déjà juste — c'est l'exactitude de ce qui
+        l'accompagne qui ne l'était pas. Un fichier qui porte une licence
+        correcte et deux affirmations fausses n'est pas à moitié honnête. */
+  const LIEN = {
+    trace: "Le tracé sur OpenStreetMap",
+    licence: "La licence des données (ODbL)",
+  };
+
   /* 🔴 L'ATTRIBUTION VOYAGE DANS LE FICHIER, PAS SEULEMENT À L'ÉCRAN. Un GPX
      se télécharge, se réexpédie, s'ouvre dans une montre six mois plus tard —
      à ce moment-là, la page qui portait « © OpenStreetMap, ODbL » n'est plus
@@ -69,11 +86,11 @@ export function enGpx(walk: Walk): string {
      xmlns="http://www.topografix.com/GPX/1/1">
   <metadata>
     <name>${walk.titre}</name>
-    <desc>${MENTION[walk.provenance]}. Tracé d'après OpenStreetMap. © les contributeurs d'OpenStreetMap, sous licence ODbL (opendatacommons.org/licenses/odbl/). Référence : ${walk.osmRef}. Aucune altitude : nous n'en disposons pas.</desc>
+    <desc>${MENTION[walk.provenance]}. Tracé d'après OpenStreetMap. © les contributeurs d'OpenStreetMap, sous licence ODbL (opendatacommons.org/licenses/odbl/).${walk.osmRef ? ` Référence : ${walk.osmRef}.` : ""} Aucune altitude : nous n'en disposons pas.</desc>
     <copyright author="les contributeurs d'OpenStreetMap">
       <license>https://opendatacommons.org/licenses/odbl/1-0/</license>
     </copyright>
-    <link href="${walk.osmUrl}"><text>Le tracé sur OpenStreetMap</text></link>
+    <link href="${walk.osmUrl}"><text>${LIEN[walk.provenance === "compose" ? "licence" : "trace"]}</text></link>
   </metadata>
   <trk><name>${walk.titre}</name><trkseg>
 ${pts}
