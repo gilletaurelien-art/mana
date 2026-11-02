@@ -592,54 +592,68 @@ export function Composer() {
               </p>
             )}
 
-            {graphe && (
-              <div className="cp-choix">
-
-            {/* ══ LE POINT DE DÉPART ══════════════════════════════════════
-                ⭐ DEUX CHEMINS, PARCE QUE DEUX SITUATIONS. Dehors, on est
-                quelque part et on veut partir de là. Chez soi la veille, on
-                prépare — et le téléphone répondrait « vous êtes à Rennes ».
+            {/* ══ LE DÉPART, EN UNE LIGNE ═════════════════════════════════
+                ⭐ UN PIN ET UN CHAMP, CÔTE À CÔTE — 2/11, demande du
+                fondateur. C'était un bouton pleine largeur, un séparateur
+                « ou », puis un champ : trois objets empilés pour une seule
+                décision. Le pin EST l'alternative au champ ; les mettre sur
+                la même ligne le dit sans un mot.
                 ⛔ LA POSITION SE DEMANDE LÀ OÙ LA QUESTION SE POSE, jamais
                    d'avance, et elle ne part sur aucun serveur.
-                ⚠️ Et la recherche porte sur les lieux DU GRAPHE, pas sur un
-                   répertoire général : chacun est accroché à un chemin, donc
-                   on peut vraiment en partir. Chercher dans un annuaire
-                   rendrait des adresses d'où aucune boucle ne commence. */}
-            <div className="cp-depart">
-              <button className="cp-depart-ici" onClick={localiser}>
-                <SvgRepere />{situe ? "Me resituer" : "Partir d'où je suis"}
-              </button>
-              <div className="cp-depart-ou">ou</div>
-              <label className="cp-depart-champ">
-                <span className="sr-only">Chercher un lieu de départ</span>
-                <SvgLoupe />
-                <input
-                  type="search"
-                  value={requete}
-                  placeholder="un lieu, une plage, une chapelle…"
-                  onChange={(e) => setRequete(e.target.value)}
-                />
-              </label>
-              {trouves.length > 0 && (
-                <ul className="cp-depart-liste">
-                  {trouves.map((l) => (
-                    <li key={`${l.c}|${l.n}`}>
-                      <button onClick={() => { setPosition(l.g); setSitue(true); setRequete(""); setMotGps(`Départ : ${l.n}`); }}>
-                        {l.n}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+                ⚠️ Un bouton qui n'est qu'un picto a besoin d'un nom pour qui
+                   ne voit pas l'image : `aria-label`, et le titre au survol. */}
+            {graphe && (
+              <>
+                <div className="cp-ligne-depart">
+                  <button
+                    className="cp-pin"
+                    onClick={localiser}
+                    aria-label={situe ? "Me resituer" : "Partir d'où je suis"}
+                    title={situe ? "Me resituer" : "Partir d'où je suis"}
+                  >
+                    <SvgRepere />
+                  </button>
+                  <label className="cp-depart-champ">
+                    <span className="sr-only">Chercher un lieu de départ</span>
+                    <SvgLoupe />
+                    <input
+                      type="search"
+                      value={requete}
+                      placeholder="un lieu, une plage, une chapelle…"
+                      onChange={(e) => setRequete(e.target.value)}
+                    />
+                  </label>
+                </div>
+                {trouves.length > 0 && (
+                  <ul className="cp-depart-liste">
+                    {trouves.map((l) => (
+                      <li key={`${l.c}|${l.n}`}>
+                        <button onClick={() => { setPosition(l.g); setSitue(true); setRequete(""); setMotGps(`Départ : ${l.n}`); }}>
+                          {l.n}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {motGps && <p className="cp-depart-mot">{motGps}</p>}
 
+                <div className="cp-actions">
+                  <button className="cp-primaire" onClick={lancer} disabled={!ix}>
+                    <SvgBoussole />{cible ? "M'y emmener" : "Composer ma promenade"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </header>
+
+        {/* ══ LA DISTANCE — ET C'EST SA PLACE QUE LA CARTE PRENDRA ═════════
+            ⭐ Tant que rien n'est composé, cette bulle demande la distance.
+            Dès qu'une boucle existe, la carte s'affiche ici même : le
+            même emplacement, la question puis sa réponse. */}
+        {graphe && !b && (
+          <section className="cp-feuille">
             <p className="cp-distance-dire">Quelle distance&nbsp;?</p>
-            {/* 🔴 DES KILOMÈTRES, PAS DES HEURES — 2/11, arbitrage du
-                fondateur : « certains sont lents, certains marchent vite ».
-                Et nous n'avons aucun dénivelé sur les 36 989 arêtes : la
-                durée était calculée à plat, donc fausse dès que ça monte.
-                ⭐ On annonçait un chiffre qu'on ne savait pas faire. Un
-                   kilomètre, lui, est un kilomètre. */}
             <div className="cp-temps" role="group" aria-label="Distance de marche">
               {DISTANCES.map((d) => (
                 <button
@@ -654,29 +668,8 @@ export function Composer() {
                 </button>
               ))}
             </div>
-
-            <div className="cp-actions">
-              <button className="cp-primaire" onClick={lancer} disabled={!ix}>
-                <SvgBoussole />{cible ? "M'y emmener" : "Composer ma promenade"}
-              </button>
-            </div>
-
-            {/* ⚠️ LE POINT DE DÉPART EST UNE DONNÉE PERSONNELLE : on le demande
-                LÀ OÙ LA QUESTION SE POSE, jamais d'avance, et on dit d'où l'on
-                part quand on ne le sait pas. */}
-
-            {motGps && <p className="page-note">{motGps}</p>}
-            {/* ⛔ LA NOTE « par défaut, on part du bourg de Crozon » ET LE
-                CURSEUR REPLIÉ SONT PARTIS — 2/11, demande du fondateur.
-                ⚠️ Conséquence assumée, et elle réduit une capacité : le
-                   moteur accepte 1 à 5 h par demi-heures, et seules 1, 2 et
-                   3 h sont désormais atteignables. Ce n'est pas un oubli,
-                   c'est un arbitrage — trois gestes valent mieux qu'un
-                   réglage, sur un écran qu'on lit debout. */}
-              </div>
-            )}
-          </div>
-        </header>
+          </section>
+        )}
 
 
 

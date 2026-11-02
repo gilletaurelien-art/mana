@@ -3048,3 +3048,51 @@ body:has(.jeu) { padding-bottom: 0; }
   font-size: var(--t-s); font-weight: 600; color: var(--nuit);
 }
 .cp-choix .cp-actions { margin-bottom: 0; }
+
+/* ── le héros : pin + champ + le bouton, à même l'illustration ─────────────
+   ⭐ UN PIN ET UN CHAMP CÔTE À CÔTE. C'était un bouton pleine largeur, un
+      séparateur « ou », puis un champ : trois objets empilés pour une seule
+      décision. Le pin EST l'alternative au champ ; les mettre sur la même
+      ligne le dit sans un mot.
+   ⚠️ ET LES CONTRÔLES GARDENT UN FOND À EUX, pas une carte autour d'eux.
+      Posés nus sur une côte au soleil, un champ de saisie et un bouton se
+      liraient mal ; une carte, elle, refermait le héros. Chacun son voile. */
+.cp-ligne-depart {
+  display: flex; gap: 8px; align-items: stretch;
+  margin-bottom: var(--sp-1);
+}
+.cp-pin {
+  flex: none; width: 52px; min-height: 52px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--nuit);
+  background: rgb(255 255 255 / 92%);
+  border: 1.5px solid rgb(25 43 67 / 12%); border-radius: var(--r-m);
+  cursor: pointer;
+}
+.cp-pin:hover { border-color: var(--action); }
+.cp-pin .cp-picto { width: 22px; height: 22px; }
+.cp-ligne-depart .cp-depart-champ {
+  flex: 1 1 auto; min-width: 0; min-height: 52px;
+  background: rgb(255 255 255 / 92%);
+}
+.cp-depart-liste {
+  background: rgb(255 255 255 / 96%);
+  border-radius: var(--r-m); overflow: hidden;
+  box-shadow: 0 6px 20px rgb(25 43 67 / 12%);
+  margin-bottom: var(--sp-1);
+}
+.cp-depart-mot {
+  margin: 0 0 var(--sp-1); font-size: var(--t-xs);
+  color: var(--nuit); opacity: .85;
+}
+.cp-entree .cp-actions { margin-bottom: 0; }
+
+/* la bulle de distance : elle occupe la place que la carte prendra */
+.cp-feuille { margin-top: var(--sp-2); }
+
+/* ⚠️ LE BLOC DE L'ENTRÉE PREND TOUTE LA LARGEUR. `.cp-entree` est un
+   conteneur flex centré verticalement : son enfant se rétractait sur son
+   contenu — 296 px pour 343 disponibles — et le champ de saisie y perdait
+   « une chapelle… ». Mesuré, pas deviné : un élément flex sans `flex-grow`
+   prend la taille de ce qu'il porte, et personne ne l'a écrit nulle part. */
+.cp-entree-dire { flex: 1 1 auto; width: 100%; }

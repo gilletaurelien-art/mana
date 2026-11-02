@@ -333,8 +333,19 @@ describe("la distance, pas la durée", () => {
      dehors on est quelque part, chez soi la veille on prépare. Retirer l'un
      des deux ferme la moitié des usages. */
   it("le point de départ se donne par la position OU par un lieu cherché", () => {
-    expect(compo).toMatch(/className="cp-depart-ici"[\s\S]{0,120}onClick=\{localiser\}/);
-    expect(compo).toMatch(/type="search"/);
-    expect(compo).toMatch(/setPosition\(l\.g\)/);
+    /* ⚠️ CE GARDE NOMMAIT UNE CLASSE CSS — `.cp-depart-ici` — et il est
+       tombé au premier changement de dessin, alors que la règle n'avait
+       pas bougé d'un pouce : le bouton est devenu un pin, la classe a
+       changé de nom, les deux chemins existaient toujours.
+       ⭐ Un garde qui nomme une forme meurt au premier refactor, et il
+          meurt en CRIANT — ce qui coûte plus cher qu'un garde absent : on
+          cherche une régression qui n'existe pas. Il nomme désormais la
+          règle : un contrôle demande la position, un champ cherche un
+          lieu, et choisir un résultat pose le départ. */
+    expect(compo, "aucun contrôle ne demande la position")
+      .toMatch(/onClick=\{localiser\}/);
+    expect(compo, "aucun champ de recherche").toMatch(/type="search"/);
+    expect(compo, "choisir un résultat ne pose pas le départ")
+      .toMatch(/setPosition\(l\.g\)/);
   });
 });
