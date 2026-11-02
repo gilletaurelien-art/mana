@@ -3022,3 +3022,29 @@ body:has(.jeu) { padding-bottom: 0; }
 :where(.cp-depart-ici, .cp-depart-liste button):focus-visible {
   outline: 2px solid var(--ocre); outline-offset: 2px;
 }
+
+/* ── l'entrée porte tout : titre, compte, départ, distance, bouton ─────────
+   ⭐ L'écran ne pose plus qu'une question. Il en posait deux, dans une carte
+      glissée sous une image qui, elle, ne demandait rien. */
+.cp-entree { min-height: 0; padding-bottom: clamp(20px, 6vw, 36px); }
+.cp-entree-dire { max-width: none; }
+.cp-titre { margin-bottom: 6px; }
+.cp-compte { margin-bottom: var(--sp-2); font-size: var(--t-s); opacity: .85; }
+.cp-compte .cp-etincelle { color: var(--or-profond); opacity: .9; }
+
+/* ⚠️ LES CONTRÔLES ONT LEUR PROPRE FOND. Posés à même l'illustration, un
+   champ de saisie et trois boutons se liraient mal dès que l'image est
+   claire — et elle l'est, c'est une côte au soleil. Un voile derrière eux
+   seulement : l'image reste visible autour, le texte reste lisible dessus. */
+.cp-choix {
+  background: rgb(250 248 240 / 93%);
+  border: 1px solid rgb(25 43 67 / 8%);
+  border-radius: var(--r-l);
+  box-shadow: 0 4px 20px rgb(25 43 67 / 8%);
+  padding: var(--sp-2);
+}
+.cp-distance-dire {
+  margin: var(--sp-2) 0 8px;
+  font-size: var(--t-s); font-weight: 600; color: var(--nuit);
+}
+.cp-choix .cp-actions { margin-bottom: 0; }

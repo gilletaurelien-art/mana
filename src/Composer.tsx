@@ -561,59 +561,39 @@ export function Composer() {
             ⚠️ Elle ne tourne pas : cet écran se lit, il ne s'habite pas. Une
                rotation toutes les trois secondes derrière un texte qu'on est
                en train de choisir est une distraction, pas une ambiance. */}
+        {/* ══ A · L'ENTRÉE — ELLE PORTE TOUT ═══════════════════════════
+            2/11, ordre arrêté par le fondateur : le titre, le nombre de
+            lieux, le point de départ, puis le bouton. La carte vient après.
+            ⭐ L'ÉCRAN NE POSE PLUS QU'UNE QUESTION. Il en posait deux, dans
+               une carte glissée sous une image qui, elle, ne demandait rien.
+               Et le texte d'introduction disait en trois lignes ce que le
+               champ de saisie dit en existant.
+            ⛔ L'IMAGE EST UNE ILLUSTRATION, PAS UNE PHOTOGRAPHIE : elle
+               passe par `paysages/` et non par `images/Photo.tsx`, dont tout
+               le contrat consiste à AFFIRMER un lieu. */}
         <header className="cp-entree">
-          {/* ⛔ C'EST UNE ILLUSTRATION, PAS UNE PHOTOGRAPHIE, et c'est pourquoi
-              elle passe par `paysages/` et non par `images/Photo.tsx` — dont
-              tout le contrat consiste à AFFIRMER un lieu. Elle évoque la
-              Bretagne ; elle ne documente aucun endroit, et rien ici ne
-              prétend le contraire.
-              ⚠️ `fond-07` plutôt que la première venue : la côte, le sentier
-                 d'ajoncs, l'anse. La veille j'avais pris `fond-13` — une
-                 rivière en sous-bois avec un chevreuil. Juste comme image,
-                 faux comme promesse : cet écran parle de marcher ici. */}
           <picture className="cp-entree-fond">
             <source srcSet={`${import.meta.env.BASE_URL}paysages/fond-07-1280.avif`} type="image/avif" />
             <img src={`${import.meta.env.BASE_URL}paysages/fond-07-1280.webp`}
                  alt="" aria-hidden="true" decoding="async" />
           </picture>
           <div className="cp-entree-dire">
-            <h1 className="cp-titre">
-              {cible ? <>Vers {cible.nom}</> : <>Où vous mèneront<br />vos&nbsp;pas&nbsp;?</>}
-            </h1>
-            <p className="cp-chapo">
-              {cible
-                ? <>Une promenade depuis où vous êtes qui passe <strong>devant</strong> ce lieu, et vous ramène.</>
-                : <>Une promenade depuis où vous êtes,<br />par les chemins, pour découvrir<br />ce qui se trouve sur votre route.</>}
-            </p>
-            {/* ⭐ LES DEUX NOMBRES SONT COMPTÉS DANS L'ARTEFACT CHARGÉ, jamais
-                écrits à la main : ils changent à chaque moisson, et une
-                valeur recopiée dans une page devient un faux témoin. */}
+            <h1 className="cp-titre">{cible ? <>Vers {cible.nom}</> : "Promenade"}</h1>
+
+            {/* ⭐ UN SEUL NOMBRE, ET C'EST CELUI QU'ON VIENT CHERCHER. Les
+                tronçons de chemin disaient la taille de notre moisson ; les
+                lieux remarquables disent ce qu'il y a à voir. Le premier
+                nous flatte, le second renseigne. Compté dans l'artefact
+                chargé, jamais écrit à la main. */}
             {graphe && (
               <p className="cp-compte">
-                <SvgBotte />
-                <span>
-                  {graphe.a.length.toLocaleString("fr-FR")} tronçons de chemin
-                  {" · "}{graphe.l.length} lieux remarquables
-                </span>
+                <SvgEtincelle />
+                <span>{graphe.l.length} lieux remarquables</span>
               </p>
             )}
-          </div>
-        </header>
 
-        {/* ══ B · COMBIEN DE TEMPS AVEZ-VOUS ? ═══════════════════════════
-            ⭐ TROIS CARTES PLUTÔT QU'UN CURSEUR, parce que dehors, debout,
-            on choisit — on ne règle pas. Mais le moteur accepte 1 à 5 h par
-            demi-heures, et retirer cette étendue serait perdre une capacité
-            pour un dessin. Le curseur reste donc, replié : trois gestes
-            courants devant, la finesse derrière un mot.
-            ⚠️ « Environ 3 km » n'est pas une illustration : c'est
-               `km * 1000`, la valeur que le moteur va réellement viser.
-               Deux nombres écrits séparément divergeraient au premier
-               changement d'allure. */}
-        {graphe && (
-          <section className="cp-feuille">
-            <p className="cp-sus">Votre promenade</p>
-            <h2 className="cp-question">D'où partez-vous&nbsp;?</h2>
+            {graphe && (
+              <div className="cp-choix">
 
             {/* ══ LE POINT DE DÉPART ══════════════════════════════════════
                 ⭐ DEUX CHEMINS, PARCE QUE DEUX SITUATIONS. Dehors, on est
@@ -653,7 +633,7 @@ export function Composer() {
               )}
             </div>
 
-            <h2 className="cp-question cp-question-2">Quelle distance&nbsp;?</h2>
+            <p className="cp-distance-dire">Quelle distance&nbsp;?</p>
             {/* 🔴 DES KILOMÈTRES, PAS DES HEURES — 2/11, arbitrage du
                 fondateur : « certains sont lents, certains marchent vite ».
                 Et nous n'avons aucun dénivelé sur les 36 989 arêtes : la
@@ -693,8 +673,11 @@ export function Composer() {
                    3 h sont désormais atteignables. Ce n'est pas un oubli,
                    c'est un arbitrage — trois gestes valent mieux qu'un
                    réglage, sur un écran qu'on lit debout. */}
-          </section>
-        )}
+              </div>
+            )}
+          </div>
+        </header>
+
 
 
         {/* 🔴 CE PANNEAU NE S'AFFICHE QUE S'IL A QUELQUE CHOSE À DIRE.
