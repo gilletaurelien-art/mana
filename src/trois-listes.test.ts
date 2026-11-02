@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { describe, it, expect } from "vitest";
 import { ROUTES_APP, PREFIXES_APP, FICHIERS_APP, estANous } from "./routes";
 
@@ -51,6 +52,32 @@ describe("les trois listes de chemins", () => {
       ...FICHIERS_APP,
     ];
     expect(m![1].trim().split(/\s+/)).toEqual(attendus);
+  });
+
+  /* 🔴 ET LE GARDE D'AU-DESSUS NE COUVRAIT QUE LA MOITIÉ DE LA FAMILLE —
+     trouvé le 2/11/2026 en essayant simplement de relancer le générateur.
+
+     Il compare le bloc COMMITÉ aux constantes : les deux concordaient
+     parfaitement. Pendant ce temps `scripts/caddy-bloc.mjs` était cassé de
+     DEUX façons — il levait sur la terminaison `];` de `FICHIERS_APP`, et une
+     fois cela admis il rendait **18 chemins au lieu de 20**, sans
+     `/carte-style.json` ni `/carte-ortho.json`, parce qu'il ne lisait que les
+     chaînes entre guillemets doubles et que ces deux-là sont des gabarits.
+
+     ⭐ C'EST L'ACCIDENT DU 31/10 QUE CE FICHIER EXISTE POUR EMPÊCHER, et le
+        générateur l'aurait CRÉÉ : « /carte/style.json → 404, aucune carte sur
+        aucun site, aucune erreur ». Sa prochaine exécution était la bascule
+        vers le KS-5.
+     ⭐ UN GARDE POSÉ SUR LE RÉSULTAT D'UN OUTIL NE DIT RIEN DE L'OUTIL. Celui-ci
+        FAIT TOURNER le générateur — en mode `--verifier`, qui calcule sans rien
+        écrire, pour que le test ne touche pas l'arbre de travail. */
+  it("🔴 le GÉNÉRATEUR du bloc Caddy rend bien ce que le bloc contient", () => {
+    const sortie = execFileSync("node", ["scripts/caddy-bloc.mjs", "--verifier"],
+                                { encoding: "utf8" });
+    /* Le compte aussi, pas seulement l'accord : si un jour les deux se
+       trompaient de la même façon, le nombre le dirait. */
+    expect(sortie).toMatch(
+      new RegExp(`${ROUTES_APP.length + PREFIXES_APP.length + FICHIERS_APP.length} chemins`));
   });
 
   it("et il vise bien le seul domaine concerné", () => {
