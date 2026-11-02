@@ -258,6 +258,34 @@ describe("de la carte au compositeur", () => {
       .not.toMatch(/traits\([^)]*\)\s*\.flat\(\)/);
     expect(compo, "les points de la carte ne suivent pas l'ordre de marche")
       .toMatch(/points: b\.contour/);
+
+    /* 🔴 ET CE QUI PORTE DES INDICES D'ARÊTE NE SE LIT JAMAIS SANS SA
+       PROVENANCE — défaut bloquant du 2/11. Les propositions ne valent que
+       dans le graphe qui les a produites ; un changement de territoire les
+       périme, et la moitié des cas ne LÈVE RIEN (indices valides dans un
+       graphe plus grand) donc ne se voit pas. */
+    expect([...compo.matchAll(/props\.liste/g)].length,
+           "les propositions doivent se lire en UN SEUL endroit, celui qui "
+           + "vérifie de quel graphe elles viennent").toBe(1);
+    expect(compo, "la provenance des propositions n'est pas comparée au territoire")
+      .toMatch(/props\.de === territoire\.slug/);
+    expect(compo, "un changement de territoire ne périme pas les propositions")
+      .toMatch(/setProps\(null\)[\s\S]{0,400}?dejaPropose\.current = false/);
+
+    /* 🔴 `Etape.pos` EST UNE FRACTION DU PARCOURS, PAS UN RANG. Les promenades
+       du catalogue portent 0,109 · 0,2439 · 0,5034, et `EnChemin` s'en sert
+       pour griser ce qui est passé, poser le jalon sur la barre
+       (`${pos * 100}%`) et annoncer la prochaine étape. En y mettant l'indice
+       de la boucle, le deuxième jalon partait à 100 % de la barre et le
+       troisième à 200 %.
+       ⭐ Le nombre juste était déjà calculé et je l'ai jeté en recopiant la
+          FORME du catalogue sans relire ce que son champ voulait dire. */
+    const etapes = compo.match(/etapes: rencontres\.map\(([^)]*)\) => \(\{[\s\S]*?\}\)\)/);
+    expect(etapes, "la fabrique des étapes").not.toBeNull();
+    expect(etapes![0], "`pos` doit recevoir une fraction mesurée, jamais un rang")
+      .toMatch(/pos: r\.ordre/);
+    expect(etapes![1], "la fabrique des étapes ne doit pas même recevoir l'indice")
+      .not.toMatch(/,/);
   });
 
   /* 🔴 LE GARDE QUI COMPTE : UN REFUS MUET RESSEMBLE À UNE ABSENCE. Le

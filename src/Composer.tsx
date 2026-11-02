@@ -263,8 +263,32 @@ export function Composer() {
    */
   /** Le lieu d'où l'on part — choisi, jamais supposé. */
   const [spot, setSpot] = useState<{ i: number; lieu: Lieu } | null>(null);
-  /** Les trois lieux qu'on propose autour, chacun avec son trajet VRAI. */
-  const [props, setProps] = useState<Proposition<Lieu>[] | null>(null);
+  /**
+   * Les trois lieux qu'on propose autour, chacun avec son trajet VRAI — ET LE
+   * TERRITOIRE QUI LES A PRODUITS.
+   *
+   * 🔴 UN INDICE D'ARÊTE N'A DE SENS QUE DANS SON GRAPHE, et rien ne le dit
+   *    dans le type. Défaut trouvé le 2/11 : choisir un lieu de l'Aulne depuis
+   *    la presqu'île (46 spots sont dans ce cas, les emprises se chevauchent
+   *    de −4,32 à −4,2554) déplace `position`, donc `territoire`, donc
+   *    recharge l'autre graphe — mais `props` restait celui d'avant.
+   *    · presqu'île → Aulne : `traits()` lit `g.a[20498]` sur 16 210 arêtes,
+   *      `TypeError` levée DANS le `useMemo` de `walk`, pendant le rendu :
+   *      l'écran de composition meurt.
+   *    · ⚠️ Aulne → presqu'île est PIRE : les 41 spots concernés portent des
+   *      indices tous valides dans les 20 779 arêtes, donc rien ne lève —
+   *      l'écran dessine un tracé d'arêtes sans aucun rapport, en silence.
+   *
+   * ⭐ ET LE COMMENTAIRE DE L'EFFET DE CHARGEMENT ANNONÇAIT DÉJÀ LA RÈGLE :
+   *    « sans ça on composerait sur le réseau d'à côté ». Il décrivait le
+   *    rechargement du graphe ; il ne tenait pas ce qui dépend du graphe. Un
+   *    commentaire répond à la place du code.
+   *
+   * ⛔ LE SLUG VOYAGE AVEC, plutôt qu'un simple vidage à l'effet : vider
+   *    protège du plantage, l'étiquette protège AUSSI du cas muet — un rendu
+   *    qui arriverait avant le vidage trouverait quand même le désaccord.
+   */
+  const [props, setProps] = useState<{ de: string; liste: Proposition<Lieu>[] } | null>(null);
   /**
    * ⭐ LA BOUCLE EST UNE OPTION, PLUS LA FORME PAR DÉFAUT. Elle reste le
    *    « coup d'après » du produit : le moteur qui la compose n'est pas
@@ -357,6 +381,15 @@ export function Composer() {
   useEffect(() => {
     let vivant = true;
     setGraphe(null);
+    /* 🔴 CE QUI DÉPEND DU GRAPHE SE PÉRIME AVEC LUI. Le commentaire ci-dessus
+       dit depuis le début « sans ça on composerait sur le réseau d'à côté » —
+       il parlait du rechargement, pas de ce qui en dépend. Les indices
+       d'arête des propositions sont périmés ; `dejaPropose` doit se rouvrir
+       pour que la proposition se rejoue sur le bon graphe, sinon l'écran
+       reste vide après un changement de territoire. */
+    setProps(null); setChoisie(0); setEnBoucle(false); setBoucleVisee(null);
+    setRetour(null); setMotRetour(""); setMot("");
+    dejaPropose.current = false;
     fetch(urlGraphe(BASE, territoire))
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((g) => { if (vivant) setGraphe(g); })
@@ -513,7 +546,16 @@ export function Composer() {
        rendrait « aucune proposition » — un refus qui ressemble à un trou de
        donnée alors que c'est une baie, un cap ou une épave. */
     if (!accroche(a)) {
-      setRefusDepart({ nom, a });
+      /* ⚠️ ET L'ÉCART SE RECALCULE ICI, parce que la table partagée est bâtie
+         avec `ecartSiLoin: false` : un lieu hors réseau y garde
+         `ecart: Infinity`, et le refus écrivait « le plus proche en reste à
+         Infinity m ». La docstring d'`accrocherTous` le dit en toutes
+         lettres — « pour l'écrire, rappeler `accrocherUn` sur ce seul lieu ».
+         ⭐ Un avertissement lu et non suivi coûte autant qu'un absent : c'est
+            le prix d'un refus qui doit DIRE un nombre, et il se paie une fois,
+            sur un point, au moment où quelqu'un attend la réponse. */
+      const vrai = Number.isFinite(a.ecart) ? a : accrocherUn(graphe, ix, g);
+      setRefusDepart({ nom, a: vrai });
       setDepart(null); setProps(null);
       return;
     }
@@ -521,7 +563,7 @@ export function Composer() {
     const t0 = performance.now();
     setDepart({ a, nom, g });
     const p = propositionsAutour(graphe, ix, a, spots, positions, accroches, { sauf });
-    setProps(p);
+    setProps({ de: territoire.slug, liste: p });
     setDuree(Math.round(performance.now() - t0));
     setMot(
       p.length === 0
@@ -620,7 +662,7 @@ export function Composer() {
    */
   const basculerBoucle = () => {
     if (enBoucle) { setEnBoucle(false); return; }
-    const p = props?.[choisie];
+    const p = lesProps?.[choisie];
     if (!graphe || !ix || !depart || !p) return;
     const v = composerVers(graphe, ix, depart.a.noeud,
       Math.round(p.parcours.metres * BOUCLE_PAR_ALLER), positions[p.i] as [number, number]);
@@ -679,7 +721,17 @@ export function Composer() {
    *    mesure pareil (l'étalement, qui compare une aire à un périmètre) reste
    *    sur `Boucle` et n'est lu que quand on tient une boucle.
    */
-  const prop = props?.[choisie] ?? null;
+  /**
+   * ⭐ LE SEUL ENDROIT QUI LIT LES PROPOSITIONS, et il vérifie leur provenance.
+   *    Tant que le graphe chargé n'est pas celui qui a produit ces indices
+   *    d'arête, il n'y a RIEN à montrer — ni tracé, ni carte, ni décompte.
+   *    C'est le cas normal d'un quart de seconde pendant un changement de
+   *    territoire, et c'est exactement le quart de seconde où l'écran mourait.
+   */
+  const lesProps: Proposition<Lieu>[] | null =
+    props && props.de === territoire.slug ? props.liste : null;
+
+  const prop = lesProps?.[choisie] ?? null;
   const laBoucle: Boucle | null =
     enBoucle && boucleVisee?.etat === "ok" ? boucleVisee.boucles[0] : null;
   const b: Parcours | null = laBoucle ?? prop?.parcours ?? null;
@@ -735,6 +787,8 @@ export function Composer() {
       nom: r.l.n ?? inventaire.libelles[r.l.c] ?? r.l.c,
       libelle: inventaire.libelles[r.l.c] ?? r.l.c,
       lon: r.l.g[0], lat: r.l.g[1], ecart: r.m,
+      /* ⭐ LA POSITION LE LONG DU PARCOURS VOYAGE AVEC — voir `etapes`. */
+      ordre: r.ordre,
     }));
   }, [graphe, b, inventaire]);
 
@@ -745,12 +799,12 @@ export function Composer() {
    *    proposition, contre 86 ms pour le reste du calcul.
    */
   const comptes = useMemo(() => {
-    if (!graphe || !props || !inventaire) return [];
+    if (!graphe || !lesProps || !inventaire) return [];
     /* ⚠️ `contour` ici AUSSI : c'est la même mesure, et la même faute si on
        la refait avec `traits()`. Le badge « N lieux sur le chemin » de chaque
        carte en dépend. */
-    return props.map((p) => rencontresLeLong(p.parcours.contour, inventaire.lieux).length);
-  }, [graphe, props, inventaire]);
+    return lesProps.map((p) => rencontresLeLong(p.parcours.contour, inventaire.lieux).length);
+  }, [graphe, lesProps, inventaire]);
 
   // La carte attend un `Walk` : on lui en fabrique un, avec les TRAITS
   // séparés — jamais une ligne unique (voir Walk.traits).
@@ -777,8 +831,18 @@ export function Composer() {
          ligne (WalkMap). Lui donner `t.flat()` posait les repères aux mauvais
          bouts et faisait tracer des droites de plus d'un kilomètre. */
       points: b.contour.map(([lon, lat]) => ({ lon, lat })), traits: t,
-      etapes: rencontres.map((r, i) => ({
-        nom: r.nom, categorie: r.libelle, pos: i, lat: r.lat, lon: r.lon,
+      /* 🔴 `pos` EST UNE FRACTION DU PARCOURS, PAS UN RANG — et j'y mettais
+         l'indice. Les promenades du catalogue portent 0,109 · 0,2439 · 0,5034…
+         et `EnChemin` les lit comme telles : `e.pos <= part` pour griser ce
+         qui est passé, `insetInlineStart: ${e.pos * 100}%` pour poser le jalon
+         sur la barre, et `e.pos > part + 0.005` pour annoncer la prochaine
+         étape. Avec un rang, le deuxième jalon partait à 100 % de la barre, le
+         troisième à 200 %, et « prochaine étape » désignait toujours le même.
+         ⭐ Le nombre juste était déjà calculé — `rencontresLeLong` le rend —
+            et je l'avais jeté en recopiant la forme du catalogue sans relire
+            ce que son champ voulait dire. */
+      etapes: rencontres.map((r) => ({
+        nom: r.nom, categorie: r.libelle, pos: r.ordre, lat: r.lat, lon: r.lon,
       })),
     };
   }, [graphe, b, depart, prop, laBoucle, metresDits, rencontres, spots]);
@@ -981,7 +1045,7 @@ export function Composer() {
           </section>
         )}
 
-        {depart && props && props.length === 0 && (
+        {depart && lesProps && lesProps.length === 0 && (
           <section className="page-panel">
             {departCoupe ? (
               <>
@@ -1091,10 +1155,10 @@ export function Composer() {
               ⭐ LE VISAGE, C'EST LA SILHOUETTE. Elle est VRAIE, elle se
                  dessine depuis nos propres données, et aucun catalogue de
                  photographies ne peut la copier. */}
-        {props && props.length > 0 && (
+        {lesProps && lesProps.length > 0 && (
           <section className="cp-propositions">
             <p className="cp-sus"><SvgEtincelle />
-              {props.length > 1 ? `${props.length} lieux autour` : "Un lieu autour"}
+              {lesProps.length > 1 ? `${lesProps.length} lieux autour` : "Un lieu autour"}
             </p>
             {/* ⭐ LE NOM VIENT DU TERRITOIRE CHARGÉ, pas d'une chaîne écrite
                 ici : c'est `territoires.ts` qui sait de quel graphe on
@@ -1104,7 +1168,7 @@ export function Composer() {
             </h2>
 
             <ul className="cp-cartes">
-              {props.map((x, i) => {
+              {lesProps.map((x, i) => {
                 /* 🔴 UNE BOÎTE DEBOUT, PAS COUCHÉE — et c'est une MESURE qui
                    l'impose. Dans un bandeau 320×132, ces tracés occupaient
                    76 % de la hauteur et 19 % de la largeur : un ruban perdu au

@@ -91,7 +91,25 @@ const estANous = (pathname) => {
 const ORIGINES = ["https://mana.bzh"];
 
 /** Ce qui décide, et qui doit donc être frais. */
-const DONNEES = [/\/fermetures\.json$/];
+const DONNEES = [
+  /\/fermetures\.json$/,
+  /* 🔴 LE CATALOGUE DES ITINÉRAIRES N'ÉTAIT GARDÉ PAR RIEN — trouvé le 2/11.
+     `src/catalogue.ts` charge `/bretagne/index.json` (la liste), puis
+     `/bretagne/t/<slug>.json` (un itinéraire), et `/promenades/communes.json`
+     (la recherche par proximité). Le seul motif de graphe était
+     `/bretagne/g/…`, qui ne couvre ni `index` ni `t/`. Hors ligne, la liste
+     des promenades était donc VIDE — et le hors-ligne est notre argument.
+     ⭐ DANS `DONNEES` ET NON `IMMUABLES` : ces fichiers changent au rythme de
+        la MOISSON, pas de nos déploiements. Réseau d'abord les garde frais ;
+        le cache de secours les rend disponibles. Un cache-first servirait un
+        catalogue vieux de trois semaines sans jamais se corriger.
+     ⚠️ Et ces chemins sont RECOPIÉS ICI, comme les deux qui ont déjà mordu.
+        Un test les relie à `catalogue.ts` et tombe s'ils divergent — c'est la
+        seule chose qui tienne une recopie. */
+  /\/bretagne\/index\.json$/,
+  /\/bretagne\/t\/[^/]+\.json$/,
+  /\/promenades\/communes\.json$/,
+];
 
 /** Ce qui est immuable et lourd : on le garde, on le rafraîchit derrière. */
 const IMMUABLES = [
@@ -129,6 +147,26 @@ const IMMUABLES = [
   /\.(woff2?|ttf|svg|png|webp|avif|jpe?g)$/,
 ];
 
+/**
+ * 🔴 LES TUILES, ÉCARTÉES AVANT TOUT LE RESTE — défaut trouvé le 2/11.
+ *
+ *    L'en-tête de ce fichier promet, en toutes lettres : « il ne met pas en
+ *    cache les TUILES de la carte. Elles sont des milliers, elles pèsent des
+ *    dizaines de mégaoctets, et les promettre serait mentir. » Le motif
+ *    d'extensions d'`IMMUABLES` se termine par `|jpe?g)$` — et une tuile ortho
+ *    s'appelle `/carte/ortho/14/8000/5700.jpg`. Elles étaient donc TOUTES
+ *    gardées, sans borne, et le commentaire disait le contraire.
+ *
+ * ⭐ C'EST LE MÊME DÉFAUT QUE LES DEUX MOTIFS PÉRIMÉS DU 1/11, PRIS PAR
+ *    L'AUTRE BOUT : là, un motif ne correspondait plus à ce qu'il visait ;
+ *    ici, il correspond à ce qu'il ne visait pas. Une liste blanche
+ *    d'extensions ne sait pas de quel DOSSIER elle parle.
+ * ⚠️ `/carte/` AVEC LES DEUX BARRES : les feuilles de style s'appellent
+ *    `/carte-style.json` et `/carte-ortho.json` — un tiret, pas une barre.
+ *    Elles restent gardées, et c'est voulu : elles sont uniques.
+ */
+const TUILES = [/^\/carte\//];
+
 const correspond = (motifs, url) => motifs.some((m) => m.test(url.pathname));
 
 self.addEventListener("install", (event) => {
@@ -155,6 +193,24 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+/**
+ * ⛔ ON NE GARDE JAMAIS DU HTML À LA PLACE D'UN ACTIF.
+ *
+ * 🔴 Trouvé le 2/11 : le bloc Caddy de mana.bzh porte
+ *    `try_files {path} {path}/index.html /index.html`, donc un fichier ABSENT
+ *    sous `/app/`, `/paysages/` ou `/images/` revient en **HTTP 200 avec la
+ *    coquille**. Le garde `res.ok` ne voit rien — c'est bien un 200 — et le
+ *    cache se remplit de HTML sous le nom d'un bundle. L'application se
+ *    casserait alors hors ligne, durablement, sans aucune erreur.
+ * ⭐ C'est le piège « un 200 ne prouve rien sur un site à repli SPA » que ce
+ *    dépôt documente déjà, pris du côté du CACHE. Le serveur peut mentir ;
+ *    c'est à celui qui garde de vérifier ce qu'il garde.
+ * ⚠️ Le contrôle porte sur le TYPE renvoyé, pas sur le statut : c'est la
+ *    seule chose qui distingue la coquille de l'actif qu'on demandait.
+ */
+const estDeLaCoquille = (res) =>
+  (res.headers.get("content-type") || "").includes("text/html");
+
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
@@ -163,7 +219,12 @@ self.addEventListener("fetch", (event) => {
   if (!memeOrigine && !ORIGINES.includes(url.origin)) return;
 
   // ── 1. la coquille : réseau d'abord ───────────────────────────────────────
-  if (memeOrigine && (req.mode === "navigate" || url.pathname.endsWith("index.html"))) {
+  /* ⚠️ `endsWith("index.html")` A ÉTÉ RETIRÉ — c'était une branche MORTE, et
+     une branche morte se lit comme une intention. `estANous("/index.html")`
+     rend faux : ce chemin n'est ni dans `ROUTES_APP` ni dans `FICHIERS_APP`,
+     donc la ligne suivante sortait toujours. Elle donnait l'impression de
+     couvrir un cas qu'elle ne couvrait pas. */
+  if (memeOrigine && req.mode === "navigate") {
     /* ⛔ UNE NAVIGATION QUI N'EST PAS À NOUS N'EST PAS LA NÔTRE À SERVIR.
        On ne la garde pas (elle remplirait le cache de pages d'agrégat), et
        hors ligne on ne rend surtout pas notre coquille à sa place. */
@@ -184,12 +245,18 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  /* ⛔ LES TUILES NE PASSENT PAS PAR LE CACHE — avant tout autre aiguillage,
+     parce que c'est le motif d'extensions d'`IMMUABLES` qui les attrapait. */
+  if (correspond(TUILES, url)) return;
+
   // ── 2. ce qui décide : réseau d'abord, TOUJOURS ───────────────────────────
   if (correspond(DONNEES, url)) {
     event.respondWith(
       fetch(req)
         .then((res) => {
-          if (res.ok) { const copie = res.clone(); caches.open(CACHE).then((c) => c.put(req, copie)); }
+          if (res.ok && !estDeLaCoquille(res)) {
+            const copie = res.clone(); caches.open(CACHE).then((c) => c.put(req, copie));
+          }
           return res;
         })
         .catch(() => caches.match(req))
@@ -203,7 +270,9 @@ self.addEventListener("fetch", (event) => {
       caches.match(req).then((hit) => {
         const reseau = fetch(req)
           .then((res) => {
-            if (res.ok) { const copie = res.clone(); caches.open(CACHE).then((c) => c.put(req, copie)); }
+            if (res.ok && !estDeLaCoquille(res)) {
+              const copie = res.clone(); caches.open(CACHE).then((c) => c.put(req, copie));
+            }
             return res;
           })
           .catch(() => hit);          // hors ligne : la version gardée fait l'affaire

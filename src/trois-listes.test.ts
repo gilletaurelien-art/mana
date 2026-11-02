@@ -71,6 +71,83 @@ describe("les trois listes de chemins", () => {
      ⭐ UN GARDE POSÉ SUR LE RÉSULTAT D'UN OUTIL NE DIT RIEN DE L'OUTIL. Celui-ci
         FAIT TOURNER le générateur — en mode `--verifier`, qui calcule sans rien
         écrire, pour que le test ne touche pas l'arbre de travail. */
+  /* 🔴 LE CATALOGUE N'ÉTAIT GARDÉ PAR RIEN — trouvé le 2/11 en confrontant ce
+     que l'application CHARGE à ce que le service worker GARDE. Hors ligne, la
+     liste des promenades était vide : le seul motif de données était
+     `/fermetures.json`, et le seul motif de graphe `/bretagne/g/…`, qui ne
+     couvre ni `/bretagne/index.json` ni `/bretagne/t/<slug>.json` ni
+     `/promenades/communes.json`.
+     ⭐ C'est le TROISIÈME chemin recopié qui mord dans ce fichier. Les deux
+        premiers (`/assets/`, `/carte/style.json`) avaient cessé de désigner
+        leur cible ; celui-ci n'a jamais été écrit. Même remède : on ne garde
+        pas la recopie, on la RELIE — ce test lit les URL de `catalogue.ts` et
+        exige qu'un motif du service worker les attrape. */
+  it("🔴 tout ce que le catalogue CHARGE, le service worker le GARDE", () => {
+    const cat = readFileSync("src/catalogue.ts", "utf8");
+    /* Les chemins tels que `catalogue.ts` les fabrique : une base absolue, et
+       des gabarits. On les résout en exemples concrets. */
+    const exemples = [
+      "/bretagne/index.json",
+      "/bretagne/t/pointe-de-pen-hir.json",
+      "/promenades/communes.json",
+    ];
+    /* ⚠️ Le test ne vaut que si ces exemples décrivent VRAIMENT ce que le
+       fichier charge : on le vérifie, sinon il garderait une fiction. */
+    expect(cat, "la base du catalogue a changé").toMatch(/mana\.bzh\/bretagne/);
+    expect(cat, "l'index du catalogue").toMatch(/\/index\.json/);
+    expect(cat, "un itinéraire du catalogue").toMatch(/\/t\/\$\{encodeURIComponent/);
+    expect(cat, "les communes").toMatch(/promenades\/communes\.json/);
+
+    const sw = readFileSync("public/sw.js", "utf8");
+    const bloc = (nom: string) => {
+      const m = sw.match(new RegExp(`const ${nom} = \\[([\\s\\S]*?)\\n\\];`));
+      expect(m, `le bloc ${nom}`).not.toBeNull();
+      return m![1];
+    };
+    /* 🔴 LES COMMENTAIRES D'ABORD, ET C'EST LE GARDE LUI-MÊME QUI L'A APPRIS.
+       Première version : l'extracteur lisait le bloc en entier, commentaires
+       compris. Or la prose y CITE les chemins — « ne couvre ni
+       /bretagne/index.json ni … » — et deux barres obliques autour d'un texte
+       font une expression régulière parfaitement valide, qui correspond.
+       Éprouvé par mutation : en RETIRANT le motif, le test restait vert.
+       ⭐ Le commentaire répondait à la place du code, dans un test écrit pour
+          empêcher exactement ce genre de substitution. Neuvième fois de la
+          journée pour cette famille de défaut. */
+    const sansCommentaires = (t: string) =>
+      t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+    const motifs = sansCommentaires(bloc("DONNEES") + "\n" + bloc("IMMUABLES"));
+    /* On exécute les motifs plutôt que de chercher leur texte : c'est leur
+       EFFET qui compte, pas leur écriture. */
+    const regex = motifs.split("\n")
+      /* une ligne = un motif ; le commentaire de fin de ligne s'en va aussi */
+      .map((l) => l.replace(/\s*\/\/.*$/, "").trim())
+      .map((l) => l.match(/^\/(.+)\/,?$/))
+      .filter((m): m is RegExpMatchArray => m !== null)
+      .map((m) => { try { return new RegExp(m[1]); } catch { return null; } })
+      .filter((r): r is RegExp => r !== null);
+    expect(regex.length, "aucun motif lisible dans le service worker")
+      .toBeGreaterThanOrEqual(4);
+    for (const chemin of exemples) {
+      expect(regex.some((r) => r.test(chemin)),
+        `« ${chemin} » est chargé par le catalogue et aucun motif du service `
+        + `worker ne le garde — hors ligne, cette page sera vide`).toBe(true);
+    }
+  });
+
+  /* ⛔ ET CE QUE LE FICHIER PROMET DE NE PAS GARDER, IL NE LE GARDE PAS. */
+  it("⛔ les tuiles de la carte ne sont PAS mises en cache, comme annoncé", () => {
+    const sw = readFileSync("public/sw.js", "utf8");
+    /* L'en-tête promet : « il ne met pas en cache les TUILES… les promettre
+       serait mentir ». Le motif d'extensions d'`IMMUABLES` finit par `jpe?g)$`
+       et une tuile ortho s'appelle `/carte/ortho/14/8000/5700.jpg` : elles
+       étaient toutes gardées, sans borne.
+       ⭐ Une liste blanche d'extensions ne sait pas de quel DOSSIER elle parle. */
+    expect(sw, "la promesse de l'en-tête a disparu").toMatch(/ne met pas en\s+\/\/\s+cache les TUILES/);
+    expect(sw, "rien n'écarte les tuiles avant les immuables").toMatch(/const TUILES = \[/);
+    expect(sw, "les tuiles ne sont pas écartées AVANT l'aiguillage du cache")
+      .toMatch(/correspond\(TUILES, url\)\) return;[\s\S]*?correspond\(DONNEES/);
+  });
+
   it("🔴 le GÉNÉRATEUR du bloc Caddy rend bien ce que le bloc contient", () => {
     const sortie = execFileSync("node", ["scripts/caddy-bloc.mjs", "--verifier"],
                                 { encoding: "utf8" });

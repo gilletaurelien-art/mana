@@ -376,6 +376,42 @@ describe.skipIf(!dispo)("sur le graphe réel de la presqu'île", () => {
     expect(perdu / n, "le tracé renonce trop souvent à passer devant").toBeLessThan(0.35);
   }, 60_000);
 
+  it("🔴 un indice d'arête n'est PAS portable d'un graphe à l'autre", () => {
+    /* Le défaut bloquant du 2/11. Les deux emprises se chevauchent (−4,32 à
+       −4,2554) : choisir un lieu de l'Aulne depuis la presqu'île déplaçait
+       `position`, donc `territoire`, donc rechargeait l'autre graphe — sans
+       périmer les propositions, qui ne portent que des INDICES d'arête.
+         · presqu'île → Aulne : indice hors bornes, `TypeError` levée pendant
+           le rendu, l'écran meurt ;
+         · ⚠️ Aulne → presqu'île : les indices restent VALIDES dans un graphe
+           plus grand — rien ne lève, et on dessine des arêtes sans rapport.
+       ⭐ C'est la seconde moitié qui a imposé une ÉTIQUETTE de provenance
+          plutôt qu'un simple vidage : vider protège du plantage, pas du
+          silence. Ce test tient la raison — un indice ne veut rien dire sans
+          son graphe — plutôt que la mécanique du composant. */
+    const { g, ix, pos, acc } = reel();
+    const i = pos.findIndex((_, k) => accroche(acc[k]));
+    const p = propositionsAutour(g, ix, acc[i], pos, pos, acc)[0];
+    expect(p, "il faut une proposition pour éprouver la règle").toBeTruthy();
+
+    /* Un graphe VOISIN, délibérément plus petit : les mêmes indices n'y
+       désignent pas les mêmes arêtes, quand ils y désignent quelque chose. */
+    const petit: Graphe = {
+      ...g, a: g.a.slice(0, 8), n: g.n, l: [],
+    };
+    const dehors = p.parcours.aretes.some((e) => e >= petit.a.length);
+    expect(dehors, "le fixture doit sortir des bornes pour éprouver le cas").toBe(true);
+    expect(() => traits(petit, p.parcours)).toThrow();
+
+    /* Et le cas MUET : des indices valides ailleurs rendent une géométrie
+       sans rapport, sans rien lever. C'est lui qui a imposé l'étiquette. */
+    const autre: Graphe = { ...g, a: [...g.a].reverse() };
+    const faux = traits(autre, p.parcours);
+    expect(faux).toHaveLength(p.parcours.aretes.length);   // aucune erreur
+    expect(JSON.stringify(faux))
+      .not.toBe(JSON.stringify(traits(g, p.parcours)));    // et c'est faux
+  }, 60_000);
+
   it("⭐ l'option « en boucle » dérive sa cible de l'aller, et elle tient", () => {
     /* 🔴 LA LEÇON DU 2/11. La même fonction mesurée à 58 % de réussite le 1/11
        et à plus de 90 % ici : la différence n'est pas le code, c'est que la

@@ -775,15 +775,34 @@ describe("dire une boucle", () => {
      ⭐ Et ce test tient le CODE, pas une sortie : un adjectif ajouté demain
         dans une branche que ce test n'exerce pas tomberait quand même. */
   it("⛔ aucun adjectif touristique, nulle part dans la source", () => {
-    const src = readFileSync("src/composition.ts", "utf8")
+    /* 🔴 CE GARDE NE LISAIT PLUS LÀ OÙ LE TEXTE EST ÉCRIT — trouvé le 2/11. Il
+       slicait `composition.ts` à partir d'`intitule`, c'est-à-dire les
+       fonctions qui rédigeaient les intitulés du temps où la promenade était
+       une boucle sans destination. Depuis le pivot A→B, l'écran nomme la
+       promenade par le LIEU où elle mène, et les phrases que les gens lisent
+       (« Le chemin y passe », « le lieu se voit depuis le sentier ») sont
+       écrites dans `Composer.tsx`. Le garde protégeait donc du code que plus
+       personne n'appelle, pendant que le texte vivant n'était tenu par rien.
+       ⭐ Un garde qui survit à son objet ne se plaint jamais : il reste vert,
+          et sa vertu se déplace sans lui. Il lit désormais les DEUX. */
+    const nu = (f: string) => readFileSync(f, "utf8")
       .replace(/\/\*[\s\S]*?\*\//g, "")                       // hors commentaires
       .split("\n").filter((l) => !/^\s*(\/\/|\*)/.test(l)).join("\n");
-    const fonctions = src.slice(src.indexOf("export function intitule"));
-    for (const mot of ["magnifique", "superbe", "incontournable", "sauvage",
-                       "authentique", "exceptionnel", "charmant", "pittoresque",
-                       "inoubliable", "secret", "préservé", "paradis"]) {
-      expect(fonctions.toLowerCase(), `« ${mot} » est une promesse, pas une mesure`)
-        .not.toContain(mot);
+    const src = nu("src/composition.ts");
+    const surfaces: [string, string][] = [
+      ["composition.ts", src.slice(src.indexOf("export function intitule"))],
+      /* ⚠️ L'ÉCRAN EN ENTIER, pas une tranche : il n'y a pas de frontière
+         nette entre « le code » et « le texte » dans un composant. */
+      ["Composer.tsx", nu("src/Composer.tsx")],
+    ];
+    for (const [ou, texte] of surfaces) {
+      for (const mot of ["magnifique", "superbe", "incontournable", "sauvage",
+                         "authentique", "exceptionnel", "charmant", "pittoresque",
+                         "inoubliable", "secret", "préservé", "paradis"]) {
+        expect(texte.toLowerCase(),
+          `« ${mot} » dans ${ou} : c'est une promesse, pas une mesure`)
+          .not.toContain(mot);
+      }
     }
   });
 
