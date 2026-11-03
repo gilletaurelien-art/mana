@@ -1586,7 +1586,19 @@ export function Composer() {
             </section>
           </>
         )}
+        </div>
       </div>
+      {/* ══ LE CORPS, SUITE — sécurité, signature et catalogue ═════════════
+          🔴 3/11/2026 : CE second `.cp-corps` n'est PAS un second sol, c'est
+          le même, continué. `.cp-securite` et la signature rendent
+          DÉLIBÉRÉMENT hors de `.wrap` (styles `cp-…` propres, qui gèrent
+          déjà leur propre largeur) — mais hors de `.wrap` ne veut pas dire
+          hors du sol : sans lui, `.cp-signature`/`.cp-flanerie` (texte nu,
+          sans carte) retombaient sur le fond tournant, et `--nuit` n'y tient
+          pas toujours le contraste. Le catalogue (son propre `.wrap`, plus
+          bas) a le même besoin — une seule enveloppe continue plutôt que
+          trois sols recollés évite toute couture visible entre eux. */}
+      <div className="cp-corps">
         {/* ══ E · CONDITIONS ET SÉCURITÉ ═══════════════════════════════════
             🔴 CE BLOC FAISAIT 862 px, DONT 462 POUR LES SECTEURS NON SITUÉS,
             dépliés en permanence — avant même qu'on ait composé quoi que ce

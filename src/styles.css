@@ -2685,8 +2685,15 @@ body:has(.jeu) { padding-bottom: 0; }
 .page-composer .section-title,
 .page-composer h1, .page-composer h2 { color: var(--nuit); }
 .page-composer .page-note { opacity: .82; }
+/* ⛔ `.btn` EST EXCLU, ET C'EST UN BUG QUI L'A RÉVÉLÉ. Un lien de texte ordinaire
+   (une mention, une source) doit prendre l'or sombre ; un `.btn-primary` porte
+   DÉJÀ sa propre couleur de texte (`--action-texte`, blanc, choisie contre son
+   propre fond doré — tokens.css §3). Sans l'exclusion, `.page-composer a`
+   (classe + balise, plus spécifique que la seule classe `.btn-primary`)
+   écrasait ce blanc par l'or sombre : texte à peu près de la même teinte que
+   le bouton, « Ouvrir l'itinéraire » illisible. Mesuré : #7f6027 sur #94702e. */
 .page-composer .apercu-label,
-.page-composer a { color: var(--or-profond); }
+.page-composer a:not(.btn) { color: var(--or-profond); }
 
 /* ── A · l'entrée ───────────────────────────────────────────────────────── */
 .cp-entree {
