@@ -669,3 +669,108 @@ Politique d'usage lue en entier, **en vigueur au 11 juin 2026**, 11 rubriques.
   deux catégories, dont *l'éditeur qui met des contenus pornographiques à
   disposition du public*. **L'hypothèse du cadrage était exacte, et même plus
   restrictive qu'il ne le disait.**
+
+---
+
+# DÉCISION DU 3/11/2026 — **DISSOCIER LES DEUX APPLICATIONS**
+
+> *« Mana.bzh est sans compte, ciblé Bretagne, sans chat IA. mana.love cible le
+> monde et le chat IA. »*
+
+Cette décision remplace celle de « réhabiller » (§1.4) : il n'y a plus une app
+à rhabiller, il y en a **deux à séparer**.
+
+## I · Ce qu'elle tranche d'un coup
+
+⭐ **Elle correspond déjà aux deux dépôts existants.** C'est ce qui la rend
+peu coûteuse :
+
+| | mana.bzh | mana.love |
+|---|---|---|
+| dépôt | `gilletaurelien-art/mana` | `gilletaurelien-art/mana.love` |
+| périmètre | **Bretagne** | **le monde** |
+| compte | **aucun** | **obligatoire pour le chat** |
+| chat IA | **aucun** | **oui**, limité en gratuit |
+| pile | statique, zéro backend | backend + modèle |
+
+Les deux dépôts sont **déjà** dans cette forme. `/home/user/mana` n'a ni
+compte ni chat et en fait une position publique ; `gilletaurelien-art/mana.love`
+a le chat, l'exploration et la fondation i18n, et **aucun verrou breton**.
+
+⭐ **Et cela me débloque pour mana.love.** Puisque mana.love se rebâtit dans le
+dépôt neuf, le dépôt de l'ancien build n'est plus nécessaire *pour la
+construire* — l'inventaire de l'annexe tient lieu de cahier des charges. Il
+reste nécessaire pour **l'autre moitié** : retirer mana.love du build partagé
+sans casser mana.bzh.
+
+## II · ⛔ Ce que la dissociation CASSE, et qu'il faut traiter
+
+**1. L'ancre du compte est sur le mauvais site.** Le bouton de connexion dit
+aujourd'hui *« Se connecter à **MANA.bzh** »*, et c'est un compte pour tout
+l'écosystème. Or mana.bzh devient **sans compte**.
+⭐ **L'identité doit déménager.** C'est la conséquence la moins visible et la
+plus structurante de cette décision.
+
+**2. Le build partagé doit être scindé.** Aujourd'hui un seul bundle choisit sa
+marque à l'exécution (`has("asManaLove") ? "mana.love" : …`). Tant que ce code
+sert les deux, « dissocier » n'est pas fait — c'est seulement affiché.
+
+**3. Le bloc Caddy.** `deploiement/mana-bzh.caddy` porte `host mana.bzh` pour
+protéger les deux autres domaines. mana.love aura besoin du sien, avec sa
+propre racine.
+
+**4. Deux « balades » coexisteront, et elles se ressemblent.** mana.bzh sert
+des promenades bretonnes réelles (tracés OSM, GPX, hors ligne) ; mana.love sert
+« Me balader », un parcours composé de demi-journée, partout. ⚠️ Même mot, deux
+produits — à nommer différemment avant que l'usage ne les confonde.
+
+## III · Les trois allocations que la décision ne tranche pas
+
+**A — MANAradio.** Le même flux (`radio.mana.bzh/listen/mana/radio.mp3`) est
+câblé dans les deux, à l'identique. mana.bzh l'appelle « la voix du
+territoire » et la met au centre de son accueil ; l'ancien mana.love en fait sa
+page d'accueil, « le triskèle en est l'interrupteur ».
+→ **Proposition : la radio reste à mana.bzh**, et mana.love y renvoie. Le flux
+ne bouge pas — le code de mana.bzh prévient que ces adresses sont câblées dans
+quatre sites et que les renommer casserait tout.
+
+**B — La recherche territoriale.** Associations (RNA), ESS (SIRENE),
+DATAtourisme, l'agenda : **ce sont des bases françaises**, ni bretonnes ni
+mondiales. Elles ne vont donc ni à l'un ni à l'autre.
+→ ⭐ **Proposition : elles appartiennent à `manafrance.org`**, qui existe déjà
+et se décrit « partout en France ». Cela donne une géographie à trois étages
+qui suit les domaines : **Bretagne → mana.bzh · France → manafrance.org ·
+monde → mana.love**.
+
+**C — RELAX, le Sanctuaire, la Tribu.** RELAX est un péage vers SUPERMANA :
+il suit le chat, donc **mana.love**. La Tribu est manafamily — mesuré, c'est un
+site à part. Le Sanctuaire n'a pas été exploré.
+
+## IV · Ce que mana.love doit reprendre, par ordre de valeur
+
+D'après l'annexe, et seulement ce qui est mesuré :
+
+1. ⛔ **Les garde-fous de détresse** — 12 règles, 4 familles, 6 numéros
+   vérifiés, évalués AVANT le modèle. Le dépôt neuf n'en a **aucun**, et il
+   ouvre la confidence. **Et on ne recopie PAS `leverLaCaptation:!0`** : c'est
+   le défaut du §D.
+2. ⭐ **La mémoire déclarée** (`memoire_declaree`) — déclarée et non déduite,
+   péremption par genre, désactiver ≠ supprimer. C'est le modèle qui tient à la
+   fois la promesse publiée et la minimisation RGPD.
+3. **Le contrat de `mana-presence`** — pas son transport. Le dépôt neuf a déjà
+   `POST /api/chat` de même forme.
+4. **La voix** — `mana-ecoute` (reconnaissance) et `mana-voice` (synthèse) :
+   c'est ce que SUPERMANA vend (« conversations vocales illimitées »), et le
+   dépôt neuf n'a rien.
+5. **Le palier payant** — 9 €/mois, « par personne et jamais par structure ».
+
+## V · Ce que « cibler le monde » coûte, maintenant chiffré
+
+- **une constante** : `", France"` suffixée à chaque recherche ;
+- **deux géocodeurs français** à remplacer (Nominatim biaisé `Accept-Language:
+  fr`, et la Base Adresse Nationale, France seule) ;
+- **la barrière linguistique réelle** : onze écrans du dépôt neuf n'ont aucune
+  clé i18n, et `systemPrompt.ts:17` ordonne « Réponds en français », verrouillé
+  par un test ;
+- ⚠️ **et le droit suit la géographie** : le Royaume-Uni reste **INVÉRIFIABLE**
+  (Ofcom inatteignable). Géo-restreindre ou assumer le dossier UK reste ouvert.
