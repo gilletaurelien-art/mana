@@ -118,12 +118,40 @@ export function Promenades() {
   return (
     <main className="page">
       <div className="wrap">
+        {/* 🔴 L'OUTIL D'ABORD, EN TÊTE DE PAGE — arbitrage du fondateur,
+            3/11/2026. Ce bloc vivait APRÈS la liste des sentiers, avec une
+            raison écrite le 31/10 : « on propose de fabriquer une promenade
+            à qui n'en a pas trouvé une, pas à qui vient d'arriver ». Cette
+            raison n'était pas fausse — elle a été ANNULÉE : la page doit
+            montrer ce que MANA sait faire de propre avant de montrer ce
+            qu'elle a moissonné d'ailleurs. ⭐ Les 1 032 itinéraires restent
+            juste en dessous, entiers — ce n'est pas un remplacement, c'est
+            un ordre. */}
+        <section className="page-panel">
+          <p className="apercu-label">Notre outil</p>
+          <h2 className="section-title" style={{ marginBottom: "var(--sp-2)" }}>
+            Composer votre propre promenade
+          </h2>
+          <p className="page-texte">
+            Une boucle depuis où vous êtes, par les chemins, devant ce qu'il
+            y a à voir.
+          </p>
+          <div className="est-actions" style={{ marginBottom: 0 }}>
+            <a className="btn btn-primary" href={`${B}/composer`}>
+              Composer une promenade
+            </a>
+          </div>
+        </section>
+
         {/* ⚠️ « Presqu'île de Crozon » jusqu'au 31/10 — faux depuis que la
             page porte les 46 circuits de l'Office, dont ceux de Pont-de-Buis
             et du Faou. ⭐ Ajouter du contenu requalifie le CADRE : un titre
-            qui survit à ce qu'il annonce devient un faux témoin. */}
+            qui survit à ce qu'il annonce devient un faux témoin.
+            ⚠️ TITRE DE NIVEAU 2, PAS 1 — depuis que le compositeur tient le
+            haut de page. Un seul h1 par page ; celui-ci porte désormais le
+            catalogue, pas la page entière. */}
         <p className="hero-label">Presqu'île de Crozon &amp; Aulne maritime</p>
-        <h1 className="page-titre"><span>Les sentiers</span></h1>
+        <h2 className="page-titre"><span>Les sentiers</span></h2>
 
         <section className="page-panel">
           <p className="page-intro">
@@ -302,31 +330,6 @@ export function Promenades() {
             </ul>
           </section>
         )}
-
-        {/* ⭐ APRÈS LA LISTE, PAS AVANT — 31/10/2026. Elle s'ouvrait sur
-            « composez la vôtre », c'est-à-dire sur du travail, avant d'avoir
-            montré ce qui existe déjà. On propose de fabriquer une promenade à
-            qui n'en a pas trouvé une, pas à qui vient d'arriver.
-            La vitrine, toujours accessible : elle est embarquée, donc elle
-            s'affiche même sans réseau. */}
-        {/* ⭐ La composition est l'autre moitié du produit : les 1 032
-            itinéraires sont les promenades des AUTRES ; celle-ci est la
-            vôtre, depuis là où vous êtes. */}
-        <section className="page-panel">
-          <p className="apercu-label">Ou bien</p>
-          <h2 className="section-title" style={{ marginBottom: "var(--sp-2)" }}>
-            Composer votre propre promenade
-          </h2>
-          <p className="page-texte">
-            Une boucle depuis où vous êtes, par les chemins, devant ce qu'il y
-            a à voir.
-          </p>
-          <div className="est-actions" style={{ marginBottom: 0 }}>
-            <a className="btn btn-primary" href={`${B}/composer`}>
-              Composer une promenade
-            </a>
-          </div>
-        </section>
 
       </div>
     </main>
