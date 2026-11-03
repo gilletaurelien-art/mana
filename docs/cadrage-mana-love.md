@@ -41,38 +41,125 @@ embarquée. §8 dit quoi mesurer, et pourquoi c'est le prochain geste.
 
 ---
 
-## 1 · La décision du fondateur : **le compte dès la v1**
+## 1 · La décision du fondateur : **deux portes, un seul verrou**
 
-Arbitrage rendu le 3/11/2026. ⭐ **Ma recommandation était l'inverse** — tenir
-l'architecture locale et différer le compte — et elle est consignée ici pour
-mémoire, pas pour être rejouée : le fondateur a tranché, et ce document suit
-sa décision.
+Arbitrage rendu le 3/11/2026, et il tranche mieux que les options que ce
+document proposait. Il tient en trois phrases :
 
-Ce que le compte emporte, et qui n'est pas négociable une fois le choix fait :
+1. **La nouvelle app est le dépôt GitHub**, et elle reprend les
+   fonctionnalités de l'ancien site mana.love. Ce n'est pas une migration de
+   code : c'est une reprise de fonctionnalités dans un code propre.
+2. **Un mode sans compte existe**, pour qui veut seulement se balader.
+3. **Le chat avec MANA exige un compte** — et le chat est **limité** dans
+   l'offre gratuite.
+
+### 1.1 — Ce que ça résout, et que ni A ni B ne résolvaient
+
+⭐ **La promesse « sans compte » de l'ancien site ne se renie pas : elle se
+BORNE.** mana.love affiche aujourd'hui en page d'accueil *« Sans compte, sans
+publicité, et sans que vos recherches partent ailleurs »*. Avec deux portes,
+cette phrase reste **vraie pour la balade** — il suffit qu'elle dise de quoi
+elle parle. C'était le point le plus coûteux des lectures A et B : l'une
+interdisait le compte, l'autre faisait mentir la page. Celle-ci ne fait ni
+l'un ni l'autre.
+
+⭐ **Et le périmètre réglementaire se réduit d'autant.** Les obligations du §5
+— article 9, consentement explicite, AIPD — **ne portent que sur le chemin du
+chat**, celui où il y a un compte et de la confidence. La balade reste hors de
+ce périmètre, et n'y entre pas par accident. C'est une frontière de produit qui
+sert de frontière de conformité.
+
+### 1.2 — Ce que « limité » devrait vouloir dire
+
+⚠️ Une proposition, pas une décision : **la limite naturelle est la MÉMOIRE,
+pas le nombre de messages.**
+
+Le code porte déjà la bonne ligne de fracture. `server/chat.ts:74` n'envoie que
+`history.slice(-20)` : **une fenêtre de 20 messages**. La compagne *affiche*
+tout et ne *raisonne* que sur les vingt dernières répliques. Elle ne se souvient
+donc pas encore « de ce qui compte » — et c'est exactement ce que l'offre
+payante aurait à vendre.
+
+| | gratuit | payant |
+|---|---|---|
+| elle parle, elle écoute | oui | oui |
+| **elle se souvient de vous** | la fenêtre courte | la mémoire longue (couche de synthèse) |
+| entre appareils | non | oui |
+
+⭐ Cette ligne-là suit l'architecture au lieu de la combattre : le palier
+payant **est** le chantier technique (la couche de synthèse + le backend
+autoritaire), et non un compteur greffé par-dessus. Un quota de messages, à
+l'inverse, demanderait un deuxième compteur et n'apporterait aucune
+fonctionnalité.
+
+⛔ **Et il y a un compteur de trop à régler d'abord.** Le dépôt porte déjà une
+économie de points (§4) dont le plafond journalier **exige** la réouverture de
+l'app. Deux compteurs — les points et un quota de messages — sur un produit qui
+publie *« nous ne concevons pas de mécaniques de dépendance »*, c'est
+intenable. **L'arbitrage du §4 passe donc avant le réglage de « limité ».**
+
+### 1.3 — Ce que le compte emporte, sur le chemin du chat
 
 1. **La suppression côté serveur se livre AVEC le compte**, pas après.
    `PrivacyScreen.tsx:36-44` promet déjà : *« quand un backend sera en place,
-   la suppression s'étendra aux données serveur »*. Cette phrase arrive à
-   terme le jour du compte.
-2. **Le registre de progression devient autoritaire.** Le README le liste en
-   attente n° 3 : aujourd'hui `localStorage` est un cache client, donc les
-   points sont falsifiables depuis la console.
-3. **Les obligations du §6 s'appliquent en entier**, parce que des
-   conversations intimes stockées chez nous sont des données de l'article 9.
+   la suppression s'étendra aux données serveur »*.
+2. **Le registre de progression devient autoritaire** si les points survivent
+   au §4 : aujourd'hui `localStorage` est un cache client, donc les points sont
+   falsifiables depuis la console.
+3. **Un palier payant ajoute la facturation** — et en PWA, cela évite les
+   boutiques d'applications et leurs restrictions sur le contenu adulte
+   (§5.4). C'est un argument réel pour rester sur le web.
+4. ⭐ **Un chat derrière un compte rend la vérification d'âge TRACTABLE** (il y
+   a un titulaire), et rend le **chemin de crise obligatoire** : des personnes
+   identifiées qui se confient, et aujourd'hui zéro modération dans tout le
+   dépôt (§4.2).
 
-⚠️ **Ce que le compte n'achète PAS : l'intimité.** La compagne se souvient
-déjà — `useConversations` (`persistence.ts:109`) relit
-`mana.love.conversations.v1` au démarrage. Le compte achète la **continuité
-entre appareils** et la survie à un vidage de cache. Ce qui l'empêche de se
-souvenir *de ce qui compte* est ailleurs : `server/chat.ts:74` ne lui envoie
-que `history.slice(-20)`. **Une fenêtre de 20 messages.** Le compte ne la lève
-pas ; il faut une couche de synthèse. Les deux chantiers sont distincts.
+⚠️ Et le ton reste un axe gratuit, indépendant des deux portes :
+`systemPrompt.ts:13` pose le vouvoiement par défaut. Le rendre proche est une
+ligne de prompt, pas une architecture.
 
-⭐ Et le ton est un troisième axe, gratuit : `systemPrompt.ts:13` pose le
-vouvoiement par défaut. Le rendre proche est une ligne de prompt, pas une
-architecture.
 
----
+### 1.4 — ⟲ Révision du 3/11 : on RÉHABILLE, on ne réécrit pas
+
+Le fondateur a révisé sa position dans la même séance, et elle remplace la
+phrase 1 du §1 :
+
+> *« On garde l'ancienne application avec ses fonctionnalités, on la réhabille
+> avec la nouvelle application. Ensuite, on vérifie que tout fonctionne. »*
+
+⭐ **C'est le choix le moins coûteux, et de loin.** Tout ce que §3 passait son
+temps à chiffrer — où trouver des évènements datés, comment sortir de France,
+qui écrit l'éditorial territoire par territoire — est **déjà résolu dans
+l'ancienne app**, qui interroge DATAtourisme, SIRENE, le Répertoire National
+des Associations et France Travail. Le nouveau dépôt, lui, n'a aucune de ces
+sources : il a un type `Experience` nourri de données de démonstration.
+
+**Ce que cette révision déplace :**
+
+| | avant | après la révision |
+|---|---|---|
+| ce qui est servi | le nouveau dépôt | **l'ancienne app** |
+| rôle du nouveau dépôt | le produit | **la source du nouvel habillage** |
+| les fonctionnalités | à porter | **déjà là, rien à porter** |
+| Supabase | interdit par la CI du nouveau dépôt | **conservé** — le garde ne s'applique plus |
+| les deux verrous de « monde entier » (§3.3) | à lever dans le nouveau code | **à re-mesurer dans l'ancien**, qui a son propre modèle |
+
+⛔ **ET UN BLOCAGE, QUI PASSE AVANT TOUT LE RESTE : le code de l'ancienne
+application est introuvable.** Vérifié le 3/11/2026 : il n'est dans **aucun**
+des cinq dépôts accessibles de ce compte. `manahome-app` est MANAhome
+(manafrance.org, son propre Caddyfile), `manafamily` est MANA.family (33
+fichiers), `manatimebank` la banque du temps (30 fichiers) — aucun ne sert
+mana.love, et aucun ne contient les bundles servis
+(`/assets/supabase-Bt9U0Lmh.js`, `/assets/react-D8dCdO9M.js`).
+
+⭐ **On ne réhabille pas une application dont on n'a pas la source.** C'est la
+seule question qui bloque la suite : où vit ce code ? Un dépôt privé ou d'une
+autre organisation, un serveur sans dépôt, ou une autre plateforme de
+construction.
+
+⚠️ En revanche, « vérifier que tout fonctionne » **ne demande pas la source** :
+l'app servie se teste de l'extérieur, dans un vrai navigateur. C'est fait
+indépendamment, et le résultat vaut quel que soit l'endroit où le code dort.
 
 ## 2 · L'état réel du code, mesuré
 
