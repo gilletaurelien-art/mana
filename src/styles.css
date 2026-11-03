@@ -2852,70 +2852,54 @@ body:has(.jeu) { padding-bottom: 0; }
 
 /* ── C · les trois propositions ─────────────────────────────────────────── */
 .cp-propositions { margin-bottom: var(--sp-2); }
-.cp-cartes { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-2); }
 
-/* ⭐ LA CARTE EST COUCHÉE : le tracé debout à gauche, le dire à droite. Elle
-   passe de ~350 px de haut à ~150, et trois propositions tiennent dans un
-   écran — ce que la maquette obtient avec des photographies que nous n'avons
-   pas. La forme réelle de nos données commande la mise en page ; l'inverse
-   produit du vide bien cadré. */
-.cp-carte {
-  position: relative; display: flex; width: 100%; padding: 0;
-  overflow: hidden; text-align: left; cursor: pointer;
+/* 🔴 TROIS PETITS BOUTONS ALIGNÉS, PICTO AU-DESSUS DU NOM — 3/11/2026,
+   demande du fondateur. Les grandes cartes couchées (tracé + fiche) tenaient
+   ~150 px CHACUNE ; trois boutons de 76 px tiennent ENSEMBLE sur une largeur
+   de téléphone, et ce que chaque carte disait en plus (distance, lieux
+   croisés, bord de mer…) ne disait rien pour les deux qu'on n'a pas choisies
+   — `.cp-choix-detail`, juste après, le dit une fois, pour celle qu'on a
+   choisie. */
+.cp-choix-lieux {
+  list-style: none; margin: 0 0 var(--sp-2); padding: 0;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-1);
+}
+.cp-choix-lieu {
+  width: 100%; min-height: 76px; padding: 10px 4px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  text-align: center; cursor: pointer;
   background: rgb(250 248 240 / 96%);
   border: 1.5px solid rgb(25 43 67 / 9%);
-  border-radius: var(--r-xl);
-  box-shadow: 0 4px 18px rgb(25 43 67 / 7%);
+  border-radius: var(--r-l);
   transition: border-color var(--d-micro) var(--e-doux),
-              box-shadow var(--d-micro) var(--e-doux),
-              transform var(--d-micro) var(--e-doux);
+              background var(--d-micro) var(--e-doux);
 }
-.cp-carte:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgb(25 43 67 / 13%); }
-.cp-carte.est-choisie { border-color: var(--action); border-width: 2px; }
+.cp-choix-lieu:hover { border-color: rgb(127 96 39 / 45%); }
+/* ⭐ L'ÉTAT CHOISI NE TIENT PAS À LA SEULE COULEUR — même raison que
+   `.cp-temps-choix.est-choisi` : la bordure épaissit ET le fond change. */
+.cp-choix-lieu.est-choisie {
+  border-color: var(--action); border-width: 2px;
+  background: rgb(198 154 72 / 16%);
+}
+.cp-choix-picto { width: 26px; height: 26px; flex: none; color: var(--or-profond); opacity: .75; }
+.cp-choix-lieu.est-choisie .cp-choix-picto { opacity: 1; }
+.cp-choix-lieu-nom {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  overflow: hidden; text-wrap: balance;
+  font-size: var(--t-xs); line-height: 1.2; color: var(--nuit);
+}
 
-/* ⛔ CE N'EST PAS UNE PHOTOGRAPHIE, C'EST LE TRACÉ — et le fond kaki le dit :
-   personne ne prend une silhouette dorée sur kaki pour une vue de la côte.
-   La maquette demande « une photographie du paysage réellement traversé » :
-   nous n'en avons aucune, et cette boucle n'existait pas il y a trois
-   secondes. */
-.cp-carte-trace {
-  flex: none; width: 104px; align-self: stretch;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--kaki); padding: 8px 0;
+/* ⚠️ CE QUE CHAQUE CARTE DISAIT EN PLUS VIT ICI MAINTENANT, une seule fois,
+   pour le choix en cours — pas trois fois, une par carte qu'on ne regarde
+   déjà plus une fois le choix fait. */
+.cp-choix-detail {
+  margin: 0 0 var(--sp-2); font-size: var(--t-xs); line-height: 1.6;
+  color: var(--nuit); opacity: .85;
 }
-.cp-carte-trace svg { display: block; width: 100%; height: auto; max-height: 100%; }
-.cp-carte-trace path { stroke: var(--ocre); }
-.cp-carte-trace circle { fill: var(--craie); }
-
-.cp-carte-dire { display: block; padding: var(--sp-2) 52px var(--sp-2) var(--sp-2); }
-.cp-carte-titre {
-  display: block; margin-bottom: 6px;
-  font: 400 clamp(1.2rem, 5vw, 1.4rem)/1.14 var(--titre);
-  color: var(--nuit); text-wrap: balance;
-}
-.cp-carte-faits {
-  display: flex; flex-direction: column; gap: 4px;
-  margin-bottom: 10px;
-  font-size: var(--t-s); color: var(--nuit); opacity: .85;
-}
-.cp-carte-faits > span { display: flex; align-items: center; gap: 7px; }
-.cp-carte-faits .cp-picto { width: 17px; height: 17px; opacity: .65; }
-.cp-carte-faits .cp-alerte { color: var(--or-profond); opacity: 1; font-weight: 600; }
-.cp-carte-faits .cp-alerte .cp-picto { opacity: 1; }
-.cp-carte-texte {
-  display: block; font-size: var(--t-s); line-height: 1.5;
-  color: var(--nuit); opacity: .78;
-}
-/* la flèche de la maquette : un repère de lecture, pas une seconde cible —
-   toute la carte est cliquable, elle n'est donc pas un bouton de plus */
-.cp-carte-fleche {
-  position: absolute; right: var(--sp-2); bottom: var(--sp-2);
-  width: 38px; height: 38px; border-radius: var(--r-rond);
-  display: flex; align-items: center; justify-content: center;
-  background: rgb(198 154 72 / 18%); color: var(--or-profond);
-}
-.cp-carte-fleche svg { width: 17px; height: 17px; }
-.cp-carte.est-choisie .cp-carte-fleche { background: var(--action); color: var(--action-texte); }
+.cp-choix-detail .cp-picto { width: 15px; height: 15px; vertical-align: -2px; opacity: .65; margin-right: 3px; }
+.cp-choix-detail-sep { margin: 0 6px; opacity: .5; }
+.cp-choix-detail .cp-alerte { color: var(--or-profond); opacity: 1; font-weight: 600; }
+.cp-choix-detail .cp-alerte .cp-picto { opacity: 1; }
 
 /* ── D · ce qu'on emporte ───────────────────────────────────────────────── */
 .cp-emporter { display: flex; flex-wrap: wrap; gap: var(--sp-1); margin-top: var(--sp-2); }

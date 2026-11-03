@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
 import { indexer, composerVers, metres, fondreRencontres, ECART_MAX_M, noeudLePlusProche, traits, formeDeLaBoucle, SOURCE_MAREES, cheminDeRetour, composanteAtteint, accrocherTous, accrocherUn, accroche, propositionsAutour, promenadeVers, AUTOUR_MIN_M, AUTOUR_MAX_M, BOUCLE_PAR_ALLER } from "./composition";
-import { portrait } from "./portrait";
 import { enGpx, telecharger } from "./Promenade";
 import type { Graphe, Boucle, Retour, Visee, Parcours, Accroche, Proposition } from "./composition";
 import { chargerLieux, type Lieu, type Inventaire } from "./lieux";
@@ -112,6 +111,40 @@ const LIBELLE: Record<string, string> = {
   grotte: "Grotte", source: "Source", cascade: "Cascade", ruine: "Ruines",
 };
 
+/* 🔴 UN TYPE DE LIEU, UNE SILHOUETTE — 3/11/2026, demande du fondateur.
+   ⚠️ LA CLÉ EST LE CODE, PAS LE LIBELLÉ : `lieu.c` reste stable d'une langue
+      à l'autre, `LIBELLE`/`inventaire.libelles` eux peuvent changer de texte.
+   ⛔ `LIEU_INCONNU` SANS QUOI UN CODE ABSENT D'ICI (le catalogue en porte plus
+      que les treize que `LIBELLE` nomme) RENDRAIT UN BOUTON MUET — mieux vaut
+      un repère générique qu'une case vide sur une rangée qui n'en a que
+      trois. */
+const PICTO_LIEU: Record<string, string> = {
+  megalithe: "M9 21V10c0-4 1.2-7 3-7s3 3 3 7v11M7 21h10",
+  plage: "M2 19c2.2-2 4.3-2 6.5 0s4.3 2 6.5 0 4.3-2 6.5 0M12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
+  panorama: "M3 18l6-10 4 6 3-4 5 8H3z",
+  chateau: "M6 21V12h12v9zM6 12V9h2v3M11 12V9h2v3M16 12V9h2v3",
+  calvaire: "M12 3v18M7 8h10",
+  chapelle: "M4 21V12l8-7 8 7v9zM12 5V2M10.3 3.5h3.4",
+  lieu_de_culte: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v10M8 12h8",
+  moulin: "M12 12L7 5M12 12l7-5M12 12l-7 5M12 12l7 5M12 21v-6",
+  phare: "M9.5 21h5l-.8-12h-3.4zM9.5 9h5M12 3v2M8.3 5.3l1.5 1.5M15.7 5.3l-1.5 1.5",
+  grotte: "M4 21V14a8 8 0 0 1 16 0v7M4 21h16",
+  source: "M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11z",
+  cascade: "M9 3c1.3 2-1.3 3 0 5s-1.3 3 0 5-1.3 3 0 5M15 3c1.3 2-1.3 3 0 5s-1.3 3 0 5-1.3 3 0 5",
+  ruine: "M9 21V9.5l1-2.3 2 2 2-2.8 1 2.4V21z",
+};
+const PICTO_LIEU_DEFAUT = "M12 21s7-7.5 7-12a7 7 0 1 0-14 0c0 4.5 7 12 7 12zM12 11.3a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6z";
+
+function SvgLieu({ type }: { type: string }) {
+  return (
+    <svg className="cp-choix-picto" viewBox="0 0 24 24" aria-hidden="true"
+         fill="none" stroke="currentColor" strokeWidth="1.6"
+         strokeLinecap="round" strokeLinejoin="round">
+      <path d={PICTO_LIEU[type] ?? PICTO_LIEU_DEFAUT} />
+    </svg>
+  );
+}
+
 /** ⭐ Dessiné ici plutôt qu'importé : un seul picto, 7 lignes, et aucune
  *  bibliothèque d'icônes ne rentre dans le paquet pour ça. */
 function SvgEtincelle() {
@@ -169,16 +202,6 @@ function SvgVague() {
       <path d="M2 9c2.2-2 4.3-2 6.5 0s4.3 2 6.5 0 4.3-2 6.5 0" />
       <path d="M2 14c2.2-2 4.3-2 6.5 0s4.3 2 6.5 0 4.3-2 6.5 0" />
       <path d="M2 19c2.2-2 4.3-2 6.5 0s4.3 2 6.5 0 4.3-2 6.5 0" />
-    </svg>
-  );
-}
-
-function SvgFleche() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true"
-         fill="none" stroke="currentColor" strokeWidth="1.8"
-         strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5 12h13" /><path d="M13 7l5 5-5 5" />
     </svg>
   );
 }
@@ -1286,25 +1309,20 @@ export function Composer() {
               Où vont vos pas depuis {depart?.nom ?? (territoireDe(position[0], position[1]) ?? DEFAUT).avecArticle} ?
             </h2>
 
-            <ul className="cp-cartes">
+            {/* 🔴 TROIS PETITS BOUTONS, PAS TROIS CARTES — 3/11/2026, demande
+                du fondateur. Les grandes cartes (silhouette du tracé, fiche
+                complète) répétaient la même information trois fois quand une
+                seule, celle du choix en cours, intéresse vraiment ; les
+                boutons tiennent sur une ligne, et le détail du choix se
+                développe juste en dessous, pour celui-là seulement. */}
+            <ul className="cp-choix-lieux">
               {lesProps.map((x, i) => {
-                /* 🔴 UNE BOÎTE DEBOUT, PAS COUCHÉE — et c'est une MESURE qui
-                   l'impose. Dans un bandeau 320×132, ces tracés occupaient
-                   76 % de la hauteur et 19 % de la largeur : un ruban perdu au
-                   milieu du vide. Les chemins de la presqu'île courent
-                   nord-sud, le long de la côte.
-                   ⭐ `portrait()` n'était pas en cause : il applique UN SEUL
-                      facteur aux deux axes, c'est tout son objet, et c'est ce
-                      qui empêche les silhouettes de devenir des rectangles
-                      identiques. Quand une forme ne remplit pas sa boîte, on
-                      change la boîte — jamais la projection. */
-                const t = portrait(x.parcours.contour, 104, 132, 0.1);
                 const lieu = spots[x.i];
                 return (
                   <li key={x.i}>
                     <button
                       type="button"
-                      className={`cp-carte${i === choisie ? " est-choisie" : ""}`}
+                      className={`cp-choix-lieu${i === choisie ? " est-choisie" : ""}`}
                       aria-pressed={i === choisie}
                       onClick={() => {
                         setChoisie(i);
@@ -1316,64 +1334,45 @@ export function Composer() {
                         setEnBoucle(false); setBoucleVisee(null);
                       }}
                     >
-                      <span className="cp-carte-trace" aria-hidden="true">
-                        {t && (
-                          <svg viewBox="0 0 104 132" preserveAspectRatio="xMidYMid meet">
-                            <path d={t.d} fill="none" strokeWidth="2"
-                                  strokeLinecap="round" strokeLinejoin="round" />
-                            <circle cx={t.depart[0]} cy={t.depart[1]} r="3.4" />
-                          </svg>
-                        )}
-                      </span>
-                      <span className="cp-carte-dire">
-                        {/* ⭐ LE TITRE EST LE NOM DU LIEU. Il n'y a plus rien à
-                            inventer : la personne va QUELQUE PART, et cet
-                            endroit a un nom qu'OpenStreetMap porte. Les
-                            intitulés calculés servaient à nommer une boucle
-                            qui n'allait nulle part en particulier. */}
-                        <span className="cp-carte-titre">{lieu.n}</span>
-                        {/* ⚠️ CHAQUE LIGNE EST UNE MESURE, et son picto dit
-                            laquelle. Une ligne qui n'a rien à dire ne
-                            s'affiche pas : « 0 m au bord de l'eau » est du
-                            remplissage.
-                            🔴 LA DISTANCE EST CELLE DU CHEMIN, JAMAIS DU VOL
-                               D'OISEAU, et elle compte les deux bouts hors
-                               réseau. Mesuré le 2/11 : le détour médian est de
-                               ×1,27 et monte à ×2,9 sur ces propositions —
-                               annoncer la ligne droite enverrait quelqu'un
-                               pour trois fois moins que la marche. */}
-                        <span className="cp-carte-faits">
-                          <span><SvgRuban />{(x.metres / 1000).toFixed(1)} km à pied</span>
-                          <span><SvgEtincelle />{comptes[i] ?? 0} lieu{(comptes[i] ?? 0) > 1 ? "x" : ""} sur le chemin · {inventaire?.libelles[lieu.c] ?? LIBELLE[lieu.c] ?? lieu.c}</span>
-                          {x.parcours.bordDeMer > 300 && (
-                            <span><SvgVague />{Math.round(x.parcours.bordDeMer)} m au bord de l'eau</span>
-                          )}
-                          {x.parcours.marees > 0 && (
-                            <span className="cp-alerte"><SvgVague />un passage dépend de la marée</span>
-                          )}
-                        </span>
-                        {/* ⚠️ « À » ET PAS « SUR » QUAND CE N'EST PAS SUR. Le
-                            tracé passe à `sortie` mètres du lieu : zéro quand
-                            il passe dessus, jusqu'à 150 m quand il passe
-                            devant. Les 150 m sont dits à l'écran parce que
-                            c'est ce qui autorise la phrase « vous passez
-                            devant ». */}
-                        <span className="cp-carte-texte">
-                          {x.sortie <= 20
-                            ? "Le chemin y passe."
-                            : `Le chemin passe à ${x.sortie} m — le lieu se voit depuis le sentier.`}
-                          {x.minimum > 0 && x.parcours.metres > x.minimum * 1.05 &&
-                            ` Un détour de ${Math.round(x.parcours.metres - x.minimum)} m pour un chemin plus agréable que le plus court.`}
-                        </span>
-                      </span>
-                      <span className="cp-carte-fleche" aria-hidden="true">
-                        <SvgFleche />
-                      </span>
+                      <SvgLieu type={lieu.c} />
+                      <span className="cp-choix-lieu-nom">{lieu.n}</span>
                     </button>
                   </li>
                 );
               })}
             </ul>
+
+            {/* ⚠️ CE QUI VIVAIT DANS CHAQUE CARTE NE DISPARAÎT PAS : la
+                distance, ce qu'on croise en chemin, le bord de mer, la marée,
+                la façon dont le sentier approche le lieu — tout reste dit,
+                mais une seule fois, pour le choix en cours. Les trois cartes
+                répétaient cette lecture trois fois pour n'en garder qu'une. */}
+            {prop && (
+              <p className="cp-choix-detail">
+                <SvgRuban />{(prop.metres / 1000).toFixed(1)} km à pied
+                <span className="cp-choix-detail-sep" aria-hidden="true">·</span>
+                <SvgEtincelle />{comptes[choisie] ?? 0} lieu{(comptes[choisie] ?? 0) > 1 ? "x" : ""} sur le chemin{" "}
+                · {inventaire?.libelles[spots[prop.i].c] ?? LIBELLE[spots[prop.i].c] ?? spots[prop.i].c}
+                {prop.parcours.bordDeMer > 300 && (
+                  <>
+                    <span className="cp-choix-detail-sep" aria-hidden="true">·</span>
+                    <SvgVague />{Math.round(prop.parcours.bordDeMer)} m au bord de l'eau
+                  </>
+                )}
+                {prop.parcours.marees > 0 && (
+                  <span className="cp-alerte">
+                    <span className="cp-choix-detail-sep" aria-hidden="true">·</span>
+                    <SvgVague />un passage dépend de la marée
+                  </span>
+                )}
+                <br />
+                {prop.sortie <= 20
+                  ? "Le chemin y passe."
+                  : `Le chemin passe à ${prop.sortie} m — le lieu se voit depuis le sentier.`}
+                {prop.minimum > 0 && prop.parcours.metres > prop.minimum * 1.05 &&
+                  ` Un détour de ${Math.round(prop.parcours.metres - prop.minimum)} m pour un chemin plus agréable que le plus court.`}
+              </p>
+            )}
           </section>
         )}
 
