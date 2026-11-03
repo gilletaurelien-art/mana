@@ -117,6 +117,31 @@ describe("le GPX d'une promenade composée", () => {
     const gpx = enGpx(compose);
     expect(gpx).toMatch(/opendatacommons\.org\/licenses\/odbl/);
     expect(gpx).toMatch(/contributeurs d'OpenStreetMap/);
-    expect(gpx, "l'absence d'altitude se dit").toMatch(/[Aa]ucune altitude/);
+    /* ⭐ CE GARDE A ÉTÉ RETOURNÉ LE 3/11/2026, PAS SUPPRIMÉ. Il exigeait la
+       phrase « Aucune altitude : nous n'en disposons pas » — vraie la veille,
+       fausse le jour où `graphe_altitude.py` a rempli les deux graphes. Il
+       aurait alors tenu en place une affirmation périmée DANS UN FICHIER QUI
+       VOYAGE, c'est-à-dire à l'endroit le plus coûteux : un GPX s'ouvre dans
+       une montre six mois plus tard, loin de la page qui pourrait le corriger.
+       Ce qu'il protégeait reste vrai sous une autre forme — le fichier doit
+       DIRE ce qu'il sait du relief et ce qu'il n'en sait pas. */
+    expect(gpx, "l'absence d'altitude PAR POINT se dit, et se justifie")
+      .toMatch(/[Pp]as d'altitude par point/);
+    expect(gpx, "⛔ et aucune élévation n'est inventée dans le tracé")
+      .not.toMatch(/<ele>/);
+
+    /* 🔴 L'ABSENCE DOIT RESTER UNE ABSENCE. Ce fixture n'a pas de `monteeM`
+       — comme un itinéraire de l'Office, qui porte le relevé que l'Office a
+       mesuré au sol, pas le nôtre. Le fichier doit alors SE TAIRE, jamais
+       écrire « 0 m » : un zéro se lit « c'est plat », et c'est le défaut
+       dans le sens le plus coûteux pour qui part sur un sentier de falaise. */
+    expect(gpx, "sans montée connue, le fichier se tait — il n'écrit pas 0")
+      .not.toMatch(/Montée cumulée/);
+
+    /* Et quand on la connaît, elle voyage — avec sa source nommée. */
+    const avecMontee = enGpx({ ...compose, monteeM: 87 });
+    expect(avecMontee).toMatch(/Montée cumulée : 87 m/);
+    expect(avecMontee, "la source de l'altitude est nommée dans le fichier")
+      .toMatch(/SRTM/);
   });
 });

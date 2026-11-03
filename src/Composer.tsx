@@ -821,6 +821,12 @@ export function Composer() {
       //    annoncer 2 h pour un parcours qui monte de 200 m, c'est promettre
       //    ce qu'on ne tient pas.
       dureeEstimeeH: Math.round((b.ressentie / 1000 / ALLURE_KMH) * 2) / 2,
+      /* ⭐ La montée VOYAGE avec le fichier depuis le 3/11/2026. Jusque-là le
+         GPX affirmait « Aucune altitude : nous n'en disposons pas » — vrai la
+         veille, faux ce jour-là. Un GPX s'ouvre dans une montre six mois plus
+         tard, loin de la page qui pourrait le corriger : c'est le dernier
+         endroit où une affirmation périmée doit survivre. */
+      monteeM: Math.round(b.montee),
       boucle: !!laBoucle,
       osmUrl: "https://www.openstreetmap.org/copyright", osmRef: "",
       /* ⚠️ DEUX GÉOMÉTRIES, ET ELLES NE SONT PAS INTERCHANGEABLES.
@@ -1349,20 +1355,32 @@ export function Composer() {
                   <SvgTelecharger />Emporter le tracé (GPX)
                 </button>
               </p>
-              {/* ⚠️ LA DURÉE EST CALCULÉE À PLAT, ET ON LE DIT ICI plutôt que
-                  de laisser « environ » porter seul le doute. Sur la
-                  presqu'île, l'Office déclare jusqu'à +310 m sur 14 km :
-                  à 3 km/h, Naismith y ajouterait près de 40 minutes. Un
-                  promeneur qui part sur une estimation basse, sur un sentier
-                  de falaise, arrive à la nuit.
-                  ⛔ On ne corrige pas en gonflant la durée « par prudence » :
-                     ce serait inventer dans l'autre sens. On dit ce qu'on
-                     sait, et ce qu'on ne sait pas. */}
+              {/* ✅ L'ALTITUDE EST POSÉE DEPUIS LE 3/11/2026 — et cette note
+                  disait encore le contraire ce matin-là. Elle annonçait
+                  « nous n'avons pas de relevé d'altitude sur ces chemins » :
+                  vrai le 2/11, faux dès que `scripts/graphe_altitude.py` a
+                  rempli les deux graphes. ⭐ Une note qui survit à sa cause
+                  devient un faux témoin — celle-ci n'aura vécu qu'un jour.
+
+                  ⛔ ON NE REMET PAS LA DURÉE POUR AUTANT. L'arbitrage du
+                     fondateur, 2/11 : « certains sont lents, certains
+                     marchent vite. La pertinence est la distance. » Avoir le
+                     dénivelé ne rend pas une allure moins fausse — ça rend
+                     l'EFFORT mesurable, et l'effort se dit en mètres de
+                     montée, pas en minutes inventées.
+
+                  ⚠️ CE QU'ON SAIT ET CE QU'ON NE SAIT PAS, puisque c'est la
+                     règle de cette page. La source est SRTM à 30 m :
+                     elle voit les vallons, pas les marches d'un escalier
+                     côtier. 83 arêtes de la presqu'île (0,5 %) restent sans
+                     dénivelé — toutes très courtes, où deux échantillons
+                     distants de 30 m donneraient une pente absurde ; on
+                     préfère ne rien dire. Et les circuits de l'Office
+                     gardent leur propre relevé, qui est mesuré au sol. */}
               <p className="page-note">
-                Durée calculée <strong>à plat</strong> — nous n'avons pas de
-                relevé d'altitude sur ces chemins. Le terrain monte&nbsp;:
-                comptez davantage. Les circuits balisés de l'Office, eux,
-                portent le dénivelé qu'il a mesuré.
+                Dénivelé d'après le modèle d'altitude SRTM (30&nbsp;m) —
+                il voit les vallons, pas les marches. Les circuits balisés de
+                l'Office portent leur propre relevé, mesuré au sol.
               </p>
               <p className="page-note">
                 {/* ⛔ L'ÉTALEMENT NE SE LIT QUE SUR UNE BOUCLE. C'est un

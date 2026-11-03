@@ -166,6 +166,29 @@ describe("mesurer un parcours", () => {
     expect(mesurer(g, ix, [0, 0], 0).montee).toBe(30); // aller-retour : une fois
   });
 
+  it("la montée suit la GÉOMÉTRIE, pas le net entre extrémités", () => {
+    /* 🔴 LE CAS QUI A COÛTÉ 43 % DE LA MONTÉE RÉELLE — mesuré le 29/10 côté
+       pipeline : 242 m le long de la géométrie, 137 m par la somme des dz.
+       Ici une arête qui monte de 40 puis redescend de 30 : le net dit 10,
+       la marche dit 40. Et à l'envers, ce qui se descendait se grimpe :
+       exactement `montée − dz` = 40 − 10 = 30.
+       ⭐ Si ce test tombe parce que quelqu'un a resimplifié `mesurer()` vers
+       le dz seul, la promenade annoncée « +10 m » en fera grimper 40 : le
+       chiffre que la personne lit pour décider de partir redeviendrait
+       faux dans le sens flatteur. */
+    const n: [number, number][] = [[-4.49, 48.24], [-4.488, 48.24], [-4.487, 48.24]];
+    const g: Graphe = { genere: "t", territoire: "t", attribution: "OSM", n,
+      //              [a, b,  m, agr, points,  mer,  dz, marée, montée a→b]
+      a: [[0, 2, 300, 200, [0, 1, 2], null, 10, 0, 40]], l: [] };
+    const ix = indexer(g);
+    expect(mesurer(g, ix, [0], 0).montee).toBe(40);        // la bosse comptée
+    expect(mesurer(g, ix, [0], 2).montee).toBe(30);        // à l'envers : 40 − 10
+    expect(mesurer(g, ix, [0, 0], 0).montee).toBe(70);     // aller-retour : 40 + 30
+    /* Et sans la case 8, le repli au net reste là — assumé bas, jamais haut. */
+    const g2: Graphe = { ...g, a: [[0, 2, 300, 200, [0, 1, 2], null, 10, 0]] };
+    expect(mesurer(g2, indexer(g2), [0], 0).montee).toBe(10);
+  });
+
   it("le bord de mer et la marée ne se comptent pas deux fois, les mètres si", () => {
     const n: [number, number][] = [[-4.49, 48.24], [-4.487, 48.24]];
     const g: Graphe = { genere: "t", territoire: "t", attribution: "OSM", n,

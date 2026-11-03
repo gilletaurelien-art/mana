@@ -36,9 +36,19 @@ export interface Graphe {
    *  change le parcours, ni de dire au promeneur « au bord de mer sur 2 km ».
    *  `null` au-delà de 2 km — et absente sur un graphe bâti sans littoral.
    *  Le dénivelé est celui du sens a→b ; `marée` vaut 1 sur un passage qui
-   *  dépend de l'heure de la mer. */
+   *  dépend de l'heure de la mer.
+   *
+   *  🔴 LA CASE 8 EXISTE PARCE QUE LE dz NE SUFFIT PAS — mesuré le 29/10 côté
+   *  pipeline : sur la boucle de l'Arrée, la montée réelle le long de la
+   *  géométrie vaut 242 m quand la somme des dz d'arêtes n'en rend que 137.
+   *  Le net ignore chaque bosse INTÉRIEURE à l'arête — 43 % de la montée
+   *  perdus sur le chiffre que la personne lit pour décider de partir.
+   *  `montée a→b` est la grimpe cumulée en marchant l'arête à l'endroit ;
+   *  dans l'autre sens elle vaut EXACTEMENT `montée − dz` (ce qui se descend
+   *  à l'aller moins le net est ce qui se grimpe au retour). Vérifié en
+   *  force brute sur les 36 769 arêtes posées : zéro écart. */
   a: [number, number, number, number, number[],
-      (number | null)?, (number | null)?, (0 | 1)?][];
+      (number | null)?, (number | null)?, (0 | 1)?, (number | null)?][];
   /** lieux : accrochés à une arête, avec leur fraction le long d'elle */
   l: LieuAccroche[];
 }
@@ -413,7 +423,19 @@ export function mesurer(
     const ar = g.a[e];
     const aLEndroit = ar[0] === nMarche;
     const dz = ar[6];
-    if (dz != null) montee += Math.max(0, aLEndroit ? dz : -dz);
+    const grimpe = ar[8];
+    if (grimpe != null && dz != null) {
+      // ⭐ La montée LE LONG DE LA GÉOMÉTRIE, pas le net entre extrémités —
+      //    le net perdait 43 % de la montée réelle (242 m → 137 m, mesuré
+      //    sur l'Arrée). À l'envers : ce qui se descendait se grimpe,
+      //    soit exactement `grimpe − dz`. Le max(0) n'est qu'une ceinture
+      //    contre l'arrondi à 0,1 m près des deux champs.
+      montee += Math.max(0, aLEndroit ? grimpe : grimpe - dz);
+    } else if (dz != null) {
+      // Repli pour un graphe qui ne porterait que le net : approximation
+      // ASSUMÉE basse — jamais au-dessus du vrai, souvent en dessous.
+      montee += Math.max(0, aLEndroit ? dz : -dz);
+    }
     const suite = aLEndroit ? ar[4] : [...ar[4]].reverse();
     for (const pt of suite) contour.push(g.n[pt]);
     nMarche = aLEndroit ? ar[1] : ar[0];

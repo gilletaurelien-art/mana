@@ -113,6 +113,14 @@ export interface Walk {
   distanceKm: number;
   /** Marche à 3,5 km/h — une estimation, jamais un relevé. */
   dureeEstimeeH: number;
+  /**
+   * Montée cumulée en mètres, le long de la géométrie. ⚠️ OPTIONNELLE, et
+   * l'absence est une information : un itinéraire de l'Office porte le
+   * relevé que l'Office a mesuré au sol, pas le nôtre, et une promenade
+   * bâtie sur un graphe sans altitude n'en a aucune. ⛔ Ne jamais la
+   * remplacer par 0 — un zéro se lit « c'est plat ».
+   */
+  monteeM?: number;
   boucle: boolean;
   osmUrl: string;
   osmRef: string;

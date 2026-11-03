@@ -52,8 +52,21 @@ function messageGps(err: GeolocationPositionError): string {
    gardes de ce fichier (attribution DANS le fichier, aucune altitude
    inventée, licence nommée) valent exactement pareil pour elle. */
 export function enGpx(walk: Walk): string {
-  // ⛔ PAS DE <ele> : nous n'avons AUCUNE altitude. Un GPX qui en porterait
-  //    une inventée tromperait la montre du promeneur, pas seulement l'écran.
+  // ⛔ TOUJOURS AUCUNE BALISE D'ÉLÉVATION, ET LA RAISON A CHANGÉ LE 3/11/2026.
+  //    Avant : nous n'avions aucune altitude. Depuis : nous l'avons au MOMENT
+  //    DE BÂTIR le graphe, et le dénivelé y est stocké PAR ARÊTE — dz et
+  //    montée cumulée. Mais `walk.points` est une polyligne, et aucun de ses
+  //    points ne porte son altitude : la poser demanderait de stocker 78 363
+  //    altitudes de nœuds dans le graphe servi (~10 % de plus à télécharger).
+  // ⭐ Donc on n'en met pas — pas par manque de donnée, par refus d'en
+  //    inventer une par interpolation. La montée TOTALE, elle, est connue et
+  //    voyage dans la description : c'est le chiffre qui sert à décider.
+  // ⚠️ ET CE COMMENTAIRE EST ÉCRIT EN `//` À DESSEIN. Le garde
+  //    « aucune altitude inventée » écarte les lignes commençant par `//`,
+  //    `*` ou `/*` ; un bloc dont les lignes de suite commencent par du texte
+  //    y échappe, et mon premier jet s'est fait attraper par le piège que le
+  //    garde documente lui-même. ⭐ Un fichier qui explique pourquoi il n'a
+  //    pas quelque chose contient le nom de cette chose.
   const pts = walk.points
     .map((p) => `      <trkpt lat="${p.lat}" lon="${p.lon}" />`)
     .join("\n");
@@ -86,7 +99,7 @@ export function enGpx(walk: Walk): string {
      xmlns="http://www.topografix.com/GPX/1/1">
   <metadata>
     <name>${walk.titre}</name>
-    <desc>${MENTION[walk.provenance]}. Tracé d'après OpenStreetMap. © les contributeurs d'OpenStreetMap, sous licence ODbL (opendatacommons.org/licenses/odbl/).${walk.osmRef ? ` Référence : ${walk.osmRef}.` : ""} Aucune altitude : nous n'en disposons pas.</desc>
+    <desc>${MENTION[walk.provenance]}. Tracé d'après OpenStreetMap. © les contributeurs d'OpenStreetMap, sous licence ODbL (opendatacommons.org/licenses/odbl/).${walk.osmRef ? ` Référence : ${walk.osmRef}.` : ""}${walk.monteeM != null ? ` Montée cumulée : ${walk.monteeM} m (modèle d'altitude SRTM, 30 m).` : ""} Pas d'altitude par point : ce fichier n'en porte aucune plutôt qu'une interpolée.</desc>
     <copyright author="les contributeurs d'OpenStreetMap">
       <license>https://opendatacommons.org/licenses/odbl/1-0/</license>
     </copyright>
