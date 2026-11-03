@@ -6,10 +6,20 @@ import type { Graphe, Boucle, Retour, Visee, Parcours, Accroche, Proposition } f
 import { chargerLieux, type Lieu, type Inventaire } from "./lieux";
 import { rencontresLeLong } from "./proches";
 import { DEFAUT, territoireDe, urlGraphe } from "./territoires";
-import type { Walk } from "./walks";
+import { VITRINE, effortLisible, MENTION, type Walk } from "./walks";
 import { WalkMap } from "./WalkMap";
 import { CarteOuSchema } from "./CarteOuSchema";
 import { chargerFermetures, aretesTouchees, type Fermetures } from "./fermetures";
+import { baseUrl } from "./router";
+/* ⭐ CE QUI SUIT RASSEMBLE LE CATALOGUE — importé le 3/11/2026, quand
+   `/promenades` et `/composer` ont fusionné. Ces quatre imports, et eux
+   seuls, n'existaient nulle part dans ce fichier avant la fusion. */
+import {
+  chargerIndex, chargerCommunes, chercher, trajet, estContinu,
+  type Fiche, type Commune,
+} from "./catalogue";
+import { chargerOT, PRATIQUE, type ItineraireOT } from "./ot";
+import { surLaPresquile } from "./Promenades";
 
 const CarteReelle = lazy(() =>
   import("./CarteReelle").then((m) => ({ default: m.CarteReelle }))
@@ -236,7 +246,79 @@ function SvgBotte() {
   );
 }
 
+/* ═══ LE CATALOGUE — fusionné ici le 3/11/2026 ════════════════════════════
+   Ce qui suit, jusqu'à `export function Composer()`, vivait dans
+   `Promenades.tsx` : les constantes du filtre des 1 032 itinéraires de
+   Bretagne que cet écran montre maintenant SOUS le compositeur, au lieu de
+   les montrer sur une seconde adresse. */
+
+type FiltreForme = "tous" | "boucle" | "aller";
+const MAX_AFFICHES = 40;
+
+/**
+ * 🔴 LE CRAN LE PLUS À DROITE VEUT DIRE « SANS LIMITE », ET C'EST UN CORRECTIF.
+ *
+ * Mesuré à l'écran le 28/10/2026 : le filtre plafonnait à 24 h de marche, soit
+ * 84 km. La page annonçait « 1 032 itinéraires » et en affichait **1 015** —
+ * les 17 plus longs, dont « De Douarnenez à Redon » (355 km) et le Chemin de
+ * Halage (315 km), étaient invisibles **par défaut**.
+ * ⭐ Un filtre dont la valeur initiale exclut les pièces maîtresses du
+ *    catalogue ne paraît pas trop serré : il fait croire qu'elles n'existent
+ *    pas. Et le compte affiché à côté le contredisait sans que rien ne le dise.
+ */
+const DUREE_SANS_LIMITE = 25;
+
 export function Composer() {
+  /* ═══ LE CATALOGUE — état, effets et calcul fusionnés ici le 3/11/2026 ═══
+     Recopiés tels quels depuis `Promenades.tsx`. Un seul renommage :
+     `erreur`/`setErreur` existait DÉJÀ ci-dessous pour le chargement du
+     GRAPHE — ce bloc-ci a sa propre erreur, celle du CATALOGUE, et les deux
+     ne doivent jamais se confondre : un refus de charger le catalogue
+     n'empêche pas de composer, un refus de charger le graphe empêche tout. */
+  const B = baseUrl();
+  const [dureeMax, setDureeMax] = useState(DUREE_SANS_LIMITE);
+  const [forme, setForme] = useState<FiltreForme>("tous");
+  const [q, setQ] = useState("");
+  const [fiches, setFiches] = useState<Fiche[] | null>(null);
+  const [lieuxCatalogue, setLieuxCatalogue] = useState<Commune[] | null>(null);
+  const [erreurCatalogue, setErreurCatalogue] = useState("");
+  /* ⚠️ Chargé À LA DEMANDE : 258 Ko de tracés que personne ne paie avant
+     d'arriver sur cette page. */
+  const [ot, setOt] = useState<ItineraireOT[] | null>(null);
+  const [pratique, setPratique] = useState<ItineraireOT["pratique"] | "tous">("tous");
+
+  useEffect(() => {
+    setQ(new URLSearchParams(window.location.search).get("q") ?? "");
+  }, []);
+
+  useEffect(() => {
+    // ⚠️ L'échec des communes n'est PAS bloquant : sans elles, la recherche
+    //    retombe sur le texte. Un index chargé vaut mieux qu'une page morte.
+    chargerCommunes().then(setLieuxCatalogue).catch(() => setLieuxCatalogue(null));
+    chargerOT().then((r) => setOt(r.itineraires)).catch(() => setOt([]));
+    chargerIndex()
+      .then(setFiches)
+      // ⚠️ UNE ERREUR SE DIT. Sans ce message, un refus CORS ou une coupure
+      //    rendrait une page vide et silencieuse — le visiteur conclurait
+      //    qu'il n'existe aucun sentier.
+      .catch(() =>
+        setErreurCatalogue(
+          "Sentiers indisponibles. Vérifiez votre connexion."
+        )
+      );
+  }, []);
+
+  const resultats = useMemo(() => {
+    if (!fiches) return [];
+    // Sans recherche, on montre TOUT, du plus long au plus court : l'index est
+    // déjà trié ainsi, et les grands itinéraires sont ceux qu'on reconnaît.
+    const ici = fiches.filter(surLaPresquile);
+    const base = q.trim() ? chercher(ici, q, lieuxCatalogue) : ici;
+    return base
+      .filter((f) => dureeMax >= DUREE_SANS_LIMITE || f.k / 3.5 <= dureeMax)
+      .filter((f) => forme === "tous" || (forme === "boucle" ? f.o : !f.o));
+  }, [fiches, lieuxCatalogue, q, dureeMax, forme]);
+
   const [graphe, setGraphe] = useState<Graphe | null>(null);
   const [erreur, setErreur] = useState("");
   /**
@@ -1593,6 +1675,210 @@ export function Composer() {
             </p>
           </>
         )}
+
+      {/* ══ F · LE CATALOGUE ══════════════════════════════════════════════
+          🔴 FUSIONNÉ DEPUIS `Promenades.tsx` LE 3/11/2026 — demande du
+          fondateur : composer une promenade EN DIRECT, sans quitter cette
+          adresse pour en voir d'autres. Jusque-là, un bouton renvoyait vers
+          `/composer` depuis cette liste ; maintenant la liste est SOUS le
+          compositeur, et il n'y a plus de bouton — il n'y a plus de clic.
+          ⚠️ SON PROPRE `<div className="wrap">` : l'entrée, les propositions,
+          la carte et l'export vivent dans le `.wrap` ouvert plus haut, qui se
+          ferme avant la section « conditions et sécurité » — ⛔ celle-ci et
+          la signature rendent DÉLIBÉRÉMENT hors de `.wrap` (styles `cp-…`
+          propres, sans besoin du gabarit commun). Le catalogue, lui, réutilise
+          `.page-panel`, qui a besoin du même gabarit que sur son ancienne
+          adresse : un second `.wrap` le lui redonne sans toucher à la
+          structure qui précède. */}
+      <div className="wrap">
+        {/* ⚠️ « Presqu'île de Crozon » jusqu'au 31/10 — faux depuis que la
+            page porte les 46 circuits de l'Office, dont ceux de Pont-de-Buis
+            et du Faou. ⭐ Ajouter du contenu requalifie le CADRE : un titre
+            qui survit à ce qu'il annonce devient un faux témoin.
+            ⚠️ TITRE DE NIVEAU 2, PAS 1 — cet écran a DÉJÀ son h1, « Promenade »,
+            porté par l'entrée du compositeur plus haut. Un seul h1 par page ;
+            celui-ci nomme le catalogue, pas la page entière. */}
+        <p className="hero-label">Presqu'île de Crozon &amp; Aulne maritime</p>
+        <h2 className="page-titre"><span>Les sentiers</span></h2>
+
+        <section className="page-panel">
+          <p className="page-intro">
+            7 itinéraires tracés d'après OpenStreetMap, 181 km. Et les
+            46 circuits balisés de l'Office, plus bas.
+          </p>
+          <div className="moteur-barre" role="search">
+            <svg className="moteur-loupe" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="10.5" cy="10.5" r="6.5" />
+              <path d="m15.5 15.5 4.5 4.5" />
+            </svg>
+            <input
+              type="search"
+              autoComplete="off"
+              placeholder="Une commune, un nom de sentier…"
+              aria-label="Chercher une commune ou un sentier"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
+          </div>
+          <p className="page-note">
+            {erreurCatalogue ? (
+              <strong>{erreurCatalogue}</strong>
+            ) : !fiches ? (
+              "Chargement des sentiers…"
+            ) : (
+              `${resultats.length.toLocaleString("fr-FR")} itinéraire${
+                resultats.length > 1 ? "s" : ""
+              }${q.trim() ? ` pour « ${q} »` : ""}`
+            )}
+          </p>
+        </section>
+
+        {fiches && (
+          <section className="page-panel">
+            <p className="apercu-label">Filtres</p>
+            <div className="est-actions" style={{ marginBottom: 0 }}>
+              <label className="filtre">
+                {dureeMax >= DUREE_SANS_LIMITE
+                  ? "Toutes les durées"
+                  : `Marche ≤ ${dureeMax} h`}
+                <input
+                  type="range"
+                  min={1}
+                  max={DUREE_SANS_LIMITE}
+                  step={1}
+                  value={dureeMax}
+                  onChange={(e) => setDureeMax(Number(e.target.value))}
+                />
+              </label>
+              <select
+                value={forme}
+                onChange={(e) => setForme(e.target.value as FiltreForme)}
+                className="filtre-select"
+                aria-label="Forme du parcours"
+              >
+                <option value="tous">Boucle ou traversée</option>
+                <option value="boucle">Boucle</option>
+                <option value="aller">Traversée</option>
+              </select>
+            </div>
+          </section>
+        )}
+
+        {resultats.slice(0, MAX_AFFICHES).map((f) => (
+          <section key={f.s} className="page-panel">
+            <p className="apercu-label">{trajet(f)}</p>
+            <h2 className="section-title" style={{ marginBottom: "var(--sp-2)" }}>
+              {f.n}
+            </h2>
+            <p className="page-note">
+              {f.k} km · {effortLisible(f.k)} · {f.c} commune
+              {f.c > 1 ? "s" : ""}
+              {/* ⚠️ ON LE DIT. Un itinéraire morcelé s'affiche en plusieurs
+                   traits sur la carte, et le visiteur doit savoir pourquoi
+                   AVANT de l'ouvrir, pas en découvrant un trou. */}
+              {!estContinu(f) && ` · tracé incomplet dans OpenStreetMap`}
+            </p>
+            <div
+              className="est-actions"
+              style={{ marginTop: "var(--sp-2)", marginBottom: 0 }}
+            >
+              <a className="btn btn-primary" href={`${B}/promenade/${f.s}`}>
+                Ouvrir l'itinéraire
+              </a>
+            </div>
+          </section>
+        ))}
+
+        {resultats.length > MAX_AFFICHES && (
+          <section className="page-panel">
+            <p className="page-note">
+              {resultats.length - MAX_AFFICHES} autres itinéraires
+              correspondent. Cherchez une commune, ou resserrez la durée.
+            </p>
+          </section>
+        )}
+
+        {fiches && resultats.length === 0 && (
+          <section className="page-panel">
+            <p className="page-texte">
+              Aucun itinéraire ne correspond. ⚠️ La recherche compare au{" "}
+              <strong>point de départ</strong> : un grand sentier qui traverse
+              la commune sans en partir ne sortira pas. Essayez une commune
+              voisine, ou le nom du sentier.
+            </p>
+          </section>
+        )}
+
+        {/* ⚠️ VIDE DEPUIS LE 31/10 — `VITRINE` est une liste vide, et cette
+            section ne s'affiche donc pas. Elle reste écrite : le jour où les
+            promenades MANA reviennent, il n'y a rien à reconstruire.
+            ⭐ Une section conditionnée par ses données se tait toute seule ;
+               une section supprimée demande qu'on la réinvente. */}
+        {VITRINE.length > 0 && (
+          <section className="page-panel">
+            <p className="apercu-label">Vérifiées</p>
+            <p className="page-texte">
+              {VITRINE.length} promenade{VITRINE.length > 1 ? "s" : ""} vérifiée
+              {VITRINE.length > 1 ? "s" : ""}, hors ligne.
+            </p>
+            <div className="est-actions" style={{ marginBottom: 0 }}>
+              {VITRINE.map((w) => (
+                <a key={w.slug} className="btn btn-ghost" href={`${B}/promenade/${w.slug}`}>
+                  {w.titre}
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ── LES ITINÉRAIRES BALISÉS ─────────────────────────────────────
+            ⛔ CE NE SONT PAS LES NÔTRES, et le libellé le dit. « Balisé par
+               l'Office de tourisme » est un fait qui se constate sur un
+               poteau ; « recommandé par » serait un avis sur un tiers.
+            ⚠️ Le lien mène à LEUR fiche : c'est elle qui fait foi, et c'est
+               eux qui entretiennent le balisage. */}
+        {ot !== null && ot.length > 0 && (
+          <section className="page-panel">
+            <p className="apercu-label">Balisés</p>
+            <h2 className="section-title" style={{ marginBottom: "var(--sp-1)" }}>
+              Les {ot.length} circuits de l'Office de tourisme
+            </h2>
+            <p className="fiche-provenance fiche-provenance-ot">{MENTION.ot}</p>
+
+            <div className="ot-filtres" role="group" aria-label="Pratique">
+              {(["tous", "pied", "vtt", "velo", "trail"] as const).map((k) => (
+                <button key={k} type="button"
+                  className={k === pratique ? "ot-filtre ot-filtre-actif" : "ot-filtre"}
+                  aria-pressed={k === pratique}
+                  onClick={() => setPratique(k)}>
+                  {k === "tous" ? "Tous" : PRATIQUE[k]}
+                </button>
+              ))}
+            </div>
+
+            <ul className="ot-liste">
+              {ot.filter((i) => pratique === "tous" || i.pratique === pratique).map((i) => (
+                <li key={i.slug}>
+                  <a className="ot-item" href={i.source} target="_blank" rel="noreferrer noopener">
+                    <span className="ot-item-titre">{i.titre}</span>
+                    <span className="ot-item-meta">
+                      {PRATIQUE[i.pratique]} ·{" "}
+                      {/* ⚠️ Le kilométrage est MESURÉ sur le tracé, pas repris
+                          de leur fiche : les deux diffèrent de 1,2 % en
+                          médiane et de 17 % au pire. On affiche ce qu'on a
+                          vérifié. */}
+                      {i.km.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} km ·{" "}
+                      {i.boucle ? "boucle" : "aller simple"}
+                      {i.difficulte && ` · ${i.difficulte}`}
+                      {i.commune && ` · ${i.commune}`}
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </div>
     </main>
   );
 }

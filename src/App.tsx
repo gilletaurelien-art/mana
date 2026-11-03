@@ -11,7 +11,6 @@ import {
   GlyphCarte,
   GlyphSentier,
 } from "./Glyphs";
-import { Promenades } from "./Promenades";
 import { Invitation } from "./Invitation";
 import { Reglages } from "./Reglages";
 import { EcranTerritoire } from "./EcranTerritoire";
@@ -151,8 +150,11 @@ export const TITRE_DEFAUT = "MANA.bzh — Promenades & découvertes en Bretagne"
 export const TITRES: Record<string, string> = {
   "/": TITRE_DEFAUT,
   "/carte": "La carte du territoire — presqu'île de Crozon & Aulne maritime — MANA.bzh",
-  "/promenades": "Les sentiers — presqu'île de Crozon & Aulne maritime — MANA.bzh",
-  "/composer": "Composer une promenade — MANA.bzh",
+  /* ⭐ MÊME TITRE AUX DEUX ADRESSES, DEPUIS LE 3/11/2026 : c'est la MÊME
+     page, affichée par le même composant — un titre qui varierait selon
+     l'URL d'arrivée décrirait deux pages là où il n'y en a qu'une. */
+  "/promenades": "Composer une promenade — presqu'île de Crozon & Aulne maritime — MANA.bzh",
+  "/composer": "Composer une promenade — presqu'île de Crozon & Aulne maritime — MANA.bzh",
   "/radio": "MANARADIO — l'antenne de MANA, en direct — MANA.bzh",
   "/territoire": "Le territoire — MANA.bzh",
   "/reglages": "Réglages, sources et mentions — MANA.bzh",
@@ -315,7 +317,21 @@ export default function App() {
       ) : path === "/composer" ? (
         <Composer />
       ) : path === "/promenades" ? (
-        <Promenades />
+        /* 🔴 MÊME ÉCRAN QUE `/composer`, DEPUIS LE 3/11/2026 — fusion
+           demandée par le fondateur : « on s'épargne un clic ». Les deux
+           branches restent SÉPARÉES dans ce ternaire plutôt que combinées
+           en `["/composer","/promenades"].includes(path)` : un garde de
+           `prefixe.test.ts` extrait chaque route par le motif littéral
+           `path === "/…"` pour vérifier qu'elle a son titre — un test qui
+           ne lit que le texte du fichier, pas son AST. Les fondre aurait
+           rendu `/promenades` invisible à ce garde, silencieusement.
+           ⭐ Le catalogue des 1 032 itinéraires, qui vivait dans
+           `Promenades.tsx`, est maintenant la seconde moitié de l'écran que
+           `Composer.tsx` rend : composer d'abord, parcourir ensuite, sans
+           changer d'adresse. `Promenades.tsx` ne garde que les deux
+           fonctions pures que `Promenades.test.ts` vérifie
+           (`surLaPresquile`, `PRESQUILE`) — plus de composant, plus de JSX. */
+        <Composer />
       ) : path === "/espace" ? (
         <Espace base={B} />
       ) : routeRencontres(path) ? (

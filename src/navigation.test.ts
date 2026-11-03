@@ -182,7 +182,10 @@ describe("de la carte au compositeur", () => {
   const compo = nu("./Composer.tsx");
 
   it("la carte propose d'aller vers le lieu désigné, en lui passant sa position", () => {
-    const lien = carte.match(/\/composer\?vers=[^`]*/);
+    /* ⚠️ `/promenades`, PAS `/composer` — depuis le 3/11/2026, les deux
+       adresses rendent le même écran, mais `/promenades` est la forme
+       CANONIQUE que ce lien doit utiliser, comme le reste de l'app. */
+    const lien = carte.match(/\/promenades\?vers=[^`]*/);
     expect(lien, "aucun lien « vers » depuis la fiche d'un lieu").not.toBeNull();
     // ⛔ la position du LIEU, jamais un identifiant de catalogue
     expect(lien![0]).toMatch(/vise\.g\[0\][\s\S]*vise\.g\[1\]/);
@@ -425,11 +428,19 @@ describe("la distance, pas la durée", () => {
         donc calculée à plat, donc fausse dès que ça monte — on annonçait un
         chiffre qu'on ne savait pas faire. Un kilomètre, lui, est un
         kilomètre. */
-  it("⛔ l'écran n'annonce aucune durée de marche", () => {
+  it("⛔ l'écran n'annonce aucune durée de marche POUR LA PROMENADE COMPOSÉE", () => {
     /* ⚠️ On vise les FORMATS d'affichage, pas le mot « heure » : il reste
        légitime dans une phrase (« donnez-vous plus de temps »). Ce qui est
-       interdit, c'est de RENDRE un nombre d'heures. */
-    for (const motif of [/\{heuresDe\(/, /dureeEstimeeH\}/, /\} h\b/, /heure\{/]) {
+       interdit, c'est de RENDRE un nombre d'heures.
+       ⚠️ ET LE TITRE A GAGNÉ TROIS MOTS LE 3/11/2026, QUAND CE FICHIER A
+          FUSIONNÉ AVEC LE CATALOGUE. L'interdit porte sur la promenade qu'on
+          vient de COMPOSER — personne ne connaît votre pas, donc aucune durée
+          ne lui est inventée. Le catalogue, lui, montre 1 032 itinéraires
+          DÉJÀ DOCUMENTÉS, et porte un filtre « marche ≤ N h » où N est un
+          SEUIL CHOISI PAR LA PERSONNE sur un curseur — on lui redit sa propre
+          valeur, on ne lui invente rien. `(?<!dureeMax)` exempte CE SEUL cas,
+          nommé, et rien d'autre : tout AUTRE `} h` reste interdit. */
+    for (const motif of [/\{heuresDe\(/, /dureeEstimeeH\}/, /(?<!dureeMax)\} h\b/, /heure\{/]) {
       expect(compo, `l'écran affiche une durée : ${motif}`).not.toMatch(motif);
     }
     /* 🔴 ET CE GARDE A ÉTÉ RETOURNÉ DEUX FOIS EN UN JOUR, CE QUI EN DIT

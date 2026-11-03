@@ -873,7 +873,14 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
             <p className="terr-vise-dire">
               <a
                 className="m-action-fine terr-bouton"
-                href={`${base}/composer?vers=${vise.g[0].toFixed(5)},${vise.g[1].toFixed(5)}&nom=${encodeURIComponent(vise.nom)}`}
+                /* ⚠️ `/promenades`, PAS `/composer`, DEPUIS LE 3/11/2026 —
+                   les deux rendent le même écran, mais `/promenades` est
+                   l'adresse CANONIQUE : c'est elle que la nav, le pied et les
+                   trois autres CTA de l'accueil pointent déjà. `/composer`
+                   reste une adresse valide (ancien bookmarks, ancien lien
+                   partagé) ; ce lien-ci ne doit pas être le seul endroit de
+                   l'app à préférer l'autre forme. */
+                href={`${base}/promenades?vers=${vise.g[0].toFixed(5)},${vise.g[1].toFixed(5)}&nom=${encodeURIComponent(vise.nom)}`}
               >
                 {/* 🔴 LE SENS A CHANGÉ LE 2/11, ET LE LIBELLÉ DEVAIT SUIVRE.
                     Ce bouton disait « vers ce lieu » du temps où la promenade

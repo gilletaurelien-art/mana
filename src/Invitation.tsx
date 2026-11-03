@@ -33,8 +33,10 @@ export function Invitation({ base }: { base: string }) {
      ⚠️ VÉRIFIÉ AVANT DE LA RETIRER, PAS APRÈS : `/composer` demande la
         position LUI-MÊME (deux appels à `navigator.geolocation` dans
         `Composer.tsx`), et il reste atteignable depuis `/promenades`, qui est
-        liée depuis les sections de l'accueil et le pied. Ce qui disparaît est
-        un raccourci d'un clic, pas une fonction ni son seul chemin.
+        liée depuis les sections de l'accueil et le pied — et depuis le
+        3/11/2026, ce sont la MÊME adresse : `/promenades` rend désormais le
+        compositeur en tête de page. Ce qui disparaît est un raccourci d'un
+        clic, pas une fonction ni son seul chemin.
      ⭐ Retirer un bouton sans chercher ce qu'il était seul à ouvrir, c'est
         rendre un écran inatteignable sans que rien ne le dise — un écran
         orphelin ne se plaint jamais. */

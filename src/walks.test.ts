@@ -160,9 +160,15 @@ describe("aucun lien interne ne pointe vers une promenade inexistante", () => {
   //    la remoisson a renuméroté les portions de sentier.
   // ⭐ Ce test LIT les sources plutôt que de décrire ce qu'elles contiennent :
   //    une liste recopiée dans un commentaire vieillit en silence.
+  // ⚠️ `src/Promenades.tsx` A QUITTÉ CETTE LISTE LE 3/11/2026 : il ne rend
+  //    plus aucun lien — /promenades et /composer ont fusionné dans
+  //    `Composer.tsx`, qui porte désormais le catalogue ET ses liens
+  //    `/promenade/<slug>`. Garder l'ancien nom aurait laissé ce garde lire
+  //    un fichier qui ne peut plus faillir, pendant que le risque réel
+  //    changeait d'adresse sans lui.
   const slugs = new Set(WALKS.map((w) => w.slug));
 
-  for (const f of ["src/App.tsx", "src/Promenades.tsx", "src/Promenade.tsx"]) {
+  for (const f of ["src/App.tsx", "src/Composer.tsx", "src/Promenade.tsx"]) {
     it(`${f} — tous les /promenade/<slug> existent`, () => {
       const src = readFileSync(f, "utf8");
       const cites = [...src.matchAll(/\/promenade\/([a-z0-9-]+)/g)].map((m) => m[1]);
