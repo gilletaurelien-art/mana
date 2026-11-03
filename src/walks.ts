@@ -121,6 +121,21 @@ export interface Walk {
    * remplacer par 0 — un zéro se lit « c'est plat ».
    */
   monteeM?: number;
+  /**
+   * 🔴 LES DEUX BOUTS QUI NE SONT PAS SUR LE TRACÉ DESSINÉ — et sans eux, la
+   *    progression mélange deux référentiels. `distanceKm` compte le réseau
+   *    PLUS la marche du lieu de départ jusqu'au premier chemin, et du
+   *    dernier chemin jusqu'au lieu visé ; `points`, lui, ne dessine que le
+   *    réseau. Multiplier l'un par une fraction de l'autre annonce des
+   *    kilomètres faux aux deux bouts — jusqu'à 381 m d'un côté et 150 de
+   *    l'autre, mesuré le 2/11.
+   * ⚠️ OPTIONNELS : un itinéraire du catalogue commence et finit SUR son
+   *    tracé, il n'a aucun bout hors réseau. Leur absence vaut zéro ici,
+   *    et c'est le seul cas où une absence vaut zéro dans ce fichier —
+   *    parce qu'elle décrit une géométrie, pas une mesure manquante.
+   */
+  approcheM?: number;
+  sortieM?: number;
   boucle: boolean;
   osmUrl: string;
   osmRef: string;

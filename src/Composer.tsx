@@ -827,6 +827,14 @@ export function Composer() {
          tard, loin de la page qui pourrait le corriger : c'est le dernier
          endroit où une affirmation périmée doit survivre. */
       monteeM: Math.round(b.montee),
+      /* ⚠️ Une BOUCLE n'a qu'un bout : on part du lieu, on rejoint le réseau,
+         et on revient au même endroit — `metresDits` ajoute cet écart une
+         seule fois, donc on le déclare une seule fois ici. Déclarer deux
+         bouts ferait que la somme des deux ne vaudrait plus `distanceKm`. */
+      approcheM: laBoucle
+        ? (depart ? Math.round(depart.a.ecartNoeud) : 0)
+        : Math.round(prop.approche),
+      sortieM: laBoucle ? 0 : Math.round(prop.sortie),
       boucle: !!laBoucle,
       osmUrl: "https://www.openstreetmap.org/copyright", osmRef: "",
       /* ⚠️ DEUX GÉOMÉTRIES, ET ELLES NE SONT PAS INTERCHANGEABLES.

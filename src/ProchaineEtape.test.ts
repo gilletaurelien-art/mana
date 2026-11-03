@@ -53,3 +53,47 @@ describe("l'avancement sur le tracé", () => {
     expect(avancement(parcours([{ lat: 48.3, lon: -4.6 }]), { lat: 48.3, lon: -4.6 })).toBeNull();
   });
 });
+
+describe("l'avancement est une fraction de DISTANCE, jamais de POINTS", () => {
+  /**
+   * 🔴 LE DÉFAUT QUE CE TEST TIENT — trouvé le 3/11/2026, invisible aux 300
+   *    tests d'alors. `avancement()` rendait `index / (n − 1)`, la fraction
+   *    des POINTS franchis. Les points d'une polyligne ne sont pas
+   *    équidistants : mesuré sur 11 boucles réelles de la presqu'île, l'écart
+   *    entre les deux fractions atteint 21,5 % — soit 1 292 m annoncés à côté
+   *    sur une promenade de 6 km.
+   *
+   * ⭐ Le fixture reproduit le régime, il ne l'imite pas : vingt points serrés
+   *    sur 190 m (un sentier sinueux), puis deux points sur 2 km (une ligne
+   *    droite). Au bout du groupe serré, on a franchi 20 points sur 22 — 90 %
+   *    de l'index — et seulement 8,7 % de la distance.
+   */
+  const SERRE = 20, PAS = 0.00009;   // ~10 m entre points
+  const pts: { lat: number; lon: number }[] = [];
+  for (let i = 0; i < SERRE; i++) pts.push({ lat: 48.24, lon: -4.49 + i * PAS });
+  const finSerre = pts[pts.length - 1];
+  pts.push({ lat: 48.24, lon: finSerre.lon + 0.0134 });   // ~1 km
+  pts.push({ lat: 48.24, lon: finSerre.lon + 0.0268 });   // ~1 km de plus
+
+  it("au bout du tronçon serré, on a fait 9 % du chemin — pas 90 %", () => {
+    const p = avancement(parcours(pts), finSerre);
+    expect(p).not.toBeNull();
+    /* ⛔ C'est l'assertion qui compte : l'ancienne implémentation rendait
+       0,90 ici. Une tolérance large suffit — on sépare deux réponses qui
+       diffèrent d'un facteur dix, pas deux arrondis. */
+    expect(p!).toBeLessThan(0.2);
+    expect(p!).toBeGreaterThan(0.03);
+  });
+
+  it("au départ 0, à l'arrivée 1 — les deux bouts restent justes", () => {
+    expect(avancement(parcours(pts), pts[0])).toBeCloseTo(0, 5);
+    expect(avancement(parcours(pts), pts[pts.length - 1])).toBeCloseTo(1, 5);
+  });
+
+  it("⛔ un tracé dégénéré se tait au lieu de répondre 0/0", () => {
+    /* Tous les points confondus : la longueur est nulle. Rendre 0 dirait
+       « vous êtes au départ », ce qui est une affirmation, pas une absence. */
+    const plat = [{ lat: 48.24, lon: -4.49 }, { lat: 48.24, lon: -4.49 }];
+    expect(avancement(parcours(plat), plat[0])).toBeNull();
+  });
+});

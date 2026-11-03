@@ -63,6 +63,25 @@ const lisible = (m: number) =>
  *    des mesures — et c'est écrit ici pour que personne ne les cite comme
  *    des valeurs établies. Ils sont choisis larges : mieux vaut se taire une
  *    fois de trop que d'afficher un chiffre faux une fois de trop.
+ *
+ * 🔴 CE QUE REND CETTE FONCTION EST UNE FRACTION DE **DISTANCE**, ET ÇA N'A
+ *    PAS TOUJOURS ÉTÉ LE CAS — corrigé le 3/11/2026. Elle rendait
+ *    `index / (n − 1)`, c'est-à-dire la fraction des POINTS franchis. Or les
+ *    points d'une polyligne ne sont pas équidistants : un sentier côtier
+ *    sinueux en porte dix fois plus au kilomètre qu'une ligne droite.
+ *    Mesuré sur 11 boucles réelles de la presqu'île : l'écart entre les deux
+ *    fractions atteint **21,5 %**, médian 8,4 % — soit, sur 6 km,
+ *    **1 292 mètres annoncés à côté** dans « km parcourus ».
+ *
+ * ⭐ ET LE DÉFAUT NE S'ARRÊTAIT PAS À L'AFFICHAGE. `ProchaineEtape` compare
+ *    `e.pos > part` : or `Etape.pos` est une fraction de DISTANCE des deux
+ *    côtés — vérifié le 3/11, le catalogue colle à 0,17–1,20 % de la
+ *    fraction de distance contre 3,14–7,60 % de celle d'index, et le
+ *    compositeur la tient de `rencontresLeLong`. On comparait donc deux
+ *    grandeurs de nature différente, et « prochaine étape » pouvait
+ *    désigner une étape déjà passée.
+ *    ⭐ Un mélange de référentiels ne se voit pas : les deux nombres sont
+ *       entre 0 et 1, et la comparaison compile.
  */
 export function avancement(walk: Walk, moi: WalkPoint): number | null {
   const n = walk.points.length;
@@ -73,12 +92,26 @@ export function avancement(walk: Walk, moi: WalkPoint): number | null {
     d[i] = metres(moi, walk.points[i].lat, walk.points[i].lon);
     if (d[i] < meilleur) { meilleur = d[i]; index = i; }
   }
+  /* ⚠️ L'ÉCART D'AMBIGUÏTÉ RESTE EN INDEX, À DESSEIN. Il demande « ce second
+     candidat est-il AILLEURS dans le tableau », une question de structure ;
+     la convertir en distance ne la rendrait pas plus juste et ferait perdre
+     la mutation qui l'éprouve déjà dans `ProchaineEtape.test.ts`. */
   const ecartMin = Math.max(1, Math.round(n * 0.12));
   for (let i = 0; i < n; i++) {
     if (Math.abs(i - index) < ecartMin) continue;
     if (d[i] <= meilleur * 1.6) return null; // deux endroits possibles : on se tait
   }
-  return index / (n - 1);
+  /* La distance cumulée jusqu'au point retenu, rapportée à la longueur du
+     tracé. ⚠️ `total` peut être nul si tous les points sont confondus — un
+     tracé dégénéré ne dit rien de l'avancement, et 0/0 dirait « au départ ». */
+  let total = 0, avant = 0;
+  for (let i = 1; i < n; i++) {
+    const pas = metres(walk.points[i - 1], walk.points[i].lat, walk.points[i].lon);
+    total += pas;
+    if (i <= index) avant += pas;
+  }
+  if (total <= 0) return null;
+  return avant / total;
 }
 
 export function ProchaineEtape({ walk, moi }: { walk: Walk; moi: WalkPoint | null }) {

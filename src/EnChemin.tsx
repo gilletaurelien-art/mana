@@ -242,10 +242,35 @@ export function EnChemin(
                   temps restant demanderait une vitesse, et la nôtre est une
                   convention (3,5 km/h), pas une mesure. Les deux distances,
                   elles, se déduisent de la position : ce sont des faits. */}
-              <p className="ech-chiffres">
-                <strong>{km(walk.distanceKm * part)} km</strong> parcourus ·{" "}
-                <strong>{km(walk.distanceKm * (1 - part))} km</strong> restants
-              </p>
+              {/* 🔴 LA FRACTION PORTE SUR LE TRACÉ, LA DISTANCE PORTE EN PLUS
+                  LES DEUX BOUTS — corrigé le 3/11/2026. `part` se lit le long
+                  de `walk.points`, qui ne dessine que le réseau ; or
+                  `distanceKm` compte aussi la marche du lieu de départ
+                  jusqu'au premier chemin et du dernier chemin jusqu'au lieu
+                  visé — jusqu'à 381 m d'un côté et 150 de l'autre. Les
+                  multiplier l'un par l'autre annonçait « 0 km parcourus » à
+                  quelqu'un qui avait déjà fait l'approche, et « 0 km
+                  restants » à qui avait encore la sortie devant lui.
+                  ⭐ Deux grandeurs entre 0 et 1 se multiplient sans se
+                     plaindre : un mélange de référentiels ne se signale
+                     jamais, il se vérifie en marchant. */}
+              {(() => {
+                const total = walk.distanceKm * 1000;
+                const approche = walk.approcheM ?? 0;
+                const sortie = walk.sortieM ?? 0;
+                /* ⚠️ `Math.max(0, …)` : si un jour les bouts dépassaient le
+                   total (données incohérentes), la longueur du tracé
+                   deviendrait négative et les deux chiffres partiraient à
+                   l'envers. On préfère dégénérer en « tout est tracé ». */
+                const trace = Math.max(0, total - approche - sortie);
+                const fait = approche + part * trace;
+                return (
+                  <p className="ech-chiffres">
+                    <strong>{km(fait / 1000)} km</strong> parcourus ·{" "}
+                    <strong>{km((total - fait) / 1000)} km</strong> restants
+                  </p>
+                );
+              })()}
             </>
           ) : moi ? (
             <p className="ech-indetermine">
