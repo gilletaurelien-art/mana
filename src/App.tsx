@@ -15,6 +15,7 @@ import { Invitation } from "./Invitation";
 import { Reglages } from "./Reglages";
 import { EcranTerritoire } from "./EcranTerritoire";
 import { Composer } from "./Composer";
+import { BaladesOT } from "./BaladesOT";
 import { Radio } from "./Radio";
 import { Promenade } from "./Promenade";
 import { FichePromenade } from "./FichePromenade";
@@ -156,6 +157,7 @@ export const TITRES: Record<string, string> = {
   "/promenades": "Composer une promenade — presqu'île de Crozon & Aulne maritime — MANA.bzh",
   "/composer": "Composer une promenade — presqu'île de Crozon & Aulne maritime — MANA.bzh",
   "/radio": "MANARADIO — l'antenne de MANA, en direct — MANA.bzh",
+  "/balades-office": "Les balades de l'Office de tourisme — presqu'île de Crozon & Aulne maritime — MANA.bzh",
   "/territoire": "Le territoire — MANA.bzh",
   "/reglages": "Réglages, sources et mentions — MANA.bzh",
   "/espace": "Mon espace — MANA.bzh",
@@ -276,17 +278,18 @@ export default function App() {
               <GlyphCarte />
               <span className="sr-only">La carte du territoire</span>
             </a>
-            {/* ⭐ DES ÉTINCELLES, PLUS UNE CARTE — 1/11, demande du fondateur.
-                Elle mène à `/promenades`, qui s'intitule « Les sentiers » :
-                7 itinéraires tracés d'après OpenStreetMap et les 46 circuits
-                de l'Office. ⚠️ PAS à `/carte` — l'icône n°1 y mène déjà, et
-                deux portes voisines vers la même page ne se distinguent que
-                par leur dessin. C'est la troisième fois en deux jours que ce
-                doublon-là se présente ; il se vérifie maintenant en lisant
-                les `href`, jamais les libellés. */}
-            <a href={`${B}/promenades`} aria-current={path === "/promenades" ? "page" : undefined}>
+            {/* 🔴 ÉTINCELLES, DEUXIÈME ONGLET — 3/11/2026, demande du
+                fondateur : « carte = nos sites et nos propositions, premier
+                onglet ; les balades de l'Office, deuxième onglet ». Elle
+                menait à `/promenades` (compositeur + catalogue MANA) ;
+                `/promenades` reste atteignable (accueil, « Partir d'ici »
+                sur la carte du territoire), mais perd sa porte dans la barre
+                du bas — c'est `/carte` qui la porte désormais, par construction
+                du premier onglet. ⚠️ Toujours PAS vers `/carte` : l'icône n°1
+                y mène déjà. */}
+            <a href={`${B}/balades-office`} aria-current={path === "/balades-office" ? "page" : undefined}>
               <GlyphEtincelles />
-              <span className="sr-only">Les sentiers</span>
+              <span className="sr-only">Les balades de l'Office</span>
             </a>
             {/* ⚠️ « MANA » seul ICI, « MANA.bzh » dans le pied : ce n'est pas
                 une incohérence. Le pied est l'endroit où l'on signe. */}
@@ -335,6 +338,11 @@ export default function App() {
            fonctions pures que `Promenades.test.ts` vérifie
            (`surLaPresquile`, `PRESQUILE`) — plus de composant, plus de JSX. */
         <Composer />
+      ) : path === "/balades-office" ? (
+        /* 🔴 EXTRAIT DE `Composer.tsx` LE 3/11/2026 — demande du fondateur :
+           carte = nos sites et nos propositions, second onglet = les
+           balades de l'Office. Voir `BaladesOT.tsx`. */
+        <BaladesOT />
       ) : path === "/espace" ? (
         <Espace base={B} />
       ) : routeRencontres(path) ? (

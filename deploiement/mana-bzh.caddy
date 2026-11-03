@@ -26,7 +26,7 @@
 #    `/carte/*` n'attrape pas `/carte` nu. Vérifié par requête, pas déduit.
 @appbzh {
     host mana.bzh
-    path / /carte /promenades /composer /territoire /reglages /contact /mentions-legales /espace /radio /promenade/* /app/* /paysages/* /images/* /carte-style.json /carte-ortho.json /fermetures.json /icon.svg /manifest.webmanifest /sw.js
+    path / /carte /promenades /composer /balades-office /territoire /reglages /contact /mentions-legales /espace /radio /promenade/* /app/* /paysages/* /images/* /carte-style.json /carte-ortho.json /fermetures.json /icon.svg /manifest.webmanifest /sw.js
 }
 handle @appbzh {
     root * /srv/www/_app-bzh

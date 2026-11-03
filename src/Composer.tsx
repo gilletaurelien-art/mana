@@ -5,7 +5,7 @@ import type { Graphe, Boucle, Retour, Visee, Parcours, Accroche, Proposition } f
 import { chargerLieux, type Lieu, type Inventaire } from "./lieux";
 import { rencontresLeLong } from "./proches";
 import { DEFAUT, territoireDe, urlGraphe } from "./territoires";
-import { VITRINE, effortLisible, MENTION, type Walk } from "./walks";
+import { VITRINE, effortLisible, type Walk } from "./walks";
 import { WalkMap } from "./WalkMap";
 import { CarteOuSchema } from "./CarteOuSchema";
 import { chargerFermetures, aretesTouchees, type Fermetures } from "./fermetures";
@@ -17,7 +17,6 @@ import {
   chargerIndex, chargerCommunes, chercher, trajet, estContinu,
   type Fiche, type Commune,
 } from "./catalogue";
-import { chargerOT, PRATIQUE, type ItineraireOT } from "./ot";
 import { surLaPresquile } from "./Promenades";
 
 const CarteReelle = lazy(() =>
@@ -337,11 +336,6 @@ export function Composer() {
   const [fiches, setFiches] = useState<Fiche[] | null>(null);
   const [lieuxCatalogue, setLieuxCatalogue] = useState<Commune[] | null>(null);
   const [erreurCatalogue, setErreurCatalogue] = useState("");
-  /* ⚠️ Chargé À LA DEMANDE : 258 Ko de tracés que personne ne paie avant
-     d'arriver sur cette page. */
-  const [ot, setOt] = useState<ItineraireOT[] | null>(null);
-  const [pratique, setPratique] = useState<ItineraireOT["pratique"] | "tous">("tous");
-
   useEffect(() => {
     setQ(new URLSearchParams(window.location.search).get("q") ?? "");
   }, []);
@@ -350,7 +344,6 @@ export function Composer() {
     // ⚠️ L'échec des communes n'est PAS bloquant : sans elles, la recherche
     //    retombe sur le texte. Un index chargé vaut mieux qu'une page morte.
     chargerCommunes().then(setLieuxCatalogue).catch(() => setLieuxCatalogue(null));
-    chargerOT().then((r) => setOt(r.itineraires)).catch(() => setOt([]));
     chargerIndex()
       .then(setFiches)
       // ⚠️ UNE ERREUR SE DIT. Sans ce message, un refus CORS ou une coupure
@@ -1748,20 +1741,21 @@ export function Composer() {
           adresse : un second `.wrap` le lui redonne sans toucher à la
           structure qui précède. */}
       <div className="wrap">
-        {/* ⚠️ « Presqu'île de Crozon » jusqu'au 31/10 — faux depuis que la
-            page porte les 46 circuits de l'Office, dont ceux de Pont-de-Buis
-            et du Faou. ⭐ Ajouter du contenu requalifie le CADRE : un titre
-            qui survit à ce qu'il annonce devient un faux témoin.
+        {/* ⚠️ « Presqu'île de Crozon » malgré un catalogue qui dépasse Crozon,
+            dont Pont-de-Buis et le Faou (Aulne maritime). ⭐ Le nom désigne le
+            territoire couvert, pas le contenu de la section.
             ⚠️ TITRE DE NIVEAU 2, PAS 1 — cet écran a DÉJÀ son h1, « Promenade »,
             porté par l'entrée du compositeur plus haut. Un seul h1 par page ;
-            celui-ci nomme le catalogue, pas la page entière. */}
+            celui-ci nomme le catalogue, pas la page entière.
+            🔴 « ET LES 46 CIRCUITS… PLUS BAS » EST PARTI LE 3/11/2026 : les
+            circuits de l'Office ont leur propre adresse (`BaladesOT.tsx`),
+            un lien plus bas y mène. */}
         <p className="hero-label">Presqu'île de Crozon &amp; Aulne maritime</p>
         <h2 className="page-titre"><span>Les sentiers</span></h2>
 
         <section className="page-panel">
           <p className="page-intro">
-            7 itinéraires tracés d'après OpenStreetMap, 181 km. Et les
-            46 circuits balisés de l'Office, plus bas.
+            7 itinéraires tracés d'après OpenStreetMap, 181 km.
           </p>
           <div className="moteur-barre" role="search">
             <svg className="moteur-loupe" viewBox="0 0 24 24" aria-hidden="true">
@@ -1888,53 +1882,18 @@ export function Composer() {
           </section>
         )}
 
-        {/* ── LES ITINÉRAIRES BALISÉS ─────────────────────────────────────
-            ⛔ CE NE SONT PAS LES NÔTRES, et le libellé le dit. « Balisé par
-               l'Office de tourisme » est un fait qui se constate sur un
-               poteau ; « recommandé par » serait un avis sur un tiers.
-            ⚠️ Le lien mène à LEUR fiche : c'est elle qui fait foi, et c'est
-               eux qui entretiennent le balisage. */}
-        {ot !== null && ot.length > 0 && (
-          <section className="page-panel">
-            <p className="apercu-label">Balisés</p>
-            <h2 className="section-title" style={{ marginBottom: "var(--sp-1)" }}>
-              Les {ot.length} circuits de l'Office de tourisme
-            </h2>
-            <p className="fiche-provenance fiche-provenance-ot">{MENTION.ot}</p>
-
-            <div className="ot-filtres" role="group" aria-label="Pratique">
-              {(["tous", "pied", "vtt", "velo", "trail"] as const).map((k) => (
-                <button key={k} type="button"
-                  className={k === pratique ? "ot-filtre ot-filtre-actif" : "ot-filtre"}
-                  aria-pressed={k === pratique}
-                  onClick={() => setPratique(k)}>
-                  {k === "tous" ? "Tous" : PRATIQUE[k]}
-                </button>
-              ))}
-            </div>
-
-            <ul className="ot-liste">
-              {ot.filter((i) => pratique === "tous" || i.pratique === pratique).map((i) => (
-                <li key={i.slug}>
-                  <a className="ot-item" href={i.source} target="_blank" rel="noreferrer noopener">
-                    <span className="ot-item-titre">{i.titre}</span>
-                    <span className="ot-item-meta">
-                      {PRATIQUE[i.pratique]} ·{" "}
-                      {/* ⚠️ Le kilométrage est MESURÉ sur le tracé, pas repris
-                          de leur fiche : les deux diffèrent de 1,2 % en
-                          médiane et de 17 % au pire. On affiche ce qu'on a
-                          vérifié. */}
-                      {i.km.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} km ·{" "}
-                      {i.boucle ? "boucle" : "aller simple"}
-                      {i.difficulte && ` · ${i.difficulte}`}
-                      {i.commune && ` · ${i.commune}`}
-                    </span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
+        {/* ── LES ITINÉRAIRES BALISÉS — PARTIS SUR LEUR PROPRE ADRESSE ═════
+            🔴 3/11/2026, demande du fondateur : carte = nos sites et nos
+            propositions, second onglet = les balades de l'Office. Vivre
+            après 1 032 itinéraires qui SONT les nôtres brouillait la
+            distinction que `BaladesOT.tsx` (et son garde `⛔ CE NE SONT PAS
+            LES NÔTRES`) tient depuis — une adresse à part la rend visible
+            dès la barre du bas, pas seulement en bas d'un défilement. */}
+        <p className="cp-second">
+          <a className="cp-lien" href={`${B}/balades-office`}>
+            <SvgEtincelle />Voir les circuits balisés par l'Office de tourisme
+          </a>
+        </p>
         </div>
       </div>
     </main>

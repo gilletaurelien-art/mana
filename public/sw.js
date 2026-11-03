@@ -64,7 +64,7 @@ const CACHE = "mana-bzh-v6";
    ⚠️ Ce fichier est servi tel quel depuis `public/` : il ne peut pas
       importer `src/routes.ts`. D'où la copie, et le test qui la tient. */
 const ROUTES_APP = [
-  "/", "/carte", "/promenades", "/composer", "/territoire",
+  "/", "/carte", "/promenades", "/composer", "/balades-office", "/territoire",
   "/reglages", "/contact", "/mentions-legales", "/espace", "/radio",
 ];
 const PREFIXES_APP = ["/promenade/", "/app/", "/paysages/", "/images/"];
