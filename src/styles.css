@@ -1296,7 +1296,12 @@ body { padding-bottom: var(--reserve-barre); }
 .carte-reelle { margin: 0; }
 .carte-plan {
   position: relative;
-  border-radius: var(--r-m);
+  /* 🔴 `--r-l`, PAS `--r-m` — 3/11/2026. Sur `/composer`, la carte vit dans
+     un `.page-panel` sans marge (`padding: 0`, voir Composer.tsx) : son
+     propre rayon devait donc ÉGALER celui du panneau pour suivre le même
+     arrondi, pas un rayon plus serré qui dessine un coin presque droit à
+     l'intérieur d'un coin rond — net au zoom, invisible en captures. */
+  border-radius: var(--r-l);
   overflow: hidden;
   border: 1px solid var(--bulle-trait);
   background: var(--fond-surelevé);
@@ -1350,8 +1355,10 @@ body { padding-bottom: var(--reserve-barre); }
 .carte-repere-depart .carte-etiquette,
 .carte-repere-arrivee .carte-etiquette { font-weight: 700; }
 
+/* 🔴 EN PETIT — 3/11/2026, demande du fondateur. `--t-xs` se lisait comme un
+   paragraphe de plus ; c'est une mention légale, pas du contenu. */
 .carte-credit {
-  font: 400 var(--t-xs)/1.5 var(--sans);
+  font: 400 var(--t-2xs)/1.4 var(--sans);
   color: var(--texte-doux);
   margin-top: var(--sp-1);
 }
@@ -2680,10 +2687,14 @@ body:has(.jeu) { padding-bottom: 0; }
   border: 1px solid rgb(25 43 67 / 9%);
   box-shadow: 0 2px 14px rgb(25 43 67 / 6%);
 }
+/* ⛔ `.cp-titre` EST EXCLU, MÊME DÉFAUT QUE `.btn` CI-DESSOUS. C'est un `<h1>` :
+   `.page-composer h1` (classe + balise) battait `.cp-titre` (classe seule) et
+   repeignait en `--nuit` un titre pensé pour le dégradé sombre du hero — sur
+   fond `--nuit`, du texte `--nuit` ne se voyait tout simplement plus. */
 .page-composer .page-note,
 .page-composer .page-texte,
 .page-composer .section-title,
-.page-composer h1, .page-composer h2 { color: var(--nuit); }
+.page-composer h1:not(.cp-titre), .page-composer h2 { color: var(--nuit); }
 .page-composer .page-note { opacity: .82; }
 /* ⛔ `.btn` EST EXCLU, ET C'EST UN BUG QUI L'A RÉVÉLÉ. Un lien de texte ordinaire
    (une mention, une source) doit prendre l'or sombre ; un `.btn-primary` porte
@@ -2708,22 +2719,17 @@ body:has(.jeu) { padding-bottom: 0; }
   padding: clamp(24px, 8vw, 52px) var(--sp-2) clamp(56px, 14vw, 84px);
   min-height: clamp(280px, 44vh, 380px); display: flex; align-items: center;
 }
-/* ⭐ UN VOILE QUI LAISSE VOIR. Le texte vit à gauche : le voile y est dense
-   et s'efface vers la côte. Premier jet : un ivoire à 96 % sur toute la
-   largeur — il protégeait trois lignes en éteignant l'image, c'est-à-dire
-   en supprimant la seule raison d'avoir une image.
-   🔴 ET DEPUIS LE 3/11, « l'image » EST LE FOND TOURNANT GLOBAL, pas une
-      illustration propre à cet écran (voir le commentaire sur `.cp-entree`
-      dans `Composer.tsx`) — le voile n'a pas changé, ce qu'il y a dessous
-      si. */
-.cp-entree::before {
-  content: ""; position: absolute; inset: 0; z-index: -1;
-  background: linear-gradient(100deg,
-    rgb(238 235 221 / 94%) 0%,
-    rgb(238 235 221 / 86%) 30%,
-    rgb(238 235 221 / 46%) 58%,
-    rgb(238 235 221 / 6%) 88%);
-}
+/* 🔴 LE VOILE IVOIRE EST PARTI LE 3/11/2026 — demande du fondateur : « le
+   hero, comme la landing ». Il supposait un texte SOMBRE sur une image CLAIRE
+   locale ; depuis le 3/11 l'image est le fond tournant global, qui porte
+   DÉJÀ son propre dégradé (`.fond-degrade`, posé une fois dans `<Fond />`,
+   sous tout le contenu — voir `systeme.css` « LE DÉGRADÉ, SUR TOUTES LES
+   PAGES »). Superposer un second voile, en plus clair et dans l'autre sens,
+   c'était rejouer localement ce que l'app tient déjà globalement — et avec
+   un texte sombre là où le dégradé global est calibré pour du clair.
+   `.cp-entree` n'a donc plus besoin d'aucune surface propre : elle montre le
+   dégradé global, et son texte passe au clair comme `hero-label`/`page-titre`
+   ailleurs dans l'app (Reglages, Territoire, Promenade…). */
 .cp-entree-dire { max-width: 30ch; }
 /* 🔴 `hyphens: manual`, ET CE N'EST PAS UN DÉTAIL DE GOÛT. Le `body` de
    l'application porte `hyphens: auto` — justifié pour un paragraphe de
@@ -2735,17 +2741,20 @@ body:has(.jeu) { padding-bottom: 0; }
 .cp-titre {
   margin: 0 0 var(--sp-2);
   font: 400 clamp(1.9rem, 9vw, 3rem)/1.03 var(--titre);
-  color: var(--nuit); letter-spacing: -.01em;
+  color: var(--craie); letter-spacing: -.01em;
   hyphens: manual; overflow-wrap: normal;
 }
 .cp-chapo {
   margin: 0 0 var(--sp-1);
-  font-size: var(--t-s); line-height: 1.45; color: var(--nuit);
+  font-size: var(--t-s); line-height: 1.45; color: var(--texte-immersif-doux);
   hyphens: manual;
 }
+/* ⚠️ PAS D'OPACITÉ EN PLUS DU TOKEN — `--texte-immersif-doux` est DÉJÀ le ton
+   secondaire calculé pour rester lisible sur la PIRE image du fond tournant
+   (tokens.css §3) ; lui superposer une opacité l'atténuerait sous ce calcul. */
 .cp-compte {
   display: flex; align-items: center; gap: var(--sp-1);
-  margin: 0; font-size: var(--t-xs); color: var(--nuit); opacity: .8;
+  margin: 0; font-size: var(--t-xs); color: var(--texte-immersif-doux);
 }
 .cp-botte { width: 30px; height: 30px; flex: none; opacity: .7; }
 
@@ -3095,9 +3104,11 @@ body:has(.jeu) { padding-bottom: 0; }
   box-shadow: 0 6px 20px rgb(25 43 67 / 12%);
   margin-bottom: var(--sp-1);
 }
+/* ⚠️ TEXTE NU SUR LE DÉGRADÉ GLOBAL, PAS DE CARTE PROPRE — même raison que
+   `.cp-compte` : le ton clair du token porte déjà le calcul de contraste. */
 .cp-depart-mot {
   margin: 0 0 var(--sp-1); font-size: var(--t-xs);
-  color: var(--nuit); opacity: .85;
+  color: var(--texte-immersif-doux);
 }
 .cp-entree .cp-actions { margin-bottom: 0; }
 
