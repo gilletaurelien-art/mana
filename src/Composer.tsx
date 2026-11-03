@@ -158,6 +158,33 @@ function SvgEtincelle() {
   );
 }
 
+/* ⭐ DEUX ICÔNES MIROIR, PAS UNE SEULE QU'ON FERAIT PIVOTER — 3/11/2026,
+ *  demande du fondateur : une flèche diagonale pour agrandir la carte, une
+ *  pour la réduire. Pivoter une icône « agrandir » de 180° donne une flèche
+ *  qui pointe toujours vers un coin, mais le MAUVAIS geste qu'elle décrit
+ *  reste illisible sans lire le texte qui l'accompagne — ici elle est seule
+ *  sur la carte, sans texte à côté. */
+function SvgAgrandir() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true"
+         fill="none" stroke="currentColor" strokeWidth="1.8"
+         strokeLinecap="round" strokeLinejoin="round">
+      <path d="M15 3h6v6" /><path d="M21 3l-7 7" />
+      <path d="M9 21H3v-6" /><path d="M3 21l7-7" />
+    </svg>
+  );
+}
+function SvgReduire() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true"
+         fill="none" stroke="currentColor" strokeWidth="1.8"
+         strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 10V4h6" /><path d="M10 10L4 4" />
+      <path d="M20 14v6h-6" /><path d="M14 14l6 6" />
+    </svg>
+  );
+}
+
 function SvgTelecharger() {
   return (
     <svg className="cp-picto" viewBox="0 0 24 24" aria-hidden="true"
@@ -1257,21 +1284,28 @@ export function Composer() {
               </p>
             </section>
           ) : (
-            <>
-              <section className="page-panel" style={{ padding: 0, overflow: "hidden" }}>
-                <CarteOuSchema schema={<WalkMap walk={walk} />}>
-                  <CarteReelle
-                    walk={walk}
-                    hauteur={carteAgrandie ? HAUTEUR_CARTE.agrandie : HAUTEUR_CARTE.reduite}
-                  />
-                </CarteOuSchema>
-              </section>
-              <p className="cp-second">
-                <button className="cp-lien" onClick={() => setCarteAgrandie((v) => !v)}>
-                  {carteAgrandie ? "Réduire la carte" : "Agrandir la carte"}
-                </button>
-              </p>
-            </>
+            <section className="page-panel cp-carte-panneau" style={{ padding: 0, overflow: "hidden" }}>
+              <CarteOuSchema schema={<WalkMap walk={walk} />}>
+                <CarteReelle
+                  walk={walk}
+                  hauteur={carteAgrandie ? HAUTEUR_CARTE.agrandie : HAUTEUR_CARTE.reduite}
+                />
+              </CarteOuSchema>
+              {/* 🔴 DANS LA CARTE, PAS SOUS ELLE — 3/11/2026, demande du
+                  fondateur. En haut à droite : les commandes de zoom de
+                  maplibre vivent en bas à droite (voir CarteReelle.tsx), et
+                  les deux cibles de 44 px au même coin se feraient de l'ombre
+                  — la leçon du zoom déjà posée là, appliquée ici. */}
+              <button
+                type="button"
+                className="cp-carte-agrandir"
+                onClick={() => setCarteAgrandie((v) => !v)}
+                aria-label={carteAgrandie ? "Réduire la carte" : "Agrandir la carte"}
+                title={carteAgrandie ? "Réduire la carte" : "Agrandir la carte"}
+              >
+                {carteAgrandie ? <SvgReduire /> : <SvgAgrandir />}
+              </button>
+            </section>
           )
         )}
 
@@ -1299,16 +1333,11 @@ export function Composer() {
                  photographies ne peut la copier. */}
         {lesProps && lesProps.length > 0 && (
           <section className="cp-propositions">
-            <p className="cp-sus"><SvgEtincelle />
-              {lesProps.length > 1 ? `${lesProps.length} lieux autour` : "Un lieu autour"}
-            </p>
-            {/* ⭐ LE NOM VIENT DU TERRITOIRE CHARGÉ, pas d'une chaîne écrite
-                ici : c'est `territoires.ts` qui sait de quel graphe on
-                compose, et il le sait parce qu'il a tranché la couture. */}
-            <h2 className="cp-question">
-              Où vont vos pas depuis {depart?.nom ?? (territoireDe(position[0], position[1]) ?? DEFAUT).avecArticle} ?
-            </h2>
-
+            {/* 🔴 L'EN-TÊTE EST PARTIE — 3/11/2026, demande du fondateur.
+                « 3 lieux autour » et « Où vont vos pas depuis X ? »
+                redisaient ce que les trois boutons, juste en dessous, disent
+                déjà par leurs noms et leur présence : la question se voit,
+                elle n'a plus besoin de se lire deux fois. */}
             {/* 🔴 TROIS PETITS BOUTONS, PAS TROIS CARTES — 3/11/2026, demande
                 du fondateur. Les grandes cartes (silhouette du tracé, fiche
                 complète) répétaient la même information trois fois quand une
@@ -1365,12 +1394,6 @@ export function Composer() {
                     <SvgVague />un passage dépend de la marée
                   </span>
                 )}
-                <br />
-                {prop.sortie <= 20
-                  ? "Le chemin y passe."
-                  : `Le chemin passe à ${prop.sortie} m — le lieu se voit depuis le sentier.`}
-                {prop.minimum > 0 && prop.parcours.metres > prop.minimum * 1.05 &&
-                  ` Un détour de ${Math.round(prop.parcours.metres - prop.minimum)} m pour un chemin plus agréable que le plus court.`}
               </p>
             )}
           </section>

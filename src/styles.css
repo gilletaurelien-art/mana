@@ -1364,6 +1364,25 @@ body { padding-bottom: var(--reserve-barre); }
 }
 .carte-credit a { color: inherit; }
 
+/* ── le bouton agrandir/réduire, POSÉ SUR la carte ──────────────────────────
+   🔴 3/11/2026, demande du fondateur : dans la carte, pas sous elle — un
+   lien de texte en dessous se lisait, un geste sur la carte se devine.
+   ⚠️ `.cp-carte-panneau` donne la `position: relative` que `.page-panel`
+      n'a pas par défaut (trois autres écrans l'emploient sans ce besoin) ;
+      sans elle ce bouton se positionnerait contre la page entière, pas
+      contre la carte. */
+.cp-carte-panneau { position: relative; }
+.cp-carte-agrandir {
+  position: absolute; top: var(--sp-1); right: var(--sp-1); z-index: 1;
+  width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+  color: var(--nuit);
+  background: rgb(255 255 255 / 92%);
+  border: 1.5px solid rgb(25 43 67 / 12%); border-radius: var(--r-m);
+  cursor: pointer; box-shadow: var(--ombre-pose);
+}
+.cp-carte-agrandir:hover { border-color: var(--action); }
+.cp-carte-agrandir svg { width: 18px; height: 18px; }
+
 /* ⚠️ LE TITRE EST SABLE SUR UN FOND À MOTIF dont certaines bandes sont
    claires : un titre LONG les traverse et devient illisible par endroits.
    Les titres courts d'origine tenaient sur une ligne et tombaient, par
@@ -1420,6 +1439,19 @@ body { padding-bottom: var(--reserve-barre); }
    plein milieu de la feuille. Le serveur de dev l'a refusée en 500, et
    c'est lui qui tranche : `tsc` ne lit pas le CSS. */
 .page .page-titre { line-height: 1.1; }
+
+/* ═══ L'EN-TÊTE KAKI — /promenades, /radio, /reglages ═════════════════════
+   🔴 3/11/2026, demande du fondateur : le même thème que `/carte` (`.terr`)
+   — un kaki PLEIN en tête d'écran, pas le fond tournant. `.page .hero-label`/
+   `.page .page-titre` juste au-dessus restent les bons rôles pour le texte :
+   calibrés clair, ils tiennent aussi bien sur un kaki fixe que sur le
+   dégradé qu'ils protégeaient à l'origine. `.entete-kaki` ne fait donc que
+   poser le fond et le débord plein écran — rien côté texte à dupliquer. */
+.entete-kaki {
+  margin: calc(var(--sp-6) * -1) calc(var(--sp-2) * -1) var(--sp-4);
+  padding: clamp(24px, 8vw, 44px) var(--sp-2) clamp(28px, 7vw, 40px);
+  background: var(--kaki);
+}
 
 .page .wrap > .page-titre { margin-bottom: 0; }
 .page .wrap > .page-titre + * { margin-top: var(--sp-4); }
@@ -2718,18 +2750,15 @@ body:has(.jeu) { padding-bottom: 0; }
   margin: calc(var(--sp-6) * -1) calc(var(--sp-2) * -1) 0;
   padding: clamp(24px, 8vw, 52px) var(--sp-2) clamp(56px, 14vw, 84px);
   min-height: clamp(280px, 44vh, 380px); display: flex; align-items: center;
+  /* 🔴 KAKI FIXE, PAS LE FOND TOURNANT — 3/11/2026, demande du fondateur :
+     le même thème que `/carte` (`.terr`), qui ne montre jamais le fond
+     tournant sous sa carte — un kaki uni, et le dégradé devient inutile :
+     un ton plein n'a pas besoin d'être protégé par un voile. Le texte reste
+     clair (`--craie`/`--texte-immersif-doux`), posé ici pour un fond fixe
+     plutôt que pour vingt-deux images changeantes — mais c'est le même rôle,
+     donc rien à changer sur `.cp-titre`/`.cp-compte`/`.cp-depart-mot`. */
+  background: var(--kaki);
 }
-/* 🔴 LE VOILE IVOIRE EST PARTI LE 3/11/2026 — demande du fondateur : « le
-   hero, comme la landing ». Il supposait un texte SOMBRE sur une image CLAIRE
-   locale ; depuis le 3/11 l'image est le fond tournant global, qui porte
-   DÉJÀ son propre dégradé (`.fond-degrade`, posé une fois dans `<Fond />`,
-   sous tout le contenu — voir `systeme.css` « LE DÉGRADÉ, SUR TOUTES LES
-   PAGES »). Superposer un second voile, en plus clair et dans l'autre sens,
-   c'était rejouer localement ce que l'app tient déjà globalement — et avec
-   un texte sombre là où le dégradé global est calibré pour du clair.
-   `.cp-entree` n'a donc plus besoin d'aucune surface propre : elle montre le
-   dégradé global, et son texte passe au clair comme `hero-label`/`page-titre`
-   ailleurs dans l'app (Reglages, Territoire, Promenade…). */
 .cp-entree-dire { max-width: 30ch; }
 /* 🔴 `hyphens: manual`, ET CE N'EST PAS UN DÉTAIL DE GOÛT. Le `body` de
    l'application porte `hyphens: auto` — justifié pour un paragraphe de
@@ -2757,67 +2786,14 @@ body:has(.jeu) { padding-bottom: 0; }
   margin: 0; font-size: var(--t-xs); color: var(--texte-immersif-doux);
 }
 .cp-botte { width: 30px; height: 30px; flex: none; opacity: .7; }
-
-/* ── B · combien de temps ───────────────────────────────────────────────── */
-.cp-feuille {
-  background: rgb(250 248 240 / 96%);
-  border: 1px solid rgb(25 43 67 / 8%);
-  border-radius: var(--r-xl);
-  box-shadow: 0 6px 26px rgb(25 43 67 / 10%);
-  padding: var(--sp-2);
-  /* ⭐ ELLE CHEVAUCHE L'IMAGE — c'est le geste de la maquette, et il rend
-     deux choses à la fois : la hauteur de l'entrée, et le lien entre la
-     question et le paysage qui la motive. */
-  position: relative; z-index: 1;
-  margin: -40px 0 var(--sp-2);
-}
-.cp-sus {
-  display: flex; align-items: center; gap: var(--sp-0);
-  margin: 0 0 var(--sp-0);
-  font-size: var(--t-xs); letter-spacing: .14em; text-transform: uppercase;
-  color: var(--or-profond); font-weight: 700;
-}
 .cp-etincelle { width: 18px; height: 18px; flex: none; }
-.cp-question {
-  margin: 0 0 var(--sp-1);
-  font: 400 clamp(1.4rem, 6vw, 2rem)/1.12 var(--titre);
-  color: var(--nuit); text-wrap: balance;
-}
 
-/* ⭐ TROIS DE FRONT, comme la maquette — et sans requête de média : une
-   grille à trois fractions tient dans la colonne, à 97 px par carte. Le
-   picto passe AU-DESSUS du texte, parce qu'à cette largeur il n'y a pas la
-   place de le mettre à côté. */
-.cp-temps {
-  display: grid; grid-template-columns: repeat(3, 1fr);
-  gap: var(--sp-1); margin-bottom: var(--sp-2);
-}
-.cp-temps-choix {
-  display: flex; flex-direction: column; align-items: center; gap: 2px;
-  min-height: 76px; padding: 10px 4px; cursor: pointer;
-  /* ⚠️ « Environ 6 km » à 14 px mesure 88 px pour 86 px utiles : le mot
-     « km » tombait à la ligne, sur la carte du milieu seulement — donc
-     une carte plus haute que ses deux voisines. Mesuré, pas deviné. */
-  text-align: center; hyphens: manual; text-wrap: nowrap;
-  background: rgb(255 255 255 / 70%);
-  border: 1.5px solid rgb(25 43 67 / 10%);
-  border-radius: var(--r-m);
-  transition: border-color var(--d-micro) var(--e-doux),
-              background var(--d-micro) var(--e-doux);
-}
-.cp-temps-choix .cp-picto { width: 19px; height: 19px; opacity: .55; }
-.cp-temps-choix:hover { border-color: rgb(127 96 39 / 45%); }
-/* ⭐ L'ÉTAT CHOISI NE TIENT PAS À LA SEULE COULEUR : la bordure épaissit, le
-   fond change, et `aria-pressed` le dit au lecteur d'écran. Une bordure
-   dorée seule disparaît pour qui distingue mal les teintes. */
-.cp-temps-choix.est-choisi {
-  border-color: var(--action); border-width: 2px;
-  background: rgb(198 154 72 / 16%);
-}
-.cp-temps-choix.est-choisi .cp-picto { opacity: .85; color: var(--or-profond); }
-.cp-temps-h { font: 700 var(--t-s)/1.2 inherit; color: var(--nuit); }
-.cp-temps-km { font-size: 12px; color: var(--nuit); opacity: .75; }
-
+/* 🔴 `.cp-feuille`, `.cp-sus`, `.cp-question`, `.cp-temps*` SONT PARTIS LE
+   3/11/2026 : zéro appelant dans `Composer.tsx` — `.cp-question`/`.cp-sus`
+   portaient l'en-tête des propositions (« 3 lieux autour », « Où vont vos
+   pas… ? »), retiré à la demande du fondateur ; les autres n'en avaient déjà
+   plus depuis la fusion du 3/11, un sélecteur de durée qu'aucun écran ne
+   montait plus. */
 .cp-actions { display: flex; margin-bottom: var(--sp-1); }
 .cp-primaire {
   display: inline-flex; align-items: center; justify-content: center;
@@ -2923,15 +2899,14 @@ body:has(.jeu) { padding-bottom: 0; }
 .cp-arretes ul { margin: var(--sp-0) 0 0; padding-left: 1.2em; }
 .cp-arretes li { margin-bottom: var(--sp-0); }
 
-:where(.cp-temps-choix, .cp-carte, .cp-primaire, .cp-secondaire, .cp-lien,
+:where(.cp-choix-lieu, .cp-carte-agrandir, .cp-primaire, .cp-secondaire, .cp-lien,
        .cp-plus > summary, .cp-arretes > summary):focus-visible {
   outline: 2px solid var(--ocre); outline-offset: 3px;
 }
 /* ⚠️ Quelqu'un qui a demandé moins d'animation en a demandé MOINS, pas une
    version plus rapide. On retire le mouvement, on garde l'état. */
 @media (prefers-reduced-motion: reduce) {
-  .cp-carte, .cp-primaire, .cp-temps-choix { transition: none; }
-  .cp-carte:hover { transform: none; }
+  .cp-choix-lieu, .cp-primaire { transition: none; }
 }
 
 /* ── E · conditions et sécurité, et la signature ────────────────────────────

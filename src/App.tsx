@@ -308,8 +308,11 @@ export default function App() {
       {path === "/radio" ? (
         <main className="page">
           <div className="wrap">
-            <p className="hero-label">Écouter</p>
-            <h1 className="page-titre"><span>MANAradio</span></h1>
+            {/* 🔴 EN-TÊTE KAKI — 3/11/2026, même thème que `/carte`. */}
+            <header className="entete-kaki">
+              <p className="hero-label">Écouter</p>
+              <h1 className="page-titre"><span>MANAradio</span></h1>
+            </header>
 
             <Radio />
           </div>
