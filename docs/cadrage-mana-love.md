@@ -524,3 +524,148 @@ Le compte est tranché (§1). Restent :
 Et trois réparations qui ne demandent **aucun arbitrage** : le test du
 vouvoiement, la CI du garde d'origines côté `server/`, et les deux phrases
 publiées du §4.1.
+
+---
+
+# ANNEXE — MESURES DU 3/11/2026, SITE EN LIGNE
+
+Réseau ouvert ce jour. 8 agents, 407 appels d'outils. Ce qui suit est **mesuré
+sur le site servi**, et corrige le document ci-dessus là où il se trompait.
+
+## A · ⭐ OÙ EST LE CODE : mana.love **est le build de mana.bzh**
+
+`https://mana.love/robots.txt` le dit lui-même :
+
+> *« mana.love shares its build with mana.bzh (same repository, same deploy)
+> but is a DIFFERENT site in the eyes of search engines and AI agents: its own
+> host, its own canonical, its own sitemap… see `scripts/gen-sitemap.mjs` and
+> `scripts/prerender.mjs` (`coquille-manalove.html`) »*
+
+Et le bundle choisit sa marque à l'exécution :
+`new URLSearchParams(location.search).has("asManaLove") ? "mana.love" :
+has("asFamily") ? "manafamily.org" : location.hostname`.
+
+⛔ **Trois sites, un seul dépôt — et ce dépôt n'est PAS `/home/user/mana`.**
+Les quatre fichiers que `robots.txt` nomme n'y existent pas. Le dépôt cherché
+est celui qui déploie mana.bzh **et** mana.love **et** manafamily.org.
+
+## B · Le chat : `mana-presence`, et non `ask-mana`
+
+`POST https://db.temposystem.fr/functions/v1/mana-presence` (fonction Edge
+Supabase auto-hébergée). Corps : `{messages, context, voice:"mana"|"fee",
+surface:"exploration"|"sanctuaire", univers, intention, allowMemoryWrites}`.
+
+⟲ **`ask-mana` : 0 occurrence** dans les 2 209 488 octets livrés. `mana-chat` :
+14 occurrences, **toutes des variables CSS de police**. Le commentaire de
+`check-origins.mjs:13` nomme deux services qui n'existent pas.
+
+Trois autres fonctions : `mana-ecoute` (reconnaissance vocale), `mana-voice`
+(synthèse, voix `fr_marie_happy`), `radio-regie`.
+
+⚠️ **Le fournisseur de modèle est INVÉRIFIABLE** : zéro occurrence de mistral,
+openai, anthropic, claude ou gpt- dans les bundles. L'appel vit dans la
+fonction Edge. **On ne peut pas dire que l'ancien mana.love tourne sur Mistral.**
+
+## C · La mémoire est **déclarée**, pas déduite — et c'est un modèle à reprendre
+
+Table `memoire_declaree`, quatre genres avec péremption en dur :
+`preference` 365 j, `intention` 30 j, `rappel` 30 j, `contexte` sans
+expiration. **Le client ne l'écrit jamais** (il envoie `allowMemoryWrites:true`,
+la fonction Edge décide) mais il peut confirmer, désactiver et **supprimer**.
+
+⭐ Trois qualités qui coûtent peu et valent cher : la mémoire est **déclarée**,
+ce qui tient la promesse *« ce qui s'en déduit n'est écrit nulle part »* ;
+chaque souvenir **périme**, ce qui règle la minimisation RGPD sans débat ;
+**désactiver ≠ supprimer**, les deux existent. Le nouveau dépôt n'a rien de cela.
+
+## D · ⛔ LE DÉFAUT LE PLUS GRAVE : les garde-fous sont **désarmés** là où le chat est le plus intime
+
+L'ancien site porte deux registres que le nouveau dépôt n'a pas du tout :
+
+- **12 règles de détresse**, 4 familles hiérarchisées (vital >
+  violence_conjugale > maltraitance > enfance_danger), **6 numéros vérifiés**
+  (3114, 15-112, SOS Amitié, 3919, 3977, 119) — évaluées **avant** tout appel
+  au modèle, en tutoiement et en vouvoiement ;
+- **14 règles anti-captation**.
+
+⚠️ **Mais le chat de figure — `surface:"sanctuaire"`, `voice:"fee"` — appelle
+le filtre avec `leverLaCaptation:!0` écrit EN DUR.** Les 9 règles levables
+(*tu me manques, reste avec moi, tu n'as que moi, je suis la seule à te
+comprendre, reviens me parler*…) sont désactivées.
+
+⭐ **Le chat le plus intime est celui dont les protections sont retirées**, sur
+un produit qui publie *« nous ne concevons pas de mécaniques de dépendance »*.
+C'est l'arbitrage le plus lourd de tout ce dossier, et il précède le reste.
+
+⚠️ Et un garde-fou mort : le détecteur de numéro/courriel inventé ne s'exécute
+que si le filtre reçoit un champ `sources`, qui ne lui est jamais passé.
+
+## E · « Sans compte » : ce que le code dit vraiment
+
+⛔ **Parler à MANA déclenche `signInAnonymously()`** — une ligne utilisateur est
+créée sur `db.temposystem.fr` et un JWT persiste dans le navigateur. **Rien ne
+l'annonce.** La mention « sans compte » est **exacte pour la radio** et pour le
+moteur de recherche territorial ; elle est **fausse pour la conversation**.
+
+⚠️ **RELAX est un péage** : ses six lignes appellent toutes `onSuperMana`.
+
+✅ **Zéro traceur, zéro analytics, zéro pixel** — des deux côtés. Mesuré.
+
+⚠️ Barrière d'âge : **16 ans**, à la création de compte, avec acceptation de
+CGU versionnée (`legal_acceptances`). **Elle ne protège pas le chat**, qui
+répond avant le compte.
+
+## F · ⟲ Corrections aux sections précédentes
+
+| le document disait | mesuré sur le site servi |
+|---|---|
+| §3.1 « un évènement daté n'existe pas, **aucune source** » | **FAUX** — tuile « Agenda / Évènements », 4 fenêtres temporelles, compteur national |
+| §3.3 « un code INSEE… dans le point d'entrée réel » | l'en-tête le dit, mais le fichier **n'est le point d'entrée de rien** : zéro import hors de `src/domain` |
+| §0 « rayon **figé** à 3 000 m » | vrai de l'interface, **faux du serveur** : `?radius=5000` fonctionne |
+| §0 « Nominatim ne fait que `/reverse` » | vrai du dépôt neuf, **faux de l'ancien** : il a **deux** géocodeurs `/search` |
+| §5 « 4 533 pages à ne pas percuter » | **mana.love sert UNE page.** 37 chemins sondés : 200 partout, 45 375 o partout, un seul md5. `sitemap.xml` déclare 1 URL |
+
+⛔ **Le verrou France est une chaîne de caractères** : `const i=", France"`,
+suffixé à tout ce que le visiteur tape avant l'envoi à Nominatim, plus
+`Accept-Language: fr`. Le second géocodeur est la Base Adresse Nationale,
+France seule. ⭐ C'est le chiffrage de « monde entier » : **une constante, deux
+géocodeurs à remplacer.**
+
+⚠️ Et `llms.txt` (daté du 18/10/2026) décrit **un autre produit** : *« a walking
+companion across 26 EU+CH countries »*, *« Free: walking exploration… no account
+required. Paid: Pasithée… and Discuter, a conversation that remembers »*.
+
+## G · Mistral — le verdict « invérifiable » tombe
+
+Politique d'usage lue en entier, **en vigueur au 11 juin 2026**, 11 rubriques.
+
+- **Contenu sexuel explicite entre adultes consentants : NON TRAITÉ.** Seuls
+  sont nommés le CSAM, les images intimes non consenties et les « sexual
+  services » exploitantes. ⭐ *Non traité n'est pas autorisé* — rien ne couvre
+  le projet, rien ne l'interdit.
+- **Compagnons virtuels : zéro occurrence.**
+- ⛔ **Une clause que ce document n'avait pas vue, et qui mord** : « Professional
+  advice » interdit *« any form of health-related guidance »*. C'est un **usage
+  interdit**, pas une catégorie de modération — et une confidente du soir en
+  reçoit.
+- **Rétention : 30 jours glissants** pour la surveillance d'abus, sauf ZDR.
+- Les CGU commerciales (25/09/2026) imposent de **répercuter les mêmes
+  restrictions dans nos propres CGU**, et posent un plancher d'âge à 13 ans.
+
+## H · Ce qui reste non mesuré, et pourquoi
+
+- **Overpass : échec de mesure assumé, 7/7.** L'hôte est autorisé et le CONNECT
+  passe, mais la poignée TLS est coupée en amont (`ws_closed_mid_exchange`).
+  **Les huit chiffres n'existent pas.** ⭐ Et le correctif que §3.2 sous-entend
+  (`node` → `nwr`) n'est pas plus vérifié que le défaut qu'il dénonce :
+  `geo.ts:62` exige `el.lat`/`el.lon` au premier niveau, or `center` les place
+  ailleurs pour les ways. **Passer à `nwr` sans toucher `geo.ts:62` ne rendrait
+  rien de plus.**
+- **Légifrance, EUR-Lex et Ofcom : non atteints** (défis anti-robot Cloudflare
+  et AWS WAF). L'agent a refusé de maquiller son agent utilisateur. Le DSA et
+  le Royaume-Uni restent **INVÉRIFIABLES**.
+- ✅ **ARCOM atteint.** Correction : le dispositif n'est pas « un article de
+  SREN » mais **l'article 10 de la LCEN**, réécrit par SREN. Périmètre fermé à
+  deux catégories, dont *l'éditeur qui met des contenus pornographiques à
+  disposition du public*. **L'hypothèse du cadrage était exacte, et même plus
+  restrictive qu'il ne le disait.**
