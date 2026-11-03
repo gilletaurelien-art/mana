@@ -2665,8 +2665,15 @@ body:has(.jeu) { padding-bottom: 0; }
       exactement la manière dont une identité se défait sans décision. */
 .page-composer {
   position: relative; isolation: isolate; min-height: 100vh;
-  background: var(--craie); color: var(--nuit);
+  color: var(--nuit);
 }
+/* 🔴 LE SOL IVOIRE A QUITTÉ `.page-composer` POUR `.cp-corps` — 3/11/2026.
+   Posé sur la page entière, il couvrait aussi `.cp-entree` et éteignait le
+   fond tournant que `<Fond />` pose déjà derrière toute l'application —
+   exactement l'inverse de ce que chaque autre écran fait (hero sur le fond,
+   corps sur une surface). `.cp-entree` n'a donc plus AUCUNE surface propre :
+   elle montre le fond tournant, comme `hero-label`/`page-titre` ailleurs. */
+.cp-corps { background: var(--craie); }
 .page-composer .page-panel {
   background: rgb(255 255 255 / 55%); color: var(--nuit);
   -webkit-backdrop-filter: none; backdrop-filter: none;
@@ -2694,14 +2701,14 @@ body:has(.jeu) { padding-bottom: 0; }
   padding: clamp(24px, 8vw, 52px) var(--sp-2) clamp(56px, 14vw, 84px);
   min-height: clamp(280px, 44vh, 380px); display: flex; align-items: center;
 }
-.cp-entree-fond, .cp-entree-fond img {
-  position: absolute; inset: 0; width: 100%; height: 100%;
-  object-fit: cover; object-position: 72% 50%; z-index: -2;
-}
 /* ⭐ UN VOILE QUI LAISSE VOIR. Le texte vit à gauche : le voile y est dense
    et s'efface vers la côte. Premier jet : un ivoire à 96 % sur toute la
    largeur — il protégeait trois lignes en éteignant l'image, c'est-à-dire
-   en supprimant la seule raison d'avoir une image. */
+   en supprimant la seule raison d'avoir une image.
+   🔴 ET DEPUIS LE 3/11, « l'image » EST LE FOND TOURNANT GLOBAL, pas une
+      illustration propre à cet écran (voir le commentaire sur `.cp-entree`
+      dans `Composer.tsx`) — le voile n'a pas changé, ce qu'il y a dessous
+      si. */
 .cp-entree::before {
   content: ""; position: absolute; inset: 0; z-index: -1;
   background: linear-gradient(100deg,

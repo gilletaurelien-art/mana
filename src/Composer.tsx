@@ -960,15 +960,6 @@ export function Composer() {
   return (
     <main className="page page-composer">
       <div className="wrap">
-        {/* ══ A · L'ENTRÉE ══════════════════════════════════════════════
-            ⛔ L'IMAGE EST UNE ILLUSTRATION, PAS UNE PHOTOGRAPHIE, et c'est
-            pourquoi elle passe par `paysages/` et non par `images/Photo.tsx`
-            — dont tout le contrat consiste à AFFIRMER un lieu. Elle évoque
-            la Bretagne ; elle ne documente aucun endroit, et rien ici ne
-            prétend le contraire.
-            ⚠️ Elle ne tourne pas : cet écran se lit, il ne s'habite pas. Une
-               rotation toutes les trois secondes derrière un texte qu'on est
-               en train de choisir est une distraction, pas une ambiance. */}
         {/* ══ A · L'ENTRÉE — ELLE PORTE TOUT ═══════════════════════════
             2/11, ordre arrêté par le fondateur : le titre, le nombre de
             lieux, le point de départ, puis le bouton. La carte vient après.
@@ -976,15 +967,17 @@ export function Composer() {
                une carte glissée sous une image qui, elle, ne demandait rien.
                Et le texte d'introduction disait en trois lignes ce que le
                champ de saisie dit en existant.
-            ⛔ L'IMAGE EST UNE ILLUSTRATION, PAS UNE PHOTOGRAPHIE : elle
-               passe par `paysages/` et non par `images/Photo.tsx`, dont tout
-               le contrat consiste à AFFIRMER un lieu. */}
+            🔴 PAS D'IMAGE PROPRE À CET ÉCRAN — 3/11/2026, demande du
+               fondateur. Une illustration fixe (`paysages/fond-07`) vivait
+               ici un instant : elle masquait le fond tournant que `<Fond />`
+               pose déjà derrière TOUTE l'application (voir `App.tsx`,
+               `systeme.css` « LE HERO — SUR TOUTES LES PAGES »), pour imiter
+               ce que le reste du site obtient gratuitement. Le voile
+               ci-dessous (`.cp-entree::before`) tenait déjà la lisibilité
+               sans savoir ce qu'il y avait dessous : il continue de le faire
+               sur le fond tournant, comme `hero-label`/`page-titre` ailleurs
+               dans l'app. */}
         <header className="cp-entree">
-          <picture className="cp-entree-fond">
-            <source srcSet={`${import.meta.env.BASE_URL}paysages/fond-07-1280.avif`} type="image/avif" />
-            <img src={`${import.meta.env.BASE_URL}paysages/fond-07-1280.webp`}
-                 alt="" aria-hidden="true" decoding="async" />
-          </picture>
           <div className="cp-entree-dire">
             <h1 className="cp-titre">Promenade</h1>
 
@@ -1068,9 +1061,16 @@ export function Composer() {
           </div>
         </header>
 
-
-
-
+        {/* ══ LE CORPS — SOL IVOIRE, ET C'EST LUI QUI LE PORTE DÉSORMAIS ════
+            🔴 3/11/2026 : le sol ivoire couvrait TOUTE la page, entrée
+            comprise — c'est ce qui masquait le fond tournant derrière le
+            hero. Il reste nécessaire ici : carte, filtres, cartes de
+            résultats sont lus longtemps, pas traversés du regard comme un
+            titre, et `.page-composer .page-panel` suppose un sol clair
+            derrière sa transparence à 55 %. Le déplacer du conteneur de page
+            vers ce seul bloc rend au hero ce que chaque autre écran a déjà :
+            le fond tournant, sous son voile. */}
+        <div className="cp-corps">
         {/* 🔴 CE PANNEAU NE S'AFFICHE QUE S'IL A QUELQUE CHOSE À DIRE.
             Il rendait une carte VIDE dans le cas normal — ni erreur, ni
             chargement, ni fermetures manquantes. ⭐ Une surface qui existe
@@ -1878,6 +1878,7 @@ export function Composer() {
             </ul>
           </section>
         )}
+        </div>
       </div>
     </main>
   );
