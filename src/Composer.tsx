@@ -255,6 +255,11 @@ function SvgBotte() {
 type FiltreForme = "tous" | "boucle" | "aller";
 const MAX_AFFICHES = 40;
 
+/** 420 px était la hauteur d'origine de `CarteReelle` ; `HAUTEUR_CARTE.agrandie`
+ *  la garde pour qui demande le détail, `HAUTEUR_CARTE.reduite` en est la moitié
+ *  exacte — pas un chiffre choisi à part, un rapport. */
+const HAUTEUR_CARTE = { reduite: 210, agrandie: 420 };
+
 /**
  * 🔴 LE CRAN LE PLUS À DROITE VEUT DIRE « SANS LIMITE », ET C'EST UN CORRECTIF.
  *
@@ -420,6 +425,14 @@ export function Composer() {
   const [retour, setRetour] = useState<Retour | null>(null);
   const [enMarche, setEnMarche] = useState(false);
   const [requete, setRequete] = useState("");
+  /* 🔴 LA CARTE DÉMARRE RÉDUITE — 3/11/2026, demande du fondateur. 210 px
+     (moitié des 420 d'origine) suffit à situer le tracé sans pousser les
+     trois propositions hors du premier écran ; qui veut le détail du chemin
+     l'agrandit d'un geste. `CarteReelle` réagit déjà à un changement de
+     hauteur de son conteneur par son propre `ResizeObserver` (`cadrer()`,
+     dans CarteReelle.tsx) : rien à faire côté carte pour qu'elle se
+     redessine au bon cadrage quand la hauteur change. */
+  const [carteAgrandie, setCarteAgrandie] = useState(false);
 
   const [motRetour, setMotRetour] = useState("");
   // ⚠️ `undefined` = pas encore chargé · `null` = fichier absent ou illisible.
@@ -1221,11 +1234,21 @@ export function Composer() {
               </p>
             </section>
           ) : (
-            <section className="page-panel" style={{ padding: 0, overflow: "hidden" }}>
-              <CarteOuSchema schema={<WalkMap walk={walk} />}>
-                <CarteReelle walk={walk} />
-              </CarteOuSchema>
-            </section>
+            <>
+              <section className="page-panel" style={{ padding: 0, overflow: "hidden" }}>
+                <CarteOuSchema schema={<WalkMap walk={walk} />}>
+                  <CarteReelle
+                    walk={walk}
+                    hauteur={carteAgrandie ? HAUTEUR_CARTE.agrandie : HAUTEUR_CARTE.reduite}
+                  />
+                </CarteOuSchema>
+              </section>
+              <p className="cp-second">
+                <button className="cp-lien" onClick={() => setCarteAgrandie((v) => !v)}>
+                  {carteAgrandie ? "Réduire la carte" : "Agrandir la carte"}
+                </button>
+              </p>
+            </>
           )
         )}
 
