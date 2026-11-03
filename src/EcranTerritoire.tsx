@@ -4,15 +4,22 @@ import { SwipeBalades } from "./SwipeBalades";
 /**
  * L'ÉCRAN DU TERRITOIRE — DEUX VUES, UNE SEULE PAR DÉFAUT.
  *
- * ⭐ LE JEU DE CARTES PASSE DEVANT, LA CARTE DEVIENT LE REPLI (31/10/2026,
- *    décision du fondateur). Ce n'est pas un classement de goût : la carte
- *    répond à « où est-ce ? », le jeu à « qu'est-ce que je marche ? ». La
- *    seconde question vient d'abord, et de très loin.
+ * 🔴 LA CARTE PASSE DEVANT, LE JEU DEVIENT LE REPLI — 3/11/2026, demande du
+ *    fondateur : « carte = premier onglet, interactive, avec nos sites
+ *    remarquables et nos propositions de promenades ». Ça RETOURNE la
+ *    décision du 31/10 (le jeu devant), qui tenait sur une lecture — « où
+ *    est-ce ? » vient après « qu'est-ce que je marche ? » — qui n'a pas
+ *    changé en soi, mais que l'onglet « carte » de la barre du bas
+ *    contredit depuis le début : son icône promet une carte, et ouvrait un
+ *    jeu de cartes. ⭐ Deux dispositifs pour une même question — l'icône et
+ *    l'ordre d'affichage — ne peuvent pas rester en désaccord.
  *
- * ⚠️ LA CARTE EST CHARGÉE À LA DEMANDE. Elle emporte le graphe du territoire
- *    et l'inventaire des lieux — près d'un mégaoctet. Qui feuillette le jeu
- *    et s'en va ne doit pas l'avoir payé. C'est ce que « repli » veut dire
- *    techniquement, pas seulement en produit.
+ * ⚠️ LA CARTE EST CHARGÉE À LA DEMANDE depuis le 31/10 : elle emporte le
+ *    graphe du territoire et l'inventaire des lieux — près d'un mégaoctet.
+ *    Elle l'était pour que le jeu, alors par défaut, ne la paie pas ; elle
+ *    le reste, parce que le code fractionné ne coûte rien à garder et que
+ *    le repli (désormais le jeu) ne doit toujours pas payer ce qu'il ne
+ *    montre pas.
  */
 const Territoire2030 = lazy(() =>
   import("./Territoire2030").then((m) => ({ default: m.Territoire2030 })),
@@ -20,10 +27,12 @@ const Territoire2030 = lazy(() =>
 
 export function EcranTerritoire({ base }: { base: string }) {
   /**
-   * ⭐ LA CARTE DU TERRITOIRE A UNE ADRESSE — `?vue=carte` (1/11).
-   *    Elle n'était qu'un ÉTAT à l'intérieur de cet écran : on ne pouvait
-   *    donc pas y mener depuis ailleurs, et deux boutons posés côte à côte
-   *    sur l'accueil auraient abouti au même endroit sans qu'on le voie.
+   * ⭐ LES DEUX VUES ONT UNE ADRESSE — `?vue=carte` (1/11), `?vue=jeu`
+   *    depuis que la carte est devenue le défaut (3/11). La première reste
+   *    lue par honnêteté (un lien qui la porte encore ne doit pas rompre) ;
+   *    c'est la seconde qui sert désormais à mener vers le jeu depuis
+   *    ailleurs — exactement le besoin que `?vue=carte` comblait à l'origine,
+   *    côté opposé.
    * ⚠️ C'est une lecture À L'OUVERTURE, pas une synchronisation : le bouton
    *    de repli continue de changer la vue sans toucher à l'URL. Tenir les
    *    deux en miroir demanderait une histoire de navigation que cet écran
@@ -32,9 +41,9 @@ export function EcranTerritoire({ base }: { base: string }) {
    */
   const [vue, setVue] = useState<"jeu" | "carte">(() => {
     try {
-      return new URLSearchParams(window.location.search).get("vue") === "carte"
-        ? "carte" : "jeu";
-    } catch { return "jeu"; }
+      return new URLSearchParams(window.location.search).get("vue") === "jeu"
+        ? "jeu" : "carte";
+    } catch { return "carte"; }
   });
   /** le point sur lequel la carte s'ouvre, quand on y arrive d'une balade */
   const [centre, setCentre] = useState<[number, number] | undefined>();

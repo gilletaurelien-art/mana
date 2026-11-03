@@ -291,8 +291,14 @@ describe("le jeu de cartes des balades", () => {
 
     // ⭐ et l'écran sait entrer par `?vue=carte`, que la barre emploie, sinon le lien ment
     expect(barre).toContain("/carte?vue=carte");
+    /* 🔴 RETOURNÉ LE 3/11/2026 — demande du fondateur : la carte est devenue
+       le DÉFAUT de cet écran (elle ne l'était pas quand ce garde a été écrit),
+       et `?vue=carte` y mène donc toujours, mais sans plus être la branche
+       que le code compare explicitement — c'est `?vue=jeu` qui, désormais,
+       distingue l'autre vue. Le lien de la barre ne ment pas tant que
+       l'écran n'exige PAS `vue === "jeu"` pour y entrer. */
     const ecran = readFileSync(new URL("./EcranTerritoire.tsx", import.meta.url), "utf8");
-    expect(ecran).toMatch(/get\("vue"\) === "carte"/);
+    expect(ecran).toMatch(/get\("vue"\) === "jeu"/);
   });
 
   /**
