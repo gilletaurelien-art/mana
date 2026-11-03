@@ -34,6 +34,14 @@ import { chargerLieux, lienWiki, type Inventaire, type Lieu } from "./lieux";
 import { libelleCategorie } from "./categories";
 import { WALKS, VITRINE, effortLisible } from "./walks";
 import type { Walk } from "./walks";
+/* 🔴 LE PONT DEVIENT UN CALCUL — 3/11/2026, demande du fondateur : « fusionne
+   le compositeur dans la carte interactive ». `propositionsAutour` et
+   `accrocherUn` sont les MÊMES fonctions que `Composer.tsx` appelle ; cet
+   écran charge déjà le même graphe ET le même inventaire (`inv`, ligne 148),
+   il ne manquait que l'appel. ⚠️ `indexer`/`accrocherTous` ont un coût
+   (le second visite chaque lieu nommé) : ils ne tournent qu'une fois le
+   graphe chargé, mémorisés, comme `sitesIci`. */
+import { indexer, accrocherUn, accrocherTous, accroche, propositionsAutour, type Proposition } from "./composition";
 import { ILLUSTRATIONS } from "./illustrations";
 import { Photo, image } from "./images/Photo";
 
@@ -159,6 +167,44 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
   /* ⚠️ Tenue à jour À CHAQUE RENDU : c'est ce qui permet aux écouteurs posés
      une seule fois de lire l'inventaire d'aujourd'hui. */
   vivant.current = { sites: sitesIci, inv };
+
+  /* ── NOS PROPOSITIONS DE PROMENADES, DEPUIS LE LIEU VISÉ ──────────────────
+     ⭐ MÊME FILTRE QUE `Composer.tsx` (lieux nommés, dédoublonnés sur le nom)
+        — une proposition « Plage » ou « Calvaire » sans autre précision ne
+        se choisit pas, et il y en a des centaines dans l'inventaire. Un
+        filtre recopié depuis l'écran qui l'a inventé, pas réinventé ici. */
+  const spotsPourComposer = useMemo(() => {
+    if (!inv) return [];
+    const vus = new Set<string>();
+    return inv.lieux.filter((l) => {
+      if (!l.n) return false;
+      if (l.n === (inv.libelles[l.c] ?? l.c)) return false;
+      if (vus.has(l.n)) return false;
+      vus.add(l.n); return true;
+    });
+  }, [inv]);
+  const positionsPourComposer = useMemo(
+    () => spotsPourComposer.map((l) => l.g as readonly [number, number]),
+    [spotsPourComposer],
+  );
+  const ixComposition = useMemo(() => (graphe ? indexer(graphe) : null), [graphe]);
+  const accrochesComposition = useMemo(
+    () => (graphe && ixComposition && positionsPourComposer.length
+      ? accrocherTous(graphe, ixComposition, positionsPourComposer, { ecartSiLoin: false })
+      : null),
+    [graphe, ixComposition, positionsPourComposer],
+  );
+  /* ⭐ RECALCULÉ QUAND LE LIEU VISÉ CHANGE, PAS À CHAQUE RENDU — les trois
+     propositions dépendent du POINT, pas de l'état du calque ou du zoom. */
+  const propositions = useMemo((): Proposition<Lieu>[] => {
+    if (!graphe || !ixComposition || !accrochesComposition || !vise) return [];
+    const depuis = accrocherUn(graphe, ixComposition, vise.g);
+    if (!accroche(depuis)) return [];
+    return propositionsAutour(
+      graphe, ixComposition, depuis,
+      spotsPourComposer, positionsPourComposer, accrochesComposition,
+    );
+  }, [graphe, ixComposition, accrochesComposition, vise, spotsPourComposer, positionsPourComposer]);
 
   const otIci = useMemo(
     () => ot.filter((i) => {
@@ -733,6 +779,27 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
         ctx.fillStyle = trace; ctx.fill();
       }
 
+      /* ── NOS PROPOSITIONS DE PROMENADES DEPUIS LE LIEU VISÉ ─────────────
+         ⭐ `parcours.contour` EST DÉJÀ LA SUITE DE POINTS [lon,lat] que le
+            chemin marche — la même donnée que `Composer.tsx` dessine via
+            maplibre, ici posée au trait sur ce canvas. Pas de silhouette
+            séparée à recalculer : une seule vérité du tracé, deux moteurs de
+            dessin. ⚠️ En pointillé : la trouver par-dessus le réseau du fond,
+            avant d'avoir choisi, demande un signal différent du trait plein
+            qui marque une promenade déjà vérifiée. */
+      for (const p of propositions) {
+        ctx.beginPath();
+        p.parcours.contour.forEach(([lon, lat], k) => {
+          const x = X(lon), y = Y(lat);
+          if (k === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.setLineDash([2, 5]);
+        ctx.strokeStyle = trace; ctx.lineWidth = 2.2; ctx.globalAlpha = 0.85;
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.globalAlpha = 1;
+      }
+
       /* ── MA POSITION ──────────────────────────────────────────────────
          ⚠️ Un halo ÉPAIS, et c'est volontaire : il ne figure pas un rayon de
             précision mesuré — nous n'affichons pas la précision du GPS — il
@@ -754,7 +821,7 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
     const ro = new ResizeObserver(dessiner);
     ro.observe(b);
     return () => ro.disconnect();
-  }, [graphe, choisie, walk, calques, vise, moi, vueTic, otIci, sitesIci]);
+  }, [graphe, choisie, walk, calques, vise, moi, vueTic, otIci, sitesIci, propositions]);
 
   return (
     <main className="terr">
@@ -897,6 +964,25 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
           </div>
         )}
       </div>
+
+      {/* ⭐ SOUS LA CARTE, PAS DESSUS — 3/11/2026, demande du fondateur : le
+          pointillé des trois propositions se lit sur la carte, mais leur nom
+          et leur distance méritent leur propre ligne, pas un empilement dans
+          l'étiquette déjà dense du lieu visé. Le geste pour vraiment partir
+          (choisir, exporter le GPX, revenir par un autre chemin) reste sur
+          `/promenades` — ce n'est pas dupliqué ici, c'est PRÉVU là-bas : les
+          mêmes fonctions, sur les mêmes données, retrouveront les mêmes
+          trois destinations. */}
+      {vise && propositions.length > 0 && (
+        <ul className="terr-propositions" aria-label={`Promenades depuis ${vise.nom}`}>
+          {propositions.map((p) => (
+            <li key={p.i}>
+              <span className="terr-proposition-nom">{spotsPourComposer[p.i]?.n}</span>
+              <span className="m-meta">{(p.metres / 1000).toFixed(1)} km</span>
+            </li>
+          ))}
+        </ul>
+      )}
 
       {/* ══ LA FEUILLE ════════════════════════════════════════════════════
           ⚠️ LA POIGNÉE EST UN BOUTON, pas un trait décoratif. La maquette

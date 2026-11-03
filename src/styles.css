@@ -2615,6 +2615,24 @@ body:has(.jeu) { padding-bottom: 0; }
 }
 .terr-vise-dire a { color: inherit; text-underline-offset: 3px; }
 
+/* 🔴 NOS PROPOSITIONS DE PROMENADES, SOUS « PARTIR D'ICI » — 3/11/2026,
+   fusion du compositeur dans la carte. Même matière que `.terr-vise-dire` :
+   ce sont les mêmes trois destinations que le pointillé dessine sur la
+   carte, nommées. */
+/* ⚠️ HORS DE `.terr-carte` DEPUIS LE 3/11 : sous la carte, pas dessus — voir
+   le commentaire sur son appel dans `Territoire2030.tsx`. Elle vit encore
+   sur le fond kaki (entre la carte et la feuille craie), d'où le même ton
+   clair que `.terr-vise-dire`. */
+.terr-propositions {
+  list-style: none; margin: 0; padding: var(--sp-1) var(--sp-2);
+  display: flex; flex-direction: column; gap: 4px;
+}
+.terr-propositions li {
+  display: flex; justify-content: space-between; gap: var(--sp-1);
+  font-size: var(--t-xs); color: var(--texte-inverse-doux);
+}
+.terr-proposition-nom { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 /* ═══ RÉGLAGES ═══════════════════════════════════════════════════════════
    ⭐ Une page de réglages est une page de COMPTES RENDUS : elle dit ce qui
       est vrai, y compris quand la réponse est « rien ». D'où très peu de
