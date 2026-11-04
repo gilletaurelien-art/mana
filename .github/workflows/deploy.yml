@@ -3,6 +3,19 @@ name: Deploy live
 on:
   push:
     branches: [main]
+  # 🔴 DÉCLENCHEUR MANUEL — 4/11/2026, après une soirée perdue à ça.
+  #    GitHub Pages a eu un hoquet : le build a réussi, l'artefact est monté,
+  #    et `deploy-pages` a expiré en attendant « updating_pages ». Rien de
+  #    notre côté à corriger — il fallait juste relancer.
+  # ⛔ ET « RELANCER » N'EXISTAIT PAS. Sans `workflow_dispatch`, le seul
+  #    déclencheur est un push : relancer l'exécution ÉCHOUÉE refait l'étape
+  #    de build, qui dépose un SECOND artefact `github-pages` — et
+  #    `deploy-pages` refuse alors d'en trouver deux (« Artifact count is
+  #    2 »). La reprise ne répare donc pas la panne, elle en ajoute une.
+  # ⭐ Le seul recours restant était un commit VIDE, dans un dépôt dont les
+  #    messages de commit sont la documentation. Une infrastructure dont le
+  #    rattrapage impose de salir l'historique n'a pas de rattrapage.
+  workflow_dispatch:
 
 permissions:
   contents: read
