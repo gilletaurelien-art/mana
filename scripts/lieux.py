@@ -37,9 +37,25 @@ REGLES = [
                              or t.get("building") == "bunker" or t.get("military") in ("bunker","naval_base")),
     ("phare",         lambda t: t.get("man_made") == "lighthouse"),
     ("moulin",        lambda t: t.get("man_made") in ("windmill","watermill") or t.get("historic") == "watermill"),
-    ("chapelle",      lambda t: t.get("building") == "chapel"),
-    ("eglise",        lambda t: t.get("building") in ("church","cathedral")),
-    ("lieu_de_culte", lambda t: t.get("amenity") == "place_of_worship"),
+    # 🔴 UNE SEULE RÈGLE POUR LES TROIS — 5/11/2026, arbitrage du fondateur :
+    #    « rassemble au sein de lieux de culte les églises et chapelles ».
+    #    ⭐ Et la donnée disait déjà qu'ils n'en faisaient qu'un. Les trois
+    #       règles d'avant ne séparaient pas trois CHOSES, elles séparaient
+    #       trois ÉTIQUETAGES de la même chose : `lieu_de_culte` ne ramassait
+    #       que les dix objets portant `amenity=place_of_worship` SANS
+    #       `building=chapel|church` — et neuf d'entre eux s'appellent
+    #       « Chapelle Saint-Guénolé », « Église Notre-Dame de Rumengol »…
+    #       Le filtre offrait donc à l'usager trois boutons pour une seule
+    #       question, dont un dernier qui n'était que le reliquat des deux
+    #       autres. ⚠️ Une catégorie dont le sens est « les cas que les
+    #       règles précédentes n'ont pas pris » se lit de l'extérieur comme
+    #       une quatrième sorte d'objet.
+    #    ⚠️ ON GARDE LES TROIS CONDITIONS : fondre les règles, ce n'est pas
+    #       les supprimer. Tout objet `building=chapel` ne porte pas
+    #       `amenity=place_of_worship` — ne garder que la troisième ferait
+    #       SORTIR de l'inventaire des chapelles qui y sont aujourd'hui.
+    ("lieu_de_culte", lambda t: t.get("building") in ("chapel","church","cathedral")
+                             or t.get("amenity") == "place_of_worship"),
     ("calvaire",      lambda t: t.get("historic") == "wayside_cross" or t.get("man_made") == "cross"),
     ("plage",         lambda t: t.get("natural") == "beach"),
     ("grotte",        lambda t: t.get("natural") == "cave_entrance"),
@@ -65,7 +81,10 @@ REGLES = [
 
 LIBELLE = {
     "megalithe":"Mégalithe","archeologie":"Site archéologique","fortification":"Fortification",
-    "phare":"Phare","moulin":"Moulin","chapelle":"Chapelle","eglise":"Église",
+    "phare":"Phare","moulin":"Moulin",
+    # ⚠️ « chapelle » et « eglise » ont disparu d'ici le 5/11 avec leurs
+    #    règles — voir REGLES ci-dessus. Le nom de chaque édifice dit déjà
+    #    lequel c'est ; la CATÉGORIE n'avait pas à le redire en trois.
     "lieu_de_culte":"Lieu de culte","calvaire":"Calvaire","plage":"Plage","grotte":"Grotte",
     "cap":"Pointe","baie":"Baie","ile":"Île","rocher":"Rocher","fontaine":"Fontaine",
     "epave":"Épave","ruine":"Ruines","memoire":"Mémorial","musee":"Musée","oeuvre":"Œuvre",

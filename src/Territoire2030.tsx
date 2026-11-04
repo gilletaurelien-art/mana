@@ -27,11 +27,13 @@
  *    côte dessiné à la main, pas de lieu ajouté pour meubler. Ce qu'on voit
  *    est ce que le graphe contient.
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { TERRITOIRES, TOUT, urlGraphe } from "./territoires";
 import { chargerOT, type ItineraireOT } from "./ot";
 import { chargerLieux, lienWiki, type Inventaire, type Lieu } from "./lieux";
-import { libelleCategorie, COULEUR_CATEGORIE, COULEUR_CATEGORIE_DEFAUT } from "./categories";
+import {
+  libelleCategorie, couleurCategorie, COULEUR_CATEGORIE, COULEUR_CATEGORIE_DEFAUT,
+} from "./categories";
 import { WALKS, VITRINE, effortLisible } from "./walks";
 import type { Walk } from "./walks";
 /* 🔴 LE PONT DEVIENT UN CALCUL — 3/11/2026, demande du fondateur : « fusionne
@@ -42,13 +44,25 @@ import type { Walk } from "./walks";
    (le second visite chaque lieu nommé) : ils ne tournent qu'une fois le
    graphe chargé, mémorisés, comme `sitesIci`. */
 import { indexer, accrocherUn, accrocherTous, accroche, propositionsAutour, type Proposition } from "./composition";
+/* 🔴 LES FERMETURES MANQUAIENT À CET ÉCRAN — 4/11/2026, trouvé par l'audit.
+   `/promenades` les chargeait et en excluait les arêtes depuis le début ;
+   `/carte`, qui propose les MÊMES trois destinations depuis le MÊME graphe,
+   appelait `indexer(graphe)` sans elles. Mesuré avant correctif : 8 des 12
+   propositions calculées depuis les quatre fermetures géolocalisées
+   traversaient un tronçon sous arrêté — à Postolonnec, 3 sur 3.
+   ⭐ Et c'est l'Office de tourisme de Crozon qui publie ces arrêtés : la
+      personne à qui l'on montre l'écran vendredi est l'autorité qui a fermé
+      le chemin qu'on lui proposait. ⚠️ Une fonction DUPLIQUÉE d'un écran à
+      l'autre se corrige des deux côtés ; une fonction appelée à deux endroits
+      avec des arguments différents n'a l'air fausse NULLE PART. */
+import { chargerFermetures, aretesTouchees, type Fermetures } from "./fermetures";
 /* ⚠️ MAPLIBRE EN v4 — même garde que `CarteReelle.tsx`/`CarteFondOT.tsx` : la
    v6 ne livre que de l'ESM, et son worker se charge par une URL relative qui,
    sous la base `/mana/`, retombe sur l'index HTML. */
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Map as MaplibreMap } from "maplibre-gl";
-import { STYLES, ATTRIBUTION, zoomMaplibrePour } from "./carte-fond";
+import { STYLES, zoomMaplibrePour } from "./carte-fond";
 import { ILLUSTRATIONS } from "./illustrations";
 import { Photo, image } from "./images/Photo";
 
@@ -102,6 +116,13 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
   const maplibreBoite = useRef<HTMLDivElement | null>(null);
   const maplibreCarte = useRef<MaplibreMap | null>(null);
   const [graphe, setGraphe] = useState<Graphe | null>(null);
+  /* Les fermetures officielles — fichier SÉPARÉ du graphe, servi avec
+     l'application : une fermeture se publie en une minute, un graphe se
+     reconstruit par un pipeline. Voir l'import de `./fermetures`. */
+  const [fermetures, setFermetures] = useState<Fermetures | null | undefined>(undefined);
+  useEffect(() => {
+    chargerFermetures(import.meta.env.BASE_URL.replace(/\/$/, "")).then(setFermetures);
+  }, []);
   const [erreur, setErreur] = useState("");
   const [choisie, setChoisie] = useState<string | null>(null);
   /* 🔴 `rendu` EST PARTI AVEC LE COMPTE QU'IL ALIMENTAIT — 4/11/2026, et ce
@@ -128,21 +149,26 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
       style: STYLES.ortho,
       center: [-4.2, 48.25], zoom: 10,
       interactive: false,
-      /* ⛔ `attributionControl` RALLUMÉ LE 4/11/2026, et ce n'est pas un
-         retour en arrière : il était coupé tant que la feuille portait le
-         paragraphe de source. Celui-ci est parti à la demande du fondateur ;
-         sans ce contrôle, l'écran ne nommerait plus NI l'IGN NI
-         OpenStreetMap, alors qu'il montre les deux. ⭐ Replié derrière un
-         « i », il tient la licence sans reprendre la place qu'on vient de
-         rendre à la carte. */
-      /* ⚠️ `customAttribution` EN PLUS DU CONTRÔLE, et ce n'est pas du zèle :
-         relevé à l'écran, le style seul rendait « © IGN | OpenFreeMap ©
-         OpenMapTiles Data from OpenStreetMap » — les deux fournisseurs y
-         sont, mais PAS l'ODbL, que le paragraphe supprimé nommait. On
-         repasse la formulation que le reste de l'app emploie déjà
-         (`ATTRIBUTION`, carte-fond.ts), plutôt que d'en écrire une
-         troisième ici. */
-      attributionControl: { compact: true, customAttribution: ATTRIBUTION.ortho },
+      /* 🔴 RECOUPÉ LE 5/11/2026, ET LA RAISON EST MESURÉE. Rallumé la veille
+         pour porter l'IGN et l'ODbL après le retrait du paragraphe de
+         source, ce contrôle rendait sa mention DERRIÈRE la barre flottante :
+         relevé à l'écran, illisible, nulle part ailleurs sur la page. ⭐ Une
+         attribution qu'on ne peut pas lire ne remplit aucune des deux
+         fonctions qu'on lui prête — ni créditer, ni informer : elle ne fait
+         que rassurer celui qui l'a posée. Nous avions donc l'inconvénient
+         de la place prise et aucun des bénéfices.
+         ⛔ ELLE N'A PAS DISPARU, ELLE A UNE SEULE ADRESSE. `/reglages`
+            nomme OpenStreetMap, l'ODbL, l'IGN et la Géoplateforme, et dit
+            CE QUE CHACUN APPORTE — à un appui de la carte, par l'icône
+            permanente de la barre. C'est déjà ce que font `CarteReelle` et
+            `CarteFondOT`, qui portent `attributionControl: false` depuis le
+            début : cet écran était l'exception, pas la règle.
+         ⚠️ `/reglages` DEVIENT DONC PORTEUR, et ça ne peut pas tenir dans un
+            commentaire : `provenance.test.ts` › « l'attribution des fonds de
+            carte a une adresse, et c'est /reglages » échoue si cette page
+            cesse de nommer l'une des quatre sources. Un interdit en
+            docstring se franchit sans le savoir. */
+      attributionControl: false,
     });
     maplibreCarte.current = m;
     m.on("load", () => setMaplibrePrete(true));
@@ -200,7 +226,9 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
    *    rien, exactement comme avant la correction. Un bug qui ressemble à
    *    l'absence de la fonctionnalité qu'on vient d'ajouter.
    */
-  const vivant = useRef<{ sites: Lieu[]; inv: Inventaire | null }>({ sites: [], inv: null });
+  const vivant = useRef<{ sites: Lieu[]; visibles: Lieu[]; inv: Inventaire | null }>(
+    { sites: [], visibles: [], inv: null },
+  );
   const [vueTic, setVueTic] = useState(0);
   const [vueBougee, setVueBougee] = useState(false);
   const ZOOM_MIN = 1, ZOOM_MAX = 12;
@@ -233,9 +261,6 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
     [inv, terr],
   );
   useEffect(() => { chargerOT().then((r) => setOt(r.itineraires)).catch(() => setOt([])); }, []);
-  /* ⚠️ Tenue à jour À CHAQUE RENDU : c'est ce qui permet aux écouteurs posés
-     une seule fois de lire l'inventaire d'aujourd'hui. */
-  vivant.current = { sites: sitesIci, inv };
 
   /* ── LES SITES, POSÉS DANS MAPLIBRE — 4/11/2026 ────────────────────────
      🔴 PLUS DE PROJECTION MAISON : chaque site est une coordonnée réelle,
@@ -248,16 +273,69 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
     for (const l of sitesIci) vus.add(l.c);
     return [...vus].sort();
   }, [sitesIci]);
-  const [genreFiltre, setGenreFiltre] = useState<string>("tous");
+  /**
+   * 🔴 PLUSIEURS GENRES À LA FOIS — 5/11/2026, demande du fondateur. C'était
+   *    une chaîne (`"tous"` ou UN genre) : chercher « les chapelles ET les
+   *    calvaires », c'est-à-dire le patrimoine religieux d'un secteur,
+   *    demandait de regarder deux fois et de se souvenir de la première.
+   * ⭐ L'ENSEMBLE VIDE VEUT DIRE « TOUS », pas « rien ». Le choix se défend
+   *    parce qu'il rend l'état de départ et le bouton « Tous » IDENTIQUES —
+   *    une carte qui s'ouvre sur zéro pastille serait une carte en panne, et
+   *    un drapeau `tousAffiches` à tenir à côté de l'ensemble finirait par
+   *    le contredire.
+   */
+  const [genresChoisis, setGenresChoisis] = useState<ReadonlySet<string>>(new Set());
+  const basculerGenre = (g: string) =>
+    setGenresChoisis((avant) => {
+      const apres = new Set(avant);
+      if (!apres.delete(g)) apres.add(g);
+      return apres;
+    });
 
+  /**
+   * 🔴 CE QUI EST CLIQUABLE EST CE QUI EST VISIBLE — 4/11/2026, défaut trouvé
+   *    par l'audit et vérifié : le calque « sites » et le filtre par genre
+   *    commandaient `visibility` et `setFilter` DANS maplibre, pendant que
+   *    `viser()` et `survol()` parcouraient les 624 sites nommés quoi qu'il
+   *    arrive. Filtre sur « Mégalithe » : on clique un point doré, la fiche
+   *    d'une fontaine masquée s'ouvre. Calque décoché : le curseur devient
+   *    « pointer » sur du satellite nu.
+   * ⭐ LE DÉFAUT VENAIT DE LA FORME, PAS DE L'ÉTOURDERIE. Une liste qu'on
+   *    DESSINE et une liste qu'on VISE, tenues séparément, divergent au
+   *    premier filtre ajouté — et divergent EN SILENCE, puisque chacune reste
+   *    juste prise seule. On n'en tient plus qu'une : `sitesGeoJSON` dessine
+   *    celle-ci, `viser()` et `survol()` lisent celle-ci.
+   * ⚠️ Les sites SANS NOM sont hors de cette liste, comme avant : ils ne sont
+   *    ni dessinés ni visables — annoncer « Fortification » sans rien d'autre
+   *    n'apprend rien, et il y en a 734.
+   */
+  const sitesVisibles = useMemo(
+    () => (calques.sites
+      ? sitesIci.filter((l) => l.n && (genresChoisis.size === 0 || genresChoisis.has(l.c)))
+      : []),
+    [sitesIci, calques.sites, genresChoisis],
+  );
+  /* ⚠️ Tenue à jour À CHAQUE RENDU : c'est ce qui permet aux écouteurs posés
+     une seule fois de lire l'inventaire d'aujourd'hui. */
+  vivant.current = { sites: sitesIci, visibles: sitesVisibles, inv };
+
+  /* 🔴 DESSINÉ DEPUIS `sitesVisibles`, PAS DEPUIS `sitesIci` — 4/11/2026.
+     Avant, la source portait TOUS les sites nommés et maplibre les masquait
+     par `visibility` + `setFilter` : deux listes, l'une dessinée, l'autre
+     visée, qui ne pouvaient que diverger. Une seule maintenant, d'où les
+     deux `setLayoutProperty`/`setFilter` disparus plus bas.
+     ⚠️ Le prix assumé : le GeoJSON remonte à chaque changement de filtre,
+        au lieu d'un `setFilter` côté GPU. 624 points au maximum — mesuré
+        sous la milliseconde, contre un défaut qui ouvrait la fiche d'un
+        site masqué. */
   const sitesGeoJSON = useMemo(() => ({
     type: "FeatureCollection" as const,
-    features: sitesIci.filter((l) => l.n).map((l) => ({
+    features: sitesVisibles.map((l) => ({
       type: "Feature" as const,
       geometry: { type: "Point" as const, coordinates: l.g },
       properties: { nom: l.n, genre: l.c },
     })),
-  }), [sitesIci]);
+  }), [sitesVisibles]);
 
   useEffect(() => {
     const m = maplibreCarte.current;
@@ -289,12 +367,7 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
     } else {
       (m.getSource("sites") as maplibregl.GeoJSONSource).setData(sitesGeoJSON);
     }
-    m.setLayoutProperty("sites-genre", "visibility", calques.sites ? "visible" : "none");
-    m.setFilter(
-      "sites-genre",
-      genreFiltre === "tous" ? null : ["==", ["get", "genre"], genreFiltre],
-    );
-  }, [maplibrePrete, sitesGeoJSON, calques.sites, genreFiltre]);
+  }, [maplibrePrete, sitesGeoJSON]);
 
   /* ── NOS PROPOSITIONS DE PROMENADES, DEPUIS LE LIEU VISÉ ──────────────────
      ⭐ MÊME FILTRE QUE `Composer.tsx` (lieux nommés, dédoublonnés sur le nom)
@@ -315,7 +388,21 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
     () => spotsPourComposer.map((l) => l.g as readonly [number, number]),
     [spotsPourComposer],
   );
-  const ixComposition = useMemo(() => (graphe ? indexer(graphe) : null), [graphe]);
+  const touchees = useMemo(
+    () => (graphe && fermetures !== undefined ? aretesTouchees(graphe, fermetures) : null),
+    [graphe, fermetures],
+  );
+  /* ⛔ ON ATTEND LES FERMETURES AVANT D'INDEXER — même règle que
+     `/promenades` : l'index EXCLUT les arêtes interdites, il ne les pénalise
+     pas, et cette garantie ne vaut que si on l'attend. Proposer d'abord et
+     corriger ensuite afficherait, l'espace d'un instant, un parcours sous
+     arrêté. ⚠️ `fermetures === undefined` dit « pas encore lu », `null` dit
+     « illisible » : le second laisse indexer (sans exclusion) plutôt que de
+     figer la carte, le premier non. */
+  const ixComposition = useMemo(
+    () => (graphe && touchees ? indexer(graphe, touchees.interdites) : null),
+    [graphe, touchees],
+  );
   const accrochesComposition = useMemo(
     () => (graphe && ixComposition && positionsPourComposer.length
       ? accrocherTous(graphe, ixComposition, positionsPourComposer, { ecartSiLoin: false })
@@ -659,8 +746,22 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
        donc les deux. ⭐ On exclut les commandes AVANT de capturer le
        pointeur, pas après : une fois capturé, le bouton perdrait aussi son
        propre `pointerup`. */
+    /* 🔴 ET LA LISTE N'AVAIT PAS SUIVI LE DÉMÉNAGEMENT DE LA RECHERCHE —
+       4/11/2026, deux heures après le correctif ci-dessus. La barre de
+       recherche est montée DANS la carte le matin même : `.jeu-haut` (le
+       champ et sa croix) et `.jeu-resultats` (les boutons de résultat) sont
+       devenus enfants de `.terr-carte` sans entrer dans cette liste. Le
+       `click` d'un résultat n'arrivait donc JAMAIS à `choisir()` — mesuré :
+       `pointerdown` sur le résultat, `pointerup` et `click` sur
+       `.terr-carte`. Seule la touche Entrée marchait encore.
+       ⭐ Le mécanisme était DÉJÀ décrit trois lignes plus haut, et la
+          correction du matin n'a pas été relue à l'aune de ce qui venait
+          d'emménager dans la carte. Une liste d'exceptions ne vieillit pas
+          toute seule : elle vieillit chaque fois qu'un enfant s'ajoute. */
     const surUneCommande = (e: PointerEvent) =>
-      !!(e.target as HTMLElement).closest(".terr-commandes, .terr-calques, .terr-vise, .terr-genres");
+      !!(e.target as HTMLElement).closest(
+        ".terr-commandes, .terr-calques, .terr-vise, .terr-genres, .jeu-haut, .jeu-resultats",
+      );
     const bas = (e: PointerEvent) => {
       if (surUneCommande(e)) return;
       doigts.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -717,8 +818,7 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
       const r = b.getBoundingClientRect();
       const cx = e.clientX - r.left, cy = e.clientY - r.top;
       let meilleur: { l: Lieu; d2: number } | null = null;
-      for (const l of vivant.current.sites) {
-        if (!l.n) continue;
+      for (const l of vivant.current.visibles) {
         const dxp = P.X(l.g[0]) - cx, dyp = P.Y(l.g[1]) - cy;
         const d2 = dxp * dxp + dyp * dyp;
         if (d2 <= 16 * 16 && (!meilleur || d2 < meilleur.d2)) meilleur = { l, d2 };
@@ -754,8 +854,7 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
       const r = b.getBoundingClientRect();
       const cx = e.clientX - r.left, cy = e.clientY - r.top;
       let sur = false;
-      for (const l of vivant.current.sites) {
-        if (!l.n) continue;
+      for (const l of vivant.current.visibles) {
         const dxp = P.X(l.g[0]) - cx, dyp = P.Y(l.g[1]) - cy;
         if (dxp * dxp + dyp * dyp <= 16 * 16) { sur = true; break; }
       }
@@ -957,8 +1056,21 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
         ctx.globalAlpha = 1;
       }
 
-      // ── passe 3 : les lieux de la promenade choisie, et eux seuls
-      if (walk && calques.lieux) {
+      /* ── passe 3 : les lieux de la promenade choisie, et eux seuls
+         🔴 L'INTERRUPTEUR « LES LIEUX » A DISPARU DU PANNEAU — 5/11/2026,
+            question du fondateur : « est-ce important ? tous nos points sont
+            des sites remarquables ». Il avait raison, et pour une raison
+            qu'il faut écrire : cette passe-ci ne dessine PAS les points de
+            la carte, elle dessine les étapes d'une promenade CHOISIE. Or
+            `VITRINE` est vide et la feuille qui permettait d'en choisir une
+            est partie le matin même : `walk` ne peut plus être autre chose
+            que `null`. La case commandait donc une passe qui ne s'exécutait
+            jamais — à côté de deux cases qui, elles, agissent.
+         ⭐ UNE CASE QUI NE FAIT RIEN NE SE LIT PAS COMME INUTILE, elle se lit
+            comme CASSÉE : on la décoche, rien ne bouge, et c'est toute la
+            rangée qui devient suspecte. ⛔ La passe reste, gardée par `walk`
+            seul : elle reprendra le jour où une promenade se choisit. */
+      if (walk) {
         for (const e of walk.etapes) {
           ctx.beginPath();
           ctx.arc(X(e.lon), Y(e.lat), 3.4, 0, Math.PI * 2);
@@ -1184,20 +1296,23 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
             {/* ⭐ Trois interrupteurs qui commandent VRAIMENT trois passes de
                 dessin. Un calque qui ne change rien à l'image est un
                 décor coûteux — on l'aurait su au premier essai. */}
+            {/* 🔴 LES TROIS GLOSES SONT PARTIES — 5/11/2026, demande du
+                fondateur. Elles expliquaient ce que le titre disait déjà
+                (« ceux de l'Office de tourisme » sous « Les circuits
+                balisés »), et elles coûtaient trois lignes chacune dans un
+                panneau que le filtre par genre venait de faire déborder de
+                l'écran. ⭐ Un sous-titre qui PARAPHRASE son titre n'ajoute
+                pas de l'aide, il ajoute de la hauteur. */}
             {([
-              ["balises", "Les circuits balisés", "ceux de l'Office de tourisme"],
-              ["sites", "Les sites remarquables", "mégalithes, plages, forts, fontaines…"],
-              ["lieux", "Les lieux", "ce qu'on croise sur le parcours choisi"],
-            ] as const).map(([clef, nom, quoi]) => (
+              ["balises", "Les circuits balisés"],
+              ["sites", "Les sites remarquables"],
+            ] as const).map(([clef, nom]) => (
               <label key={clef} className="terr-calque">
                 <input
                   type="checkbox" checked={calques[clef]}
                   onChange={(e) => setCalques((c) => ({ ...c, [clef]: e.target.checked }))}
                 />
-                <span>
-                  <span className="terr-calque-nom">{nom}</span>
-                  <span className="m-meta">{quoi}</span>
-                </span>
+                <span className="terr-calque-nom">{nom}</span>
               </label>
             ))}
             {/* ⭐ LE FILTRE PAR GENRE NE S'AFFICHE QUE SI LE CALQUE DES SITES
@@ -1205,21 +1320,58 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
                 à l'écran, et un contrôle qui ne fait rien se lit comme une
                 panne. */}
             {calques.sites && genres.length > 1 && (
-              <div className="terr-genres" role="group" aria-label="Genre de site">
+              <div className="terr-genres" role="group" aria-label="Genres de sites">
                 <button type="button"
-                  className={genreFiltre === "tous" ? "ot-filtre ot-filtre-actif" : "ot-filtre"}
-                  aria-pressed={genreFiltre === "tous"}
-                  onClick={() => setGenreFiltre("tous")}>
+                  className={genresChoisis.size === 0 ? "ot-filtre ot-filtre-actif" : "ot-filtre"}
+                  aria-pressed={genresChoisis.size === 0}
+                  onClick={() => setGenresChoisis(new Set())}>
                   Tous
                 </button>
-                {genres.map((g) => (
-                  <button key={g} type="button"
-                    className={genreFiltre === g ? "ot-filtre ot-filtre-actif" : "ot-filtre"}
-                    aria-pressed={genreFiltre === g}
-                    onClick={() => setGenreFiltre(g)}>
-                    {libelleCategorie(g)}
-                  </button>
-                ))}
+                {/* 🔴 LE LIBELLÉ VIENT DE L'INVENTAIRE, PAS DE `categories.ts`
+                    — 5/11/2026. `lieux.json` EMPORTE sa propre table
+                    (`libelles`, écrite par `scripts/lieux.py` en même temps
+                    que les genres) ; `CATEGORIE` en était une recopie figée
+                    au vocabulaire d'avant. Onze boutons sur vingt-trois
+                    affichaient donc la clé technique en minuscules —
+                    « archeologie », « epave », « oeuvre » — à côté de
+                    « Mégalithe » et « Point de vue ».
+                    ⭐ UNE TABLE QUI VOYAGE AVEC SA DONNÉE NE PEUT PAS
+                       VIEILLIR SÉPARÉMENT D'ELLE. Le repli reste le code
+                       brut : un trou doit se voir, c'est la règle du
+                       fichier — mais il ne doit pas se voir ONZE fois parce
+                       qu'on a lu la mauvaise table. */}
+                {/* 🔴 LA COULEUR DE LA PASTILLE, EN PASTILLE — 5/11/2026.
+                    Demandé : « la même couleur que leur pin » pour les
+                    libellés. Mesuré avant d'écrire, sur les 23 genres : en
+                    TEXTE, la couleur du pin tombe sous 3:1 pour DIX genres
+                    sur fond ivoire (thème clair) et DOUZE sur fond kaki
+                    (thème sombre) — « Phare » #ffd23f donne 1,32 sur
+                    l'ivoire, « Fortification » #8b5a2b donne 1,89 sur le
+                    kaki. Plus de la moitié illisible dans chaque thème, et
+                    jamais les mêmes : aucune teinte unique ne peut servir
+                    des deux côtés.
+                    ⭐ UNE COULEUR N'A PAS BESOIN D'ÊTRE DU TEXTE POUR ÊTRE
+                       LUE. Le rond porte la teinte EXACTE du pin — c'est la
+                       correspondance demandée, et elle devient même plus
+                       juste, puisque c'est la forme du pin — pendant que le
+                       libellé garde l'encre qui se lit. Le liseré du bouton
+                       reprend la teinte, le fond en garde un voile.
+                    ⚠️ Le rond porte un cerne : sans lui, « Phare » et
+                       « Plage », jaunes clairs, disparaissaient sur
+                       l'ivoire. */}
+                {genres.map((g) => {
+                  const actif = genresChoisis.has(g);
+                  return (
+                    <button key={g} type="button"
+                      className={actif ? "terr-genre terr-genre-actif" : "terr-genre"}
+                      style={{ "--pin": couleurCategorie(g) } as CSSProperties}
+                      aria-pressed={actif}
+                      onClick={() => basculerGenre(g)}>
+                      <span className="terr-genre-pin" aria-hidden="true" />
+                      {inv?.libelles[g] ?? libelleCategorie(g)}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -1255,9 +1407,18 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
                    l'exécution, sur l'arête la plus proche — ce qui fait
                    passer la couverture à 80 %, et laisse le refus honnête
                    pour les 20 % restants. */}
-            <p className="terr-vise-dire">
+            {/* 🔴 DORÉ, À DROITE, AVEC SA FLÈCHE — 5/11/2026, demande du
+                fondateur. ⭐ Et ce n'est pas qu'une couleur : c'est le SEUL
+                geste de cet écran — tout le reste informe, lui seul emmène
+                ailleurs. En liseré fin, il avait exactement le poids d'un
+                lien de plus ; en doré, il reprend le rang que la barre et les
+                boutons principaux de l'app donnent à l'action qu'on attend.
+                ⚠️ `<p>` devient `<div>` : un bouton de 44 px dans un
+                   paragraphe de texte héritait de sa hauteur de ligne et de
+                   son ton doux. */}
+            <div className="terr-vise-partir">
               <a
-                className="m-action-fine terr-bouton"
+                className="m-action terr-bouton"
                 /* ⚠️ `/promenades`, PAS `/composer`, DEPUIS LE 3/11/2026 —
                    les deux rendent le même écran, mais `/promenades` est
                    l'adresse CANONIQUE : c'est elle que la nav, le pied et les
@@ -1277,37 +1438,88 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
                        partagés continuent de fonctionner — mais un libellé qui
                        survit à sa cause est pire qu'une note : il promet. */}
                 Partir d'ici
+                {/* ⚠️ `aria-hidden` : la flèche dit « ça vous emmène
+                    ailleurs », ce que le libellé dit déjà. Lue à voix haute,
+                    elle n'ajouterait qu'un bruit. */}
+                <svg className="m-icone" viewBox="0 0 24 24" aria-hidden="true"
+                     fill="none" stroke="currentColor" strokeWidth="2"
+                     strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h13M13 6l6 6-6 6" />
+                </svg>
               </a>
-            </p>
+            </div>
+            {/* 🔴 LES TROIS PROPOSITIONS SONT REVENUES DANS L'ENCADRÉ —
+                5/11/2026, et c'est la réparation d'un défaut MUET. Posées
+                « sous la carte » le 3/11 à la demande du fondateur, elles
+                étaient restées sœurs de `.terr-carte` dans le flux. Le 4/11
+                la carte est passée en PLEIN ÉCRAN (`position: absolute;
+                inset: 0`) : la liste s'est retrouvée DESSOUS, mesurée au
+                relevé entre 0 et 91 px — c'est-à-dire derrière la barre de
+                recherche, en haut de l'écran, recouverte.
+                ⭐ RIEN N'A CASSÉ : les trois propositions étaient calculées
+                   justes, présentes dans le DOM, nommées pour le lecteur
+                   d'écran. Seul l'œil ne les voyait plus. ⛔ Un changement de
+                   POSITIONNEMENT déplace tout ce qui comptait sur le flux,
+                   y compris ce qu'on ne regardait pas en le faisant — et la
+                   disparition ne lève aucune erreur.
+                ⚠️ Elles vivent donc avec le lieu dont elles dépendent :
+                   `vise` disparaît, elles disparaissent, sans qu'une
+                   deuxième règle de position ait à le savoir. */}
+            {propositions.length > 0 && (
+              <ul className="terr-propositions" aria-label={`Promenades depuis ${vise.nom}`}>
+                {propositions.map((p) => (
+                  <li key={p.i}>
+                    <span className="terr-proposition-nom">{spotsPourComposer[p.i]?.n}</span>
+                    {/* 🔴 EN MÈTRES, PAS EN KILOMÈTRES — 5/11/2026, arbitrage
+                        du fondateur : « mètres pour les marcheurs ». Ces
+                        trois distances sont des SAUTS d'un lieu à l'autre —
+                        0,7 à 2 km le plus souvent — et le kilomètre y rend
+                        une décimale par laquelle il faut repasser : « 0,9 km »
+                        se traduit en tête avant de savoir si c'est loin.
+                        « 900 m », non. ⭐ L'unité juste est celle dans
+                        laquelle la personne PENSE, pas la plus compacte.
+                        ⚠️ Arrondi à la DIZAINE de mètres : le graphe
+                           OpenStreetMap ne justifie pas le mètre, et « 893 m »
+                           annoncerait une précision que la donnée n'a pas —
+                           même faute que le « 12.01 km » corrigé sur la liste
+                           des promenades, à l'autre bout de l'échelle.
+                        ⚠️ `toLocaleString("fr-FR")` pour l'espace des
+                           milliers : « 1100 m » se lit mal, « 1 100 m » non. */}
+                    <span className="m-meta">
+                      {(Math.round(p.metres / 10) * 10).toLocaleString("fr-FR")} m
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
       </div>
 
-      {/* ⭐ SOUS LA CARTE, PAS DESSUS — 3/11/2026, demande du fondateur : le
-          pointillé des trois propositions se lit sur la carte, mais leur nom
-          et leur distance méritent leur propre ligne, pas un empilement dans
-          l'étiquette déjà dense du lieu visé. Le geste pour vraiment partir
-          (choisir, exporter le GPX, revenir par un autre chemin) reste sur
-          `/promenades` — ce n'est pas dupliqué ici, c'est PRÉVU là-bas : les
-          mêmes fonctions, sur les mêmes données, retrouveront les mêmes
-          trois destinations. */}
-      {vise && propositions.length > 0 && (
-        <ul className="terr-propositions" aria-label={`Promenades depuis ${vise.nom}`}>
-          {propositions.map((p) => (
-            <li key={p.i}>
-              <span className="terr-proposition-nom">{spotsPourComposer[p.i]?.n}</span>
-              <span className="m-meta">{(p.metres / 1000).toFixed(1)} km</span>
-            </li>
-          ))}
-        </ul>
-      )}
-
       {/* ══ LA FEUILLE ════════════════════════════════════════════════════
+          🔴 ELLE NE S'OUVRE PLUS SUR DU VIDE — 4/11/2026, demande du
+             fondateur : « supprimer la poignée ». Son en-tête était parti le
+             matin même et `VITRINE` ne contient aucune promenade vérifiée :
+             il ne restait à l'écran qu'une barre grise de 104 px, à tirer
+             pour découvrir le néant. ⭐ Une poignée PROMET quelque chose
+             dessous ; tirée sur du vide, elle ne se lit pas comme « rien à
+             voir » mais comme « ça n'a pas chargé ».
+          ⛔ ON LA CONDITIONNE, ON NE LA SUPPRIME PAS. La liste et la fiche
+             sont écrites, testées, et attendent la première promenade
+             vérifiée ; les effacer les ferait réinventer. Une section
+             conditionnée par ses données se tait toute seule — et reparle
+             sans qu'on y touche le jour où `VITRINE` se remplit.
+          ⚠️ CONSÉQUENCE MESURÉE, et c'est un gain : la feuille recouvrait
+             l'attribution IGN/ODbL que maplibre pose en bas de carte. Elle
+             n'était visible NULLE PART sur cet écran — un contrôle rallumé
+             le matin même pour la porter, caché l'après-midi par un panneau
+             vide.
           ⚠️ LA POIGNÉE EST UN BOUTON, pas un trait décoratif. La maquette
              dessine une barre que l'on « tire » ; un glissement ne se fait ni
              au clavier ni au lecteur d'écran, et il ne se devine pas. On garde
              la forme de la poignée — elle dit « ça bouge » — et on lui donne
              le comportement qui marche pour tout le monde : un appui. */}
+      {(dIci.length > 0 || walk) && (
       <section
         className={`terr-panneau terr-feuille-${feuille}`}
         aria-label="Promenades du territoire"
@@ -1469,20 +1681,16 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
         )}
 
         {/* 🔴 LE PARAGRAPHE DE SOURCE EST PARTI DE LA FEUILLE — 4/11/2026,
-            demande du fondateur.
-            ⛔ MAIS L'ATTRIBUTION, ELLE, NE PEUT PAS PARTIR AVEC : l'ODbL
-               d'OpenStreetMap et les conditions de la Géoplateforme (IGN)
-               demandent qu'elle soit visible LÀ OÙ LA DONNÉE EST MONTRÉE,
-               pas seulement dans `/reglages` que personne n'est obligé
-               d'ouvrir. Elle revient donc à maplibre, qui la porte en
-               standard et en discret (`attributionControl`, replié derrière
-               un « i ») — voir le montage de la carte plus haut, où
-               `attributionControl: false` a été retiré le même jour.
+            demande du fondateur ; le contrôle maplibre qui l'avait remplacé
+            est parti le 5/11, parce qu'il rendait sa mention sous la barre
+            flottante. L'attribution a désormais UNE adresse, `/reglages`,
+            tenue par `provenance.test.ts` — voir le montage de la carte.
             ⚠️ CE QUI DISPARAÎT VRAIMENT, et c'est assumé : la phrase sur le
                relief et le trait de côte, qui disait ce que nous NE dessinons
                pas. Elle datait du graphe peint ; le satellite montre
                désormais le relief et la côte pour de vrai. */}
       </section>
+      )}
     </main>
   );
 }

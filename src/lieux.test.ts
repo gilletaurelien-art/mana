@@ -124,9 +124,15 @@ describe("viser un lieu sur la carte du territoire", () => {
    *    rendu — et le défaut serait MUET : un clic qui ne fait rien, exactement
    *    comme avant qu'on ajoute la fonction.
    */
+  /* 🔴 RETOURNÉ LE 5/11/2026, PAS SUPPRIMÉ. Le `ref` porte désormais une
+     TROISIÈME clé, `visibles` — la liste réellement dessinée — et c'est elle
+     que le pointage parcourt depuis qu'un clic pouvait ouvrir la fiche d'un
+     site masqué par le filtre. La règle que ce test protège n'a pas bougé
+     d'un pouce : le gestionnaire posé une seule fois doit lire l'inventaire
+     D'AUJOURD'HUI. Seul l'endroit où il le lit a changé. */
   it("le pointage lit l'inventaire d'aujourd'hui, pas celui du premier rendu", () => {
-    expect(src).toMatch(/vivant\.current = \{ sites: sitesIci, inv \}/);
-    expect(src).toMatch(/for \(const l of vivant\.current\.sites\)/);
+    expect(src).toMatch(/vivant\.current = \{ sites: sitesIci, visibles: sitesVisibles, inv \}/);
+    expect(src).toMatch(/for \(const l of vivant\.current\.visibles\)/);
   });
 
   /**
@@ -140,13 +146,45 @@ describe("viser un lieu sur la carte du territoire", () => {
    *    vérifié — c'est « la règle qui gagne » transposée au découpage de
    *    source. La fenêtre s'arrête donc à `const survol`.
    */
-  it("ne vise que les lieux nommés", () => {
-    const viser = src.slice(src.indexOf("const viser ="), src.indexOf("const survol ="));
-    expect(viser.length, "la fenêtre de lecture est vide").toBeGreaterThan(200);
-    expect(viser).not.toContain("const survol");
-    expect(viser).toMatch(/if \(!l\.n\) continue/);
+  /* 🔴 RETOURNÉ LE 5/11/2026 — ET LA RAISON VAUT D'ÊTRE DITE. Le filtre
+     `if (!l.n) continue` a quitté `viser()` et `survol()` : il est remonté
+     dans `sitesVisibles`, le memo qui alimente À LA FOIS le GeoJSON dessiné
+     par maplibre et la liste parcourue au clic. Ce n'est pas une
+     réécriture de confort — c'est la correction d'un défaut mesuré : les
+     deux listes étant tenues séparément, le filtre par genre masquait les
+     pastilles sans rien changer aux cibles, et on ouvrait la fiche d'un
+     site invisible.
+     ⭐ LE TEST SUIT LA RÈGLE, PAS SA LIGNE. « Les lieux sans nom ne sont pas
+        visables » est toujours vrai ; il se vérifie maintenant à l'endroit
+        unique qui le décide, et le test exige EN PLUS que les deux
+        consommateurs lisent bien cette liste-là — ce que l'ancienne forme ne
+        pouvait pas demander, puisqu'il n'y avait pas de liste unique. */
+  it("ne vise que les lieux nommés, et les deux lecteurs lisent la même liste", () => {
+    expect(src).toMatch(/const sitesVisibles = useMemo\(/);
+    const visibles = src.slice(
+      src.indexOf("const sitesVisibles = useMemo("),
+      src.indexOf("vivant.current = {"),
+    );
+    expect(visibles.length, "la fenêtre de lecture est vide").toBeGreaterThan(80);
+    expect(visibles).toMatch(/l\.n &&/);
+
+    // ⛔ ET LES DEUX CONSOMMATEURS, NOMMÉMENT. Un seul d'entre eux relié à
+    //    `sitesVisibles` laisserait exactement le défaut du 4/11 : dessiné
+    //    d'un côté, visé de l'autre.
+    expect(src, "le GeoJSON dessiné doit venir de sitesVisibles")
+      .toMatch(/features: sitesVisibles\.map/);
+    expect(
+      src.match(/for \(const l of vivant\.current\.visibles\)/g)?.length,
+      "viser() ET survol() doivent parcourir la liste visible",
+    ).toBe(2);
+
     // ⭐ et le PLUS PROCHE, jamais le premier trouvé : sur la presqu'île les
     //    sites se touchent, et « le premier » dépend de l'ordre du fichier.
+    //    ⚠️ Fenêtre arrêtée à `const survol` : lui aussi parcourt les sites,
+    //       et un garde dont la fenêtre contient un second bloc semblable ne
+    //       peut pas dire lequel il a vérifié (défaut vécu sur ce test même).
+    const viser = src.slice(src.indexOf("const viser ="), src.indexOf("const survol ="));
+    expect(viser).not.toContain("const survol");
     expect(viser).toMatch(/d2 < meilleur\.d2/);
   });
 

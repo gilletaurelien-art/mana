@@ -961,11 +961,32 @@
   background: var(--fond-surelevé); border-radius: var(--r-m);
   box-shadow: var(--ombre-levee); padding: var(--sp-2);
   display: flex; flex-direction: column; gap: var(--sp-2); max-width: 15rem;
+  /* 🔴 IL DÉBORDAIT DE L'ÉCRAN — mesuré le 5/11 : 933 px de panneau dans une
+     fenêtre de 763, soit les trois interrupteurs du haut poussés HORS du
+     cadre, et la page entière devenue défilable sous une carte qui, elle,
+     est plein écran. Le panneau tenait tant qu'il portait trois cases ; le
+     filtre lui a ajouté vingt-deux pastilles le jour même.
+     ⭐ UN PANNEAU QUI GRANDIT AVEC SA DONNÉE DOIT BORNER SA HAUTEUR LE JOUR
+        OÙ IL EST ÉCRIT, pas le jour où il déborde — vingt-trois genres
+        aujourd'hui, et la moisson en produira d'autres. Ici la borne se
+        calcule : ce qui reste sous le bouton qui l'ouvre, au-dessus de la
+        barre flottante. */
+  max-height: calc(
+    100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)
+    - 52px - var(--barre-espace, 108px) - var(--sp-4)
+  );
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  /* ⚠️ Le défilement du panneau ne doit pas entraîner la carte dessous :
+     sans ça, arriver en bas de la liste continue en déplaçant le
+     territoire. */
+  overscroll-behavior: contain;
 }
+/* ⚠️ `align-items: center` DEPUIS LE 5/11 : la case s'alignait sur le haut
+   parce que le libellé faisait deux lignes (titre + glose). La glose partie,
+   le `start` laissait la case flotter au-dessus d'un texte d'une ligne. */
 .terr-calque { display: grid; grid-template-columns: auto 1fr; gap: var(--sp-1);
-               align-items: start; cursor: pointer; color: var(--texte); }
-.terr-calque input { margin-top: 3px; accent-color: var(--ocre); }
-.terr-calque span { display: flex; flex-direction: column; }
+               align-items: center; cursor: pointer; color: var(--texte); }
+.terr-calque input { accent-color: var(--ocre); }
 .terr-calque-nom { font-size: var(--t-s); }
 /* ── le filtre par genre de site — 4/11/2026 ───────────────────────────── */
 /* ── la recherche, en tête de la carte — 4/11/2026 ──────────────────────
@@ -985,13 +1006,97 @@
   display: flex; flex-wrap: wrap; gap: 6px;
   padding-top: var(--sp-1); border-top: 1px solid var(--bulle-trait);
 }
+/* 🔴 L'ENCRE DES FILTRES, EN TOUTES LETTRES — 5/11/2026, demande du
+   fondateur : « afficher en noir les options ». Elles étaient illisibles, et
+   la cause n'était pas une couleur mal choisie mais une couleur NON CHOISIE :
+   `.ot-filtre` porte `color: inherit`, écrit pour la liste de
+   `/balades-office` où l'ancêtre est craie sur sombre. Déployé dans
+   `.terr-calques` — un panneau IVOIRE posé sur la carte — `inherit` remonte
+   jusqu'à `.terr { color: var(--craie) }` et rend de la craie sur de
+   l'ivoire : les vingt-trois genres étaient peints, et invisibles.
+   ⭐ `inherit` N'EST PAS UNE VALEUR NEUTRE, c'est une DÉLÉGATION — elle
+      change de réponse quand le composant change de parent. Un composant
+      qu'on déménage emporte ses règles, pas son contexte.
+   ⚠️ Le bouton « Tous » garde `.ot-filtre` : il ne désigne aucun genre, donc
+      aucune couleur de pastille ne lui revient. */
+.terr-genres .ot-filtre { color: var(--texte); border-color: var(--trait); }
 
+/* ── une pastille de filtre PORTE la couleur de son genre ──────────────────
+   🔴 5/11/2026, demande du fondateur : « la même couleur que leur pin ».
+      Portée par le ROND, pas par les lettres — mesuré sur les 23 genres, la
+      teinte du pin en texte passe sous 3:1 pour dix d'entre eux sur l'ivoire
+      du thème clair et douze sur le kaki du thème sombre, et jamais les
+      mêmes : « Phare » (#ffd23f) donne 1,32 sur l'ivoire, « Fortification »
+      (#8b5a2b) donne 1,89 sur le kaki. Une teinte choisie pour se détacher
+      d'une PHOTO SATELLITE n'a aucune raison de se détacher aussi d'un
+      panneau d'interface — ce sont deux fonds, deux contraintes.
+   ⭐ La correspondance demandée est donc rendue EXACTEMENT, et par la forme
+      même du pin ; `--pin` est posée en ligne par le JSX depuis
+      `couleurCategorie()`, la table que la carte lit déjà. Une seule source,
+      deux rendus. */
+.terr-genre {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 36px; padding: 0 var(--sp-2);
+  font: inherit; font-size: var(--t-xs); cursor: pointer;
+  color: var(--texte);
+  background: color-mix(in srgb, var(--pin) 10%, var(--fond-surelevé));
+  border: 1px solid color-mix(in srgb, var(--pin) 55%, transparent);
+  border-radius: var(--r-rond);
+}
+/* ⚠️ LE CERNE N'EST PAS UNE FINITION. Sans lui, « Phare » et « Plage » —
+   jaunes clairs — rendaient un rond invisible sur l'ivoire : la couleur
+   était juste, et on ne la voyait pas. Il suit l'encre, donc il tient dans
+   les deux thèmes. */
+.terr-genre-pin {
+  width: 10px; height: 10px; border-radius: 50%; flex: none;
+  background: var(--pin);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--texte) 28%, transparent);
+}
+/* ⭐ SÉLECTIONNÉ SE DIT SANS PERDRE LA COULEUR. L'ancien actif peignait le
+   bouton en doré — tenable quand un seul genre pouvait l'être, faux depuis
+   qu'on peut en cocher cinq : les cinq auraient perdu la teinte qui est la
+   raison même du filtre. L'état passe donc par le liseré et la graisse.
+   ⚠️ `padding` réduit d'un pixel : le liseré passe de 1 à 2 px, et sans ça
+      la pastille sauterait d'un pixel en se cochant. */
+.terr-genre-actif {
+  background: color-mix(in srgb, var(--pin) 26%, var(--fond-surelevé));
+  border: 2px solid var(--pin); font-weight: 600;
+  padding: 0 calc(var(--sp-2) - 1px);
+}
+.terr-genre:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* 🔴 AU-DESSUS DE LA BARRE, ET DANS SA MATIÈRE — 5/11/2026, demande du
+   fondateur : « remonter l'encadré au-dessus de la bottom, lui appliquer la
+   même forme et la même couleur ».
+   ⚠️ DEUX DÉFAUTS, UN SEUL SYMPTÔME. Le cadre était posé à `--sp-2` du bas
+      d'une carte devenue PLEIN ÉCRAN le 4/11 : la barre flottante, qui n'est
+      pas dans le flux, lui passait dessus et coupait « Partir d'ici » —
+      c'est-à-dire le seul bouton de l'écran. Et il gardait `#192b43`, un
+      bleu nuit hérité du temps où la carte était peinte depuis le graphe :
+      posé sur du satellite, à côté d'une barre kaki, il se lisait comme un
+      élément d'une autre application.
+   ⭐ `--barre-espace` EST LA MÊME VALEUR QUE CELLE QUE LA BARRE RÉSERVE
+      ailleurs (photo-credit, `--reserve-barre`) : on ne mesure pas la barre
+      une deuxième fois ici, on nomme la réserve qui existe déjà. Une hauteur
+      recopiée en dur se décalerait au premier changement de la barre.
+   ⚠️ `--r-l`, PAS `--r-rond` : la barre est une pastille d'une seule ligne,
+      ce cadre en porte deux à quatre. Le même 999 px donnerait des bouts
+      ronds autour d'un bloc de texte — la même VALEUR, pas la même forme.
+      « Même forme » veut dire même famille de coins, même verre, même
+      liseré ; c'est ce que les quatre lignes ci-dessous reprennent de
+      `.barre`, token pour token. */
 .terr-gps, .terr-vise {
   position: absolute; z-index: var(--z-releve); left: var(--sp-2); right: var(--sp-2);
-  bottom: var(--sp-2); margin: 0;
-  background: color-mix(in srgb, #192b43 86%, transparent); color: var(--craie);
-  border-radius: var(--r-m); padding: var(--sp-1) var(--sp-2);
-  font-size: var(--t-xs); backdrop-filter: blur(4px);
+  bottom: calc(var(--barre-espace, 108px) + env(safe-area-inset-bottom, 0px) + var(--sp-2));
+  margin: 0;
+  background: var(--bulle); color: var(--bulle-texte);
+  -webkit-backdrop-filter: var(--bulle-flou);
+  backdrop-filter: var(--bulle-flou);
+  border: 1px solid var(--bulle-trait);
+  border-radius: var(--r-l);
+  box-shadow: var(--ombre-levee), var(--bulle-eclat);
+  padding: var(--sp-2);
+  font-size: var(--t-xs);
 }
 
 /* ── la feuille ────────────────────────────────────────────────────────── */

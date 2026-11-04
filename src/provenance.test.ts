@@ -63,6 +63,54 @@ describe("qui répond de ce tracé", () => {
       expect(src, f).toContain("MENTION[walk.provenance]");
     }
   });
+
+  /**
+   * 🔴 L'ATTRIBUTION DES FONDS DE CARTE N'A PLUS QU'UNE ADRESSE — 5/11/2026.
+   *    Les trois cartes de l'app portent `attributionControl: false` : aucune
+   *    ne nomme ses fournisseurs à l'écran. `/carte` a fait l'exception un
+   *    jour, et sa mention est sortie RECOUVERTE par la barre flottante —
+   *    illisible, donc inutile à tout le monde. L'arbitrage du fondateur :
+   *    une seule page porte les sources, pour tout le site.
+   * ⛔ CE QUI REND CE TEST NÉCESSAIRE : `/reglages` est devenu PORTEUR sans
+   *    en avoir l'air. Rien dans cette page ne dit qu'elle est la dernière
+   *    à nommer l'ODbL ; quelqu'un qui la raccourcit — ou qui remplace la
+   *    liste des sources par « voir la carte » — retirerait l'attribution de
+   *    l'application ENTIÈRE sans qu'aucune carte ne change d'un pixel.
+   * ⭐ C'est le cas exact où une description fidèle occupe la place d'un
+   *    garde : le commentaire posé dans `Territoire2030.tsx` décrit
+   *    parfaitement la situation, et n'aurait arrêté personne.
+   */
+  it("🔴 l'attribution des fonds de carte a une adresse, et c'est /reglages", () => {
+    const reglages = readFileSync(new URL("./Reglages.tsx", import.meta.url), "utf8");
+    for (const source of ["OpenStreetMap", "ODbL", "IGN", "Géoplateforme"]) {
+      expect(
+        reglages,
+        `/reglages ne nomme plus « ${source} » — or c'est la seule page de l'app qui le fasse`,
+      ).toContain(source);
+    }
+
+    // ⚠️ Et la prémisse se vérifie, elle aussi : si une carte se remettait à
+    //    porter sa propre attribution, cette page cesserait d'être l'unique
+    //    porteuse — ce test n'aurait plus le même sens, et il doit le dire.
+    // 🔴 EN ÉCARTANT LES COMMENTAIRES, ET CE N'EST PAS UN DÉTAIL. Écrit
+    //    d'abord en `toContain("attributionControl: false")`, ce garde a
+    //    PASSÉ la mutation qui rallumait le contrôle : le commentaire posé
+    //    juste au-dessus, qui EXPLIQUE pourquoi les trois cartes le coupent,
+    //    contient les mêmes mots et répondait à la place du code.
+    // ⭐ Une prose fidèle est le pire des faux témoins : elle dit vrai, au
+    //    mot près, sur un état qui n'est plus. Même leçon que le `grep` des
+    //    porteurs de `guardedAnswer()` dans CLAUDE.md, qui compte treize
+    //    fichiers au lieu de neuf si l'on ne filtre pas les commentaires.
+    const sansCommentaires = (s: string) =>
+      s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+    for (const f of ["./Territoire2030.tsx", "./CarteReelle.tsx", "./CarteFondOT.tsx"]) {
+      const code = sansCommentaires(readFileSync(new URL(f, import.meta.url), "utf8"));
+      expect(code, `${f} ne coupe plus son attribution : relire ce garde`)
+        .toContain("attributionControl: false");
+      expect(code, `${f} rallume une attribution à l'écran : relire ce garde`)
+        .not.toMatch(/attributionControl:\s*(\{|true)/);
+    }
+  });
 });
 
 /* ════════════════════════════════════════════════════════════════════════

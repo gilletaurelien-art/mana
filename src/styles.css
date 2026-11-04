@@ -2620,11 +2620,26 @@ body:has(.jeu) { padding-bottom: 0; }
 
 /* Le lieu visé sur la carte du territoire : nom, puis ce que la donnée dit. */
 .terr-vise-nom { margin: 0; }
+/* ⚠️ `--bulle-texte-doux` DEPUIS LE 5/11 : le cadre a pris la matière de la
+   barre flottante (voir `.terr-vise` dans `systeme.css`), et le ton doux doit
+   suivre le fond sur lequel il est posé. `--texte-inverse-doux` était calculé
+   contre le bleu nuit d'avant ; laissé tel quel, il donnait le bon ton par
+   accident et aurait dérivé au premier ajustement du verre. */
 .terr-vise-dire {
   margin: 4px 0 0; font-size: var(--t-2xs);
-  color: var(--texte-inverse-doux); line-height: 1.4;
+  color: var(--bulle-texte-doux); line-height: 1.4;
 }
 .terr-vise-dire a { color: inherit; text-underline-offset: 3px; }
+
+/* 🔴 « PARTIR D'ICI » À DROITE — 5/11/2026, demande du fondateur.
+   ⚠️ `flex: 1 1 0` VIENT DE `.terr-bouton`, écrit pour une RANGÉE de deux
+      boutons qui se partagent la largeur. Seul dans son cadre, il s'étirait
+      d'un bord à l'autre : aligner à droite un élément qui occupe toute la
+      ligne ne déplace rien. On lui rend sa largeur de contenu ici, et c'est
+      `justify-content` qui le pousse. ⭐ Une classe empruntée emporte les
+      hypothèses de l'endroit où elle a été écrite. */
+.terr-vise-partir { display: flex; justify-content: flex-end; margin-top: var(--sp-1); }
+.terr-vise-partir .terr-bouton { flex: 0 0 auto; }
 
 /* 🔴 NOS PROPOSITIONS DE PROMENADES, SOUS « PARTIR D'ICI » — 3/11/2026,
    fusion du compositeur dans la carte. Même matière que `.terr-vise-dire` :
@@ -2634,14 +2649,28 @@ body:has(.jeu) { padding-bottom: 0; }
    le commentaire sur son appel dans `Territoire2030.tsx`. Elle vit encore
    sur le fond kaki (entre la carte et la feuille craie), d'où le même ton
    clair que `.terr-vise-dire`. */
+/* ⚠️ DANS L'ENCADRÉ DEPUIS LE 5/11 — plus de rembourrage latéral (le cadre
+   le porte déjà) et un filet de séparation : les trois destinations sont une
+   SUITE du lieu visé, pas une seconde étiquette. */
 .terr-propositions {
-  list-style: none; margin: 0; padding: var(--sp-1) var(--sp-2);
+  list-style: none; margin: var(--sp-1) 0 0; padding: var(--sp-1) 0 0;
+  border-top: 1px solid var(--bulle-trait);
   display: flex; flex-direction: column; gap: 4px;
 }
 .terr-propositions li {
   display: flex; justify-content: space-between; gap: var(--sp-1);
-  font-size: var(--t-xs); color: var(--texte-inverse-doux);
+  font-size: var(--t-xs); color: var(--bulle-texte-doux);
 }
+/* 🔴 LA DISTANCE ÉTAIT ILLISIBLE — 1,79 de contraste, relevé le 5/11 sur le
+   cadre en place. `.m-meta` porte le ton doux des fonds CLAIRS (un olive
+   sombre) ; posé sur le verre kaki du cadre, il disparaît. Et c'est le
+   chiffre qui porte l'information : « Belvédère de Kerdéniel » sans son
+   « 1,8 km » ne dit pas si c'est à côté ou à l'autre bout.
+   ⭐ Troisième fois aujourd'hui que le même mécanisme mord — filtres de
+      genre, texte du cadre, distances : une classe écrite pour un fond,
+      déployée sur l'autre. Le ton doux n'est pas UNE couleur, c'en est DEUX,
+      et le choix se fait au fond, pas au composant. */
+.terr-propositions .m-meta { color: var(--bulle-texte-doux); }
 .terr-proposition-nom { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ═══ RÉGLAGES ═══════════════════════════════════════════════════════════
