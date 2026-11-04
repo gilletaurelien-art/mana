@@ -96,3 +96,36 @@ export function territoireDe(lon: number, lat: number): Territoire | null {
 
 /** L'URL du graphe d'un territoire, sous la base donnée. */
 export const urlGraphe = (base: string, t: Territoire) => `${base}/${t.slug}.json`;
+
+/**
+ * D'OÙ L'ON PART, QUAND PLUSIEURS SOURCES LE DISENT — et c'est ce point qui
+ * décide du graphe à télécharger (`territoireDe` ci-dessus).
+ *
+ * 🔴 CETTE FONCTION EXISTE PARCE QUE L'ORDRE A ÉTÉ FAUX PENDANT TROIS JOURS.
+ *    `/promenades` initialisait sa position avec `lon`/`lat` OU le repli
+ *    Crozon, en ignorant le lieu visé — alors que depuis l'arbitrage du
+ *    2/11/2026 c'est le lieu visé qui est le point de DÉPART (« j'aime ce
+ *    coin » d'abord, MANA propose où aller ensuite). Conséquence mesurée :
+ *    197 des 624 sites nommés, soit 32 %, faisaient télécharger le graphe de
+ *    la presqu'île pour un lieu de l'Aulne — et 129 d'entre eux affichaient
+ *    en plus un refus FAUX (« Aucun chemin ne passe devant Ménez-Hom, le
+ *    plus proche en reste à 956 m » : il passe à 0 m) avant de se réparer
+ *    tout seul en retéléchargeant 4 Mo.
+ *
+ * ⭐ L'ORDRE EST LA RÈGLE, ET IL SE JUSTIFIE LIGNE À LIGNE :
+ *    1. `mesuree` — la position du GPS, accordée par la personne. Qui est
+ *       dehors part d'où il est, pas du menhir qu'il regarde sur l'écran.
+ *    2. `visee` — le lieu repéré sur la carte. C'est le sens du 2/11.
+ *    3. `repli` — Crozon, et seulement quand on ne sait rien.
+ * ⛔ Elle SEEDE une position de départ, elle n'épingle rien : la position
+ *    bouge ensuite librement, et le graphe la suit. Faire dépendre le
+ *    territoire du lieu visé — qui n'est jamais remis à null — l'aurait figé
+ *    pour toute la session.
+ */
+export function positionDeDepart(
+  mesuree: [number, number] | null | undefined,
+  visee: [number, number] | null | undefined,
+  repli: [number, number],
+): [number, number] {
+  return mesuree ?? visee ?? repli;
+}

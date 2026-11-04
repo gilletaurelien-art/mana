@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { TERRITOIRES, DEFAUT, territoireDe, urlGraphe } from "./territoires";
+import { TERRITOIRES, DEFAUT, territoireDe, urlGraphe, positionDeDepart } from "./territoires";
 
 /** Coordonnées des chefs-lieux, relevées le 31/10/2026. */
 const COMMUNES: [string, number, number, string][] = [
@@ -73,5 +73,37 @@ describe("l'article du territoire", () => {
       expect(`À la découverte de ${t.avecArticle}`)
         .toMatch(/de (la |le |l'|les )/);
     }
+  });
+});
+
+/**
+ * 🔴 CE BLOC GARDE L'ORDRE QUI A ÉTÉ FAUX TROIS JOURS — voir
+ *    `positionDeDepart` dans `territoires.ts`. Ce n'est pas une règle
+ *    d'arithmétique : c'est un ARBITRAGE PRODUIT (« on part du lieu qu'on a
+ *    repéré », 2/11/2026), et les règles de produit changent plus vite que
+ *    le code. ⭐ Un interdit en docstring se franchit sans le savoir ; en
+ *    test, il se franchit en le sachant.
+ */
+describe("d'où l'on part", () => {
+  const CROZON: [number, number] = [-4.4897, 48.2470];
+  const MENEZ_HOM: [number, number] = [-4.23511, 48.21979];
+  const GPS: [number, number] = [-4.5936, 48.2772];
+
+  it("🔴 le lieu visé sert de départ quand aucune position n'est mesurée", () => {
+    expect(positionDeDepart(null, MENEZ_HOM, CROZON)).toEqual(MENEZ_HOM);
+    // ⛔ et c'est bien ce qui décide du GRAPHE : sans ça, Crozon l'emportait
+    //    et l'écran téléchargeait la presqu'île pour un lieu de l'Aulne.
+    expect(territoireDe(...positionDeDepart(null, MENEZ_HOM, CROZON))?.slug).toBe("aulne");
+    expect(territoireDe(...positionDeDepart(null, null, CROZON))?.slug).toBe("presquile");
+  });
+
+  it("⛔ une position MESURÉE passe avant le lieu visé — on part d'où l'on est", () => {
+    expect(positionDeDepart(GPS, MENEZ_HOM, CROZON)).toEqual(GPS);
+    expect(territoireDe(...positionDeDepart(GPS, MENEZ_HOM, CROZON))?.slug).toBe("presquile");
+  });
+
+  it("le repli ne sert que quand on ne sait rien", () => {
+    expect(positionDeDepart(null, null, CROZON)).toEqual(CROZON);
+    expect(positionDeDepart(undefined, undefined, CROZON)).toEqual(CROZON);
   });
 });

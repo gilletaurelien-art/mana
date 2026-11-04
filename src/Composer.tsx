@@ -4,7 +4,7 @@ import { enGpx, telecharger } from "./Promenade";
 import type { Graphe, Boucle, Retour, Visee, Parcours, Accroche, Proposition } from "./composition";
 import { chargerLieux, type Lieu, type Inventaire } from "./lieux";
 import { rencontresLeLong } from "./proches";
-import { DEFAUT, territoireDe, urlGraphe } from "./territoires";
+import { DEFAUT, territoireDe, urlGraphe, positionDeDepart } from "./territoires";
 import { VITRINE, effortLisible, type Walk } from "./walks";
 import { WalkMap } from "./WalkMap";
 import { CarteOuSchema } from "./CarteOuSchema";
@@ -447,8 +447,26 @@ export function Composer() {
    *    raison : la carte du territoire est l'endroit où l'on VOIT le menhir,
    *    donc l'endroit où l'envie naît. Le geste doit partir de là, pas d'un
    *    formulaire où il faudrait retrouver le nom qu'on vient de lire.
-   * ⚠️ `lon`/`lat` disent d'où l'on PART ; `vers` dit où l'on VA. Les deux ne
-   *    se confondent jamais : le point de départ reste le promeneur.
+   * 🔴 « `lon`/`lat` DISENT D'OÙ L'ON PART ; `vers` DIT OÙ L'ON VA » — c'est
+   *    ce qui était écrit ici, et c'était vrai jusqu'au 2/11/2026. L'arbitrage
+   *    du fondateur a INVERSÉ le sens : le lieu repéré sur la carte est celui
+   *    d'où l'on PART, et MANA propose où aller ensuite. Le paramètre a gardé
+   *    son nom pour que les liens déjà partagés marchent — voir le
+   *    commentaire de `choisirSpot` plus bas, qui dit la même chose depuis
+   *    trois jours. ⭐ Le CODE a suivi l'arbitrage ; cette note, non, et
+   *    l'initialisation de `position` juste en dessous non plus.
+   * ⛔ CE QUE L'OUBLI COÛTAIT, mesuré : sans `lon`/`lat`, `position` tombait
+   *    sur son repli CROZON, donc `territoireDe()` rendait TOUJOURS la
+   *    presqu'île — y compris pour un lieu de l'Aulne. L'écran téléchargeait
+   *    le mauvais graphe (2,9 Mo), affichait « Aucun chemin ne passe devant
+   *    Ménez-Hom, le plus proche en reste à 956 m » — un refus FAUX, le
+   *    chemin passe à 0 m —, puis se réparait tout seul en retéléchargeant
+   *    l'autre (4,0 Mo). 129 des 543 sites cliquables, soit 24 %.
+   * ⭐ UNE NOTE PÉRIMÉE NE SE CONTENTE PAS DE MENTIR : elle protège le code
+   *    qu'elle décrit. Celle-ci énonçait la confusion des deux paramètres
+   *    comme une règle à tenir — « les deux ne se confondent jamais » —, donc
+   *    les confondre avait l'air d'être le défaut, et les distinguer la
+   *    correction.
    */
   const cibleURL = (): { g: [number, number]; nom: string } | null => {
     const p = new URLSearchParams(window.location.search);
@@ -461,7 +479,26 @@ export function Composer() {
   const [cible] = useState(cibleURL);
 
   const recue = depuisURL();
-  const [position, setPosition] = useState<[number, number]>(recue ?? CROZON);
+  /**
+   * ⭐ LE LIEU VISÉ SERT DE POSITION DE DÉPART QUAND ON N'EN A PAS D'AUTRE —
+   *    5/11/2026. C'est la conséquence directe de l'arbitrage du 2/11 : on
+   *    part DU lieu qu'on a repéré. Ce qui compte ici, c'est que `territoire`
+   *    en dépend (dix lignes plus bas) : seeder la position, c'est choisir le
+   *    bon graphe AU PREMIER chargement.
+   * ⚠️ L'ORDRE DES TROIS N'EST PAS INTERCHANGEABLE. Une position VRAIE —
+   *    celle du GPS, arrivée par `lon`/`lat` depuis « Autour de moi » — passe
+   *    avant le lieu visé : quelqu'un qui est dehors part d'où il est, pas du
+   *    menhir qu'il regarde sur l'écran. `CROZON` reste le dernier recours,
+   *    et seulement quand on ne sait rien.
+   * ⛔ ET ON SEEDE, ON N'ÉPINGLE PAS. `territoire` reste dérivé de `position`,
+   *    qui bouge ensuite librement : composer de proche en proche jusqu'à
+   *    l'autre bout de la communauté de communes recharge toujours le bon
+   *    graphe. Faire dépendre `territoire` de `cible` — qui n'est jamais
+   *    remis à null — l'aurait figé au lieu d'arrivée pour toute la session.
+   */
+  const [position, setPosition] = useState<[number, number]>(
+    positionDeDepart(recue, cible?.g, CROZON),
+  );
   const [motGps, setMotGps] = useState("");
   const [choisie, setChoisie] = useState(0);
   const [duree, setDuree] = useState(0);
@@ -527,6 +564,17 @@ export function Composer() {
        reste vide après un changement de territoire. */
     setProps(null); setChoisie(0); setEnBoucle(false); setBoucleVisee(null);
     setRetour(null); setMotRetour(""); setMot("");
+    /* 🔴 LE REFUS AUSSI SE PÉRIME AVEC LE GRAPHE — 5/11/2026, et il manquait
+       à cette liste. « Aucun chemin ne passe devant X, le plus proche en
+       reste à 956 m » est une mesure faite SUR UN GRAPHE ; changer de graphe
+       la rend caduque. Sans cette ligne, le refus calculé sur l'ancien
+       réseau restait affiché pendant le rechargement — sous le panneau
+       « Chargement des chemins… », les deux ensemble.
+       ⭐ Un écran qui annonce en même temps « je charge » et « il n'y a
+          rien » n'est pas inconsistant par accident : il a deux états qui se
+          périment à des rythmes différents, et un seul qui a été remis à
+          zéro. Toute mesure dérivée du graphe appartient à cette liste. */
+    setRefusDepart(null);
     dejaPropose.current = false;
     fetch(urlGraphe(BASE, territoire))
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
