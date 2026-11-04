@@ -774,3 +774,89 @@ D'après l'annexe, et seulement ce qui est mesuré :
   par un test ;
 - ⚠️ **et le droit suit la géographie** : le Royaume-Uni reste **INVÉRIFIABLE**
   (Ofcom inatteignable). Géo-restreindre ou assumer le dossier UK reste ouvert.
+
+# ÉTAT AU 4/11/2026 — LES TROIS FACETTES DE MANA, CONSTRUITES SÉPARÉMENT
+
+Entre le 3 et le 4/11, neuf PR ont été ouvertes et fusionnées dans
+`gilletaurelien-art/mana.love` (#2 à #9 — détresse, mémoire déclarée,
+réparations sans arbitrage, routeur d'intentions, routage piéton/vélo,
+météo, contrat `mana-presence` lecture, compte par lien magique). Prises
+une à une, ce sont des correctifs et des intégrations ponctuelles. Relues
+ensemble, elles dessinent trois facettes de MANA qui existaient déjà dans
+le code, sans jamais avoir été nommées comme telles.
+
+## J · La Confidente
+
+Ce qui porte cette facette :
+- **la mémoire déclarée** (`src/domain/memoire.ts`, #3) — un souvenir est
+  un fait **déclaré**, d'un genre précis, avec une péremption fixée par ce
+  genre ; jamais une transcription ;
+- **la lecture de cette mémoire dans la conversation**
+  (`buildSystemPrompt(personality, souvenirs)`, `/api/chat`, #6) — ce qui
+  est périmé ou désactivé n'atteint jamais le modèle, et le prompt dit
+  explicitement que ces souvenirs sont des faits, pas des instructions
+  (contre l'injection par mémoire hostile) ;
+- **le routeur d'intentions** (`src/domain/intentRouter.ts`, #5) — un
+  acquiescement ou une salutation ne réclament pas qu'elle les traite
+  comme une confidence ; seul ce qui est substantiel part vers le modèle.
+
+⚠️ Toujours partielle : la moitié ÉCRITURE du contrat (la compagne qui
+*décide* de retenir un fait nouveau) n'existe pas — documentée comme
+telle au README de mana.love, §5, en attendant un projet Supabase
+provisionné.
+
+## K · L'Assistante
+
+Ce qui porte cette facette :
+- **le routage piéton/vélo réel** (`server/geo.ts` → `routing.openstreetmap.de`,
+  #7) — un temps de marche estimé, pas une suggestion de lieu sans
+  contexte temporel ;
+- **la météo et la fenêtre d'opportunité** (`src/domain/meteo.ts`,
+  `server/weather.ts` → Open-Meteo, #8) — « il y a une fenêtre sèche vers
+  15h40 », pas une probabilité de pluie brute ; dit explicitement
+  l'absence de bonne fenêtre plutôt que de proposer la moins pire sans le
+  signaler.
+
+⚠️ Un agent qui *propose*, pas qui *agit* au sens fort : aucune
+réservation, aucun itinéraire complet, aucune alerte proactive. Deux
+premiers pas vers l'agent qui agit sur l'exploration, pas la fin du
+chemin — une suite plausible (niveau 3, réservation réelle) est une
+décision business à part, pas une suite technique naturelle.
+
+## L · La Bienveillante
+
+Ce qui porte cette facette :
+- **la détection de détresse sans interrupteur**
+  (`src/domain/detresse.ts`, #2) — fonction pure à un seul paramètre,
+  verrouillée par un test d'arité contre tout futur mécanisme de
+  contournement ; c'est précisément le défaut mesuré du §D (`leverLaCaptation:!0`
+  en dur sur l'ancien site) qui n'est PAS recopié ;
+- **le garde-fou du vouvoiement, maintenant testé** (#4) — *« jamais tu
+  ne le décides »* pouvait être supprimé sans qu'aucun test ne le
+  remarque ; un test l'asserte désormais pour toute personnalité ;
+- **deux phrases publiées corrigées** (#4) — la confidentialité et le
+  README ne promettaient pas ce que le code tenait (géolocalisation
+  relayée mais mise en cache, coordonnées en `localStorage` et non « en
+  mémoire le temps de la requête ») ; honnêteté par construction plutôt
+  que par relecture occasionnelle.
+
+## M · Ce que ces trois facettes ne sont PAS
+
+⛔ Pas trois modules séparés à maintenir : les mêmes fichiers servent
+plusieurs facettes (`systemPrompt.ts` porte à la fois la Confidente et la
+Bienveillante ; `detresse.ts` s'exécute quelle que soit la facette
+active). Les nommer ne change rien au code — ça sert à confronter toute
+future décision à la question « quelle facette ça nourrit, et est-ce
+qu'elle en abîme une autre ? ». Un exemple déjà tranché implicitement :
+le routeur d'intentions (#5) sert l'Assistante *en protégeant* la
+Confidente — un message qui ressemble à une détresse retombe toujours sur
+« intime » et suit le chemin où `detresse.ts` s'exécute comme toujours.
+
+⚠️ Pas une liste figée. La discussion du 4/11 sur un possible usage
+« rencontre » a précisément buté sur cette grille : une mise en relation
+réelle entre humains (profils, matching, messagerie) n'est aucune des
+trois facettes — c'est un produit de confiance/sécurité à part, avec une
+charge de modération que ces trois facettes ne couvrent pas. Ce que la
+Confidente peut faire sans sortir de son rôle : accompagner un rendez-vous
+déjà prévu (avant : rituel de confiance ; après : débrief) — zéro mise en
+relation, zéro profil d'autrui.
