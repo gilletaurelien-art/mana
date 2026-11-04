@@ -1965,15 +1965,9 @@ body { padding-bottom: var(--reserve-barre); }
    qu'on vient de dégager. */
 .terr-feuille-replie { max-height: calc(104px + env(safe-area-inset-bottom, 0px)); }
 .terr-feuille-deploye { max-height: calc(68svh + env(safe-area-inset-bottom, 0px)); }
-.terr-entete { margin-bottom: var(--sp-3); }
-.terr-titre {
-  margin: 0;
-  font-family: var(--serif);
-  font-weight: 400;
-  font-size: clamp(1.9rem, 7vw, 2.6rem);
-  line-height: 1.05;
-}
-.terr-mesure { margin: 6px 0 0; font-size: var(--t-xs); color: var(--texte-doux); }
+/* 🔴 `.terr-entete`/`.terr-titre`/`.terr-mesure` SONT PARTIS LE 4/11/2026
+   avec « Le territoire », le compte de tronçons et le mot sur les
+   promenades vérifiées — plus aucun appelant dans `Territoire2030.tsx`. */
 
 /* ── Les deux territoires ─────────────────────────────────────────────────
    ⚠️ 44 px de haut : ce sont des cibles au pouce, sur un écran qu'on tient
@@ -2028,11 +2022,16 @@ body { padding-bottom: var(--reserve-barre); }
 /* ⭐ L'actif se dit par l'OCRE et par `aria-pressed`, jamais par la couleur
    seule : qui ne distingue pas les teintes a besoin de l'état annoncé. */
 .terr-item-active { border-color: var(--ocre); background: rgb(198 154 72 / 12%); }
-/* ⭐ MÊME POLICE ET MÊME TAILLE QUE « Le territoire » — demandé le 31/10.
-   Les noms étaient en sans, 600, 14 px : la liste se lisait comme un menu de
-   réglages sous un titre de livre. Ce sont des noms de lieux, pas des
-   options. Les valeurs sont REPRISES de `.terr-titre`, pas réécrites à
-   l'identique — si le titre change, la liste suit. */
+/* ⭐ LA TAILLE D'UN NOM DE LIEU, PAS D'UNE OPTION — demandé le 31/10. Les
+   noms étaient en sans, 600, 14 px : la liste se lisait comme un menu de
+   réglages.
+   🔴 LA NOTE DISAIT « valeurs REPRISES de `.terr-titre`, si le titre change
+      la liste suit » — c'était DÉJÀ FAUX quand elle a été écrite : les
+      quatre valeurs étaient recopiées à l'identique, pas partagées, et rien
+      n'aurait suivi. `.terr-titre` a disparu le 4/11 avec « Le territoire » ;
+      la note décrivait donc un lien vers une règle qui n'existe plus.
+   ⭐ Une note qui PROMET un lien que le code ne tient pas se lit comme une
+      garantie, et c'est pire qu'une duplication avouée. */
 .terr-item-titre {
   font-family: var(--serif);
   font-weight: 400;
@@ -2065,7 +2064,10 @@ body { padding-bottom: var(--reserve-barre); }
   background: var(--ocre); color: var(--nuit);
   font-weight: 600; font-size: var(--t-s); text-decoration: none;
 }
-.terr-source { margin: var(--sp-4) 0 0; font-size: var(--t-xs); color: var(--texte-doux); line-height: 1.5; }
+/* 🔴 `.terr-source` EST PARTI LE 4/11/2026 : l'attribution n'est plus un
+   paragraphe de la feuille, c'est le contrôle de maplibre (replié derrière
+   un « i », sur la carte elle-même) — voir le montage dans
+   `Territoire2030.tsx`. */
 
 .invitation-carte { margin: var(--sp-3) 0 0; font-size: var(--t-xs); }
 .invitation-carte a {

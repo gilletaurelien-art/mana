@@ -93,3 +93,39 @@ export function poserFond(f: Fond): void {
  *    pourquoi elle est ici plutôt que recopiée dans chaque composant.
  */
 export const ATTRIBUTION_OSM = "© OpenStreetMap — ODbL";
+
+/**
+ * LE ZOOM MAPLIBRE POUR UNE ÉCHELLE DONNÉE — 4/11/2026.
+ *
+ * 🔴 ÉCRITE PARCE QU'ELLE S'EST TROMPÉE D'UN FACTEUR DEUX. `Territoire2030`
+ *    superpose un canvas (projection maison, échelle en mètres par pixel) et
+ *    une carte maplibre qu'il recale à chaque image. Le zoom se calculait sur
+ *    place avec la constante 156543,03392 — qui vaut `2πR / 256`, l'échelle
+ *    du monde des tuiles de 256 px (Google, Leaflet, la plupart des
+ *    calculateurs de « ground resolution » qu'on trouve en ligne). MapLibre
+ *    GL rend en tuiles de 512 : le fond satellite sortait exactement deux
+ *    fois trop grand.
+ * ⭐ CE QUE ÇA COÛTAIT, MESURÉ le 4/11 sur les 593 sites nommés de l'emprise :
+ *    89 px d'écart MOYEN entre la pastille dessinée et l'endroit où le clic
+ *    la cherchait, 157 px au pire — pour une tolérance de 16 px. Après
+ *    correction : 0,02 px de moyenne, 0,06 px au pire, aucun site hors
+ *    tolérance.
+ * ⚠️ ET L'ERREUR ÉTAIT INVISIBLE AU CENTRE. Une erreur d'ÉCHELLE laisse le
+ *    point central exact et croît avec la distance à lui : la vérification
+ *    faite plus tôt dans la journée (« l'anneau tombe sur la pastille »)
+ *    avait eu lieu au milieu de l'écran, le seul endroit où ce défaut-là ne
+ *    peut pas se voir. ⭐ Un contrôle qui réussit sur le seul point où le
+ *    défaut est impossible endort mieux qu'un contrôle absent.
+ *
+ * @param metresParPixel l'échelle voulue, au sol
+ * @param latitude là où cette échelle doit être vraie (Mercator étire vers
+ *                 les pôles : une échelle n'a de sens qu'à une latitude)
+ */
+export const TUILE_MAPLIBRE_PX = 512;
+export const RAYON_TERRE_M = 6378137;
+export function zoomMaplibrePour(metresParPixel: number, latitude: number): number {
+  const metresParPixelALEquateur = (2 * Math.PI * RAYON_TERRE_M) / TUILE_MAPLIBRE_PX;
+  return Math.log2(
+    (metresParPixelALEquateur * Math.cos((latitude * Math.PI) / 180)) / metresParPixel,
+  );
+}

@@ -48,7 +48,7 @@ import { indexer, accrocherUn, accrocherTous, accroche, propositionsAutour, type
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Map as MaplibreMap } from "maplibre-gl";
-import { STYLES } from "./carte-fond";
+import { STYLES, ATTRIBUTION, zoomMaplibrePour } from "./carte-fond";
 import { ILLUSTRATIONS } from "./illustrations";
 import { Photo, image } from "./images/Photo";
 
@@ -104,7 +104,13 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
   const [graphe, setGraphe] = useState<Graphe | null>(null);
   const [erreur, setErreur] = useState("");
   const [choisie, setChoisie] = useState<string | null>(null);
-  const [rendu, setRendu] = useState(0);
+  /* 🔴 `rendu` EST PARTI AVEC LE COMPTE QU'IL ALIMENTAIT — 4/11/2026, et ce
+     n'était pas que du code mort : `setRendu()` tournait à CHAQUE passage de
+     `dessiner()`, donc une fois par image pendant un glissement. Un état
+     React que plus personne ne lit, mais qui reprovoque un rendu soixante
+     fois par seconde. ⭐ Retirer un affichage sans retirer ce qui
+     l'alimentait laisse le coût sans le bénéfice — et un coût sans
+     affichage ne se voit, par définition, nulle part. */
 
   /* ⭐ MONTÉE UNE SEULE FOIS, comme `CarteReelle`/`CarteFondOT` : une instance
      maplibre = un contexte WebGL, et on n'en veut qu'un sur cet écran. Le
@@ -121,7 +127,22 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
       container: maplibreBoite.current,
       style: STYLES.ortho,
       center: [-4.2, 48.25], zoom: 10,
-      interactive: false, attributionControl: false,
+      interactive: false,
+      /* ⛔ `attributionControl` RALLUMÉ LE 4/11/2026, et ce n'est pas un
+         retour en arrière : il était coupé tant que la feuille portait le
+         paragraphe de source. Celui-ci est parti à la demande du fondateur ;
+         sans ce contrôle, l'écran ne nommerait plus NI l'IGN NI
+         OpenStreetMap, alors qu'il montre les deux. ⭐ Replié derrière un
+         « i », il tient la licence sans reprendre la place qu'on vient de
+         rendre à la carte. */
+      /* ⚠️ `customAttribution` EN PLUS DU CONTRÔLE, et ce n'est pas du zèle :
+         relevé à l'écran, le style seul rendait « © IGN | OpenFreeMap ©
+         OpenMapTiles Data from OpenStreetMap » — les deux fournisseurs y
+         sont, mais PAS l'ODbL, que le paragraphe supprimé nommait. On
+         repasse la formulation que le reste de l'app emploie déjà
+         (`ATTRIBUTION`, carte-fond.ts), plutôt que d'en écrire une
+         troisième ici. */
+      attributionControl: { compact: true, customAttribution: ATTRIBUTION.ortho },
     });
     maplibreCarte.current = m;
     m.on("load", () => setMaplibrePrete(true));
@@ -833,9 +854,12 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
         const centreLon = loMin + (cxv - px / k - dx) / (R_LAT * kLon * ech);
         const centreLat = laMax - (cyv - py / k - dy) / (R_LAT * ech);
         const metresParPixel = 1 / (ech * k);
-        const zoom = Math.log2(
-          (156543.03392 * Math.cos((centreLat * Math.PI) / 180)) / metresParPixel,
-        );
+        /* 🔴 LE ZOOM VIT DANS `carte-fond.ts`, ET IL S'EST TROMPÉ D'UN
+           FACTEUR DEUX — toute l'histoire y est écrite, avec les chiffres
+           mesurés. Il est sorti d'ici pour qu'un test puisse le croiser avec
+           la math de maplibre elle-même : le défaut avait traversé une
+           vérification visuelle. */
+        const zoom = zoomMaplibrePour(metresParPixel, centreLat);
         if (Number.isFinite(centreLon) && Number.isFinite(centreLat) && Number.isFinite(zoom)) {
           m.jumpTo({ center: [centreLon, centreLat], zoom, bearing: 0, pitch: 0 });
         }
@@ -865,8 +889,6 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
          derrière la nouvelle — relevé en testant, un territoire « fantôme »
          visible au changement d'onglet. */
       ctx.clearRect(0, 0, W, H);
-
-      const t0 = performance.now();
 
       /* 🔴 LE FILIGRANE DU RÉSEAU EST PARTI — 4/11/2026, demande du
          fondateur. La « passe 1 » (tout le réseau marchable, à peine là) et
@@ -1022,7 +1044,6 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
         ctx.lineWidth = 2; ctx.strokeStyle = fond; ctx.stroke();
       }
 
-      setRendu(Math.round(performance.now() - t0));
     };
 
     dessiner();
@@ -1300,25 +1321,12 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
             {feuille === "replie" ? "Déplier la liste des promenades" : "Replier la liste"}
           </span>
         </button>
-        <header className="terr-entete">
-          <h1 className="terr-titre">Le territoire</h1>
-          {/* 🔴 LE CHOIX ENTRE PRESQU'ÎLE ET AULNE EST PARTI — 4/11/2026,
-              demande du fondateur : la carte montre désormais TOUT le
-              territoire moissonné par défaut (voir `TOUT`, territoires.ts),
-              les deux graphes fusionnés — plus de bascule à faire avant de
-              voir le reste. */}
-          {graphe && (
-            <p className="terr-mesure">
-              {/* ⚠️ On annonce l'INVENTAIRE, pas les lieux accrochés au
-                  réseau : le graphe n'en porte que ceux qui touchent un
-                  chemin. Annoncer 495 quand on en dessine 1 358 ferait un
-                  chiffre juste rapporté au mauvais objet. */}
-              {graphe.a.length.toLocaleString("fr-FR")} tronçons
-              {sitesIci.length > 0 && ` · ${sitesIci.length.toLocaleString("fr-FR")} sites remarquables`}
-              {rendu > 0 && ` · dessiné en ${rendu} ms`}
-            </p>
-          )}
-        </header>
+        {/* 🔴 L'EN-TÊTE DE LA FEUILLE EST PARTIE — 4/11/2026, demande du
+            fondateur : « Le territoire », le compte de tronçons et de sites,
+            le mot sur les promenades vérifiées. ⭐ Le compte disait la
+            TAILLE DE NOTRE MOISSON ; la carte, elle, montre ce qu'il y a —
+            et depuis qu'elle montre tout le territoire d'un coup, le chiffre
+            renseignait sur nous plutôt que sur le terrain. */}
 
         {/* 🔴 LA RECHERCHE A DÉMÉNAGÉ EN TÊTE DE LA CARTE — 4/11/2026, voir
             `.jeu-haut`/`.jeu-chercher` juste après `.terr-fond`. */}
@@ -1331,12 +1339,13 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
             promenades de Roscanvel et Crozon proposées à quelqu'un qui
             regarde Pont-de-Buis. ⭐ Ajouter un onglet n'ajoute pas seulement
             une donnée : il requalifie TOUT ce qui est affiché à côté. */}
-        {dIci.length === 0 ? (
-          <p className="terr-mesure">
-            Aucune promenade vérifiée sur ce territoire pour l'instant — la
-            carte et la composition, elles, y fonctionnent.
-          </p>
-        ) : (
+        {/* 🔴 LE MOT « AUCUNE PROMENADE VÉRIFIÉE » EST PARTI LE 4/11/2026,
+            demande du fondateur. ⚠️ CE QUI RESTE VRAI : `VITRINE` est vide,
+            donc cette liste ne rend rien aujourd'hui. Une section
+            conditionnée par ses données se tait toute seule — elle
+            reviendra le jour où une promenade vérifiée existe, sans qu'on
+            ait à la réinventer. */}
+        {dIci.length > 0 && (
         <ul className="terr-liste">
           {dIci.map((w) => {
             const active = choisie === w.slug;
@@ -1459,11 +1468,20 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
           </div>
         )}
 
-        <p className="terr-source">
-          Chemins et lieux d'après OpenStreetMap, sous licence ODbL. Le relief
-          et le trait de côte ne sont pas représentés : nous ne dessinons que ce
-          que la donnée contient.
-        </p>
+        {/* 🔴 LE PARAGRAPHE DE SOURCE EST PARTI DE LA FEUILLE — 4/11/2026,
+            demande du fondateur.
+            ⛔ MAIS L'ATTRIBUTION, ELLE, NE PEUT PAS PARTIR AVEC : l'ODbL
+               d'OpenStreetMap et les conditions de la Géoplateforme (IGN)
+               demandent qu'elle soit visible LÀ OÙ LA DONNÉE EST MONTRÉE,
+               pas seulement dans `/reglages` que personne n'est obligé
+               d'ouvrir. Elle revient donc à maplibre, qui la porte en
+               standard et en discret (`attributionControl`, replié derrière
+               un « i ») — voir le montage de la carte plus haut, où
+               `attributionControl: false` a été retiré le même jour.
+            ⚠️ CE QUI DISPARAÎT VRAIMENT, et c'est assumé : la phrase sur le
+               relief et le trait de côte, qui disait ce que nous NE dessinons
+               pas. Elle datait du graphe peint ; le satellite montre
+               désormais le relief et la côte pour de vrai. */}
       </section>
     </main>
   );
