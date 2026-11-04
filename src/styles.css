@@ -2685,8 +2685,14 @@ body:has(.jeu), body:has(.terr) { padding-bottom: 0; }
       genre, texte du cadre, distances : une classe écrite pour un fond,
       déployée sur l'autre. Le ton doux n'est pas UNE couleur, c'en est DEUX,
       et le choix se fait au fond, pas au composant. */
-.terr-propositions .m-meta { color: var(--bulle-texte-doux); }
-.terr-proposition-nom { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.terr-propositions .m-meta { color: var(--bulle-texte-doux); white-space: nowrap; flex: none; }
+.terr-proposition-nom { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+/* ⚠️ LA DISTANCE NE SE COUPE PAS. « Fontaine Notre-Dame-de-Bonne-Nouvelle »
+   poussait son « 2 310 m » sur deux lignes, coupé entre le nombre et son
+   unité — relevé à l'écran. Le nom, lui, a le droit de s'abréger : il reste
+   reconnaissable tronqué, un chiffre non. ⭐ Quand deux contenus se
+   disputent une ligne, celui qui cède est celui qui survit à la coupe.
+   La règle est posée dix lignes plus haut, avec la couleur. */
 
 /* ═══ RÉGLAGES ═══════════════════════════════════════════════════════════
    ⭐ Une page de réglages est une page de COMPTES RENDUS : elle dit ce qui

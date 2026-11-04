@@ -56,6 +56,7 @@ import { indexer, accrocherUn, accrocherTous, accroche, propositionsAutour, type
       l'autre se corrige des deux côtés ; une fonction appelée à deux endroits
       avec des arguments différents n'a l'air fausse NULLE PART. */
 import { chargerFermetures, aretesTouchees, type Fermetures } from "./fermetures";
+import { fusionnerGraphes } from "./fusion-graphes";
 /* ⚠️ MAPLIBRE EN v4 — même garde que `CarteReelle.tsx`/`CarteFondOT.tsx` : la
    v6 ne livre que de l'ESM, et son worker se charge par une URL relative qui,
    sous la base `/mana/`, retombe sur l'index HTML. */
@@ -66,14 +67,16 @@ import { STYLES, zoomMaplibrePour } from "./carte-fond";
 import { ILLUSTRATIONS } from "./illustrations";
 import { Photo, image } from "./images/Photo";
 
-type Graphe = {
-  genere: string;
-  territoire: string;
-  attribution: string;
-  n: [number, number][];
-  a: [number, number, number, number, number[], (number | null)?, (number | null)?, (0 | 1)?][];
-  l: { a: number; f: number; c: string; n: string; g: [number, number]; d: number }[];
-};
+/* 🔴 LE TYPE `Graphe` ÉTAIT DÉFINI DEUX FOIS — ici et dans `composition.ts`,
+   qui est pourtant le module qui le CONSOMME (`indexer`, `dijkstra`,
+   `mesurer`). Et les deux avaient déjà divergé : la copie locale s'arrêtait
+   à huit cases d'arête, quand l'originale en porte neuf depuis que la montée
+   cumulée a été ajoutée le 29/10 — celle sans laquelle 43 % du dénivelé
+   disparaît. ⭐ Une forme recopiée ne se plaint pas de vieillir : elle
+   accepte les mêmes données, perd juste une information en route. Troisième
+   recopie démasquée en deux jours, après la table des couleurs et celle des
+   libellés. Une seule définition, importée. */
+import type { Graphe } from "./composition";
 
 const BASE = import.meta.env.VITE_GRAPHE_BASE ?? "https://mana.bzh/bretagne/g";
 const R_LAT = 111_320;
@@ -472,13 +475,14 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
        (un seul fichier pèserait ~1,5 Mo). Montrer tout le territoire par
        défaut, demandé par le fondateur, se paie donc ici : les deux sont
        chargés en parallèle, puis recousus.
-       ⛔ ET LES INDEX DE NŒUDS SE DÉCALENT, SINON TOUT EST FAUX EN SILENCE.
-          Une arête ne porte pas des coordonnées mais des INDEX dans `n` —
-          concaténer les deux `n` sans décaler les arêtes du second ferait
-          pointer chacune de ses arêtes sur un nœud de la PRESQU'ÎLE : un
-          réseau plausible, entièrement faux, et rien pour le signaler.
-          Le décalage vaut `n` du premier, et il s'applique aux DEUX bouts
-          (cases 0 et 1) ET à la liste de points intermédiaires (case 4). */
+       ⛔ ET LA COUTURE ELLE-MÊME VIT DANS `fusion-graphes.ts` DEPUIS LE
+          5/11/2026, pas ici. Écrite en ligne dans cet effet, elle était
+          inatteignable par un test — un `useEffect` qui `fetch` deux
+          fichiers de 3 Mo ne s'exerce pas — et elle a porté DEUX défauts
+          mesurés pendant une journée : 277 lieux sur 775 accrochés à une
+          arête qui n'était pas la leur (jusqu'à 43 km), et deux moitiés de
+          territoire qui ne communiquaient nulle part. Les deux sont
+          expliqués et gardés là-bas. */
     Promise.all(
       TERRITOIRES.map((t) =>
         fetch(urlGraphe(BASE, t)).then((r) => {
@@ -489,29 +493,7 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
     )
       .then((graphes) => {
         if (!vivant) return;
-        const fusion = graphes.reduce((a, b) => {
-          const decalage = a.n.length;
-          return {
-            ...a,
-            territoire: TOUT.slug,
-            n: [...a.n, ...b.n],
-            a: [
-              ...a.a,
-              ...b.a.map((ar) => {
-                const copie = [...ar] as Graphe["a"][number];
-                copie[0] = ar[0] + decalage;
-                copie[1] = ar[1] + decalage;
-                copie[4] = ar[4].map((i) => i + decalage);
-                return copie;
-              }),
-            ],
-            /* ⚠️ `l` n'est plus lu par cet écran (les sites viennent de
-               l'inventaire, pas du graphe) — on le recoud quand même, pour
-               qu'un futur lecteur ne trouve pas un graphe à moitié fusionné. */
-            l: [...a.l, ...b.l],
-          };
-        });
-        setGraphe(fusion);
+        setGraphe(fusionnerGraphes(graphes, TOUT.slug));
       })
       // ⚠️ Une erreur se DIT. Sans ce message, un refus réseau rendrait un
       //    écran vide et muet, et on conclurait qu'il n'y a rien ici.

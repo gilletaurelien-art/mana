@@ -10,8 +10,20 @@
 //    recouvrement, un chemin coupé par la frontière finirait en cul-de-sac
 //    dans les DEUX fichiers — un mur invisible au milieu d'Argol. Les 4,5 km
 //    communs font qu'on compose des deux côtés de la limite.
-//    Ce qui reste impossible, et qui est le prix assumé du découpage :
-//    composer une boucle qui TRAVERSE la frontière.
+//
+// 🔴 « CE QUI RESTE IMPOSSIBLE : COMPOSER UNE BOUCLE QUI TRAVERSE LA
+//    FRONTIÈRE » — cette phrase vivait ici et elle est FAUSSE depuis le
+//    5/11/2026. Elle décrivait un écran qui chargeait UN fichier ; `/carte`
+//    les charge tous les deux et les SOUDE (`fusionnerGraphes`), donc le
+//    réseau est continu d'un bout à l'autre du territoire.
+// ⭐ Elle était juste le jour où on l'a écrite, et elle a survécu à sa cause
+//    — exactement ce que la première règle de CLAUDE.md annonce. Pire : elle
+//    énonçait la limite comme un « prix assumé », c'est-à-dire comme une
+//    décision, ce qui décourage d'aller voir. Un inconvénient présenté comme
+//    un choix ne se rouvre pas.
+// ⚠️ CE QUI RESTE VRAI : les écrans qui ne chargent QU'UN fichier (voir
+//    `territoireDe` plus bas) gardent la limite. Elle tient au CHARGEUR, pas
+//    au découpage.
 
 export interface Territoire {
   /** le nom du fichier servi, sans extension */ slug: string;
