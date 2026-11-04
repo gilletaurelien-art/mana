@@ -2646,15 +2646,15 @@ body:has(.jeu), body:has(.terr) { padding-bottom: 0; }
 }
 .terr-vise-dire a { color: inherit; text-underline-offset: 3px; }
 
-/* 🔴 « PARTIR D'ICI » À DROITE — 5/11/2026, demande du fondateur.
-   ⚠️ `flex: 1 1 0` VIENT DE `.terr-bouton`, écrit pour une RANGÉE de deux
-      boutons qui se partagent la largeur. Seul dans son cadre, il s'étirait
-      d'un bord à l'autre : aligner à droite un élément qui occupe toute la
-      ligne ne déplace rien. On lui rend sa largeur de contenu ici, et c'est
-      `justify-content` qui le pousse. ⭐ Une classe empruntée emporte les
-      hypothèses de l'endroit où elle a été écrite. */
-.terr-vise-partir { display: flex; justify-content: flex-end; margin-top: var(--sp-1); }
-.terr-vise-partir .terr-bouton { flex: 0 0 auto; }
+/* 🔴 `.terr-vise-partir` EST PARTI LE 5/11, QUELQUES HEURES APRÈS SA POSE.
+   Il existait pour qu'un bouton SEUL cesse de s'étirer d'un bord à l'autre
+   (`.terr-bouton` porte `flex: 1 1 0`, écrit pour une rangée de deux). Il y
+   en a deux depuis que « Y aller » accompagne « Partir d'ici » : l'hypothèse
+   d'origine de `.terr-bouton` est redevenue vraie, et `.terr-actions` —
+   écrit pour exactement ça — reprend la main.
+   ⭐ Une règle posée pour contourner une hypothèse se supprime le jour où
+      l'hypothèse redevient vraie. La garder aurait écrasé le partage de
+      largeur entre les deux boutons, sans que rien ne le signale. */
 
 /* 🔴 NOS PROPOSITIONS DE PROMENADES, SOUS « PARTIR D'ICI » — 3/11/2026,
    fusion du compositeur dans la carte. Même matière que `.terr-vise-dire` :

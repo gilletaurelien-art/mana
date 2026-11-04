@@ -1201,10 +1201,19 @@
   padding-inline: var(--sp-2); font-size: var(--t-xs);
 }
 .terr-bouton .m-icone { width: 1.15em; height: 1.15em; }
-/* sous 340 px, deux boutons côte à côte ne tiennent plus : on empile */
-@media (max-width: 340px) {
-  .terr-actions { flex-direction: column; }
-}
+/* 🔴 « SOUS 340 PX, DEUX BOUTONS NE TIENNENT PLUS » — c'était la règle, et
+   c'était un nombre réglé sur UNE rangée : « Voir le détail » + « En
+   chemin », dans la fiche de promenade. « Y aller » + « Partir d'ici »,
+   posés le 5/11, tiennent très bien à 333 px — mesuré, 127 et 125 px, sans
+   une lettre coupée — et le seuil les empilait quand même.
+   ⭐ LE SEUIL NE CONNAISSAIT PAS LE CONTENU. `flex: 1 1 auto` prend pour
+      base la largeur NATURELLE de chaque bouton (ils sont en `nowrap`), et
+      `flex-wrap` les fait passer à la ligne exactement quand ils ne tiennent
+      plus — quels que soient les libellés, la langue, la taille de police
+      choisie par la personne. Un nombre magique réglé sur un cas devient
+      faux au second ; une mesure prise par le navigateur, jamais. */
+.terr-actions { flex-wrap: wrap; }
+.terr-actions .terr-bouton { flex: 1 1 auto; }
 
 /* ═══ ÉCRAN 4 — EN CHEMIN, IMMERSIF ═══════════════════════════════════════
    ⚠️ `100svh` et non `100vh` : sur mobile, `vh` compte la barre d'adresse

@@ -57,6 +57,7 @@ import { indexer, accrocherUn, accrocherTous, accroche, propositionsAutour, type
       avec des arguments différents n'a l'air fausse NULLE PART. */
 import { chargerFermetures, aretesTouchees, type Fermetures } from "./fermetures";
 import { fusionnerGraphes } from "./fusion-graphes";
+import { lienYAller, plateformeDe } from "./y-aller";
 /* ⚠️ MAPLIBRE EN v4 — même garde que `CarteReelle.tsx`/`CarteFondOT.tsx` : la
    v6 ne livre que de l'ESM, et son worker se charge par une URL relative qui,
    sous la base `/mana/`, retombe sur l'index HTML. */
@@ -190,6 +191,15 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
     /** l'article, quand OSM le référence — 45 lieux sur 624 */
     wiki?: string;
   } | null>(null);
+  /* ⚠️ RELEVÉE UNE FOIS, PAS À CHAQUE RENDU : l'agent utilisateur ne change
+     pas en cours de session, et `plateformeDe` serait appelée à chaque clic
+     sur la carte. ⭐ Lue ici plutôt que dans `y-aller.ts` pour que le module
+     reste PUR — il ne touche ni `navigator` ni `window`, donc il se teste
+     sans navigateur, sur les quatre agents qui comptent. */
+  const plateforme = useMemo(
+    () => plateformeDe(navigator.userAgent, navigator.maxTouchPoints),
+    [],
+  );
   const [calquesOuverts, setCalquesOuverts] = useState(false);
   const [calques, setCalques] = useState({
     lieux: true, promenades: true, balises: true, sites: true,
@@ -1398,7 +1408,51 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
                 ⚠️ `<p>` devient `<div>` : un bouton de 44 px dans un
                    paragraphe de texte héritait de sa hauteur de ligne et de
                    son ton doux. */}
-            <div className="terr-vise-partir">
+            {/* 🔴 DEUX GESTES, PAS UN — 5/11/2026, relevé par le fondateur :
+                « on a omis la fonction principale : y aller ». L'application
+                savait montrer un lieu et composer la promenade qui en part,
+                jamais comment l'ATTEINDRE. Le parcours d'un visiteur est
+                voir → s'y rendre → marcher ; il manquait le milieu.
+                ⭐ L'ORDRE DIT LE PRODUIT. « Y aller » vient d'abord parce
+                   qu'il vient d'abord dans la vie — on n'est pas encore
+                   là —, mais c'est « Partir d'ici » qui porte l'or : la
+                   promenade est ce que MANA apporte, l'itinéraire routier
+                   est une commodité qu'on emprunte ailleurs. */}
+            <div className="terr-actions">
+              <a
+                className="m-action-fine terr-bouton"
+                /* ⛔ ON PASSE LA MAIN, ON N'ITINÈRE PAS — voir `y-aller.ts`
+                   pour les deux raisons mesurées : le graphe servi ne porte
+                   pas la classe de voirie (donc on ne sait pas où une
+                   voiture passe), et ce n'est pas la moitié que MANA
+                   apporte. */
+                href={lienYAller(vise.g, vise.nom, plateforme)}
+                /* ⚠️ DANS UN AUTRE ONGLET, et c'est pour la carte qu'on
+                   quitte, pas pour la page qu'on ouvre : sans ça, revenir
+                   coûte un retour arrière, un rechargement du graphe et la
+                   perte du lieu sélectionné. Sur téléphone le système
+                   détourne de toute façon vers Plans ou l'appli choisie, et
+                   l'onglet reste là, intact, derrière. */
+                target="_blank"
+                rel="noopener noreferrer"
+                /* ⚠️ LE TITRE DIT QU'ON SORT, parce que le libellé ne peut
+                    pas tout porter. ⛔ Et il ne crie PAS au loup sur le
+                    stationnement : nous ne savons pas s'il y a un parking à
+                    50 m ou un chemin de terre sur un kilomètre (la classe de
+                    voirie n'est pas dans le graphe servi) — alors que
+                    l'application de cartes, elle, le montrera. Avertir
+                    partout de ce qu'on ignore, c'est un avertissement qu'on
+                    apprend à ignorer. */
+                title={`Itinéraire vers ${vise.nom} dans votre application de cartes`}
+              >
+                <svg className="m-icone" viewBox="0 0 24 24" aria-hidden="true"
+                     fill="none" stroke="currentColor" strokeWidth="2"
+                     strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z" />
+                  <circle cx="12" cy="10" r="2.6" />
+                </svg>
+                Y aller
+              </a>
               <a
                 className="m-action terr-bouton"
                 /* ⚠️ `/promenades`, PAS `/composer`, DEPUIS LE 3/11/2026 —
