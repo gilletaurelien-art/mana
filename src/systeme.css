@@ -991,6 +991,11 @@
 .terr-calque input { margin-top: 3px; accent-color: var(--ocre); }
 .terr-calque span { display: flex; flex-direction: column; }
 .terr-calque-nom { font-size: var(--t-s); }
+/* ── le filtre par genre de site — 4/11/2026 ───────────────────────────── */
+.terr-genres {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  padding-top: var(--sp-1); border-top: 1px solid var(--bulle-trait);
+}
 
 .terr-gps, .terr-vise {
   position: absolute; z-index: var(--z-releve); left: var(--sp-2); right: var(--sp-2);

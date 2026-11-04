@@ -42,6 +42,13 @@ import type { Walk } from "./walks";
    (le second visite chaque lieu nommé) : ils ne tournent qu'une fois le
    graphe chargé, mémorisés, comme `sitesIci`. */
 import { indexer, accrocherUn, accrocherTous, accroche, propositionsAutour, type Proposition } from "./composition";
+/* ⚠️ MAPLIBRE EN v4 — même garde que `CarteReelle.tsx`/`CarteFondOT.tsx` : la
+   v6 ne livre que de l'ESM, et son worker se charge par une URL relative qui,
+   sous la base `/mana/`, retombe sur l'index HTML. */
+import maplibregl from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
+import type { Map as MaplibreMap } from "maplibre-gl";
+import { STYLES } from "./carte-fond";
 import { ILLUSTRATIONS } from "./illustrations";
 import { Photo, image } from "./images/Photo";
 
@@ -80,10 +87,46 @@ const R_LAT = 111_320;
 export function Territoire2030({ base, centre }: { base: string; centre?: [number, number] }) {
   const toile = useRef<HTMLCanvasElement | null>(null);
   const boite = useRef<HTMLDivElement | null>(null);
+  /* 🔴 LE FOND SATELLITE — 3/11/2026, demande du fondateur, malgré le risque
+     nommé avant d'y toucher : cet écran dessine depuis NOTRE graphe, pas
+     depuis des tuiles (voir l'en-tête du fichier), un choix qui tient
+     toujours. Ce qui change : une carte maplibre NON INTERACTIVE
+     (`interactive: false`, même garde que `CarteFondOT`) prend place SOUS
+     le canvas, sur `STYLES.ortho` — l'orthophotographie IGN déjà relayée,
+     déjà vue sur les cartes de `/balades-office`. Le canvas garde la main :
+     le réseau, les sites, le lieu visé, nos propositions restent DESSUS,
+     en vecteur, lisibles sur n'importe quelle image en dessous.
+     ⚠️ DEUX MOTEURS, UNE SEULE VUE : `maplibreCarte` est recalée à CHAQUE
+     `dessiner()` (voir plus bas) sur le centre et le zoom qu'affiche le
+     canvas — sinon l'image et le réseau divergeraient au premier geste. */
+  const maplibreBoite = useRef<HTMLDivElement | null>(null);
+  const maplibreCarte = useRef<MaplibreMap | null>(null);
   const [graphe, setGraphe] = useState<Graphe | null>(null);
   const [erreur, setErreur] = useState("");
   const [choisie, setChoisie] = useState<string | null>(null);
   const [rendu, setRendu] = useState(0);
+
+  /* ⭐ MONTÉE UNE SEULE FOIS, comme `CarteReelle`/`CarteFondOT` : une instance
+     maplibre = un contexte WebGL, et on n'en veut qu'un sur cet écran. Le
+     centre/zoom de départ n'a pas d'importance — `dessiner()` les corrige
+     dès le premier passage, une fois le graphe là pour les calculer. */
+  /* ⭐ PRÊTE, PAS SEULEMENT CRÉÉE. `new maplibregl.Map(...)` revient avant que
+     le style ait fini de charger ; ajouter une source avant `load` lève. Un
+     état React (pas une ref) parce que l'effet qui pose la couche des sites
+     doit se RELANCER quand ce passage devient vrai. */
+  const [maplibrePrete, setMaplibrePrete] = useState(false);
+  useEffect(() => {
+    if (!maplibreBoite.current) return;
+    const m = new maplibregl.Map({
+      container: maplibreBoite.current,
+      style: STYLES.ortho,
+      center: [-4.2, 48.25], zoom: 10,
+      interactive: false, attributionControl: false,
+    });
+    maplibreCarte.current = m;
+    m.on("load", () => setMaplibrePrete(true));
+    return () => { m.remove(); maplibreCarte.current = null; setMaplibrePrete(false); };
+  }, []);
 
   /* ── LE CHROME DE LA MAQUETTE, ET IL EST FONCTIONNEL ──────────────────
      ⛔ Aucun de ces contrôles n'est décoratif. Un bouton qui ne fait rien
@@ -99,7 +142,7 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
   } | null>(null);
   const [calquesOuverts, setCalquesOuverts] = useState(false);
   const [calques, setCalques] = useState({
-    lieux: true, littoral: true, promenades: true, balises: true, sites: true,
+    lieux: true, promenades: true, balises: true, sites: true,
   });
 
   const [moi, setMoi] = useState<[number, number] | null>(null);
@@ -168,6 +211,69 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
      une seule fois de lire l'inventaire d'aujourd'hui. */
   vivant.current = { sites: sitesIci, inv };
 
+  /* ── LES SITES, POSÉS DANS MAPLIBRE — 4/11/2026 ────────────────────────
+     🔴 PLUS DE PROJECTION MAISON : chaque site est une coordonnée réelle,
+     posée dans la MÊME carte que le satellite qui le montre — maplibre
+     projette les deux avec le même moteur, donc ne peut plus les désaccorder.
+     ⭐ UNE COULEUR PAR GENRE. `CATEGORIE` (categories.ts) est la table
+        partagée — pas une recopie : la fiche de promenade l'utilise aussi. */
+  const genres = useMemo(() => {
+    const vus = new Set<string>();
+    for (const l of sitesIci) vus.add(l.c);
+    return [...vus].sort();
+  }, [sitesIci]);
+  const [genreFiltre, setGenreFiltre] = useState<string>("tous");
+
+  const sitesGeoJSON = useMemo(() => ({
+    type: "FeatureCollection" as const,
+    features: sitesIci.filter((l) => l.n).map((l) => ({
+      type: "Feature" as const,
+      geometry: { type: "Point" as const, coordinates: l.g },
+      properties: { nom: l.n, genre: l.c },
+    })),
+  }), [sitesIci]);
+
+  useEffect(() => {
+    const m = maplibreCarte.current;
+    if (!m || !maplibrePrete) return;
+    if (!m.getSource("sites")) {
+      m.addSource("sites", { type: "geojson", data: sitesGeoJSON });
+      m.addLayer({
+        id: "sites-genre", type: "circle", source: "sites",
+        paint: {
+          "circle-radius": 4.5,
+          "circle-stroke-width": 1,
+          "circle-stroke-color": "#eeebdd",
+          "circle-color": [
+            "match", ["get", "genre"],
+            "megalithe", "#c69a48",
+            "plage", "#f2c14e",
+            "panorama", "#e8702a",
+            "chateau", "#8b5a2b",
+            "calvaire", "#d94f4f",
+            "chapelle", "#d9507a",
+            "lieu_de_culte", "#a357d9",
+            "moulin", "#4f8fd9",
+            "phare", "#ffd23f",
+            "grotte", "#6b52a3",
+            "source", "#3fc2b0",
+            "ruine", "#9c9c9c",
+            "memorial", "#c68f3f",
+            /* repli pour tout genre que cette liste ne nomme pas */
+            "#c69a48",
+          ],
+        },
+      });
+    } else {
+      (m.getSource("sites") as maplibregl.GeoJSONSource).setData(sitesGeoJSON);
+    }
+    m.setLayoutProperty("sites-genre", "visibility", calques.sites ? "visible" : "none");
+    m.setFilter(
+      "sites-genre",
+      genreFiltre === "tous" ? null : ["==", ["get", "genre"], genreFiltre],
+    );
+  }, [maplibrePrete, sitesGeoJSON, calques.sites, genreFiltre]);
+
   /* ── NOS PROPOSITIONS DE PROMENADES, DEPUIS LE LIEU VISÉ ──────────────────
      ⭐ MÊME FILTRE QUE `Composer.tsx` (lieux nommés, dédoublonnés sur le nom)
         — une proposition « Plage » ou « Calvaire » sans autre précision ne
@@ -214,6 +320,37 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
     }),
     [ot, terr],
   );
+
+  /* ── LES CIRCUITS BALISÉS, POSÉS DANS MAPLIBRE — 4/11/2026 ─────────────
+     🔴 MÊME RAISON QUE LES SITES : un tracé à ses coordonnées réelles, sur
+     la carte qui porte aussi le satellite, ne peut pas en diverger. */
+  const otGeoJSON = useMemo(() => ({
+    type: "FeatureCollection" as const,
+    features: otIci.map((i) => ({
+      type: "Feature" as const,
+      geometry: { type: "LineString" as const, coordinates: i.p },
+      properties: { titre: i.titre },
+    })),
+  }), [otIci]);
+
+  useEffect(() => {
+    const m = maplibreCarte.current;
+    if (!m || !maplibrePrete) return;
+    if (!m.getSource("ot-circuits")) {
+      m.addSource("ot-circuits", { type: "geojson", data: otGeoJSON });
+      /* ⛔ AVANT « sites-genre » DANS L'ORDRE D'AJOUT, DONC DESSOUS : ce ne
+         sont pas nos tracés, ils ne doivent pas prendre le dessus sur les
+         sites — la même hiérarchie que l'ancien dessin au canvas tenait. */
+      m.addLayer({
+        id: "ot-trace", type: "line", source: "ot-circuits",
+        layout: { "line-join": "round", "line-cap": "round" },
+        paint: { "line-color": "#92977c", "line-width": 1.6, "line-opacity": 0.8 },
+      }, m.getLayer("sites-genre") ? "sites-genre" : undefined);
+    } else {
+      (m.getSource("ot-circuits") as maplibregl.GeoJSONSource).setData(otGeoJSON);
+    }
+    m.setLayoutProperty("ot-trace", "visibility", calques.balises ? "visible" : "none");
+  }, [maplibrePrete, otGeoJSON, calques.balises]);
 
 
   useEffect(() => {
@@ -445,7 +582,20 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
       zoomer(Math.exp(-e.deltaY * 0.0015), e.clientX, e.clientY);
     };
     const depart = new Map<number, { x: number; y: number }>();
+    /* 🔴 LES COMMANDES NE SONT PAS LA CARTE — 4/11/2026, bug relevé par le
+       fondateur : cliquer + ou - visait aussi le lieu qui se trouvait
+       dessous. `setPointerCapture`, plus bas, livre TOUS les événements du
+       doigt à `b` (`.terr-carte`) dès le premier contact — y compris un
+       contact qui a commencé sur un bouton enfant. `viser()` ne regarde que
+       la POSITION du relâché, jamais sa cible : un bouton posé sur un site
+       (plus probable depuis que les sites sont denses et visibles) visait
+       donc les deux. ⭐ On exclut les commandes AVANT de capturer le
+       pointeur, pas après : une fois capturé, le bouton perdrait aussi son
+       propre `pointerup`. */
+    const surUneCommande = (e: PointerEvent) =>
+      !!(e.target as HTMLElement).closest(".terr-commandes, .terr-calques, .terr-vise, .terr-genres");
     const bas = (e: PointerEvent) => {
+      if (surUneCommande(e)) return;
       doigts.set(e.pointerId, { x: e.clientX, y: e.clientY });
       depart.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (doigts.size === 2) {
@@ -614,6 +764,37 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
       // ⭐ Déposée à CHAQUE rendu : le pointage vise toujours l'image qu'on voit.
       proj.current = { X, Y };
 
+      /* ── RECALER LE FOND SATELLITE SUR CE QUE LE CANVAS MONTRE ───────────
+         ⭐ L'INVERSE DE X/Y, AU CENTRE DU CADRE. `X`/`Y` sont affines en
+            lon/lat ; résoudre `X(lon) = cxv` donne le lon du centre écran,
+            et `Y(lat) = cyv` son lat. Pas d'approximation : ce sont les
+            MÊMES coefficients (`dx`, `ech`, `kLon`, `k`, `px`…) que ceux qui
+            viennent de placer le réseau et les sites.
+         ⚠️ LE ZOOM SE DÉDUIT DE L'ÉCHELLE, PAS DE `k` SEUL : `ech` porte déjà
+            le cadrage initial (combien de pixels par mètre pour que le
+            territoire tienne dans la boîte), `k` le zoom gagné depuis. Le
+            zoom maplibre se définit en « mètres par pixel à l'équateur à la
+            latitude donnée » — d'où la correction en cosinus. */
+      const m = maplibreCarte.current;
+      if (m) {
+        /* 🔴 `resize()` À CHAQUE PASSAGE — même piège que `CarteReelle.tsx` :
+           le conteneur ne tient sa hauteur FINALE qu'après le premier rendu
+           de la page, et maplibre, construit avant, gardait la taille qu'il
+           avait à la naissance (quelques pixels). Pas de garde « une seule
+           fois » : `dessiner()` tourne déjà sur un `ResizeObserver`, et
+           `resize()` ne coûte rien quand la taille n'a pas changé. */
+        m.resize();
+        const centreLon = loMin + (cxv - px / k - dx) / (R_LAT * kLon * ech);
+        const centreLat = laMax - (cyv - py / k - dy) / (R_LAT * ech);
+        const metresParPixel = 1 / (ech * k);
+        const zoom = Math.log2(
+          (156543.03392 * Math.cos((centreLat * Math.PI) / 180)) / metresParPixel,
+        );
+        if (Number.isFinite(centreLon) && Number.isFinite(centreLat) && Number.isFinite(zoom)) {
+          m.jumpTo({ center: [centreLon, centreLat], zoom, bearing: 0, pitch: 0 });
+        }
+      }
+
       /* ⭐ LA CARTE PUISE DANS LES RÔLES, PAS DANS LES MATIÈRES. Lire `--kaki`
          ici fige la carte en clair : le thème sombre redéfinit les rôles, pas
          les matières, et une carte qui nomme `--kaki` resterait kaki sur un
@@ -627,18 +808,28 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
       const fond = jeton("--carte-fond", "#343f32");
       const chemin = jeton("--carte-chemin", "#92977c");
       const cheminBeau = jeton("--carte-chemin-beau", "#92977c");
-      const eau = jeton("--carte-eau", "#192b43");
       const trace = jeton("--carte-trace", "#c69a48");
       const lieu = jeton("--carte-lieu", "#c69a48");
       const depart = jeton("--carte-depart", "#eeebdd");
-      const estran = jeton("--carte-estran", "#eeebdd");
 
-      ctx.fillStyle = fond;
-      ctx.fillRect(0, 0, W, H);
+      /* 🔴 PLUS DE REMPLISSAGE OPAQUE — 3/11/2026 : `fond` peignait le canvas
+         en kaki plein ; le satellite est maintenant DESSOUS, et un aplat
+         par-dessus l'effacerait entièrement. `ctx.clearRect`, pas rien du
+         tout : sans lui, le canvas garderait l'image du rendu précédent
+         derrière la nouvelle — relevé en testant, un territoire « fantôme »
+         visible au changement d'onglet. */
+      ctx.clearRect(0, 0, W, H);
 
       const t0 = performance.now();
 
-      // ── passe 1 : le réseau ordinaire, à peine là
+      /* 🔴 LE FILIGRANE DU RÉSEAU EST PARTI — 4/11/2026, demande du
+         fondateur. La « passe 1 » (tout le réseau marchable, à peine là) et
+         le calque « littoral » dessinaient ce que le satellite montre
+         maintenant VRAIMENT — la côte, les chemins — en traits fins et
+         transparents par-dessus l'image : un filigrane plutôt qu'une
+         information. `tracer()` reste définie : les balises, les promenades
+         vérifiées et le parcours choisi s'en servent encore, juste plus
+         pour le réseau brut. */
       const tracer = (garde: (a: Graphe["a"][number]) => boolean, couleur: string, ep: number, alpha: number) => {
         ctx.beginPath();
         for (const a of graphe.a) {
@@ -660,22 +851,6 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
         ctx.globalAlpha = 1;
       };
 
-      // le tout-venant : présent, jamais lu
-      tracer((a) => (a[3] ?? 0) < 120, chemin, 0.6, 0.22);
-      // ⭐ CE QUI REND LA CARTE DIFFÉRENTE : l'agrément décide de la présence.
-      //    Un chemin plaisant se voit, une départementale s'efface. Aucune
-      //    autre carte ne peut faire ça — l'agrément est notre donnée.
-      tracer((a) => (a[3] ?? 0) >= 120, cheminBeau, 0.9, 0.55);
-      /* ⚠️ LE CALQUE « LITTORAL » N'EST PAS UN FILTRE D'AFFICHAGE ORDINAIRE :
-         c'est lui qui révèle la presqu'île. Sans lui, la carte reste juste
-         mais la forme du territoire s'efface — on voit un réseau, plus une
-         côte. L'éteindre est donc une vraie option de lecture, pas un
-         caprice, et c'est pour ça qu'il mérite un interrupteur. */
-      if (calques.littoral) {
-        tracer((a) => a[5] != null && (a[5] as number) <= 120, eau, 1.5, 0.5);
-        tracer((a) => a[5] != null && (a[5] as number) <= 60, estran, 0.8, 0.35);
-      }
-
       // ── passe 2 : les promenades vérifiées
       /* ── les circuits balisés de l'Office ──────────────────────────────
          ⛔ DESSINÉS AVANT LES NÔTRES, ET PLUS DISCRETS. Ce ne sont pas nos
@@ -683,35 +858,22 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
             MANA, et ils ne doivent pas non plus se confondre avec eux. Un
             trait plus fin, dans la sauge du végétal, et sous la couche des
             promenades vérifiées — l'ordre de dessin EST la hiérarchie. */
-      /* ── les sites remarquables ────────────────────────────────────────
-         ⚠️ DESSINÉS EN DERNIER, donc au-dessus de tout : ce sont eux qu'on
-            vient chercher sur cet écran. Un point de 2,5 px, pas une
-            pastille : mille trois cent cinquante-huit pastilles feraient une
-            tache. ⭐ La densité EST l'information — on voit où le territoire
-            est riche avant de lire un seul nom. */
-      if (calques.sites && sitesIci.length) {
-        ctx.fillStyle = trace;
-        for (const l of sitesIci) {
-          const x = X(l.g[0]), y = Y(l.g[1]);
-          if (x < -20 || y < -20 || x > W + 20 || y > H + 20) continue;
-          ctx.beginPath(); ctx.arc(x, y, l.n ? 2.6 : 1.8, 0, Math.PI * 2); ctx.fill();
-        }
-      }
+      /* 🔴 LES SITES NE SE DESSINENT PLUS ICI — 4/11/2026, demande du
+         fondateur : « la méthode n'est pas bonne ». Les poser au canvas
+         voulait dire les projeter avec NOTRE transform (`X`/`Y`), recalée à
+         chaque image sur celle de maplibre — deux projections différentes
+         (la nôtre, équirectangulaire locale ; Mercator, la vraie, sous le
+         satellite) tenues en phase par un calcul, jamais garanties pixel
+         pour pixel. ⭐ Les poser DANS maplibre (plus bas, `sites-genre`)
+         retire le calcul : un site à sa coordonnée, sur LA MÊME carte que
+         l'image qui le montre, ne peut plus diverger d'elle. */
 
-      if (calques.balises) {
-        ctx.strokeStyle = cheminBeau;
-        ctx.lineWidth = 1.4;
-        ctx.globalAlpha = 0.75;
-        for (const i of otIci) {
-          ctx.beginPath();
-          i.p.forEach(([lo, la], k) => {
-            const x = X(lo), y = Y(la);
-            if (k === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-          });
-          ctx.stroke();
-        }
-        ctx.globalAlpha = 1;
-      }
+      /* 🔴 LES CIRCUITS BALISÉS NE SE DESSINENT PLUS ICI NON PLUS — 4/11/2026,
+         même défaut relevé par le fondateur que pour les sites : au canvas,
+         46 tracés fins dans NOTRE projection, recalée par un calcul plutôt
+         que vraie, redevenaient un filigrane dès que le satellite montrait
+         le vrai terrain dessous. Posés dans maplibre (plus bas, `ot-trace`),
+         ils suivent la même coordonnée que le sol qu'ils traversent. */
 
       for (const w of calques.promenades ? VITRINE : []) {
         const vedette = choisie === null || choisie === w.slug;
@@ -826,9 +988,10 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
   return (
     <main className="terr">
       <div className="terr-carte" ref={boite}>
-        {/* ⚠️ `aria-hidden` : le canvas ne porte aucune information qui ne soit
-            pas aussi dans la liste en dessous. Le faire annoncer donnerait du
-            bruit à qui n'y voit rien. */}
+        {/* ⚠️ `aria-hidden` SUR LES DEUX : ni le fond satellite ni le canvas ne
+            portent d'information qui ne soit pas aussi dans la liste en
+            dessous. */}
+        <div className="terr-fond" ref={maplibreBoite} aria-hidden="true" />
         <canvas ref={toile} aria-hidden="true" />
         {!graphe && !erreur && (
           <p className="terr-attente" role="status">Lecture du territoire…</p>
@@ -888,7 +1051,6 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
                 dessin. Un calque qui ne change rien à l'image est un
                 décor coûteux — on l'aurait su au premier essai. */}
             {([
-              ["littoral", "Le littoral", "la distance à la mer, par tronçon"],
               ["balises", "Les circuits balisés", "ceux de l'Office de tourisme"],
               ["sites", "Les sites remarquables", "mégalithes, plages, forts, fontaines…"],
               ["lieux", "Les lieux", "ce qu'on croise sur le parcours choisi"],
@@ -904,6 +1066,28 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
                 </span>
               </label>
             ))}
+            {/* ⭐ LE FILTRE PAR GENRE NE S'AFFICHE QUE SI LE CALQUE DES SITES
+                EST ALLUMÉ — un filtre sur une couche éteinte ne change rien
+                à l'écran, et un contrôle qui ne fait rien se lit comme une
+                panne. */}
+            {calques.sites && genres.length > 1 && (
+              <div className="terr-genres" role="group" aria-label="Genre de site">
+                <button type="button"
+                  className={genreFiltre === "tous" ? "ot-filtre ot-filtre-actif" : "ot-filtre"}
+                  aria-pressed={genreFiltre === "tous"}
+                  onClick={() => setGenreFiltre("tous")}>
+                  Tous
+                </button>
+                {genres.map((g) => (
+                  <button key={g} type="button"
+                    className={genreFiltre === g ? "ot-filtre ot-filtre-actif" : "ot-filtre"}
+                    aria-pressed={genreFiltre === g}
+                    onClick={() => setGenreFiltre(g)}>
+                    {libelleCategorie(g)}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

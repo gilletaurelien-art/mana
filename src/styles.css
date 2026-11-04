@@ -1865,9 +1865,17 @@ body { padding-bottom: var(--reserve-barre); }
      ⭐ Une surcharge locale survit à la raison qui l'a fait écrire, et elle
         devient fausse dans le régime qu'on ne regarde pas. Le rôle sait déjà
         répondre dans les deux thèmes ; il n'avait plus besoin d'aide. */
+  /* 🔴 LA CARTE PREND TOUT L'ÉCRAN — 4/11/2026, demande du fondateur :
+     « comme pour les balades de l'OT », dont la carte (`CarteFondOT`)
+     remplit toute sa carte de jeu, sans réserver une bande fixe à un
+     panneau. `.terr-panneau`, plus bas, devient une VRAIE feuille — posée
+     PAR-DESSUS en `position: absolute`, pas une deuxième rangée de grille
+     qui prenait 54 à 62 % de la hauteur EN PERMANENCE, repliée ou non (les
+     classes `terr-feuille-replie`/`-deploye` existaient déjà dans le JSX
+     sans aucune règle CSS pour les faire agir — relevé en cherchant, zéro
+     résultat). */
+  position: relative;
   min-height: 100svh;
-  display: grid;
-  grid-template-rows: minmax(38svh, 46svh) 1fr;
   background: var(--kaki);
   color: var(--craie);
   /* 🔴 LE RECTANGLE KAKI AU BAS DE LA PAGE, c'était ça : 100 px mesurés, la
@@ -1888,11 +1896,28 @@ body { padding-bottom: var(--reserve-barre); }
       est chargée après, c'est elle qui gagne. Même piège que `.nav a.brand`
       une heure plus tôt. */
 .terr-carte {
-  position: relative; overflow: hidden;
+  position: absolute; inset: 0; overflow: hidden;
   touch-action: none; cursor: grab;
 }
 .terr-carte:active { cursor: grabbing; }
-.terr-carte canvas { display: block; }
+/* 🔴 LE SATELLITE SOUS LE CANVAS — 3/11/2026. `.terr-fond` porte maplibre,
+   non interactif (`interactive: false` côté JS — un double geste sur deux
+   cartes empilées ferait l'une sans l'autre) ; le canvas garde le réseau et
+   les repères, DESSUS, en `z-index` explicite pour ne jamais dépendre de
+   l'ordre d'insertion dans le DOM. */
+/* ⚠️ `.terr-carte .terr-fond`, PAS `.terr-fond` SEUL — maplibre pose SA
+   PROPRE classe `maplibregl-map` sur ce même conteneur (`position: relative`,
+   sans hauteur), et `maplibre-gl.css` se charge après la nôtre : à spécificité
+   égale (une classe contre une classe), c'est la DERNIÈRE qui gagnait, et
+   `inset: 0` ne fait rien sur du `position: relative`. Un sélecteur à deux
+   classes (0,2,0) bat `.maplibregl-map` (0,1,0) quel que soit l'ordre de
+   chargement — relevé en mesurant : 150 px de haut (le canvas HTML par
+   défaut) au lieu des ~350 de `.terr-carte`. */
+.terr-carte .terr-fond { position: absolute; inset: 0; z-index: 0; }
+/* ⚠️ `>` : `.terr-carte canvas` (sans l'enfant direct) attraperait AUSSI le
+   canvas interne de maplibre, niché dans `.terr-fond` — lui forcer
+   `position: relative` casserait son propre positionnement absolu. */
+.terr-carte > canvas { display: block; position: relative; z-index: 1; }
 .terr-attente {
   position: absolute; inset: 0;
   display: grid; place-items: center;
@@ -1921,10 +1946,25 @@ body { padding-bottom: var(--reserve-barre); }
      bas. Le rayon dit la direction — on garde la FORME, on remplace les
      valeurs inventées par le token. */
   border-radius: var(--r-l) var(--r-l) 0 0;
-  margin-top: -18px;
-  position: relative;
-  z-index: 1;
+  /* 🔴 UNE VRAIE FEUILLE, PAS UNE RANGÉE DE GRILLE — 4/11/2026. Posée
+     PAR-DESSUS la carte (`position: absolute`, bas de `.terr`), sa hauteur
+     distingue enfin repliée de dépliée — ce que les classes faisaient
+     semblant de faire depuis leur écriture, sans la moindre règle pour les
+     tenir. ⚠️ `env(safe-area-inset-bottom)` DANS LE MAX-HEIGHT, pas en
+     padding seul : sur un téléphone à encoche, la hauteur réservée à la
+     poignée doit déjà compter cette réserve, sinon la poignée elle-même se
+     retrouve sous le système. */
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
+  max-height: calc(68svh + env(safe-area-inset-bottom, 0px));
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  box-shadow: var(--ombre-levee);
+  transition: max-height var(--d-panneau, 280ms) var(--e-sortie, ease);
 }
+/* ⭐ LA HAUTEUR REPLIÉE MONTRE LA POIGNÉE ET LE TITRE, RIEN DE PLUS — assez
+   pour dire « il y a quelque chose ici », pas assez pour cacher la carte
+   qu'on vient de dégager. */
+.terr-feuille-replie { max-height: calc(104px + env(safe-area-inset-bottom, 0px)); }
+.terr-feuille-deploye { max-height: calc(68svh + env(safe-area-inset-bottom, 0px)); }
 .terr-entete { margin-bottom: var(--sp-3); }
 .terr-titre {
   margin: 0;
