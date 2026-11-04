@@ -2108,8 +2108,23 @@ body { padding-bottom: var(--reserve-barre); }
       doit pas attendre un rendu React pour être juste. Là où `:has` manque,
       on retombe sur l'ancien comportement — un défilement de 88 px, pas un
       écran cassé. */
-body:has(.jeu) { padding-bottom: 0; }
-.app-colonne:has(.jeu) { min-height: 0; }
+/* 🔴 `.terr` REJOINT `.jeu` LE 5/11/2026 — et le défaut n'était pas celui
+   qu'on croyait. `body` réserve 88 px sous la barre flottante : juste, pour
+   une page qui défile. Mais `/carte` est plein écran depuis hier, et cette
+   réserve faisait un document de 851 px dans une fenêtre de 763. Rien n'y
+   dépassait — j'ai cherché l'élément coupable, il n'y en avait pas : c'est
+   le `padding` du `body` lui-même qui rallongeait la page.
+   ⛔ CE N'EST PAS UN DÉFAUT COSMÉTIQUE DE 88 PX. Le panneau des calques et
+      le cadre du lieu visé sont en `position: absolute` DANS `.terr` : dès
+      que la page défile, ils défilent avec elle et se décrochent du point
+      où on les a posés. Relevé : le panneau ouvert glissait sous la barre de
+      recherche, et un appui sur le bouton des calques tombait dans le vide.
+   ⭐ Une carte plein écran ne doit RIEN laisser défiler : tout ce qui flotte
+      au-dessus d'elle est positionné par rapport à elle. `.jeu` avait déjà
+      rencontré ça et rendu le verdict ; `.terr` est devenu plein écran sans
+      hériter de la règle. */
+body:has(.jeu), body:has(.terr) { padding-bottom: 0; }
+.app-colonne:has(.jeu), .app-colonne:has(.terr) { min-height: 0; }
 
 .jeu {
   /* 🔴 `100svh` SEUL DÉBORDE : `body` réserve DÉJÀ la hauteur de la barre

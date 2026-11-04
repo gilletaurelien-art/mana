@@ -958,8 +958,23 @@
 .terr-calques {
   position: absolute; z-index: var(--z-panneau);
   top: calc(var(--sp-2) + env(safe-area-inset-top, 0px) + 52px); right: var(--sp-2);
-  background: var(--fond-surelevé); border-radius: var(--r-m);
-  box-shadow: var(--ombre-levee); padding: var(--sp-2);
+  /* 🔴 LE VERRE DE LA BARRE — 5/11/2026, demande du fondateur. Le panneau
+     était en `--fond-surelevé`, c'est-à-dire IVOIRE en thème clair : une
+     plaque d'interface posée sur une photo satellite, à côté d'une barre et
+     d'un cadre en kaki translucide. Trois flottants sur la même carte,
+     trois matières.
+     ⚠️ ET LE FOND COMMANDE TOUTE L'ENCRE DU PANNEAU. Les libellés, les
+        pastilles de genre et leur cerne descendaient tous de `--texte`,
+        calculé pour un fond clair. Les basculer en même temps que le fond
+        n'est pas du zèle : c'est la SEULE façon de ne pas reproduire le
+        défaut du matin, où `.ot-filtre` rendait de la craie sur de
+        l'ivoire. Un changement de fond est un changement de palette. */
+  background: var(--bulle); color: var(--bulle-texte);
+  -webkit-backdrop-filter: var(--bulle-flou);
+  backdrop-filter: var(--bulle-flou);
+  border: 1px solid var(--bulle-trait);
+  border-radius: var(--r-l);
+  box-shadow: var(--ombre-levee), var(--bulle-eclat); padding: var(--sp-2);
   display: flex; flex-direction: column; gap: var(--sp-2);
   /* 🔴 ÉLARGI — 5/11/2026, demande du fondateur. 15 rem (240 px) étaient la
      mesure d'un panneau à TROIS CASES À COCHER ; il en porte aujourd'hui
@@ -998,7 +1013,7 @@
    parce que le libellé faisait deux lignes (titre + glose). La glose partie,
    le `start` laissait la case flotter au-dessus d'un texte d'une ligne. */
 .terr-calque { display: grid; grid-template-columns: auto 1fr; gap: var(--sp-1);
-               align-items: center; cursor: pointer; color: var(--texte); }
+               align-items: center; cursor: pointer; color: var(--bulle-texte); }
 .terr-calque input { accent-color: var(--ocre); }
 .terr-calque-nom { font-size: var(--t-s); }
 /* ── le filtre par genre de site — 4/11/2026 ───────────────────────────── */
@@ -1031,8 +1046,14 @@
       change de réponse quand le composant change de parent. Un composant
       qu'on déménage emporte ses règles, pas son contexte.
    ⚠️ Le bouton « Tous » garde `.ot-filtre` : il ne désigne aucun genre, donc
-      aucune couleur de pastille ne lui revient. */
-.terr-genres .ot-filtre { color: var(--texte); border-color: var(--trait); }
+      aucune couleur de pastille ne lui revient.
+   🔴 ET LA MÊME LIGNE A DÛ CHANGER DEUX FOIS DANS LA JOURNÉE : écrite en
+      `--texte` quand le panneau était ivoire, repassée en `--bulle-texte`
+      quand il a pris le verre de la barre. ⭐ C'est la démonstration que le
+      ton ne se choisit pas au composant mais au FOND : la même classe, le
+      même bouton, et la bonne réponse qui s'inverse parce que la plaque
+      derrière a changé de couleur. */
+.terr-genres .ot-filtre { color: var(--bulle-texte); border-color: var(--bulle-trait); }
 
 /* ── une pastille de filtre PORTE la couleur de son genre ──────────────────
    🔴 5/11/2026, demande du fondateur : « la même couleur que leur pin ».
@@ -1051,9 +1072,14 @@
   display: inline-flex; align-items: center; gap: 6px;
   min-height: 36px; padding: 0 var(--sp-2);
   font: inherit; font-size: var(--t-xs); cursor: pointer;
-  color: var(--texte);
-  background: color-mix(in srgb, var(--pin) 10%, var(--fond-surelevé));
-  border: 1px solid color-mix(in srgb, var(--pin) 55%, transparent);
+  color: var(--bulle-texte);
+  /* ⚠️ `--bulle-unie` ET NON `--bulle` : le fond du panneau est un DÉGRADÉ,
+     et `color-mix()` ne mélange que des couleurs. Le token existe pour ça —
+     « le même ton, pour ce qui est trop petit » dit sa définition dans
+     `tokens.css`. Une pastille de 36 px n'a pas besoin du dégradé, elle a
+     besoin de sa teinte. */
+  background: color-mix(in srgb, var(--pin) 16%, var(--bulle-unie));
+  border: 1px solid color-mix(in srgb, var(--pin) 60%, transparent);
   border-radius: var(--r-rond);
 }
 /* ⚠️ LE CERNE N'EST PAS UNE FINITION. Sans lui, « Phare » et « Plage » —
@@ -1063,7 +1089,7 @@
 .terr-genre-pin {
   width: 10px; height: 10px; border-radius: 50%; flex: none;
   background: var(--pin);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--texte) 28%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--bulle-texte) 28%, transparent);
 }
 /* ⭐ SÉLECTIONNÉ SE DIT SANS PERDRE LA COULEUR. L'ancien actif peignait le
    bouton en doré — tenable quand un seul genre pouvait l'être, faux depuis
@@ -1071,8 +1097,20 @@
    raison même du filtre. L'état passe donc par le liseré et la graisse.
    ⚠️ `padding` réduit d'un pixel : le liseré passe de 1 à 2 px, et sans ça
       la pastille sauterait d'un pixel en se cochant. */
+/* ⚠️ 30 % SUR `--bulle-creux`, ET LES DEUX CHIFFRES SONT MESURÉS. Premier
+   essai à 38 % sur `--bulle-unie` : la craie tombait à 3,48 sur « Phare »,
+   3,77 sur « Plage », 4,45 sur « Fontaine » — trois pastilles sous le seuil,
+   et toujours les mêmes, les teintes CLAIRES. Un fond qui s'éclaircit pour
+   dire « coché » rapproche la pastille de la couleur du texte posé dessus.
+   ⭐ La base plus sombre permet de garder une teinte FRANCHE (30 % au lieu
+      de 26 %) sans payer en lisibilité : relevé 5,11 au pire, zéro pastille
+      sous 4,5, là où 26 % sur l'uni rendait encore 4,48. On déplace le fond,
+      pas la quantité de couleur.
+   ⛔ Et l'état ne repose pas sur ce fond seul : le liseré passe à 2 px dans
+      la teinte pleine, et le libellé s'épaissit. Une sélection qui ne tient
+      qu'à une nuance de fond se perd sur un écran au soleil. */
 .terr-genre-actif {
-  background: color-mix(in srgb, var(--pin) 26%, var(--fond-surelevé));
+  background: color-mix(in srgb, var(--pin) 30%, var(--bulle-creux));
   border: 2px solid var(--pin); font-weight: 600;
   padding: 0 calc(var(--sp-2) - 1px);
 }
