@@ -2672,6 +2672,41 @@ body:has(.jeu), body:has(.terr) { padding-bottom: 0; }
   border-top: 1px solid var(--bulle-trait);
   display: flex; flex-direction: column; gap: 4px;
 }
+
+/* 🔴 CE QUE DIT LA PLACE DES TROIS PROMENADES QUAND ELLES N'Y SONT PAS —
+   4/11/2026, avec la séquence de chargement. L'écran ne retient plus rien en
+   attendant le réseau : on peut donc choisir un lieu avant que les
+   propositions soient calculables, et cette ligne occupe leur place.
+   ⭐ MÊME GABARIT QUE LA LISTE QU'ELLE REMPLACE — même filet, même marge, même
+      graisse. Un message qui prend une autre forme fait sauter l'encadré
+      quand la liste arrive, et le saut se lit comme un défaut alors que c'est
+      la réponse.
+   ⚠️ Elle NE CLIGNOTE PAS. Une animation d'attente sur trois lignes de texte
+      attire l'œil sur le vide, et l'attente dure moins longtemps que le temps
+      de comprendre ce qui bouge. */
+.terr-cherche {
+  margin: var(--sp-1) 0 0; padding: var(--sp-1) 0 0;
+  border-top: 1px solid var(--bulle-trait);
+  min-height: 44px; display: flex; align-items: center;
+  font-size: var(--t-xs); color: var(--bulle-texte-doux);
+}
+/* 🔴 ET C'ÉTAIT BIEN LA QUATRIÈME FOIS AUJOURD'HUI. `.terr-erreur` porte
+   `color: var(--ocre)`, écrit pour le VOILE de la carte — l'ocre sur le kaki
+   sombre. Posée dans la matière de la bulle, la même règle donne **3,71**,
+   sous le seuil. ⭐ Mesuré, pas supposé : cette ligne annonçait d'abord
+   « 4,8 », un nombre que je n'avais pas calculé et qui sonnait juste parce
+   qu'il est le seuil que `--bulle-action` vise dix lignes plus haut dans
+   `tokens.css`. Une valeur plausible occupe la place d'une mesure.
+   ⛔ ET LA RÉPARATION N'EST PAS DE MONTER L'OCRE. `tokens.css` l'a déjà fait
+      deux fois et en tire la propriété : sur un sol doré, l'or ne peut plus
+      marquer quoi que ce soit — deux fois la même teinte, l'une sur l'autre.
+      `--bulle-action` (#f2e4c8) est de l'ocre monté si près de la craie qu'il
+      n'est plus une couleur ; il tient 4,81 et ne dit plus rien.
+   ⭐ DONC LE TON PLEIN, ET LA PHRASE PORTE LE SENS. `--bulle-texte` donne
+      8,02 sur l'uni. Ce message-ci n'a pas besoin d'une teinte d'alarme : il
+      remplace trois promenades par la raison de leur absence, et c'est la
+      raison qui informe, pas sa couleur. */
+.terr-cherche.terr-erreur { color: var(--bulle-texte); }
 .terr-propositions li { display: block; }
 /* 🔴 CHAQUE PROPOSITION EST UN BOUTON DEPUIS LE 4/11 — avant, trois lignes
    de texte à côté de trois tracés identiques, et aucun moyen de relier les

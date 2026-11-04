@@ -26,6 +26,12 @@
  */
 import { useId } from "react";
 import type { Walk } from "./walks";
+/* ⚠️ `R_LAT` VIVAIT EN DEUX EXEMPLAIRES — ici et dans `Territoire2030.tsx`,
+   le même 111 320 écrit deux fois. La valeur n'allait pas diverger, mais
+   c'est la deuxième table recopiée démasquée cette semaine (après les
+   couleurs et les libellés de catégories) et la règle ne dépend pas du
+   risque : une seule définition, importée. */
+import { R_LAT } from "./cadrage";
 
 type Props = {
   walks: Walk[];
@@ -44,8 +50,6 @@ type Props = {
   cadrerSurFocus?: boolean;
   className?: string;
 };
-
-const R_LAT = 111_320; // mètres par degré de latitude
 
 export function Atlas({ walks, focus = null, cadrerSurFocus = false, className }: Props) {
   const id = useId();

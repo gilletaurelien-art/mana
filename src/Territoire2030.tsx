@@ -28,7 +28,7 @@
  *    est ce que le graphe contient.
  */
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { TERRITOIRES, TOUT, urlGraphe } from "./territoires";
+import { TERRITOIRES, TOUT, territoireDe, urlGraphe } from "./territoires";
 import { chargerOT, type ItineraireOT } from "./ot";
 import { chargerLieux, lienWiki, type Inventaire, type Lieu } from "./lieux";
 import {
@@ -78,9 +78,14 @@ import { Photo, image } from "./images/Photo";
    recopie démasquée en deux jours, après la table des couleurs et celle des
    libellés. Une seule définition, importée. */
 import type { Graphe } from "./composition";
+/* ⭐ LE CADRAGE AUSSI VIT AILLEURS, DEPUIS LE 4/11/2026 — et `R_LAT` avec
+   lui : la constante était déclarée ici ET dans `Atlas.tsx`, le même 111 320
+   écrit deux fois. Une seule définition maintenant, dans le module qui en
+   fait le plus d'usage ; les deux écrans l'importent. `cadrage.ts` dit
+   pourquoi la projection a dû sortir d'ici. */
+import { cadrer, R_LAT } from "./cadrage";
 
 const BASE = import.meta.env.VITE_GRAPHE_BASE ?? "https://mana.bzh/bretagne/g";
-const R_LAT = 111_320;
 
 /**
  * Les catégories, RELEVÉES et non devinées : les douze du graphe et les huit
@@ -138,9 +143,18 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
      affichage ne se voit, par définition, nulle part. */
 
   /* ⭐ MONTÉE UNE SEULE FOIS, comme `CarteReelle`/`CarteFondOT` : une instance
-     maplibre = un contexte WebGL, et on n'en veut qu'un sur cet écran. Le
-     centre/zoom de départ n'a pas d'importance — `dessiner()` les corrige
-     dès le premier passage, une fois le graphe là pour les calculer. */
+     maplibre = un contexte WebGL, et on n'en veut qu'un sur cet écran.
+     🔴 ET SON CENTRE DE DÉPART A CESSÉ D'ÊTRE ARBITRAIRE — 4/11/2026. Il
+        valait `[-4.2, 48.25]`, sous un commentaire qui disait « n'a pas
+        d'importance : `dessiner()` les corrige dès le premier passage, une
+        fois le graphe là ». La seconde moitié de la phrase EST le défaut :
+        tant que `dessiner()` attendait le graphe, cette valeur n'était pas
+        un point de départ provisoire, c'était la carte qu'on regardait
+        pendant trois secondes — décalée de 80 px et à la mauvaise échelle.
+     ⭐ Maintenant que le dessin ne l'attend plus, la correction arrive à la
+        première image. Le centre de l'emprise est quand même posé ici : une
+        valeur de départ qui désigne le bon endroit ne coûte rien, et elle
+        reste juste si quoi que ce soit retarde la première image. */
   /* ⭐ PRÊTE, PAS SEULEMENT CRÉÉE. `new maplibregl.Map(...)` revient avant que
      le style ait fini de charger ; ajouter une source avant `load` lève. Un
      état React (pas une ref) parce que l'effet qui pose la couche des sites
@@ -151,7 +165,11 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
     const m = new maplibregl.Map({
       container: maplibreBoite.current,
       style: STYLES.ortho,
-      center: [-4.2, 48.25], zoom: 10,
+      center: [
+        (TOUT.emprise[0] + TOUT.emprise[2]) / 2,
+        (TOUT.emprise[1] + TOUT.emprise[3]) / 2,
+      ],
+      zoom: 10,
       interactive: false,
       /* 🔴 RECOUPÉ LE 4/11/2026, ET LA RAISON EST MESURÉE. Rallumé la veille
          pour porter l'IGN et l'ODbL après le retrait du paragraphe de
@@ -249,8 +267,8 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
    *    rien, exactement comme avant la correction. Un bug qui ressemble à
    *    l'absence de la fonctionnalité qu'on vient d'ajouter.
    */
-  const vivant = useRef<{ sites: Lieu[]; visibles: Lieu[]; inv: Inventaire | null }>(
-    { sites: [], visibles: [], inv: null },
+  const vivant = useRef<{ sites: Lieu[]; visibles: Lieu[]; inv: Inventaire | null | undefined }>(
+    { sites: [], visibles: [], inv: undefined },
   );
   const [vueTic, setVueTic] = useState(0);
   const [vueBougee, setVueBougee] = useState(false);
@@ -273,7 +291,16 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
   /* ⭐ L'INVENTAIRE : 1 358 sites remarquables, dont 734 que personne n'a
      nommés. C'est la moitié que MANA apporte — l'Office a les circuits, nous
      avons ce qu'on croise. 110 Ko chargés à la demande. */
-  const [inv, setInv] = useState<Inventaire | null>(null);
+  /* 🔴 TROIS ÉTATS, PAS DEUX — 4/11/2026, et c'est la séquence de chargement
+     qui l'exige. `undefined` = en route, `null` = refusé, un objet = là.
+     Avant, l'échec posait `null`, exactement la valeur du chargement : un
+     `lieux.json` injoignable rendait donc « Lecture des lieux… » POUR
+     TOUJOURS. ⭐ Tant que ce message était gardé par `!graphe`, l'ambiguïté
+     ne coûtait rien — rien ne la lisait. La déplacer sur `inv` la réveille :
+     un état qui confond « j'attends » et « j'ai échoué » devient un
+     mensonge le jour où quelqu'un l'affiche. Même forme que `fermetures`,
+     dix lignes plus haut, pour la même raison. */
+  const [inv, setInv] = useState<Inventaire | null | undefined>(undefined);
   useEffect(() => { chargerLieux().then(setInv).catch(() => setInv(null)); }, []);
   const sitesIci = useMemo(
     () => (inv?.lieux ?? []).filter((l) => {
@@ -432,6 +459,22 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
       : null),
     [graphe, ixComposition, positionsPourComposer],
   );
+  /**
+   * 🔴 « ON PEUT RÉPONDRE » N'EST PAS « LE GRAPHE EST LÀ » — 4/11/2026.
+   *
+   * Trois choses doivent être prêtes pour qu'une liste vide veuille dire
+   * « aucune promenade » plutôt que « pas encore » : le graphe, l'index (qui
+   * attend les fermetures officielles), et les accroches des destinations.
+   * ⛔ CE DRAPEAU EXISTE PARCE QUE L'ÉCRAN L'AFFICHE MAINTENANT. Garder
+   *    `!graphe` dans le rendu aurait annoncé « Aucune promenade ne part
+   *    d'ici » dans la fenêtre entre l'arrivée du réseau et la lecture de
+   *    `fermetures.json` — une affirmation fausse, brève, et jamais vue par
+   *    celui qui l'écrit (les deux fichiers arrivent ensemble en local).
+   * ⚠️ Il RECOPIE la garde de `propositions` juste en dessous, et c'est le
+   *    prix : deux listes de conditions qui doivent rester d'accord. On les
+   *    garde collées l'une à l'autre plutôt qu'aux deux bouts du fichier.
+   */
+  const pretPourPropositions = !!(graphe && ixComposition && accrochesComposition);
   /* ⭐ RECALCULÉ QUAND LE LIEU VISÉ CHANGE, PAS À CHAQUE RENDU — les trois
      propositions dépendent du POINT, pas de l'état du calque ou du zoom. */
   useEffect(() => { setPropChoisie(null); }, [vise]);
@@ -516,9 +559,16 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
         if (!vivant) return;
         setGraphe(fusionnerGraphes(graphes, TOUT.slug));
       })
-      // ⚠️ Une erreur se DIT. Sans ce message, un refus réseau rendrait un
-      //    écran vide et muet, et on conclurait qu'il n'y a rien ici.
-      .catch(() => { if (vivant) setErreur("Le territoire n'a pas pu être chargé. Vérifiez votre connexion."); });
+      /* ⚠️ Une erreur se DIT. Sans ce message, un refus réseau rendrait un
+         écran vide et muet, et on conclurait qu'il n'y a rien ici.
+         🔴 ET ELLE A CHANGÉ DE TEXTE AVEC SA PORTÉE — 4/11/2026. Elle
+            annonçait « Le territoire n'a pas pu être chargé », en travers de
+            la carte, du temps où l'écran entier dépendait du réseau. Il
+            n'en dépend plus : la carte, les 624 lieux, la recherche, les
+            filtres et « Y aller » marchent sans lui. Garder l'ancienne
+            phrase ferait croire perdu ce qui est là — et détournerait vers
+            la connexion quelqu'un dont tout le reste fonctionne. */
+      .catch(() => { if (vivant) setErreur("Le réseau de chemins n'a pas pu être chargé : pas de promenade proposée."); });
     return () => { vivant = false; };
   }, []);
 
@@ -661,6 +711,22 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
    * ⛔ ET IL DIT QUAND ON EST HORS DU TERRITOIRE. Poser un marqueur au bord
    *    du cadre pour quelqu'un qui est à Rennes serait un mensonge muet :
    *    il croirait voir sa position sur la presqu'île.
+   *
+   * 🔴 LE MÊME DÉFAUT QUE LE CADRAGE, UN CRAN PLUS GRAVE — 4/11/2026. Ce
+   *    bouton répondait « suis-je dedans ? » en parcourant les 186 506 nœuds
+   *    du graphe, et surtout : `if (!graphe) { setMoi(g); return; }`. Sans
+   *    réseau, il posait le marqueur SANS vérifier — c'est-à-dire qu'il
+   *    faisait exactement le mensonge muet que son propre commentaire, trois
+   *    lignes plus haut, donne comme raison d'être.
+   * ⭐ ET LA RÉPONSE EXISTAIT DÉJÀ, SANS RIEN TÉLÉCHARGER : `territoireDe()`
+   *    tranche sur les deux emprises déclarées — la même boîte que celle qui
+   *    filtre les pastilles et cadre la carte. Un seul référentiel pour les
+   *    trois.
+   * ⚠️ AU PASSAGE, LE MESSAGE MENTAIT AUSSI. Il disait « vous n'êtes pas sur
+   *    la presqu'île de Crozon » depuis que l'écran montre LES DEUX moitiés :
+   *    quelqu'un à Châteaulin, dans l'Aulne maritime et donc parfaitement
+   *    dedans, aurait lu qu'il était ailleurs. Un libellé qui nomme une
+   *    moitié d'un territoire qui en compte deux.
    */
   const meSituer = () => {
     if (!navigator.geolocation) { setMotGps("Votre navigateur ne sait pas vous situer."); return; }
@@ -668,15 +734,9 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
     navigator.geolocation.getCurrentPosition(
       (p) => {
         const g: [number, number] = [p.coords.longitude, p.coords.latitude];
-        if (!graphe) { setMoi(g); setMotGps(""); return; }
-        let laMin = Infinity, laMax = -Infinity, loMin = Infinity, loMax = -Infinity;
-        for (const [lo, la] of graphe.n) {
-          if (la < laMin) laMin = la; if (la > laMax) laMax = la;
-          if (lo < loMin) loMin = lo; if (lo > loMax) loMax = lo;
-        }
-        const dedans = g[0] >= loMin && g[0] <= loMax && g[1] >= laMin && g[1] <= laMax;
+        const dedans = territoireDe(g[0], g[1]) !== null;
         setMoi(dedans ? g : null);
-        setMotGps(dedans ? "" : "Vous n'êtes pas sur la presqu'île de Crozon — la carte reste explorable.");
+        setMotGps(dedans ? "" : `Vous n'êtes pas sur ${terr.avecArticle} — la carte reste explorable.`);
       },
       () => setMotGps("Position indisponible. La carte fonctionne sans."),
       { enableHighAccuracy: true, timeout: 8000 },
@@ -892,9 +952,20 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
    *  Trois passes, de la plus discrète à la plus lue — l'ordre EST la
    *  hiérarchie : ce qui est tracé en dernier se voit en premier.
    */
+  /* 🔴 PLUS DE `!graphe` DANS CETTE GARDE — 4/11/2026, et c'était le cœur de
+     la séquence de chargement. Le dessin renonçait tant que le réseau
+     n'était pas là ; sans dessin, pas de recalage du fond satellite, donc
+     une carte vide. Or ce qu'on VOIT sur cet écran — l'image du sol et les
+     pastilles des lieux — ne vient pas du graphe : la première est servie en
+     tuiles par l'IGN, les secondes par `lieux.json` (110 Ko). Elles
+     attendaient 2,2 Mo de réseau compressé pour rien.
+     ⭐ Ce que le graphe commande vraiment, c'est UNE fonction : les trois
+        promenades proposées depuis le lieu choisi. Elles arrivent plus tard
+        et le disent à leur place (voir `.terr-cherche` dans le rendu), au
+        lieu de retenir tout l'écran. */
   useEffect(() => {
     const c = toile.current, b = boite.current;
-    if (!c || !b || !graphe) return;
+    if (!c || !b) return;
 
     const dessiner = () => {
       const { width: W, height: H } = b.getBoundingClientRect();
@@ -907,43 +978,29 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
       if (!ctx) return;
       ctx.scale(dpr, dpr);
 
-      // emprise du graphe
-      let laMin = Infinity, laMax = -Infinity, loMin = Infinity, loMax = -Infinity;
-      for (const [lon, lat] of graphe.n) {
-        if (lat < laMin) laMin = lat; if (lat > laMax) laMax = lat;
-        if (lon < loMin) loMin = lon; if (lon > loMax) loMax = lon;
-      }
-      const kLon = Math.cos((((laMin + laMax) / 2) * Math.PI) / 180);
-      const larM = (loMax - loMin) * R_LAT * kLon, hauM = (laMax - laMin) * R_LAT;
-      const marge = 18;
-      const ech = Math.min((W - 2 * marge) / larM, (H - 2 * marge) / hauM);
-      const dx = (W - larM * ech) / 2, dy = (H - hauM * ech) / 2;
-      /* ⭐ LA VUE S'APPLIQUE DANS LA PROJECTION, PAS EN `ctx.transform`. Une
-         transformation du contexte mettrait aussi les TRAITS à l'échelle : à
-         ×8, un chemin de 1 px deviendrait un ruban de 8 px et la carte se
-         boucherait. Ici seules les POSITIONS bougent ; les épaisseurs, les
-         pastilles et les étiquettes gardent leur taille — c'est ce qui fait
-         qu'un zoom révèle du détail au lieu de grossir une image. */
-      const { k, px, py } = vue.current;
-      const cxv = W / 2, cyv = H / 2;
-      const X = (lon: number) =>
-        cxv + ((dx + (lon - loMin) * R_LAT * kLon * ech) - cxv) * k + px;
-      const Y = (lat: number) =>
-        cyv + ((dy + (laMax - lat) * R_LAT * ech) - cyv) * k + py;
+      /* 🔴 CADRÉ SUR L'EMPRISE DÉCLARÉE, PLUS SUR LES NŒUDS DU GRAPHE —
+         4/11/2026. Toute l'histoire, les chiffres et le prix assumé sont
+         dans `cadrage.ts` ; en deux lignes : c'est la MÊME boîte que celle
+         sur laquelle `sitesIci` filtre les pastilles, elle est connue avant
+         tout téléchargement, et le relevé qu'elle remplace parcourait
+         186 506 nœuds À CHAQUE IMAGE pour redécouvrir un rectangle qui ne
+         bouge jamais. */
+      const { X, Y, kLon, centreLon, centreLat, metresParPixel } =
+        cadrer(terr.emprise, W, H, vue.current);
       // ⭐ Déposée à CHAQUE rendu : le pointage vise toujours l'image qu'on voit.
       proj.current = { X, Y };
 
       /* ── RECALER LE FOND SATELLITE SUR CE QUE LE CANVAS MONTRE ───────────
-         ⭐ L'INVERSE DE X/Y, AU CENTRE DU CADRE. `X`/`Y` sont affines en
-            lon/lat ; résoudre `X(lon) = cxv` donne le lon du centre écran,
-            et `Y(lat) = cyv` son lat. Pas d'approximation : ce sont les
-            MÊMES coefficients (`dx`, `ech`, `kLon`, `k`, `px`…) que ceux qui
-            viennent de placer le réseau et les sites.
-         ⚠️ LE ZOOM SE DÉDUIT DE L'ÉCHELLE, PAS DE `k` SEUL : `ech` porte déjà
-            le cadrage initial (combien de pixels par mètre pour que le
-            territoire tienne dans la boîte), `k` le zoom gagné depuis. Le
-            zoom maplibre se définit en « mètres par pixel à l'équateur à la
-            latitude donnée » — d'où la correction en cosinus. */
+         ⭐ `centreLon`/`centreLat` SONT L'INVERSE DE `X`/`Y` au centre du
+            cadre, calculés par `cadrer()` avec les mêmes coefficients — donc
+            incapables de dériver de la projection qui place les sites. Et,
+            depuis le 4/11, `cadrage.test.ts` croise les deux : ils étaient
+            écrits à la main l'un sous l'autre, sans rien pour les comparer.
+         ⚠️ LE ZOOM SE DÉDUIT DE L'ÉCHELLE, PAS DE `k` SEUL : `metresParPixel`
+            porte déjà le cadrage initial (combien de mètres par pixel pour
+            que le territoire tienne dans la boîte) ET le zoom gagné depuis.
+            Le zoom maplibre se définit en « mètres par pixel à l'équateur à
+            la latitude donnée » — d'où la correction en cosinus. */
       const m = maplibreCarte.current;
       if (m) {
         /* 🔴 `resize()` À CHAQUE PASSAGE — même piège que `CarteReelle.tsx` :
@@ -953,9 +1010,6 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
            fois » : `dessiner()` tourne déjà sur un `ResizeObserver`, et
            `resize()` ne coûte rien quand la taille n'a pas changé. */
         m.resize();
-        const centreLon = loMin + (cxv - px / k - dx) / (R_LAT * kLon * ech);
-        const centreLat = laMax - (cyv - py / k - dy) / (R_LAT * ech);
-        const metresParPixel = 1 / (ech * k);
         /* 🔴 LE ZOOM VIT DANS `carte-fond.ts`, ET IL S'EST TROMPÉ D'UN
            FACTEUR DEUX — toute l'histoire y est écrite, avec les chiffres
            mesurés. Il est sorti d'ici pour qu'un test puisse le croiser avec
@@ -979,7 +1033,13 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
         styles.getPropertyValue(nom).trim() || repli;
       const fond = jeton("--carte-fond", "#343f32");
       const chemin = jeton("--carte-chemin", "#92977c");
-      const cheminBeau = jeton("--carte-chemin-beau", "#92977c");
+      /* ⚠️ `--carte-chemin-beau` NE SE LIT PLUS NULLE PART : il n'alimentait
+         que `tracer()`, partie avec le filigrane du réseau. Le jeton reste
+         DÉFINI dans `tokens.css` (trois fois, un thème chacun) et plus
+         personne ne le demande — c'est écrit ici parce qu'un jeton orphelin
+         ne se voit pas depuis la feuille de style, et que le sien porte une
+         promesse datée : « agrément ≥ 120 : il se voit ». Il ne se voit
+         plus. À retirer avec la décision de redessiner le réseau, ou jamais. */
       const trace = jeton("--carte-trace", "#c69a48");
       const lieu = jeton("--carte-lieu", "#c69a48");
       const depart = jeton("--carte-depart", "#eeebdd");
@@ -997,29 +1057,16 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
          le calque « littoral » dessinaient ce que le satellite montre
          maintenant VRAIMENT — la côte, les chemins — en traits fins et
          transparents par-dessus l'image : un filigrane plutôt qu'une
-         information. `tracer()` reste définie : les balises, les promenades
-         vérifiées et le parcours choisi s'en servent encore, juste plus
-         pour le réseau brut. */
-      const tracer = (garde: (a: Graphe["a"][number]) => boolean, couleur: string, ep: number, alpha: number) => {
-        ctx.beginPath();
-        for (const a of graphe.a) {
-          if (!garde(a)) continue;
-          const pts = a[4];
-          for (let i = 0; i < pts.length; i++) {
-            const nd = graphe.n[pts[i]];
-            if (!nd) continue;
-            const x = X(nd[0]), y = Y(nd[1]);
-            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-          }
-        }
-        ctx.globalAlpha = alpha;
-        ctx.strokeStyle = couleur;
-        ctx.lineWidth = ep;
-        ctx.lineJoin = "round";
-        ctx.lineCap = "round";
-        ctx.stroke();
-        ctx.globalAlpha = 1;
-      };
+         information.
+         ⛔ ET `tracer()` EST PARTIE AVEC, le soir même. Un commentaire posé
+            ici affirmait qu'elle servait encore — « les balises, les
+            promenades vérifiées et le parcours choisi s'en servent » : les
+            trois dessinent leur propre tracé, et plus rien ne l'appelait.
+         ⭐ Elle n'était pas seulement morte, elle TENAIT L'ÉCRAN EN OTAGE :
+            c'était le dernier endroit du dessin à lire `graphe.a` et
+            `graphe.n`, donc la dernière raison d'attendre 2,2 Mo avant de
+            montrer une carte. Vingt-trois lignes jamais exécutées faisaient
+            patienter tout le monde. */
 
       // ── passe 2 : les promenades vérifiées
       /* ── les circuits balisés de l'Office ──────────────────────────────
@@ -1212,7 +1259,13 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
      qui n'y figure pas se verrait dans la liste et NULLE PART sur la carte —
      c'est-à-dire que le clic aurait l'air de ne rien faire, le défaut même
      qu'on vient de corriger. */
-  }, [graphe, choisie, walk, calques, vise, moi, vueTic, otIci, sitesIci, propositions, propChoisie]);
+  /* ⛔ `graphe` A QUITTÉ CETTE LISTE — 4/11/2026, et ce n'est pas un oubli :
+     plus une seule ligne du dessin ne le lit. Le cadre vient de l'emprise,
+     les trois tracés viennent de `propositions` (qui, elle, en dépend et
+     déclenche donc le redessin au bon moment). Le laisser aurait imposé un
+     redessin complet à l'arrivée des 2,2 Mo, pour peindre exactement la
+     même image. */
+  }, [choisie, walk, calques, vise, moi, vueTic, otIci, sitesIci, propositions, propChoisie]);
 
   return (
     <main className="terr">
@@ -1222,10 +1275,27 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
             dessous. */}
         <div className="terr-fond" ref={maplibreBoite} aria-hidden="true" />
         <canvas ref={toile} aria-hidden="true" />
-        {!graphe && !erreur && (
-          <p className="terr-attente" role="status">Lecture du territoire…</p>
+        {/* 🔴 L'ATTENTE A CHANGÉ DE CIBLE — 4/11/2026. Elle était posée sur
+            `!graphe` : un voile sur toute la carte, « Lecture du
+            territoire… », jusqu'à ce que 2,2 Mo de réseau soient arrivés,
+            parsés et soudés. Or le graphe ne commande AUCUN pixel de ce que
+            cet écran montre — il commande les trois promenades proposées.
+            ⭐ Ce qu'on attend vraiment pour VOIR quelque chose, c'est
+               l'inventaire des lieux : 110 Ko, et sans lui la carte n'est
+               qu'une photo du sol. C'est donc lui que ce message nomme, et
+               il s'en va vingt fois plus tôt.
+            ⚠️ Le réseau, lui, se signale là où il manque — dans l'encadré du
+               lieu choisi, à la place des propositions. Un manque annoncé à
+               l'endroit du manque se comprend sans qu'on explique ; annoncé
+               en travers de l'écran, il se lit « rien ne marche ». */}
+        {inv === undefined && (
+          <p className="terr-attente" role="status">Lecture des lieux…</p>
         )}
-        {erreur && <p className="terr-attente terr-erreur" role="status">{erreur}</p>}
+        {inv === null && (
+          <p className="terr-attente terr-erreur" role="status">
+            Les lieux du territoire n'ont pas pu être chargés. Vérifiez votre connexion.
+          </p>
+        )}
 
         {/* ── LA RECHERCHE, EN TÊTE DE LA CARTE — 4/11/2026 ────────────────
             🔴 RETOURNE LA DÉCISION DU 31/10 : demande du fondateur, « comme
@@ -1559,6 +1629,37 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
                 ⚠️ Elles vivent donc avec le lieu dont elles dépendent :
                    `vise` disparaît, elles disparaissent, sans qu'une
                    deuxième règle de position ait à le savoir. */}
+            {/* 🔴 LE MANQUE SE DIT À L'ENDROIT DU MANQUE — 4/11/2026, et
+                c'est l'autre moitié de la séquence de chargement. La liste
+                était gardée par `propositions.length > 0`, c'est-à-dire par
+                un tableau vide qui voulait dire QUATRE choses sans les
+                distinguer : le réseau arrive, le réseau a échoué, ce lieu
+                n'a aucune destination accessible, ou aucun lieu n'est visé.
+                ⭐ Tant que l'écran attendait le graphe derrière un voile, la
+                   confusion était inatteignable : on ne pouvait pas choisir
+                   un lieu avant que le réseau soit là. La séquence de
+                   chargement la rend atteignable — c'est le cas d'école du
+                   défaut qu'on CRÉE en réparant ailleurs, et il se voit
+                   d'autant moins qu'il ressemble à l'état d'avant.
+                ⛔ Les trois cas se nomment donc séparément. « Rien » ne
+                   reste la réponse que pour le quatrième, où la question ne
+                   se pose pas. */}
+            {!pretPourPropositions && !erreur && (
+              <p className="terr-cherche" role="status">
+                {/* ⚠️ Le présent progressif, pas « chargement » : ce qui se
+                    passe intéresse le marcheur (on lui cherche des
+                    promenades), pas la machine (elle télécharge un graphe). */}
+                Je cherche des promenades depuis ici…
+              </p>
+            )}
+            {erreur && <p className="terr-cherche terr-erreur">{erreur}</p>}
+            {pretPourPropositions && !erreur && propositions.length === 0 && (
+              /* ⚠️ Un lieu peut n'avoir aucune destination : hors réseau,
+                 derrière une fermeture, ou seul sur son bout de sentier.
+                 C'est une réponse, pas une panne — et c'est exactement ce
+                 que le vide ne savait pas dire. */
+              <p className="terr-cherche">Aucune promenade ne part d'ici.</p>
+            )}
             {propositions.length > 0 && (
               <ul className="terr-propositions" aria-label={`Promenades depuis ${vise.nom}`}>
                 {propositions.map((p, k) => (

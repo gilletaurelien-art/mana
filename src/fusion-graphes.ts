@@ -75,7 +75,33 @@ export function fusionnerGraphes(graphes: Graphe[], territoire: string): Graphe 
   if (graphes.length === 1) return { ...graphes[0], territoire };
 
   const n: [number, number][] = [];
-  const vus = new Map<string, number>();
+  /**
+   * 🔴 DEUX `Map` IMBRIQUÉES, PAS UNE CLEF `"lon,lat"` — 4/11/2026, et c'est
+   *    une mesure, pas un goût. Souder 186 506 nœuds par clef-chaîne coûtait
+   *    **530 ms** sur ce Mac ; par lon puis par lat, **293 ms**. La soudure
+   *    est le plus gros bloc de calcul synchrone de l'écran : à ~3× sur un
+   *    téléphone, 1,6 s de fil principal gelé au lieu de 0,9.
+   * ⭐ CE N'ÉTAIT PAS LA RECHERCHE QUI COÛTAIT, C'ÉTAIT LA FABRICATION DE LA
+   *    CLEF. Chaque nœud créait une chaîne de ~22 caractères, à jeter aussitôt
+   *    — 186 506 chaînes pour 19 871 soudures. Les nombres sont déjà des clefs
+   *    de `Map` valides.
+   * ⚠️ L'ÉGALITÉ RESTE EXACTEMENT LA MÊME, bit à bit, et c'est ce qui rend ce
+   *    changement sûr : `Map` compare ses clefs en SameValueZero, comme
+   *    `${lon},${lat}` comparait les siennes. Vérifié sur les fichiers réels
+   *    — 166 635 nœuds dans les deux cas, au nœud près.
+   * ⛔ UNE VARIANTE DEUX FOIS PLUS RAPIDE A ÉTÉ MESURÉE PUIS ÉCARTÉE
+   *    (89 ms) : n'indexer que la bande de recouvrement, puisqu'un jumeau ne
+   *    peut venir que de là. Elle rend **166 637** nœuds — deux de plus. Les
+   *    deux manquants sont des doublons INTERNES à `presquile.json` (78 363
+   *    nœuds, 78 361 coordonnées distinctes), hors bande, que la soudure
+   *    exhaustive fond et que la bande laisse. ⭐ Un gain de 200 ms qui change
+   *    la réponse sur deux nœuds sur 166 635 : l'écart est négligeable, le
+   *    fait qu'on ne l'ait vu qu'en comparant les COMPTES ne l'est pas. Un
+   *    chronomètre seul l'aurait expédié. À rouvrir hors veille de démo —
+   *    avec la vraie question dessous : `/promenades`, qui ne soude rien,
+   *    garde ces deux doublons.
+   */
+  const vus = new Map<number, Map<number, number>>();
   const a: Graphe["a"] = [];
   const l: LieuAccroche[] = [];
 
@@ -89,10 +115,15 @@ export function fusionnerGraphes(graphes: Graphe[], territoire: string): Graphe 
     /* La table locale → fusionnée. Un nœud déjà vu rend son rang d'origine :
        c'est la soudure. */
     const remap = g.n.map(([lon, lat]) => {
-      const clef = `${lon},${lat}`;
-      const deja = vus.get(clef);
-      if (deja !== undefined) return deja;
-      vus.set(clef, n.length);
+      let parLat = vus.get(lon);
+      if (parLat === undefined) {
+        parLat = new Map();
+        vus.set(lon, parLat);
+      } else {
+        const deja = parLat.get(lat);
+        if (deja !== undefined) return deja;
+      }
+      parLat.set(lat, n.length);
       n.push([lon, lat]);
       return n.length - 1;
     });
