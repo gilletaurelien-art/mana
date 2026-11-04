@@ -200,6 +200,16 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
     () => plateformeDe(navigator.userAgent, navigator.maxTouchPoints),
     [],
   );
+  /**
+   * 🔴 LAQUELLE DES TROIS PROPOSITIONS ON DÉSIGNE — 4/11/2026. `null` = les
+   *    trois, à égalité, comme avant qu'on puisse choisir.
+   * ⚠️ REMIS À NULL QUAND LE LIEU VISÉ CHANGE, par l'effet ci-dessous et pas
+   *    à chaque appel de `setVise` : il y en a quatre (le clic sur la carte,
+   *    le clic sur un résultat, la touche Entrée, l'arrivée par URL), et une
+   *    liste d'appelants à tenir à jour est une liste qu'on oublie — c'est
+   *    exactement ce qui est arrivé ce matin à `surUneCommande`.
+   */
+  const [propChoisie, setPropChoisie] = useState<number | null>(null);
   const [calquesOuverts, setCalquesOuverts] = useState(false);
   const [calques, setCalques] = useState({
     lieux: true, promenades: true, balises: true, sites: true,
@@ -424,6 +434,7 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
   );
   /* ⭐ RECALCULÉ QUAND LE LIEU VISÉ CHANGE, PAS À CHAQUE RENDU — les trois
      propositions dépendent du POINT, pas de l'état du calque ou du zoom. */
+  useEffect(() => { setPropChoisie(null); }, [vise]);
   const propositions = useMemo((): Proposition<Lieu>[] => {
     if (!graphe || !ixComposition || !accrochesComposition || !vise) return [];
     const depuis = accrocherUn(graphe, ixComposition, vise.g);
@@ -1121,18 +1132,60 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
             dessin. ⚠️ En pointillé : la trouver par-dessus le réseau du fond,
             avant d'avoir choisi, demande un signal différent du trait plein
             qui marque une promenade déjà vérifiée. */
-      for (const p of propositions) {
+      /* 🔴 TROIS TRACÉS IDENTIQUES, TROIS NOMS À CÔTÉ, ET RIEN ENTRE LES DEUX
+         — relevé le 4/11/2026. Même teinte, même pointillé, même épaisseur :
+         la liste disait « Fontaine Saint-Rivoal · 1 120 m » et la carte
+         dessinait trois fils indiscernables. On pouvait lire, ou regarder,
+         jamais les deux.
+         ⭐ UN NUMÉRO SUFFIT, et il est posé AU BOUT du tracé — pas sur le
+            lieu, qui porte déjà sa pastille de genre. Le chiffre appartient
+            au FIL qu'il nomme ; collé à la destination, il aurait l'air
+            d'une seconde étiquette du lieu.
+         ⚠️ Et quand on en choisit un, les deux autres ne disparaissent pas :
+            ils pâlissent. Les effacer ferait croire qu'il n'y avait qu'une
+            proposition, et retirerait le moyen de changer d'avis. */
+      /* ⚠️ BORNÉ À LA LISTE DU MOMENT. `propChoisie` est un RANG, et une
+         nouvelle sélection peut rendre moins de trois propositions : un rang
+         hors liste n'aurait correspondu à aucun tracé, et les trois seraient
+         tombées dans le pâle sans qu'aucune ne soit mise en avant — une
+         carte qui a l'air éteinte, sans cause visible. */
+      const retenu = propChoisie !== null && propChoisie < propositions.length ? propChoisie : null;
+      propositions.forEach((p, k) => {
+        const retenue = retenu === k;
+        const efface = retenu !== null && !retenue;
         ctx.beginPath();
-        p.parcours.contour.forEach(([lon, lat], k) => {
+        p.parcours.contour.forEach(([lon, lat], j) => {
           const x = X(lon), y = Y(lat);
-          if (k === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+          if (j === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
         });
-        ctx.setLineDash([2, 5]);
-        ctx.strokeStyle = trace; ctx.lineWidth = 2.2; ctx.globalAlpha = 0.85;
+        /* ⭐ LE TRAIT PLEIN DIT « CELUI-CI ». Le pointillé marquait jusqu'ici
+           « proposition, pas promenade vérifiée » ; retenue, elle reste une
+           proposition — d'où le trait plein mais TOUJOURS la teinte des
+           propositions, jamais celle des promenades vérifiées. */
+        ctx.setLineDash(retenue ? [] : [2, 5]);
+        ctx.strokeStyle = trace;
+        ctx.lineWidth = retenue ? 3.4 : 2.2;
+        ctx.globalAlpha = efface ? 0.25 : 0.85;
         ctx.stroke();
         ctx.setLineDash([]);
+
+        const bout = p.parcours.contour[p.parcours.contour.length - 1];
+        if (bout) {
+          const x = X(bout[0]), y = Y(bout[1]);
+          ctx.globalAlpha = efface ? 0.35 : 1;
+          ctx.beginPath(); ctx.arc(x, y, retenue ? 11 : 9, 0, Math.PI * 2);
+          ctx.fillStyle = trace; ctx.fill();
+          ctx.lineWidth = 2; ctx.strokeStyle = fond; ctx.stroke();
+          /* ⚠️ Le chiffre est peint dans la couleur du FOND de la carte, pas
+             en blanc : sur le thème sombre, un blanc dur sur la pastille
+             ocre jure là où le fond se fond. */
+          ctx.fillStyle = fond;
+          ctx.font = `700 ${retenue ? 13 : 11}px system-ui, sans-serif`;
+          ctx.textAlign = "center"; ctx.textBaseline = "middle";
+          ctx.fillText(String(k + 1), x, y + 0.5);
+        }
         ctx.globalAlpha = 1;
-      }
+      });
 
       /* ── MA POSITION ──────────────────────────────────────────────────
          ⚠️ Un halo ÉPAIS, et c'est volontaire : il ne figure pas un rayon de
@@ -1154,7 +1207,12 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
     const ro = new ResizeObserver(dessiner);
     ro.observe(b);
     return () => ro.disconnect();
-  }, [graphe, choisie, walk, calques, vise, moi, vueTic, otIci, sitesIci, propositions]);
+  /* ⚠️ `propChoisie` DANS LES DÉPENDANCES, sinon le trait ne change pas.
+     Le canvas ne se redessine que quand cette liste bouge ; une sélection
+     qui n'y figure pas se verrait dans la liste et NULLE PART sur la carte —
+     c'est-à-dire que le clic aurait l'air de ne rien faire, le défaut même
+     qu'on vient de corriger. */
+  }, [graphe, choisie, walk, calques, vise, moi, vueTic, otIci, sitesIci, propositions, propChoisie]);
 
   return (
     <main className="terr">
@@ -1503,8 +1561,31 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
                    deuxième règle de position ait à le savoir. */}
             {propositions.length > 0 && (
               <ul className="terr-propositions" aria-label={`Promenades depuis ${vise.nom}`}>
-                {propositions.map((p) => (
+                {propositions.map((p, k) => (
                   <li key={p.i}>
+                    {/* 🔴 UN BOUTON, PAS UNE LIGNE DE TEXTE — 4/11/2026. On
+                        voyait trois noms et trois tracés, et on ne pouvait
+                        en toucher AUCUN : le seul geste possible était
+                        « Partir d'ici », qui rouvre tout ailleurs. Quelqu'un
+                        qui avait choisi des yeux ne pouvait pas choisir du
+                        doigt.
+                        ⭐ CE QUE LE CLIC FAIT EST MODESTE ET ENTIER : il
+                           désigne. Le tracé passe au trait plein, les deux
+                           autres pâlissent, et on voit enfin OÙ va celui
+                           qu'on lisait. Un second appui rend les trois.
+                        ⛔ Il ne navigue pas, et c'est délibéré : les trois
+                           propositions de `/promenades` sont recalculées
+                           là-bas sur un graphe qui n'est pas le même (une
+                           moitié de territoire, pas les deux soudées).
+                           Emporter « la n° 2 » dans l'URL promettrait un
+                           ordre que l'autre écran ne garantit pas. */}
+                    <button
+                      type="button"
+                      className={propChoisie === k ? "terr-proposition terr-proposition-choisie" : "terr-proposition"}
+                      aria-pressed={propChoisie === k}
+                      onClick={() => setPropChoisie((avant) => (avant === k ? null : k))}
+                    >
+                    <span className="terr-proposition-rang" aria-hidden="true">{k + 1}</span>
                     <span className="terr-proposition-nom">{spotsPourComposer[p.i]?.n}</span>
                     {/* 🔴 EN MÈTRES, PAS EN KILOMÈTRES — 4/11/2026, arbitrage
                         du fondateur : « mètres pour les marcheurs ». Ces
@@ -1524,6 +1605,7 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
                     <span className="m-meta">
                       {(Math.round(p.metres / 10) * 10).toLocaleString("fr-FR")} m
                     </span>
+                    </button>
                   </li>
                 ))}
               </ul>
