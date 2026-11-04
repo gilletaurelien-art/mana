@@ -190,10 +190,25 @@ describe("fusionnerGraphes", () => {
 const DOSSIER = new URL("../public/bretagne/g/", import.meta.url);
 const presents = ["presquile", "aulne"].every((t) => existsSync(new URL(`${t}.json`, DOSSIER)));
 
-describe.skipIf(!presents)("la couture sur les graphes réellement moissonnés", () => {
-  const graphes = ["presquile", "aulne"].map(
+/**
+ * 🔴 CHARGÉS PARESSEUSEMENT, ET CE N'EST PAS UNE COQUETTERIE — appris en
+ *    cassant le déploiement du 5/11. `describe.skipIf` saute les TESTS, pas
+ *    le CORPS du `describe` : celui-ci s'exécute à la collecte, toujours.
+ *    Un `readFileSync` écrit là jetait donc un ENOENT sur la machine
+ *    d'intégration, où `public/bretagne/` n'existe pas — suite en échec,
+ *    build refusé, alors que les 325 tests passaient sur mon poste.
+ * ⭐ UN GARDE CONDITIONNEL DOIT L'ÊTRE JUSQU'AU BOUT. « Sauté » ne veut rien
+ *    dire si la préparation, elle, a déjà couru. Et le piège ne se voit que
+ *    là où la condition est FAUSSE — c'est-à-dire jamais sur la machine où
+ *    on l'écrit.
+ */
+let cache: Graphe[] | null = null;
+const lireLesGraphes = () =>
+  (cache ??= ["presquile", "aulne"].map(
     (t) => JSON.parse(readFileSync(new URL(`${t}.json`, DOSSIER), "utf8")) as Graphe,
-  );
+  ));
+
+describe.skipIf(!presents)("la couture sur les graphes réellement moissonnés", () => {
 
   /**
    * ⚠️ LA DISTANCE SE MESURE À LA POLYLIGNE, PAS AUX DEUX BOUTS — et la
@@ -225,7 +240,7 @@ describe.skipIf(!presents)("la couture sur les graphes réellement moissonnés",
   };
 
   it("🔴 aucun lieu n'est à plus de 200 m du CHEMIN qu'il déclare", () => {
-    const f = fusionnerGraphes(graphes, "tout");
+    const f = fusionnerGraphes(lireLesGraphes(), "tout");
     const loin = f.l.filter((li) => {
       const ar = f.a[li.a];
       if (!ar) return true;
@@ -239,6 +254,7 @@ describe.skipIf(!presents)("la couture sur les graphes réellement moissonnés",
   });
 
   it("🔴 le territoire fusionné forme UN réseau, pas deux", () => {
+    const graphes = lireLesGraphes();
     const f = fusionnerGraphes(graphes, "tout");
     const avant = graphes.reduce((s, g) => s + g.n.length, 0);
     expect(f.n.length, "des nœuds en double subsistent").toBeLessThan(avant);
