@@ -998,6 +998,73 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
         )}
         {erreur && <p className="terr-attente terr-erreur" role="status">{erreur}</p>}
 
+        {/* ── LA RECHERCHE, EN TÊTE DE LA CARTE — 4/11/2026 ────────────────
+            🔴 RETOURNE LA DÉCISION DU 31/10 : demande du fondateur, « comme
+            dans la page balade de l'OT » — `jeu-haut`/`jeu-chercher`,
+            repris tels quels (mêmes classes, même verre dépoli) plutôt que
+            recopiés : SwipeBalades.tsx les tient déjà, et une seconde
+            définition aurait divergé un jour. Ce que la note du 31/10
+            craignait (le clavier qui recouvre les résultats) reste vrai
+            pour un champ posé EN BAS ; posé EN HAUT, le clavier mobile
+            s'ouvre SOUS la liste, pas par-dessus elle. */}
+        <div className="jeu-haut terr-haut">
+          <form
+            className="jeu-chercher"
+            role="search"
+            onSubmit={(e) => { e.preventDefault(); if (resultats[0]) choisir(resultats[0]); }}
+          >
+            <svg className="m-icone" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="6.5" /><path d="m16 16 4.5 4.5" />
+            </svg>
+            <label className="sr-only" htmlFor="terr-q">Rechercher un lieu du territoire</label>
+            <input
+              id="terr-q" type="search" autoComplete="off"
+              placeholder="Rechercher un lieu…"
+              value={requete}
+              onChange={(e) => { setRequete(e.target.value); setVise(null); }}
+            />
+            {requete && (
+              <button type="button" className="terr-effacer"
+                onClick={() => { setRequete(""); setVise(null); }}>
+                <span className="sr-only">Effacer la recherche</span>
+                <svg className="m-icone" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m6 6 12 12M18 6 6 18" />
+                </svg>
+              </button>
+            )}
+          </form>
+        </div>
+
+        {/* ⚠️ Les résultats vivent SOUS le champ, par-dessus la carte : on
+            doit pouvoir les lire sans quitter l'écran ni perdre la carte
+            des yeux. */}
+        {requete.trim().length >= 2 && !vise && (
+          <ul className="jeu-resultats terr-haut-resultats" role="listbox" aria-label="Lieux trouvés">
+            {resultats.length === 0 ? (
+              <li className="terr-rien">
+                {/* ⚠️ Deux choses fausses ici depuis ce soir : « la presqu'île »
+                    alors qu'un onglet montre l'Aulne, et le compte des lieux du
+                    GRAPHE alors qu'on cherche dans l'inventaire. ⭐ Une phrase
+                    qui cite un chiffre vivant vieillit deux fois plus vite — on
+                    nomme le territoire affiché et on compte ce qu'on fouille. */}
+                Aucun lieu de {terr.nom.toLowerCase()} ne porte ce nom. Nous ne
+                cherchons que dans nos{" "}
+                {sitesIci.filter((l) => l.n).length.toLocaleString("fr-FR")} sites
+                nommés&nbsp;: ni adresses, ni commerces.
+              </li>
+            ) : (
+              resultats.map((r) => (
+                <li key={`${r.nom}-${r.g[0]}`}>
+                  <button type="button" className="jeu-resultat" onClick={() => choisir(r)}>
+                    <span className="jeu-resultat-nom">{r.nom}</span>
+                    <span className="m-meta">{r.detail}</span>
+                  </button>
+                </li>
+              ))
+            )}
+          </ul>
+        )}
+
         {/* ── LES COMMANDES, À DROITE ─────────────────────────────────── */}
         <div className="terr-commandes">
           <button
@@ -1217,70 +1284,8 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
           )}
         </header>
 
-        {/* ── LA RECHERCHE, SOUS LA CARTE ────────────────────────────────
-            ⭐ Un <form> véritable : « Entrée » valide, le clavier mobile
-               affiche « rechercher », et un lecteur d'écran annonce un
-               formulaire. Une <div> avec un <input> ne fait rien de tout ça.
-            ⭐ ELLE FLOTTAIT SUR LA CARTE — 31/10/2026. Un champ posé par-dessus
-               masque le coin nord du territoire, et le clavier mobile qui monte
-               recouvre ce qu'on vient de chercher. Sous la carte, elle ne cache
-               rien, et la liste des résultats tombe dans le flux au lieu de
-               flotter par-dessus le dessin. */}
-        <form
-          className="terr-recherche"
-          role="search"
-          onSubmit={(e) => { e.preventDefault(); if (resultats[0]) choisir(resultats[0]); }}
-        >
-          <svg className="m-icone" viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="11" cy="11" r="6.5" /><path d="m16 16 4.5 4.5" />
-          </svg>
-          <label className="sr-only" htmlFor="terr-q">Rechercher un lieu du territoire</label>
-          <input
-            id="terr-q" type="search" autoComplete="off"
-            placeholder="Rechercher un lieu…"
-            value={requete}
-            onChange={(e) => { setRequete(e.target.value); setVise(null); }}
-          />
-          {requete && (
-            <button type="button" className="terr-effacer"
-              onClick={() => { setRequete(""); setVise(null); }}>
-              <span className="sr-only">Effacer la recherche</span>
-              <svg className="m-icone" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="m6 6 12 12M18 6 6 18" />
-              </svg>
-            </button>
-          )}
-        </form>
-
-        {/* ⚠️ Les résultats vivent SOUS le champ, pas en modale : on doit
-            pouvoir regarder la carte pendant qu'on lit la liste. */}
-        {requete.trim().length >= 2 && !vise && (
-          <ul className="terr-resultats" role="listbox" aria-label="Lieux trouvés">
-            {resultats.length === 0 ? (
-              <li className="terr-rien">
-                {/* ⚠️ Deux choses fausses ici depuis ce soir : « la presqu'île »
-                    alors qu'un onglet montre l'Aulne, et le compte des lieux du
-                    GRAPHE alors qu'on cherche dans l'inventaire. ⭐ Une phrase
-                    qui cite un chiffre vivant vieillit deux fois plus vite — on
-                    nomme le territoire affiché et on compte ce qu'on fouille. */}
-                Aucun lieu de {terr.nom.toLowerCase()} ne porte ce nom. Nous ne
-                cherchons que dans nos{" "}
-                {sitesIci.filter((l) => l.n).length.toLocaleString("fr-FR")} sites
-                nommés&nbsp;: ni adresses, ni commerces.
-              </li>
-            ) : (
-              resultats.map((r) => (
-                <li key={`${r.nom}-${r.g[0]}`}>
-                  <button type="button" className="terr-resultat" onClick={() => choisir(r)}>
-                    <span className="terr-resultat-nom">{r.nom}</span>
-                    <span className="m-meta">{r.detail}</span>
-                  </button>
-                </li>
-              ))
-            )}
-          </ul>
-        )}
-
+        {/* 🔴 LA RECHERCHE A DÉMÉNAGÉ EN TÊTE DE LA CARTE — 4/11/2026, voir
+            `.jeu-haut`/`.jeu-chercher` juste après `.terr-fond`. */}
 
         {/* ⭐ L'ALTERNATIVE ACCESSIBLE N'EST PAS UNE CONCESSION : c'est la même
             information, en liste. Choisir une promenade au clavier doit marcher

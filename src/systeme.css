@@ -926,43 +926,19 @@
    positionnement : laissée en `position: absolute`, elle se serait collée en
    haut de la FEUILLE et aurait recouvert « Le territoire ». Déplacer dans le
    markup et oublier le CSS ne casse rien visiblement — ça déplace le défaut. */
-.terr-recherche {
-  margin: 0 0 var(--sp-2);
-  display: flex; align-items: center; gap: var(--sp-1);
-  background: var(--fond-surelevé); border-radius: var(--r-rond);
-  padding: 0 var(--sp-2); min-height: 48px;
-  box-shadow: var(--ombre-carte); color: var(--texte-doux);
-}
-.terr-recherche input {
-  flex: 1; min-width: 0; font: inherit; border: 0; background: none;
-  color: var(--texte); padding: var(--sp-1) 0;
-}
-.terr-recherche input::placeholder { color: var(--texte-doux); }
-.terr-recherche input:focus { outline: none; }
-.terr-recherche:focus-within { box-shadow: var(--ombre-carte), 0 0 0 2px var(--ocre); }
+/* 🔴 `.terr-recherche`/`.terr-resultats`/`.terr-resultat*` SONT PARTIS LE
+   4/11/2026 : la recherche a quitté la feuille pour la tête de la carte,
+   reprenant `.jeu-haut`/`.jeu-chercher`/`.jeu-resultats` tels quels — voir
+   le commentaire sur son appel dans `Territoire2030.tsx`. `.terr-effacer`
+   et `.terr-rien` restent, ils portent toujours le bouton d'effacement et
+   le message « aucun résultat ». */
 .terr-effacer { background: none; border: 0; padding: 4px; cursor: pointer; color: var(--texte-doux); }
-
-.terr-resultats {
-  /* dans le flux, elle aussi : les résultats poussent la liste vers le bas
-     au lieu de flotter par-dessus. */
-  list-style: none; margin: 0 0 var(--sp-2); padding: var(--sp-0);
-  background: var(--fond-surelevé); border-radius: var(--r-m);
-  box-shadow: var(--ombre-levee);
-  /* ⚠️ Plafonnée ET défilante : huit résultats sur un petit écran
-     recouvriraient la carte entière. */
-  max-height: 46svh; overflow-y: auto;
-}
-.terr-resultat {
-  display: flex; flex-direction: column; gap: 1px; width: 100%;
-  text-align: left; font: inherit; background: none; border: 0; cursor: pointer;
-  padding: var(--sp-1) var(--sp-2); border-radius: var(--r-s); color: var(--texte);
-}
-.terr-resultat:hover, .terr-resultat:focus-visible { background: var(--fond-enfoncé); }
-.terr-resultat-nom { font-family: var(--titre); font-size: var(--t-s); }
-/* ⚠️ `--texte-doux` vaut la sauge en thème sombre, et cette ligne vit sur le
-   kaki de la carte : 3,65. Même défaut que `.terr-attente`, corrigé le même
-   soir — et le même rôle en est la réponse. */
-.terr-rien { padding: var(--sp-2); font-size: var(--t-xs); color: var(--texte-inverse-doux); }
+/* ⚠️ `--bulle-texte-doux`, PAS `--texte-inverse-doux` — depuis le 4/11.
+   Cette ligne vivait directement sur le kaki de la carte (d'où le ton
+   inversé) ; elle vit maintenant dans `.jeu-resultats`, une surface
+   « bulle » quasi opaque et CLAIRE, comme `.jeu-resultat-cat` juste à
+   côté — même surface, même rôle de texte. */
+.terr-rien { padding: var(--sp-2); font-size: var(--t-xs); color: var(--bulle-texte-doux); }
 
 .terr-commandes {
   position: absolute; z-index: var(--z-releve);
@@ -992,6 +968,23 @@
 .terr-calque span { display: flex; flex-direction: column; }
 .terr-calque-nom { font-size: var(--t-s); }
 /* ── le filtre par genre de site — 4/11/2026 ───────────────────────────── */
+/* ── la recherche, en tête de la carte — 4/11/2026 ──────────────────────
+   ⚠️ `.terr-commandes` (calques, zoom, recadrage, position) occupe la même
+   colonne de droite, en 44 px de bouton + `--sp-2` de marge. `.jeu-haut`
+   seul irait jusqu'au bord et passerait SOUS cette colonne (son
+   `z-index: 25` la ferait même passer DESSUS, cachant les boutons) — la
+   barre s'arrête donc avant elle plutôt que de compter sur l'empilement. */
+/* ⚠️ ET `.terr-retour` (« ‹ Balades », fixe, en haut à gauche) VIT SUR LA
+   MÊME LIGNE : vu en écran, le champ commençait SOUS son texte. Même
+   principe qu'à droite — la barre s'arrête après lui plutôt que de
+   compter sur son `z-index: 30` pour rester lisible par-dessus. */
+.terr-carte .terr-haut {
+  left: calc(max(12px, calc(50% - var(--colonne) / 2 + 12px)) + 124px);
+}
+.terr-carte .terr-haut,
+.terr-carte .terr-haut-resultats {
+  right: calc(44px + var(--sp-2) + var(--sp-1));
+}
 .terr-genres {
   display: flex; flex-wrap: wrap; gap: 6px;
   padding-top: var(--sp-1); border-top: 1px solid var(--bulle-trait);
