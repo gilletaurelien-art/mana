@@ -42,7 +42,7 @@ export const libelleCategorie = (c: string) => CATEGORIE[c] ?? c;
  *    plutôt que de se signaler par une couleur qui n'existe nulle part
  *    ailleurs sur la carte.
  *
- * 🔴 ET CE REPLI A CACHÉ LE DÉFAUT PENDANT UNE JOURNÉE ENTIÈRE — 5/11/2026.
+ * 🔴 ET CE REPLI A CACHÉ LE DÉFAUT PENDANT UNE JOURNÉE ENTIÈRE — 4/11/2026.
  *    Cette table ne portait que les TREIZE genres de `walks.ts`, le
  *    vocabulaire des promenades écrites à la main. Or ce qu'elle colorie,
  *    ce sont les sites de `lieux.json`, dont le vocabulaire est celui de
@@ -95,7 +95,7 @@ export const COULEUR_CATEGORIE: Record<string, string> = {
   chateau: "#8b5a2b",        // = fortification
   source: "#3fc2b0",         // = fontaine
   memorial: "#c68f3f",       // = memoire
-  chapelle: "#a357d9",       // = lieu_de_culte (fusionné le 5/11, voir lieux.py)
+  chapelle: "#a357d9",       // = lieu_de_culte (fusionné le 4/11, voir lieux.py)
 };
 export const COULEUR_CATEGORIE_DEFAUT = COULEUR_CATEGORIE.megalithe;
 export const couleurCategorie = (c: string) => COULEUR_CATEGORIE[c] ?? COULEUR_CATEGORIE_DEFAUT;

@@ -1,7 +1,7 @@
 /**
  * « Y ALLER » — le chaînon qui manquait, et qu'on NE construit PAS.
  *
- * 🔴 LA FONCTION ÉTAIT ABSENTE, relevé par le fondateur le 5/11/2026 :
+ * 🔴 LA FONCTION ÉTAIT ABSENTE, relevé par le fondateur le 4/11/2026 :
  *    l'application savait montrer un lieu et composer la promenade qui en
  *    part, jamais comment l'atteindre. Le parcours réel d'un visiteur est
  *    pourtant : voir → s'y rendre → marcher. Il manquait le milieu.

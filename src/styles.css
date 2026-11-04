@@ -2108,7 +2108,7 @@ body { padding-bottom: var(--reserve-barre); }
       doit pas attendre un rendu React pour être juste. Là où `:has` manque,
       on retombe sur l'ancien comportement — un défilement de 88 px, pas un
       écran cassé. */
-/* 🔴 `.terr` REJOINT `.jeu` LE 5/11/2026 — et le défaut n'était pas celui
+/* 🔴 `.terr` REJOINT `.jeu` LE 4/11/2026 — et le défaut n'était pas celui
    qu'on croyait. `body` réserve 88 px sous la barre flottante : juste, pour
    une page qui défile. Mais `/carte` est plein écran depuis hier, et cette
    réserve faisait un document de 851 px dans une fenêtre de 763. Rien n'y
@@ -2635,7 +2635,7 @@ body:has(.jeu), body:has(.terr) { padding-bottom: 0; }
 
 /* Le lieu visé sur la carte du territoire : nom, puis ce que la donnée dit. */
 .terr-vise-nom { margin: 0; }
-/* ⚠️ `--bulle-texte-doux` DEPUIS LE 5/11 : le cadre a pris la matière de la
+/* ⚠️ `--bulle-texte-doux` DEPUIS LE 4/11 : le cadre a pris la matière de la
    barre flottante (voir `.terr-vise` dans `systeme.css`), et le ton doux doit
    suivre le fond sur lequel il est posé. `--texte-inverse-doux` était calculé
    contre le bleu nuit d'avant ; laissé tel quel, il donnait le bon ton par
@@ -2646,7 +2646,7 @@ body:has(.jeu), body:has(.terr) { padding-bottom: 0; }
 }
 .terr-vise-dire a { color: inherit; text-underline-offset: 3px; }
 
-/* 🔴 `.terr-vise-partir` EST PARTI LE 5/11, QUELQUES HEURES APRÈS SA POSE.
+/* 🔴 `.terr-vise-partir` EST PARTI LE 4/11, QUELQUES HEURES APRÈS SA POSE.
    Il existait pour qu'un bouton SEUL cesse de s'étirer d'un bord à l'autre
    (`.terr-bouton` porte `flex: 1 1 0`, écrit pour une rangée de deux). Il y
    en a deux depuis que « Y aller » accompagne « Partir d'ici » : l'hypothèse
@@ -2664,7 +2664,7 @@ body:has(.jeu), body:has(.terr) { padding-bottom: 0; }
    le commentaire sur son appel dans `Territoire2030.tsx`. Elle vit encore
    sur le fond kaki (entre la carte et la feuille craie), d'où le même ton
    clair que `.terr-vise-dire`. */
-/* ⚠️ DANS L'ENCADRÉ DEPUIS LE 5/11 — plus de rembourrage latéral (le cadre
+/* ⚠️ DANS L'ENCADRÉ DEPUIS LE 4/11 — plus de rembourrage latéral (le cadre
    le porte déjà) et un filet de séparation : les trois destinations sont une
    SUITE du lieu visé, pas une seconde étiquette. */
 .terr-propositions {
@@ -2676,7 +2676,7 @@ body:has(.jeu), body:has(.terr) { padding-bottom: 0; }
   display: flex; justify-content: space-between; gap: var(--sp-1);
   font-size: var(--t-xs); color: var(--bulle-texte-doux);
 }
-/* 🔴 LA DISTANCE ÉTAIT ILLISIBLE — 1,79 de contraste, relevé le 5/11 sur le
+/* 🔴 LA DISTANCE ÉTAIT ILLISIBLE — 1,79 de contraste, relevé le 4/11 sur le
    cadre en place. `.m-meta` porte le ton doux des fonds CLAIRS (un olive
    sombre) ; posé sur le verre kaki du cadre, il disparaît. Et c'est le
    chiffre qui porte l'information : « Belvédère de Kerdéniel » sans son

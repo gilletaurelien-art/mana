@@ -124,7 +124,7 @@ describe("viser un lieu sur la carte du territoire", () => {
    *    rendu — et le défaut serait MUET : un clic qui ne fait rien, exactement
    *    comme avant qu'on ajoute la fonction.
    */
-  /* 🔴 RETOURNÉ LE 5/11/2026, PAS SUPPRIMÉ. Le `ref` porte désormais une
+  /* 🔴 RETOURNÉ LE 4/11/2026, PAS SUPPRIMÉ. Le `ref` porte désormais une
      TROISIÈME clé, `visibles` — la liste réellement dessinée — et c'est elle
      que le pointage parcourt depuis qu'un clic pouvait ouvrir la fiche d'un
      site masqué par le filtre. La règle que ce test protège n'a pas bougé
@@ -146,7 +146,7 @@ describe("viser un lieu sur la carte du territoire", () => {
    *    vérifié — c'est « la règle qui gagne » transposée au découpage de
    *    source. La fenêtre s'arrête donc à `const survol`.
    */
-  /* 🔴 RETOURNÉ LE 5/11/2026 — ET LA RAISON VAUT D'ÊTRE DITE. Le filtre
+  /* 🔴 RETOURNÉ LE 4/11/2026 — ET LA RAISON VAUT D'ÊTRE DITE. Le filtre
      `if (!l.n) continue` a quitté `viser()` et `survol()` : il est remonté
      dans `sitesVisibles`, le memo qui alimente À LA FOIS le GeoJSON dessiné
      par maplibre et la liste parcourue au clic. Ce n'est pas une

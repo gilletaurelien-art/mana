@@ -4,7 +4,7 @@ import type { Graphe, LieuAccroche } from "./composition";
  * RECOUDRE PLUSIEURS GRAPHES EN UN SEUL, EN MÉMOIRE.
  *
  * ⭐ POURQUOI UNE FONCTION, ET PAS DIX LIGNES DANS L'EFFET QUI CHARGE. Elle y
- *    a vécu du 4 au 5/11/2026, et pendant ce temps elle portait DEUX défauts
+ *    a vécu du 4 au 4/11/2026, et pendant ce temps elle portait DEUX défauts
  *    que personne ne pouvait voir : un `useEffect` qui `fetch` deux fichiers
  *    de 3 Mo ne se teste pas, et ce qui ne se teste pas se relit — c'est-à-dire
  *    se croit. Ici, trois fixtures de six nœuds suffisent à faire échouer les
@@ -14,7 +14,7 @@ import type { Graphe, LieuAccroche } from "./composition";
  *    une note qui désigne quelque chose.
  *
  * ────────────────────────────────────────────────────────────────────────
- * 🔴 CE QUI SE DÉCALE, ET CE QUI NE SE DÉCALE PAS — 5/11/2026.
+ * 🔴 CE QUI SE DÉCALE, ET CE QUI NE SE DÉCALE PAS — 4/11/2026.
  *
  * Un graphe ne porte pas de coordonnées dans ses arêtes : il porte des INDEX.
  * Les recoudre demande donc de retraduire tout index du second graphe dans le

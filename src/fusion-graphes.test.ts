@@ -192,7 +192,7 @@ const presents = ["presquile", "aulne"].every((t) => existsSync(new URL(`${t}.js
 
 /**
  * 🔴 CHARGÉS PARESSEUSEMENT, ET CE N'EST PAS UNE COQUETTERIE — appris en
- *    cassant le déploiement du 5/11. `describe.skipIf` saute les TESTS, pas
+ *    cassant le déploiement du 4/11. `describe.skipIf` saute les TESTS, pas
  *    le CORPS du `describe` : celui-ci s'exécute à la collecte, toujours.
  *    Un `readFileSync` écrit là jetait donc un ENOENT sur la machine
  *    d'intégration, où `public/bretagne/` n'existe pas — suite en échec,

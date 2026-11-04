@@ -37,7 +37,7 @@ REGLES = [
                              or t.get("building") == "bunker" or t.get("military") in ("bunker","naval_base")),
     ("phare",         lambda t: t.get("man_made") == "lighthouse"),
     ("moulin",        lambda t: t.get("man_made") in ("windmill","watermill") or t.get("historic") == "watermill"),
-    # 🔴 UNE SEULE RÈGLE POUR LES TROIS — 5/11/2026, arbitrage du fondateur :
+    # 🔴 UNE SEULE RÈGLE POUR LES TROIS — 4/11/2026, arbitrage du fondateur :
     #    « rassemble au sein de lieux de culte les églises et chapelles ».
     #    ⭐ Et la donnée disait déjà qu'ils n'en faisaient qu'un. Les trois
     #       règles d'avant ne séparaient pas trois CHOSES, elles séparaient
@@ -82,7 +82,7 @@ REGLES = [
 LIBELLE = {
     "megalithe":"Mégalithe","archeologie":"Site archéologique","fortification":"Fortification",
     "phare":"Phare","moulin":"Moulin",
-    # ⚠️ « chapelle » et « eglise » ont disparu d'ici le 5/11 avec leurs
+    # ⚠️ « chapelle » et « eglise » ont disparu d'ici le 4/11 avec leurs
     #    règles — voir REGLES ci-dessus. Le nom de chaque édifice dit déjà
     #    lequel c'est ; la CATÉGORIE n'avait pas à le redire en trois.
     "lieu_de_culte":"Lieu de culte","calvaire":"Calvaire","plage":"Plage","grotte":"Grotte",

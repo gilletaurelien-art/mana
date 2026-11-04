@@ -74,7 +74,7 @@ describe("les genres de l'inventaire", () => {
       ["chateau", "fortification"],
       ["source", "fontaine"],
       ["memorial", "memoire"],
-      // 🔴 Fusionné le 5/11 : `lieux.py` ne produit plus `chapelle` ni
+      // 🔴 Fusionné le 4/11 : `lieux.py` ne produit plus `chapelle` ni
       //    `eglise`, les deux tombent dans `lieu_de_culte`. `walks.ts` porte
       //    encore `chapelle` sur ses étapes — même chose, même teinte.
       ["chapelle", "lieu_de_culte"],

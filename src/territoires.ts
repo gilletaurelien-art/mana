@@ -13,7 +13,7 @@
 //
 // 🔴 « CE QUI RESTE IMPOSSIBLE : COMPOSER UNE BOUCLE QUI TRAVERSE LA
 //    FRONTIÈRE » — cette phrase vivait ici et elle est FAUSSE depuis le
-//    5/11/2026. Elle décrivait un écran qui chargeait UN fichier ; `/carte`
+//    4/11/2026. Elle décrivait un écran qui chargeait UN fichier ; `/carte`
 //    les charge tous les deux et les SOUDE (`fusionnerGraphes`), donc le
 //    réseau est continu d'un bout à l'autre du territoire.
 // ⭐ Elle était juste le jour où on l'a écrite, et elle a survécu à sa cause

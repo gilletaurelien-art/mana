@@ -153,7 +153,7 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
       style: STYLES.ortho,
       center: [-4.2, 48.25], zoom: 10,
       interactive: false,
-      /* 🔴 RECOUPÉ LE 5/11/2026, ET LA RAISON EST MESURÉE. Rallumé la veille
+      /* 🔴 RECOUPÉ LE 4/11/2026, ET LA RAISON EST MESURÉE. Rallumé la veille
          pour porter l'IGN et l'ODbL après le retrait du paragraphe de
          source, ce contrôle rendait sa mention DERRIÈRE la barre flottante :
          relevé à l'écran, illisible, nulle part ailleurs sur la page. ⭐ Une
@@ -287,7 +287,7 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
     return [...vus].sort();
   }, [sitesIci]);
   /**
-   * 🔴 PLUSIEURS GENRES À LA FOIS — 5/11/2026, demande du fondateur. C'était
+   * 🔴 PLUSIEURS GENRES À LA FOIS — 4/11/2026, demande du fondateur. C'était
    *    une chaîne (`"tous"` ou UN genre) : chercher « les chapelles ET les
    *    calvaires », c'est-à-dire le patrimoine religieux d'un secteur,
    *    demandait de regarder deux fois et de se souvenir de la première.
@@ -486,7 +486,7 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
        défaut, demandé par le fondateur, se paie donc ici : les deux sont
        chargés en parallèle, puis recousus.
        ⛔ ET LA COUTURE ELLE-MÊME VIT DANS `fusion-graphes.ts` DEPUIS LE
-          5/11/2026, pas ici. Écrite en ligne dans cet effet, elle était
+          4/11/2026, pas ici. Écrite en ligne dans cet effet, elle était
           inatteignable par un test — un `useEffect` qui `fetch` deux
           fichiers de 3 Mo ne s'exerce pas — et elle a porté DEUX défauts
           mesurés pendant une journée : 277 lieux sur 775 accrochés à une
@@ -1049,7 +1049,7 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
       }
 
       /* ── passe 3 : les lieux de la promenade choisie, et eux seuls
-         🔴 L'INTERRUPTEUR « LES LIEUX » A DISPARU DU PANNEAU — 5/11/2026,
+         🔴 L'INTERRUPTEUR « LES LIEUX » A DISPARU DU PANNEAU — 4/11/2026,
             question du fondateur : « est-ce important ? tous nos points sont
             des sites remarquables ». Il avait raison, et pour une raison
             qu'il faut écrire : cette passe-ci ne dessine PAS les points de
@@ -1288,7 +1288,7 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
             {/* ⭐ Trois interrupteurs qui commandent VRAIMENT trois passes de
                 dessin. Un calque qui ne change rien à l'image est un
                 décor coûteux — on l'aurait su au premier essai. */}
-            {/* 🔴 LES TROIS GLOSES SONT PARTIES — 5/11/2026, demande du
+            {/* 🔴 LES TROIS GLOSES SONT PARTIES — 4/11/2026, demande du
                 fondateur. Elles expliquaient ce que le titre disait déjà
                 (« ceux de l'Office de tourisme » sous « Les circuits
                 balisés »), et elles coûtaient trois lignes chacune dans un
@@ -1320,7 +1320,7 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
                   Tous
                 </button>
                 {/* 🔴 LE LIBELLÉ VIENT DE L'INVENTAIRE, PAS DE `categories.ts`
-                    — 5/11/2026. `lieux.json` EMPORTE sa propre table
+                    — 4/11/2026. `lieux.json` EMPORTE sa propre table
                     (`libelles`, écrite par `scripts/lieux.py` en même temps
                     que les genres) ; `CATEGORIE` en était une recopie figée
                     au vocabulaire d'avant. Onze boutons sur vingt-trois
@@ -1332,7 +1332,7 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
                        brut : un trou doit se voir, c'est la règle du
                        fichier — mais il ne doit pas se voir ONZE fois parce
                        qu'on a lu la mauvaise table. */}
-                {/* 🔴 LA COULEUR DE LA PASTILLE, EN PASTILLE — 5/11/2026.
+                {/* 🔴 LA COULEUR DE LA PASTILLE, EN PASTILLE — 4/11/2026.
                     Demandé : « la même couleur que leur pin » pour les
                     libellés. Mesuré avant d'écrire, sur les 23 genres : en
                     TEXTE, la couleur du pin tombe sous 3:1 pour DIX genres
@@ -1399,7 +1399,7 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
                    l'exécution, sur l'arête la plus proche — ce qui fait
                    passer la couverture à 80 %, et laisse le refus honnête
                    pour les 20 % restants. */}
-            {/* 🔴 DORÉ, À DROITE, AVEC SA FLÈCHE — 5/11/2026, demande du
+            {/* 🔴 DORÉ, À DROITE, AVEC SA FLÈCHE — 4/11/2026, demande du
                 fondateur. ⭐ Et ce n'est pas qu'une couleur : c'est le SEUL
                 geste de cet écran — tout le reste informe, lui seul emmène
                 ailleurs. En liseré fin, il avait exactement le poids d'un
@@ -1408,7 +1408,7 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
                 ⚠️ `<p>` devient `<div>` : un bouton de 44 px dans un
                    paragraphe de texte héritait de sa hauteur de ligne et de
                    son ton doux. */}
-            {/* 🔴 DEUX GESTES, PAS UN — 5/11/2026, relevé par le fondateur :
+            {/* 🔴 DEUX GESTES, PAS UN — 4/11/2026, relevé par le fondateur :
                 « on a omis la fonction principale : y aller ». L'application
                 savait montrer un lieu et composer la promenade qui en part,
                 jamais comment l'ATTEINDRE. Le parcours d'un visiteur est
@@ -1485,7 +1485,7 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
               </a>
             </div>
             {/* 🔴 LES TROIS PROPOSITIONS SONT REVENUES DANS L'ENCADRÉ —
-                5/11/2026, et c'est la réparation d'un défaut MUET. Posées
+                4/11/2026, et c'est la réparation d'un défaut MUET. Posées
                 « sous la carte » le 3/11 à la demande du fondateur, elles
                 étaient restées sœurs de `.terr-carte` dans le flux. Le 4/11
                 la carte est passée en PLEIN ÉCRAN (`position: absolute;
@@ -1506,7 +1506,7 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
                 {propositions.map((p) => (
                   <li key={p.i}>
                     <span className="terr-proposition-nom">{spotsPourComposer[p.i]?.n}</span>
-                    {/* 🔴 EN MÈTRES, PAS EN KILOMÈTRES — 5/11/2026, arbitrage
+                    {/* 🔴 EN MÈTRES, PAS EN KILOMÈTRES — 4/11/2026, arbitrage
                         du fondateur : « mètres pour les marcheurs ». Ces
                         trois distances sont des SAUTS d'un lieu à l'autre —
                         0,7 à 2 km le plus souvent — et le kilomètre y rend
@@ -1718,7 +1718,7 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
 
         {/* 🔴 LE PARAGRAPHE DE SOURCE EST PARTI DE LA FEUILLE — 4/11/2026,
             demande du fondateur ; le contrôle maplibre qui l'avait remplacé
-            est parti le 5/11, parce qu'il rendait sa mention sous la barre
+            est parti le 4/11, parce qu'il rendait sa mention sous la barre
             flottante. L'attribution a désormais UNE adresse, `/reglages`,
             tenue par `provenance.test.ts` — voir le montage de la carte.
             ⚠️ CE QUI DISPARAÎT VRAIMENT, et c'est assumé : la phrase sur le

@@ -65,7 +65,7 @@ describe("qui répond de ce tracé", () => {
   });
 
   /**
-   * 🔴 L'ATTRIBUTION DES FONDS DE CARTE N'A PLUS QU'UNE ADRESSE — 5/11/2026.
+   * 🔴 L'ATTRIBUTION DES FONDS DE CARTE N'A PLUS QU'UNE ADRESSE — 4/11/2026.
    *    Les trois cartes de l'app portent `attributionControl: false` : aucune
    *    ne nomme ses fournisseurs à l'écran. `/carte` a fait l'exception un
    *    jour, et sa mention est sortie RECOUVERTE par la barre flottante —

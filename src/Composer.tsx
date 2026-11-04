@@ -481,7 +481,7 @@ export function Composer() {
   const recue = depuisURL();
   /**
    * ⭐ LE LIEU VISÉ SERT DE POSITION DE DÉPART QUAND ON N'EN A PAS D'AUTRE —
-   *    5/11/2026. C'est la conséquence directe de l'arbitrage du 2/11 : on
+   *    4/11/2026. C'est la conséquence directe de l'arbitrage du 2/11 : on
    *    part DU lieu qu'on a repéré. Ce qui compte ici, c'est que `territoire`
    *    en dépend (dix lignes plus bas) : seeder la position, c'est choisir le
    *    bon graphe AU PREMIER chargement.
@@ -564,7 +564,7 @@ export function Composer() {
        reste vide après un changement de territoire. */
     setProps(null); setChoisie(0); setEnBoucle(false); setBoucleVisee(null);
     setRetour(null); setMotRetour(""); setMot("");
-    /* 🔴 LE REFUS AUSSI SE PÉRIME AVEC LE GRAPHE — 5/11/2026, et il manquait
+    /* 🔴 LE REFUS AUSSI SE PÉRIME AVEC LE GRAPHE — 4/11/2026, et il manquait
        à cette liste. « Aucun chemin ne passe devant X, le plus proche en
        reste à 956 m » est une mesure faite SUR UN GRAPHE ; changer de graphe
        la rend caduque. Sans cette ligne, le refus calculé sur l'ancien

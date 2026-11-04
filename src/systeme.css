@@ -958,7 +958,7 @@
 .terr-calques {
   position: absolute; z-index: var(--z-panneau);
   top: calc(var(--sp-2) + env(safe-area-inset-top, 0px) + 52px); right: var(--sp-2);
-  /* 🔴 LE VERRE DE LA BARRE — 5/11/2026, demande du fondateur. Le panneau
+  /* 🔴 LE VERRE DE LA BARRE — 4/11/2026, demande du fondateur. Le panneau
      était en `--fond-surelevé`, c'est-à-dire IVOIRE en thème clair : une
      plaque d'interface posée sur une photo satellite, à côté d'une barre et
      d'un cadre en kaki translucide. Trois flottants sur la même carte,
@@ -976,7 +976,7 @@
   border-radius: var(--r-l);
   box-shadow: var(--ombre-levee), var(--bulle-eclat); padding: var(--sp-2);
   display: flex; flex-direction: column; gap: var(--sp-2);
-  /* 🔴 ÉLARGI — 5/11/2026, demande du fondateur. 15 rem (240 px) étaient la
+  /* 🔴 ÉLARGI — 4/11/2026, demande du fondateur. 15 rem (240 px) étaient la
      mesure d'un panneau à TROIS CASES À COCHER ; il en porte aujourd'hui
      vingt et une pastilles de genre, qui tombaient deux par rangée et
      allongeaient la liste d'autant.
@@ -989,7 +989,7 @@
         `vw` : sur grand écran l'app est une colonne centrée, et `100vw`
         mesurerait la fenêtre au lieu de la carte. */
   max-width: min(26rem, calc(100% - var(--sp-2) * 2));
-  /* 🔴 IL DÉBORDAIT DE L'ÉCRAN — mesuré le 5/11 : 933 px de panneau dans une
+  /* 🔴 IL DÉBORDAIT DE L'ÉCRAN — mesuré le 4/11 : 933 px de panneau dans une
      fenêtre de 763, soit les trois interrupteurs du haut poussés HORS du
      cadre, et la page entière devenue défilable sous une carte qui, elle,
      est plein écran. Le panneau tenait tant qu'il portait trois cases ; le
@@ -1009,7 +1009,7 @@
      territoire. */
   overscroll-behavior: contain;
 }
-/* ⚠️ `align-items: center` DEPUIS LE 5/11 : la case s'alignait sur le haut
+/* ⚠️ `align-items: center` DEPUIS LE 4/11 : la case s'alignait sur le haut
    parce que le libellé faisait deux lignes (titre + glose). La glose partie,
    le `start` laissait la case flotter au-dessus d'un texte d'une ligne. */
 .terr-calque { display: grid; grid-template-columns: auto 1fr; gap: var(--sp-1);
@@ -1034,7 +1034,7 @@
   display: flex; flex-wrap: wrap; gap: 6px;
   padding-top: var(--sp-1); border-top: 1px solid var(--bulle-trait);
 }
-/* 🔴 L'ENCRE DES FILTRES, EN TOUTES LETTRES — 5/11/2026, demande du
+/* 🔴 L'ENCRE DES FILTRES, EN TOUTES LETTRES — 4/11/2026, demande du
    fondateur : « afficher en noir les options ». Elles étaient illisibles, et
    la cause n'était pas une couleur mal choisie mais une couleur NON CHOISIE :
    `.ot-filtre` porte `color: inherit`, écrit pour la liste de
@@ -1056,7 +1056,7 @@
 .terr-genres .ot-filtre { color: var(--bulle-texte); border-color: var(--bulle-trait); }
 
 /* ── une pastille de filtre PORTE la couleur de son genre ──────────────────
-   🔴 5/11/2026, demande du fondateur : « la même couleur que leur pin ».
+   🔴 4/11/2026, demande du fondateur : « la même couleur que leur pin ».
       Portée par le ROND, pas par les lettres — mesuré sur les 23 genres, la
       teinte du pin en texte passe sous 3:1 pour dix d'entre eux sur l'ivoire
       du thème clair et douze sur le kaki du thème sombre, et jamais les
@@ -1116,7 +1116,7 @@
 }
 .terr-genre:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
-/* 🔴 AU-DESSUS DE LA BARRE, ET DANS SA MATIÈRE — 5/11/2026, demande du
+/* 🔴 AU-DESSUS DE LA BARRE, ET DANS SA MATIÈRE — 4/11/2026, demande du
    fondateur : « remonter l'encadré au-dessus de la bottom, lui appliquer la
    même forme et la même couleur ».
    ⚠️ DEUX DÉFAUTS, UN SEUL SYMPTÔME. Le cadre était posé à `--sp-2` du bas
@@ -1204,7 +1204,7 @@
 /* 🔴 « SOUS 340 PX, DEUX BOUTONS NE TIENNENT PLUS » — c'était la règle, et
    c'était un nombre réglé sur UNE rangée : « Voir le détail » + « En
    chemin », dans la fiche de promenade. « Y aller » + « Partir d'ici »,
-   posés le 5/11, tiennent très bien à 333 px — mesuré, 127 et 125 px, sans
+   posés le 4/11, tiennent très bien à 333 px — mesuré, 127 et 125 px, sans
    une lettre coupée — et le seuil les empilait quand même.
    ⭐ LE SEUIL NE CONNAISSAIT PAS LE CONTENU. `flex: 1 1 auto` prend pour
       base la largeur NATURELLE de chaque bouton (ils sont en `nowrap`), et
