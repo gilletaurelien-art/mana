@@ -960,7 +960,20 @@
   top: calc(var(--sp-2) + env(safe-area-inset-top, 0px) + 52px); right: var(--sp-2);
   background: var(--fond-surelevé); border-radius: var(--r-m);
   box-shadow: var(--ombre-levee); padding: var(--sp-2);
-  display: flex; flex-direction: column; gap: var(--sp-2); max-width: 15rem;
+  display: flex; flex-direction: column; gap: var(--sp-2);
+  /* 🔴 ÉLARGI — 5/11/2026, demande du fondateur. 15 rem (240 px) étaient la
+     mesure d'un panneau à TROIS CASES À COCHER ; il en porte aujourd'hui
+     vingt et une pastilles de genre, qui tombaient deux par rangée et
+     allongeaient la liste d'autant.
+     ⚠️ `min()` AVEC LE POURCENTAGE, pas une valeur fixe : le panneau est
+        ancré à droite et grandit vers la GAUCHE. Une largeur en rem seule
+        sortirait de l'écran sur un téléphone étroit, et le contenu partirait
+        hors cadre du côté qui n'a pas de bord. Le second terme laisse
+        toujours la même marge à gauche qu'à droite. ⭐ Une dimension qui
+        dépend du conteneur doit se dire en pourcentage DU CONTENEUR, pas en
+        `vw` : sur grand écran l'app est une colonne centrée, et `100vw`
+        mesurerait la fenêtre au lieu de la carte. */
+  max-width: min(26rem, calc(100% - var(--sp-2) * 2));
   /* 🔴 IL DÉBORDAIT DE L'ÉCRAN — mesuré le 5/11 : 933 px de panneau dans une
      fenêtre de 763, soit les trois interrupteurs du haut poussés HORS du
      cadre, et la page entière devenue défilable sous une carte qui, elle,
