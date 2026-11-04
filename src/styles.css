@@ -2002,23 +2002,9 @@ body { padding-bottom: var(--reserve-barre); }
 .ot-item-titre { font-family: var(--titre); font-size: var(--t-m); line-height: 1.2; }
 .ot-item-meta { font-size: var(--t-xs); color: var(--bulle-texte-doux); }
 
-.terr-onglets { display: flex; gap: 6px; margin-top: var(--sp-2); }
-.terr-onglet {
-  flex: 1 1 0; min-height: 44px; padding: 0 var(--sp-2);
-  font: inherit; font-size: var(--t-xs); cursor: pointer;
-  color: inherit; background: transparent;
-  border: 1px solid var(--trait); border-radius: var(--r-rond);
-  transition: border-color 160ms ease, background 160ms ease;
-}
-.terr-onglet:hover { border-color: var(--ocre); }
-.terr-onglet:focus-visible { outline: 2px solid var(--ocre); outline-offset: 2px; }
-/* ⭐ L'actif se dit par l'OR ET par la graisse ET par `aria-selected` — jamais
-   par la couleur seule : qui ne sépare pas les teintes a besoin des deux
-   autres, et le lecteur d'écran du troisième. */
-.terr-onglet-actif {
-  border-color: var(--action); background: var(--action);
-  color: var(--action-texte); font-weight: 600;
-}
+/* 🔴 `.terr-onglets`/`.terr-onglet*` SONT PARTIS LE 4/11/2026 avec la bascule
+   presqu'île/Aulne : la carte montre les deux d'un coup, il n'y a plus
+   d'onglet à peindre. */
 
 .terr-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .terr-item {
@@ -2438,25 +2424,8 @@ body:has(.jeu) { padding-bottom: 0; }
   .jeu-carte { transition: none !important; }
 }
 
-/* Le retour au jeu, posé par-dessus la carte du territoire. */
-.terr-retour {
-  /* ⚠️ `fixed` SORT DE LA COLONNE — et la colonne est centrée. `left: 12px`
-     collerait ce bouton au bord de la FENÊTRE, à 400 px de la carte qu'il
-     commande, sur tout écran large. Même famille que la requête de média
-     supprimée plus haut : un repère pris sur la fenêtre pour un élément qui
-     vit dans une boîte de 440 px. On recalcule donc le bord de la colonne,
-     et `max()` rend les 12 px dès que la fenêtre est plus étroite qu'elle. */
-  position: fixed; top: 12px; z-index: 30;
-  left: max(12px, calc(50% - var(--colonne) / 2 + 12px));
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 9px 14px 9px 10px; border-radius: var(--r-rond);
-  border: 1px solid var(--bulle-trait-fort);
-  background: color-mix(in srgb, var(--bulle-unie) 86%, transparent);
-  backdrop-filter: blur(10px);
-  color: var(--bulle-texte); font-size: var(--t-xs); cursor: pointer;
-}
-.terr-retour .m-icone { width: 18px; height: 18px; }
-.terr-retour:focus-visible { outline: 2px solid var(--ocre); outline-offset: 2px; }
+/* 🔴 `.terr-retour` EST PARTI LE 4/11/2026 AVEC LE BOUTON — plus d'appelant
+   dans `EcranTerritoire.tsx`. */
 
 /* ── LE FOND OSM D'UNE CARTE DU JEU ──────────────────────────────────────
    ⚠️ `.ot-plan` porte la carte, `.ot-calque` le tracé par-dessus. On

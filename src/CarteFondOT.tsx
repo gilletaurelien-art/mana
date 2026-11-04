@@ -7,6 +7,7 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { SOURCE_DE_BASE, STYLES, type Fond } from "./carte-fond";
 import { picto } from "./pictos";
+import { couleurCategorie } from "./categories";
 import type { Lieu } from "./lieux";
 
 /**
@@ -279,7 +280,11 @@ export function CarteFondOT({
             jamais passer dessous — c'est par lui qu'on commence à marcher. */}
         {lieux.map((l) => (
           <g key={l.osm} className="ot-lieu" data-lieu data-lon={l.g[0]} data-lat={l.g[1]}>
-            <circle className="ot-lieu-fond" r="13" />
+            {/* 🔴 UNE COULEUR PAR GENRE — 4/11/2026, demande du fondateur :
+                le même changement que sur /carte (maplibre, `sites-genre`),
+                déployé ici depuis la MÊME table (`couleurCategorie`,
+                categories.ts) plutôt que recopié. */}
+            <circle className="ot-lieu-fond" r="13" style={{ stroke: couleurCategorie(l.c) }} />
             {/* ⚠️ Le picto est dessiné sur une grille de 24 : on le recentre
                 et on le réduit à 15 px, sinon il déborde de sa pastille. */}
             <path className="ot-lieu-picto" d={picto(l.c)}

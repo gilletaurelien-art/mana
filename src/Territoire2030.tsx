@@ -28,10 +28,10 @@
  *    est ce que le graphe contient.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { DEFAUT, TERRITOIRES, territoireDe, urlGraphe } from "./territoires";
+import { TERRITOIRES, TOUT, urlGraphe } from "./territoires";
 import { chargerOT, type ItineraireOT } from "./ot";
 import { chargerLieux, lienWiki, type Inventaire, type Lieu } from "./lieux";
-import { libelleCategorie } from "./categories";
+import { libelleCategorie, COULEUR_CATEGORIE, COULEUR_CATEGORIE_DEFAUT } from "./categories";
 import { WALKS, VITRINE, effortLisible } from "./walks";
 import type { Walk } from "./walks";
 /* 🔴 LE PONT DEVIENT UN CALCUL — 3/11/2026, demande du fondateur : « fusionne
@@ -187,7 +187,12 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
   /* ⭐ DEUX TERRITOIRES, ET CELUI-CI SE CHOISIT — contrairement au
      compositeur, où la position tranche. Cet écran répond à « qu'y a-t-il
      ici ? » : il faut pouvoir regarder l'autre moitié sans y être. */
-  const [terr, setTerr] = useState(() => (centre && territoireDe(centre[0], centre[1])) || DEFAUT);
+  /* 🔴 PLUS DE BASCULE — 4/11/2026 : `terr` ne change plus en cours d'écran,
+     il garde `TOUT`. `useState` reste utile ailleurs dans ce fichier pour
+     des valeurs qui bougent ; celle-ci n'en a plus besoin, mais une
+     constante locale suffit et dit « ça ne change plus » plus honnêtement
+     qu'un état qu'on n'actionne jamais. */
+  const terr = TOUT;
   /* ⚠️ Chargés À LA DEMANDE, comme sur la liste : 258 Ko que personne ne paie
      avant d'ouvrir la carte. ⭐ Et filtrés sur le territoire affiché — les 46
      circuits couvrent les deux moitiés de la communauté, en dessiner la
@@ -244,24 +249,20 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
           "circle-radius": 4.5,
           "circle-stroke-width": 1,
           "circle-stroke-color": "#eeebdd",
+          /* ⭐ ENGENDRÉE DEPUIS `COULEUR_CATEGORIE` (categories.ts), PAS
+             RECOPIÉE : c'est la MÊME table que `CarteFondOT.tsx` lit pour
+             les pastilles de /balades-office — une couleur corrigée ici se
+             voit là-bas, et l'inverse. */
+          /* ⚠️ `as any` : maplibre type `match` comme un n-uplet de longueur
+             fixe, incompatible avec un tableau ENGENDRÉ dont la longueur
+             dépend du nombre de genres dans `COULEUR_CATEGORIE`. La forme
+             reste celle que maplibre attend à l'exécution — seul le TYPE
+             statique ne sait pas la vérifier pour une liste qui grandit. */
           "circle-color": [
             "match", ["get", "genre"],
-            "megalithe", "#c69a48",
-            "plage", "#f2c14e",
-            "panorama", "#e8702a",
-            "chateau", "#8b5a2b",
-            "calvaire", "#d94f4f",
-            "chapelle", "#d9507a",
-            "lieu_de_culte", "#a357d9",
-            "moulin", "#4f8fd9",
-            "phare", "#ffd23f",
-            "grotte", "#6b52a3",
-            "source", "#3fc2b0",
-            "ruine", "#9c9c9c",
-            "memorial", "#c68f3f",
-            /* repli pour tout genre que cette liste ne nomme pas */
-            "#c69a48",
-          ],
+            ...Object.entries(COULEUR_CATEGORIE).flat(),
+            COULEUR_CATEGORIE_DEFAUT,
+          ] as any,
         },
       });
     } else {
@@ -356,25 +357,70 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
   useEffect(() => {
     let vivant = true;
     setGraphe(null); setErreur("");
-    /* ⚠️ `setVise(null)` AVEC le changement de territoire : un lieu visé porte
-       un index d'arête, et cet index ne désigne pas le même chemin dans
-       l'autre graphe. Le garder ferait pointer la carte sur un tronçon au
-       hasard — un défaut invisible, puisqu'il reste un repère à l'écran. */
     setVise(null);
-    fetch(urlGraphe(BASE, terr))
-      .then((r) => { if (!r.ok) throw new Error(String(r.status)); return r.json(); })
-      .then((g) => { if (vivant) setGraphe(g); })
+    /* 🔴 LES DEUX GRAPHES, FUSIONNÉS EN MÉMOIRE — 4/11/2026. Il n'existe pas
+       de fichier unique : la moisson produit `presquile.json` et
+       `aulne.json` séparément, pour la raison écrite dans `territoires.ts`
+       (un seul fichier pèserait ~1,5 Mo). Montrer tout le territoire par
+       défaut, demandé par le fondateur, se paie donc ici : les deux sont
+       chargés en parallèle, puis recousus.
+       ⛔ ET LES INDEX DE NŒUDS SE DÉCALENT, SINON TOUT EST FAUX EN SILENCE.
+          Une arête ne porte pas des coordonnées mais des INDEX dans `n` —
+          concaténer les deux `n` sans décaler les arêtes du second ferait
+          pointer chacune de ses arêtes sur un nœud de la PRESQU'ÎLE : un
+          réseau plausible, entièrement faux, et rien pour le signaler.
+          Le décalage vaut `n` du premier, et il s'applique aux DEUX bouts
+          (cases 0 et 1) ET à la liste de points intermédiaires (case 4). */
+    Promise.all(
+      TERRITOIRES.map((t) =>
+        fetch(urlGraphe(BASE, t)).then((r) => {
+          if (!r.ok) throw new Error(String(r.status));
+          return r.json() as Promise<Graphe>;
+        }),
+      ),
+    )
+      .then((graphes) => {
+        if (!vivant) return;
+        const fusion = graphes.reduce((a, b) => {
+          const decalage = a.n.length;
+          return {
+            ...a,
+            territoire: TOUT.slug,
+            n: [...a.n, ...b.n],
+            a: [
+              ...a.a,
+              ...b.a.map((ar) => {
+                const copie = [...ar] as Graphe["a"][number];
+                copie[0] = ar[0] + decalage;
+                copie[1] = ar[1] + decalage;
+                copie[4] = ar[4].map((i) => i + decalage);
+                return copie;
+              }),
+            ],
+            /* ⚠️ `l` n'est plus lu par cet écran (les sites viennent de
+               l'inventaire, pas du graphe) — on le recoud quand même, pour
+               qu'un futur lecteur ne trouve pas un graphe à moitié fusionné. */
+            l: [...a.l, ...b.l],
+          };
+        });
+        setGraphe(fusion);
+      })
       // ⚠️ Une erreur se DIT. Sans ce message, un refus réseau rendrait un
       //    écran vide et muet, et on conclurait qu'il n'y a rien ici.
       .catch(() => { if (vivant) setErreur("Le territoire n'a pas pu être chargé. Vérifiez votre connexion."); });
     return () => { vivant = false; };
-  }, [terr]);
+  }, []);
 
-  /** Les promenades vérifiées qui tombent dans le territoire affiché. */
+  /** Les promenades vérifiées qui tombent dans le territoire affiché.
+   *  ⚠️ COMPARÉ À L'EMPRISE, PLUS AU SLUG — depuis que `terr` vaut `TOUT`,
+   *  qui n'est l'un des deux slugs que `territoireDe` peut rendre : un point
+   *  de la presqu'île OU de l'Aulne doit compter, et seule l'emprise (leur
+   *  union) le sait encore dire. */
   const dIci = useMemo(
     () => VITRINE.filter((w) => {
       const p = w.points[0];
-      return p && territoireDe(p.lon, p.lat)?.slug === terr.slug;
+      return p && p.lon >= terr.emprise[0] && p.lon <= terr.emprise[2]
+                && p.lat >= terr.emprise[1] && p.lat <= terr.emprise[3];
     }),
     [terr],
   );
@@ -1256,21 +1302,11 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
         </button>
         <header className="terr-entete">
           <h1 className="terr-titre">Le territoire</h1>
-          {/* ⛔ Deux onglets, pas une liste déroulante : il n'y a que deux
-              territoires, et une liste cache la moitié de l'offre derrière un
-              geste. Le jour où il y en a six, ceci change. */}
-          <div className="terr-onglets" role="tablist" aria-label="Territoire">
-            {TERRITOIRES.map((t) => (
-              <button
-                key={t.slug} type="button" role="tab"
-                aria-selected={t.slug === terr.slug}
-                className={t.slug === terr.slug ? "terr-onglet terr-onglet-actif" : "terr-onglet"}
-                onClick={() => setTerr(t)}
-              >
-                {t.nom}
-              </button>
-            ))}
-          </div>
+          {/* 🔴 LE CHOIX ENTRE PRESQU'ÎLE ET AULNE EST PARTI — 4/11/2026,
+              demande du fondateur : la carte montre désormais TOUT le
+              territoire moissonné par défaut (voir `TOUT`, territoires.ts),
+              les deux graphes fusionnés — plus de bascule à faire avant de
+              voir le reste. */}
           {graphe && (
             <p className="terr-mesure">
               {/* ⚠️ On annonce l'INVENTAIRE, pas les lieux accrochés au

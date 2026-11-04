@@ -56,18 +56,13 @@ export function EcranTerritoire({ base }: { base: string }) {
     );
   }
 
+  /* 🔴 LE BOUTON « ‹ Balades » EST PARTI — 4/11/2026, demande du fondateur.
+     Le jeu de cartes reste atteignable (l'accueil, « Balades » — voir
+     `larchitecture-des-cinq-portes`) ; cet écran-ci n'a plus de chemin de
+     retour PROPRE vers lui, et c'est voulu : la carte, désormais le défaut
+     de l'onglet, n'a plus besoin de savoir d'où l'on vient. */
   return (
     <Suspense fallback={<p className="jeu-vide" role="status">Lecture du territoire…</p>}>
-      {/* ⚠️ Le retour au jeu est posé PAR-DESSUS la carte : `Territoire2030`
-          occupe tout l'écran et n'a aucune place pour un bouton de plus.
-          Le faire entrer dans son rendu l'obligerait à connaître l'écran qui
-          le contient — exactement ce qu'un repli ne doit pas savoir. */}
-      <button type="button" className="terr-retour" onClick={() => setVue("jeu")}>
-        <svg className="m-icone" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M15 18l-6-6 6-6" />
-        </svg>
-        Balades
-      </button>
       <Territoire2030 base={base} centre={centre} />
     </Suspense>
   );
