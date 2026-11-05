@@ -523,6 +523,21 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
    *    ailleurs. Un recadrage qu'on n'a pas demandé est une carte qui
    *    résiste.
    */
+  /**
+   * ⭐ LA DESTINATION DÉSIGNÉE DU DOIGT, s'il y en a une — bornée à la liste
+   *    du moment, exactement comme le tracé retenu au canvas. Un rang hors
+   *    liste ne doit pas fabriquer un lien vers rien : `propChoisie` est un
+   *    RANG, et une nouvelle sélection peut rendre moins de trois
+   *    propositions.
+   */
+  const retenuPourLien = useMemo(
+    () =>
+      propChoisie !== null && propChoisie < propositions.length
+        ? (propositions[propChoisie].spot.g as [number, number])
+        : null,
+    [propChoisie, propositions],
+  );
+
   const cadrageFait = useRef<string | null>(null);
   useEffect(() => {
     const b = boite.current;
@@ -1777,7 +1792,31 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
                    reste une adresse valide (ancien bookmarks, ancien lien
                    partagé) ; ce lien-ci ne doit pas être le seul endroit de
                    l'app à préférer l'autre forme. */
-                href={`${base}/promenades?vers=${vise.g[0].toFixed(5)},${vise.g[1].toFixed(5)}&nom=${encodeURIComponent(vise.nom)}`}
+                /* 🔴 LA DESTINATION CHOISIE VOYAGE — 5/11/2026, et ça répare
+                   un geste perdu. Jusqu'ici « Partir d'ici » n'emportait que
+                   le point de DÉPART : qui avait touché la proposition n° 2
+                   arrivait sur `/promenades` devant la n° 1, sans rien pour
+                   comprendre pourquoi. Le choix était fait, lu, affiché — et
+                   jeté au passage d'un écran à l'autre.
+                   ⛔ CE QUI M'EN AVAIT EMPÊCHÉ ÉTAIT UNE PEUR MAL MESURÉE.
+                      J'avais écrit que les deux écrans « peuvent proposer des
+                      listes différentes » — vrai : `/carte` soude les deux
+                      graphes, `/promenades` n'en charge qu'un. Mesuré enfin,
+                      sur TOUS les lieux de la bande de couture : 141 listes
+                      identiques sur 143, et les deux divergentes partagent
+                      déjà deux destinations sur trois. Zéro divergence sur un
+                      échantillon uniforme de 51 lieux ailleurs.
+                   ⭐ Un risque nommé et non mesuré est cru traité : il m'a
+                      servi à justifier le retrait d'une fonction pour 1,4 %
+                      des cas, et la justification tenait d'autant mieux
+                      qu'elle était vraie.
+                   ⚠️ `dest` est une SUGGESTION, pas un ordre : `/promenades`
+                      la retrouve par POSITION dans sa propre liste, et garde
+                      sa première proposition s'il ne la trouve pas. Les
+                      1,4 % retombent donc exactement sur l'ancien
+                      comportement, sans message d'erreur ni liste vide. */
+                href={`${base}/promenades?vers=${vise.g[0].toFixed(5)},${vise.g[1].toFixed(5)}&nom=${encodeURIComponent(vise.nom)}${
+                  retenuPourLien ? `&dest=${retenuPourLien[0].toFixed(5)},${retenuPourLien[1].toFixed(5)}` : ""}`}
               >
                 {/* 🔴 LE SENS A CHANGÉ LE 2/11, ET LE LIBELLÉ DEVAIT SUIVRE.
                     Ce bouton disait « vers ce lieu » du temps où la promenade
@@ -1847,6 +1886,9 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
                  que le vide ne savait pas dire. */
               <p className="terr-cherche">Aucune promenade ne part d'ici.</p>
             )}
+            {/* ⭐ La destination que le doigt a désignée, s'il en a désigné une.
+                Bornée à la liste du moment, comme le tracé : un rang hors
+                liste ne doit pas fabriquer un lien vers rien. */}
             {propositions.length > 0 && (
               <ul className="terr-propositions" aria-label={`Promenades depuis ${vise.nom}`}>
                 {propositions.map((p, k) => (

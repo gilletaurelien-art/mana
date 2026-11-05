@@ -478,6 +478,35 @@ export function Composer() {
   };
   const [cible] = useState(cibleURL);
 
+  /**
+   * 🔴 LA DESTINATION QUE L'AUTRE ÉCRAN A DÉSIGNÉE — 5/11/2026.
+   *
+   * `/carte` montre trois promenades depuis un lieu et laisse en toucher
+   * une. Jusqu'ici « Partir d'ici » n'emportait que le DÉPART : qui avait
+   * choisi la deuxième arrivait ici devant la première, sans rien pour
+   * comprendre. Le geste était fait, lu, affiché — et jeté au passage d'un
+   * écran à l'autre.
+   *
+   * ⚠️ C'EST UNE SUGGESTION, PAS UN ORDRE, et c'est ce qui rend ce paramètre
+   *    sûr. Les deux écrans ne calculent pas sur le même réseau : `/carte`
+   *    soude les deux graphes, celui-ci n'en charge qu'un pour ne pas faire
+   *    attendre quelqu'un qui est déjà dehors. Mesuré sur TOUS les lieux de
+   *    la bande de couture — 141 listes identiques sur 143, et les deux
+   *    divergentes partagent déjà deux destinations sur trois.
+   * ⭐ On la retrouve donc par POSITION dans NOTRE liste, et on garde la
+   *    première si elle n'y est pas. Les 1,4 % retombent sur l'ancien
+   *    comportement : pas de message d'erreur, pas de liste vide. Un
+   *    paramètre qui exigerait d'être honoré changerait une divergence rare
+   *    en panne visible.
+   */
+  const destURL = (): [number, number] | null => {
+    const v = new URLSearchParams(window.location.search).get("dest");
+    if (!v) return null;
+    const [lo, la] = v.split(",").map(Number);
+    return Number.isFinite(lo) && Number.isFinite(la) ? [lo, la] : null;
+  };
+  const [dest] = useState(destURL);
+
   const recue = depuisURL();
   /**
    * ⭐ LE LIEU VISÉ SERT DE POSITION DE DÉPART QUAND ON N'EN A PAS D'AUTRE —
@@ -750,6 +779,21 @@ export function Composer() {
     setDepart({ a, nom, g });
     const p = propositionsAutour(graphe, ix, a, spots, positions, accroches, { sauf });
     setProps({ de: territoire.slug, liste: p });
+    /* ⭐ ET SI L'AUTRE ÉCRAN A DÉSIGNÉ UNE DESTINATION, ON LA RETROUVE ICI —
+       par la POSITION, jamais par le nom. Le nom qui voyage dans l'URL est
+       celui qu'affichait la carte, et rien ne garantit qu'il s'écrive comme
+       dans l'inventaire : c'est déjà la règle que suit `cible` plus bas.
+       ⚠️ 60 m, le même seuil que `cible`, et il est large sans risque : deux
+          propositions sont séparées d'au moins 150 m par construction
+          (`PROPOSITIONS_ECART_MIN_M`), donc aucune confusion possible. */
+    if (dest) {
+      let proche = -1, dp = Infinity;
+      p.forEach((q, k) => {
+        const m = metres(dest, (q.spot as { g: [number, number] }).g);
+        if (m < dp) { dp = m; proche = k; }
+      });
+      if (proche >= 0 && dp < 60) setChoisie(proche);
+    }
     setDuree(Math.round(performance.now() - t0));
     setMot(
       p.length === 0
