@@ -83,7 +83,7 @@ import type { Graphe } from "./composition";
    écrit deux fois. Une seule définition maintenant, dans le module qui en
    fait le plus d'usage ; les deux écrans l'importent. `cadrage.ts` dit
    pourquoi la projection a dû sortir d'ici. */
-import { cadrer, R_LAT } from "./cadrage";
+import { cadrer, vuePour, R_LAT, ZOOM_MIN, ZOOM_MAX, type Vue } from "./cadrage";
 
 const BASE = import.meta.env.VITE_GRAPHE_BASE ?? "https://mana.bzh/bretagne/g";
 
@@ -272,7 +272,10 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
   );
   const [vueTic, setVueTic] = useState(0);
   const [vueBougee, setVueBougee] = useState(false);
-  const ZOOM_MIN = 1, ZOOM_MAX = 12;
+  /* ⭐ LES DEUX BORNES DU ZOOM VIENNENT DE `cadrage.ts` depuis le 5/11/2026 :
+     le pincement de la main et le recadrage automatique doivent viser le
+     même plafond, sinon le second demande une vue que le premier ne peut pas
+     tenir. L'histoire du passage de 12 à 64, et les mesures, sont là-bas. */
 
   /* ⭐ DEUX TERRITOIRES, ET CELUI-CI SE CHOISIT — contrairement au
      compositeur, où la position tranche. Cet écran répond à « qu'y a-t-il
@@ -487,6 +490,85 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
       spotsPourComposer, positionsPourComposer, accrochesComposition,
     );
   }, [graphe, ixComposition, accrochesComposition, vise, spotsPourComposer, positionsPourComposer]);
+
+  /**
+   * ── RECADRER SUR CE QU'ON VIENT DE CHOISIR — 5/11/2026 ────────────────
+   *
+   * 🔴 LE DÉFAUT, MESURÉ : on tapait « Menhirs de Kerziou », l'écran nommait
+   *    le lieu, listait trois promenades avec leurs distances au mètre près,
+   *    et la carte ne bougeait pas d'un pixel. Sur 49,4 km de large, le lieu
+   *    et ses trois destinations tenaient dans une tache de **12 × 13 px**.
+   *    Tout était juste et rien ne se voyait — le défaut le plus coûteux,
+   *    parce qu'il ressemble à une carte qui marche.
+   *
+   * ⭐ ON CADRE SUR LE LIEU **ET SES TRACÉS**, PAS SUR LE LIEU SEUL. Un
+   *    point n'a pas de taille : le cadrer demande de choisir une échelle
+   *    arbitraire. Les trois parcours, eux, DISENT l'échelle — c'est
+   *    exactement la portée de ce qu'on propose de marcher.
+   *
+   * ⚠️ DEUX MOUVEMENTS AU MAXIMUM, ET CHACUN A UNE CAUSE VISIBLE. Quand le
+   *    réseau est déjà là (le cas normal, et toujours le cas à la deuxième
+   *    visite), les propositions sont calculées dans le même rendu que le
+   *    lieu : un seul vol. Quand il arrive encore — ce soir, 66 s en
+   *    production — on cadre d'abord sur le lieu, pour qu'il soit VU, puis
+   *    on élargit à ses promenades quand elles existent. Attendre le réseau
+   *    pour bouger laisserait l'écran parler d'un lieu qu'on ne voit pas.
+   *
+   * ⛔ ET UNE SEULE FOIS PAR ÉTAT, d'où la clef. `propositions` est un
+   *    `useMemo` : il se recalcule si le graphe change, si les fermetures
+   *    arrivent, si les spots bougent. Sans cette garde, chacun de ces
+   *    recalculs ramènerait la caméra sur le lieu — y compris longtemps
+   *    après que la personne a déplacé la carte à la main pour regarder
+   *    ailleurs. Un recadrage qu'on n'a pas demandé est une carte qui
+   *    résiste.
+   */
+  const cadrageFait = useRef<string | null>(null);
+  useEffect(() => {
+    const b = boite.current;
+    if (!vise) { cadrageFait.current = null; return; }
+    const clef = `${vise.g[0]},${vise.g[1]}|${propositions.length}`;
+    if (cadrageFait.current === clef) return;
+    cadrageFait.current = clef;
+    if (!b) return;
+    const cadre = b.getBoundingClientRect();
+    const { width: W, height: H } = cadre;
+    if (W < 2 || H < 2) return;
+    const points: [number, number][] = [vise.g];
+    for (const p of propositions) for (const pt of p.parcours.contour) points.push(pt);
+    /* ⭐ ON MESURE CE QUI RECOUVRE, ON NE LE DEVINE PAS. La hauteur de
+       l'encadré dépend du nombre de propositions, de la longueur des noms et
+       du corps de texte du système ; une constante serait juste sur mon
+       écran et fausse sur le premier téléphone réglé en gros caractères.
+       ⚠️ Lu MAINTENANT, c'est-à-dire après que React a posé le DOM de ce
+          rendu : l'encadré du lieu qu'on vient de choisir est déjà là, avec
+          sa taille d'aujourd'hui.
+       🔴 ET CE QU'ON MESURE EST LA PLACE PERDUE, PAS LA TAILLE DU PANNEAU.
+          Première écriture : `r.height`. L'encadré fait 273 px mais flotte
+          AU-DESSUS de la barre du bas — son bord haut est à 451 sur un
+          écran de 812, donc il retire 361 px, pas 273. Les 88 px d'écart
+          sont exactement la bande où la proposition n° 2 est allée se
+          cacher. ⭐ Un panneau flottant ne mesure pas ce qu'il coûte : seul
+          son BORD le dit. */
+    const perdu = (sel: string, cote: "haut" | "bas" | "droite") => {
+      const e = b.querySelector(sel);
+      if (!e) return 0;
+      const r = e.getBoundingClientRect();
+      if (r.height <= 0) return 0;
+      const air = 12;   // l'air entre le panneau et le tracé le plus proche
+      const d = cote === "haut" ? r.bottom - cadre.top
+              : cote === "bas" ? cadre.bottom - r.top
+              : cadre.right - r.left;
+      return Math.max(0, d + air);
+    };
+    volerVers(
+      vuePour(terr.emprise, points, W, H, {
+        haut: perdu(".jeu-haut", "haut"),
+        bas: perdu(".terr-vise", "bas"),
+        droite: perdu(".terr-commandes", "droite"),
+      }),
+      W, H,
+    );
+  }, [vise, propositions, terr]);
 
   const otIci = useMemo(
     () => ot.filter((i) => {
@@ -784,9 +866,80 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
   };
 
   const recadrer = () => {
+    arreterLeVol();
     vue.current = { k: 1, px: 0, py: 0 };
     setVueBougee(false);
     setVueTic((n) => n + 1);
+  };
+
+  /**
+   * ── ALLER VERS UNE VUE, SANS SAUTER ───────────────────────────────────
+   *
+   * 🔴 LE SAUT ÉTAIT LE PREMIER DESSIN DE CETTE FONCTION, et il était faux
+   *    pour une raison qui se voit tout de suite à l'écran : passer de 49 km
+   *    de large à 2 km en une image ne montre pas qu'on s'est déplacé, ça
+   *    montre une AUTRE carte. On perd le lien entre le territoire qu'on
+   *    regardait et l'endroit où l'on vient d'arriver.
+   *
+   * ⭐ LE ZOOM S'INTERPOLE EN LOGARITHME, PAS EN LIGNE DROITE. De k = 1 à
+   *    k = 24, la moitié linéaire du chemin est k = 12,5 — c'est-à-dire que
+   *    la première moitié du temps avale 96 % de la distance visuelle et la
+   *    seconde rampe. L'œil lit le zoom comme un rapport : doubler de 1 à 2
+   *    et doubler de 12 à 24 sont le même geste.
+   * ⚠️ ET CE QU'ON INTERPOLE N'EST PAS `px`, C'EST LE CENTRE. `px` est un
+   *    décalage en pixels DÉJÀ multiplié par `k` : le promener en ligne
+   *    droite pendant que `k` grimpe en exponentielle fait dériver le point
+   *    visé en cours de route, puis revenir. On interpole le centre dans les
+   *    pixels du repos, et on en redéduit `px` à chaque image.
+   */
+  const vol = useRef<number | null>(null);
+  const arreterLeVol = () => {
+    if (vol.current !== null) { cancelAnimationFrame(vol.current); vol.current = null; }
+  };
+  /* ⚠️ ET À LA SORTIE DE L'ÉCRAN. Une image en vol appelle `setVueTic` sur un
+     composant démonté : React se tait là-dessus depuis la 18, donc le défaut
+     ne se signale pas — il laisse juste une boucle qui tourne sur des refs
+     mortes tant que l'onglet vit. */
+  useEffect(() => arreterLeVol, []);
+  const poserLaVue = (v: Vue) => {
+    vue.current = v;
+    serrer();
+    setVueBougee(vue.current.k !== 1 || vue.current.px !== 0 || vue.current.py !== 0);
+    setVueTic((n) => n + 1);
+  };
+  const volerVers = (cible: Vue, W: number, H: number) => {
+    arreterLeVol();
+    const d = { ...vue.current };
+    /* ⚠️ `matchMedia` est interrogé À CHAQUE VOL et non une fois au montage :
+       le réglage système se change en cours de session, et une préférence
+       d'accessibilité relevée au démarrage est une préférence qu'on ignore
+       pour le reste de la visite. */
+    const sansMouvement = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (sansMouvement || (Math.abs(cible.k - d.k) < 0.01
+        && Math.abs(cible.px - d.px) < 1 && Math.abs(cible.py - d.py) < 1)) {
+      poserLaVue(cible);
+      return;
+    }
+    const cxv = W / 2, cyv = H / 2;
+    // le centre visé, exprimé dans les pixels du cadre au repos
+    const cx0 = cxv - d.px / d.k, cy0 = cyv - d.py / d.k;
+    const cx1 = cxv - cible.px / cible.k, cy1 = cyv - cible.py / cible.k;
+    const lnk0 = Math.log(d.k), lnk1 = Math.log(cible.k);
+    const DUREE = 460;
+    const t0 = performance.now();
+    const pas = () => {
+      const t = Math.min(1, (performance.now() - t0) / DUREE);
+      const e = 1 - (1 - t) ** 3;   // sortie douce : vif au départ, posé à l'arrivée
+      if (t >= 1) { vol.current = null; poserLaVue(cible); return; }
+      const k = Math.exp(lnk0 + (lnk1 - lnk0) * e);
+      poserLaVue({
+        k,
+        px: (cxv - (cx0 + (cx1 - cx0) * e)) * k,
+        py: (cyv - (cy0 + (cy1 - cy0) * e)) * k,
+      });
+      vol.current = requestAnimationFrame(pas);
+    };
+    vol.current = requestAnimationFrame(pas);
   };
 
   useEffect(() => {
@@ -794,8 +947,15 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
     let doigts = new Map<number, { x: number; y: number }>();
     let ecart0 = 0, k0 = 1;
 
+    /* ⛔ LA MAIN L'EMPORTE SUR LE VOL, TOUJOURS. Sans ces deux arrêts, un
+       recadrage en cours continue d'écrire `vue.current` pendant qu'un doigt
+       la déplace : la carte repart toute seule sous le geste, une fois par
+       image, et on ne peut rien faire jusqu'à la fin de l'animation. ⭐ Une
+       animation qu'on ne peut pas interrompre n'est pas une animation, c'est
+       un écran bloqué qui bouge. */
     const molette = (e: WheelEvent) => {
       e.preventDefault();
+      arreterLeVol();
       zoomer(Math.exp(-e.deltaY * 0.0015), e.clientX, e.clientY);
     };
     const depart = new Map<number, { x: number; y: number }>();
@@ -827,6 +987,7 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
       );
     const bas = (e: PointerEvent) => {
       if (surUneCommande(e)) return;
+      arreterLeVol();
       doigts.set(e.pointerId, { x: e.clientX, y: e.clientY });
       depart.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (doigts.size === 2) {
@@ -1212,7 +1373,22 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
         ctx.setLineDash(retenue ? [] : [2, 5]);
         ctx.strokeStyle = trace;
         ctx.lineWidth = retenue ? 3.4 : 2.2;
-        ctx.globalAlpha = efface ? 0.25 : 0.85;
+        /* 🔴 0,45 ET PLUS 0,25 — 5/11/2026, et c'est la note d'hier qui se
+           corrige elle-même. Elle dit : « quand on en choisit un, les deux
+           autres ne disparaissent pas : ils pâlissent. Les effacer ferait
+           croire qu'il n'y avait qu'une proposition. » Posé à 0,25 sur le
+           canvas kaki, c'était vrai. Le recadrage amène maintenant la vue au
+           ras du sol, où le fond n'est plus un aplat mais une photographie :
+           un or à 25 % sur des champs et de la lande ne se distingue plus de
+           la texture. Relevé à l'écran — deux tracés que je ne retrouvais
+           pas, et que j'ai cru manquants avant de comprendre qu'ils étaient
+           simplement effacés.
+           ⭐ L'INTENTION N'A PAS CHANGÉ, LE FOND OUI. Une valeur juste contre
+              une matière devient fausse contre une autre, sans qu'une seule
+              ligne de la règle ait bougé — même mécanisme que les quatre
+              couleurs de texte reprises hier quand les panneaux ont pris la
+              matière de la bulle. */
+        ctx.globalAlpha = efface ? 0.45 : 0.85;
         ctx.stroke();
         ctx.setLineDash([]);
 

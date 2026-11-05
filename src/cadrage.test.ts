@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { cadrer, R_LAT, type Emprise } from "./cadrage";
+import { cadrer, vuePour, VUE_REPOS, R_LAT, ZOOM_MIN, ZOOM_MAX, type Emprise } from "./cadrage";
 import { TOUT } from "./territoires";
 
 /* Une boîte de téléphone, et une de portable — le cadrage prend le plus
@@ -110,6 +110,198 @@ describe("le cadrage de la carte", () => {
     const c = cadrer(petite, TEL.W, TEL.H, REPOS);
     expect(c.centreLon).toBeCloseTo(-4.5, 6);
     expect(c.centreLat).toBeCloseTo(48.25, 6);
+  });
+});
+
+/**
+ * 🔴 LE RECADRAGE SUR CE QU'ON VIENT DE CHOISIR — 5/11/2026.
+ *
+ * ⭐ LA PROPRIÉTÉ QU'ON TIENT N'EST PAS UNE FORMULE, C'EST UNE PROMESSE :
+ *    « les points qu'on cadre sont VISIBLES ». Les tests la vérifient donc en
+ *    reprojetant avec `cadrer()` sous la vue rendue — c'est-à-dire en
+ *    croisant les deux fonctions l'une par l'autre, plutôt qu'en comparant
+ *    `vuePour` à une seconde écriture de son propre calcul.
+ */
+describe("cadrer sur ce qu'on vient de choisir", () => {
+  const dansLaBoite = (pts: readonly (readonly [number, number])[], W: number, H: number, o?: object) => {
+    const v = vuePour(TOUT.emprise, pts, W, H, o);
+    const c = cadrer(TOUT.emprise, W, H, v);
+    return pts.map(([lon, lat]) => ({ x: c.X(lon), y: c.Y(lat), v }));
+  };
+
+  // Menhirs de Kerziou et ses trois destinations, relevés en production
+  const KERZIOU: [number, number] = [-4.2996, 48.2456];
+  const TROIS: [number, number][] = [
+    [-4.3072, 48.2528], [-4.2888, 48.2371], [-4.3104, 48.2399],
+  ];
+
+  /**
+   * ⛔ UNE ENFILADE EST-OUEST, ET ELLE N'EST PAS DÉCORATIVE. Un lieu et ses
+   *    trois destinations forment une tache presque CARRÉE (12,7 × 13,8 px au
+   *    repos) — et sur une boîte carrée, croiser les deux axes dans le calcul
+   *    du zoom donne un résultat simplement plus LÂCHE : 22,4 au lieu de
+   *    24,4, donc tout rentre encore et aucun test ne tombe. Mutation passée.
+   * ⭐ Le régime qui démasque est celui où la boîte est étirée : trois points
+   *    le long de la côte font 70,4 × 2,6 px, et le zoom croisé (7,9 au lieu
+   *    de 4,4) voudrait leur donner 560 px de large pour 390 disponibles.
+   *    Un cas réel — les promenades suivent le littoral.
+   */
+  const ENFILADE: [number, number][] = [
+    [-4.40, 48.250], [-4.34, 48.252], [-4.28, 48.249],
+  ];
+
+  it("un lieu et ses trois promenades tiennent tous à l'écran", () => {
+    for (const pts of [[KERZIOU, ...TROIS], ENFILADE]) {
+      for (const { W, H } of [TEL, ORDI]) {
+        for (const p of dansLaBoite(pts, W, H)) {
+          expect(p.x, `x dans ${W}×${H}`).toBeGreaterThanOrEqual(0);
+          expect(p.x, `x dans ${W}×${H}`).toBeLessThanOrEqual(W);
+          expect(p.y, `y dans ${W}×${H}`).toBeGreaterThanOrEqual(0);
+          expect(p.y, `y dans ${W}×${H}`).toBeLessThanOrEqual(H);
+        }
+      }
+    }
+  });
+
+  it("🔴 et ils ne font plus trois pixels", () => {
+    /* C'EST LE DÉFAUT MESURÉ, et donc le seul test qui dit si on l'a réparé.
+       Au repos, les quatre points tiennent dans une tache de quelques pixels
+       sur une carte de 45 km de large. Le seuil est posé à 120 px : en
+       dessous, on ne lit pas la forme d'un chemin. */
+    const repos = cadrer(TOUT.emprise, TEL.W, TEL.H, VUE_REPOS);
+    const etendue = (c: { X: (n: number) => number; Y: (n: number) => number }) => {
+      const xs = [KERZIOU, ...TROIS].map(([lo]) => c.X(lo));
+      const ys = [KERZIOU, ...TROIS].map(([, la]) => c.Y(la));
+      return Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
+    };
+    expect(etendue(repos), "au repos, la tache devrait être minuscule").toBeLessThan(25);
+    const v = vuePour(TOUT.emprise, [KERZIOU, ...TROIS], TEL.W, TEL.H);
+    /* 🔴 LE SEUIL EST À 250 px, ET IL A DÛ MONTER. Écrit d'abord à 120, il
+       laissait passer la mutation qui redescend le plafond de zoom à 12 : au
+       plafond de 12 la tache fait 166 px — plus que 120, donc « réparé » —
+       alors que le cadrage demandé en vaut 338. ⭐ Un seuil choisi pour être
+       sûrement franchi par le correctif est aussi un seuil que la moitié du
+       correctif franchit. On le pose là où le DÉFAUT tombe, pas là où le
+       correctif passe : 250 px, soit les deux tiers d'un écran de téléphone,
+       en dessous desquels on ne lit pas la forme d'un chemin. */
+    expect(etendue(cadrer(TOUT.emprise, TEL.W, TEL.H, v))).toBeGreaterThan(250);
+  });
+
+  it("⛔ un lieu SEUL ne se colle pas au nez — on voit autour", () => {
+    /* Sans `spanMinM`, une boîte de taille nulle donne un zoom infini, ramené
+       à `kMax` : le lieu occuperait l'écran entier, sans entourage.
+       🔴 LE SEUIL SE MESURE EN MÈTRES AU SOL, PAS EN `k`. Écrit d'abord
+       `expect(v.k).toBeLessThan(12)`, ce test est tombé le jour où le
+       plafond est monté à 64 — en disant « 12 n'est pas < 12 », c'est-à-dire
+       en parlant d'un réglage et pas de ce qu'on voit. ⭐ Un seuil posé sur
+       une borne interne devient faux quand la borne bouge, même si la
+       PROPRIÉTÉ, elle, tient toujours. */
+    const c = cadrer(TOUT.emprise, TEL.W, TEL.H, vuePour(TOUT.emprise, [KERZIOU], TEL.W, TEL.H));
+    const largeurEcranM = c.metresParPixel * TEL.W;
+    expect(largeurEcranM, "l'écran doit montrer le hameau autour du menhir")
+      .toBeGreaterThan(1200);
+    expect(largeurEcranM, "mais pas la moitié du territoire non plus")
+      .toBeLessThan(6000);
+  });
+
+  it("⛔ la vue rendue est DÉJÀ légale : bornée et serrée", () => {
+    for (const pts of [[KERZIOU], [KERZIOU, ...TROIS], TROIS]) {
+      const v = vuePour(TOUT.emprise, pts, TEL.W, TEL.H);
+      expect(v.k).toBeGreaterThanOrEqual(ZOOM_MIN);
+      expect(v.k).toBeLessThanOrEqual(ZOOM_MAX);
+      // ⚠️ le même serrage que `serrer()` dans l'écran : la fenêtre ne sort
+      //    jamais du cadre de départ, donc pas d'« écran vide » sans retour
+      expect(Math.abs(v.px)).toBeLessThanOrEqual((TEL.W * (v.k - 1)) / 2 + 1e-9);
+      expect(Math.abs(v.py)).toBeLessThanOrEqual((TEL.H * (v.k - 1)) / 2 + 1e-9);
+    }
+  });
+
+  it("⛔ un point HORS emprise ne fait pas sortir la fenêtre du cadre", () => {
+    /* 🔴 LE SERRAGE DANS `vuePour` ÉTAIT DU CODE QUE RIEN N'ATTEIGNAIT — sa
+       mutation passait. Démonstration : pour un point DANS l'emprise, le
+       centrage est toujours légal, parce que la marge de 18 px du cadre le
+       tient à distance du bord. Le serrage ne mord que pour un point du
+       dehors — et il y en a un vrai, la position GPS de quelqu'un qui n'est
+       pas sur le territoire.
+       ⭐ C'est le même piège que `tracer()` hier : du code défendable, jamais
+          exécuté, qu'aucune mutation ne pouvait démasquer faute d'entrée qui
+          l'emprunte. La réparation n'est pas de retirer la garde — elle est
+          juste — mais de lui donner le cas qui la traverse. */
+    const loin: [number, number] = [-5.1, 48.4];   // au large d'Ouessant
+    const v = vuePour(TOUT.emprise, [loin], TEL.W, TEL.H);
+    expect(Math.abs(v.px), "px déborde le serrage")
+      .toBeLessThanOrEqual((TEL.W * (v.k - 1)) / 2 + 1e-9);
+    expect(Math.abs(v.py), "py déborde le serrage")
+      .toBeLessThanOrEqual((TEL.H * (v.k - 1)) / 2 + 1e-9);
+    /* Et la conséquence qui compte : la FENÊTRE reste dans le cadre de
+       départ, donc l'écran ne montre jamais de vide hors territoire.
+       ⚠️ Ce n'est PAS « toute l'emprise est visible » — à fort zoom elle ne
+          l'est évidemment pas. C'est : le morceau qu'on regarde est un
+          morceau DU cadre. En pixels du repos, la fenêtre va de
+          `centre ± W / (2k)`, et elle doit tenir dans [0, W]. */
+    const fenetre = (centre: number, taille: number, k: number) =>
+      [centre - taille / (2 * k), centre + taille / (2 * k)] as const;
+    const [gauche, droite] = fenetre(TEL.W / 2 - v.px / v.k, TEL.W, v.k);
+    const [haut, bas] = fenetre(TEL.H / 2 - v.py / v.k, TEL.H, v.k);
+    expect(gauche, "la fenêtre déborde à gauche du cadre").toBeGreaterThanOrEqual(-1e-6);
+    expect(droite, "la fenêtre déborde à droite du cadre").toBeLessThanOrEqual(TEL.W + 1e-6);
+    expect(haut, "la fenêtre déborde en haut du cadre").toBeGreaterThanOrEqual(-1e-6);
+    expect(bas, "la fenêtre déborde en bas du cadre").toBeLessThanOrEqual(TEL.H + 1e-6);
+  });
+
+  it("un lieu au bord de l'emprise reste visible, même serré", () => {
+    /* ⚠️ Le régime qu'on ne regarde pas : au bord, le serrage EMPÊCHE de
+       centrer. Le lieu ne doit pas pour autant sortir de l'écran. */
+    const [o, s, e, n] = TOUT.emprise;
+    for (const coin of [[o, s], [e, n], [o, n], [e, s]] as [number, number][]) {
+      const v = vuePour(TOUT.emprise, [coin], TEL.W, TEL.H);
+      const c = cadrer(TOUT.emprise, TEL.W, TEL.H, v);
+      expect(c.X(coin[0]), `coin ${coin}`).toBeGreaterThanOrEqual(-0.001);
+      expect(c.X(coin[0]), `coin ${coin}`).toBeLessThanOrEqual(TEL.W + 0.001);
+      expect(c.Y(coin[1]), `coin ${coin}`).toBeGreaterThanOrEqual(-0.001);
+      expect(c.Y(coin[1]), `coin ${coin}`).toBeLessThanOrEqual(TEL.H + 0.001);
+    }
+  });
+
+  it("🔴 ce qui est recouvert ne compte pas comme de la place", () => {
+    /* Le défaut relevé à l'écran : l'encadré du lieu mange le bas, la
+       recherche le haut, et un cadrage « au centre » pose les tracés
+       derrière eux. On vérifie la propriété utile — les points tombent dans
+       la bande LIBRE — et pas la formule qui la produit. */
+    const HAUT = 74, BAS = 374, DROITE = 68;   // relevés sur un téléphone
+    const v = vuePour(TOUT.emprise, [KERZIOU, ...TROIS], TEL.W, TEL.H,
+                      { haut: HAUT, bas: BAS, droite: DROITE });
+    const c = cadrer(TOUT.emprise, TEL.W, TEL.H, v);
+    for (const [lon, lat] of [KERZIOU, ...TROIS]) {
+      const x = c.X(lon), y = c.Y(lat);
+      expect(y, `${lon},${lat} passe sous la recherche`).toBeGreaterThanOrEqual(HAUT);
+      expect(y, `${lon},${lat} passe derrière l'encadré`).toBeLessThanOrEqual(TEL.H - BAS);
+      expect(x, `${lon},${lat} passe derrière les commandes`).toBeLessThanOrEqual(TEL.W - DROITE);
+      expect(x, `${lon},${lat} sort à gauche`).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it("⚠️ et sans recouvrement, le cadrage reprend tout l'écran", () => {
+    // le régime qu'on ne regarde pas : `haut`/`bas` à zéro doivent rendre
+    // exactement le cadrage d'avant, pas une version décalée
+    const sans = vuePour(TOUT.emprise, [KERZIOU, ...TROIS], TEL.W, TEL.H);
+    const zeros = vuePour(TOUT.emprise, [KERZIOU, ...TROIS], TEL.W, TEL.H, { haut: 0, bas: 0 });
+    expect(zeros).toEqual(sans);
+    const c = cadrer(TOUT.emprise, TEL.W, TEL.H, sans);
+    const ys = [KERZIOU, ...TROIS].map(([, la]) => c.Y(la));
+    // centré verticalement dans l'écran entier
+    expect((Math.min(...ys) + Math.max(...ys)) / 2).toBeCloseTo(TEL.H / 2, 6);
+  });
+
+  it("aucun point : on ne bouge pas", () => {
+    expect(vuePour(TOUT.emprise, [], TEL.W, TEL.H)).toEqual(VUE_REPOS);
+  });
+
+  it("⛔ on ne DÉZOOME jamais sous le territoire entier", () => {
+    // une boîte plus large que l'emprise ne doit pas rendre k < 1 : en
+    // dessous, on montrerait du vide autour d'une donnée qu'on n'a pas
+    const v = vuePour(TOUT.emprise, [[-5.5, 47.5], [-3.2, 49.0]], TEL.W, TEL.H);
+    expect(v.k).toBe(1);
   });
 });
 
