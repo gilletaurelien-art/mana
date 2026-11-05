@@ -10,6 +10,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { describe, it, expect } from "vitest";
 import {
   indexer, metres, mesurer, traits, accrocherTous, accrocherUn, accroche,
+  PROPOSITIONS_ECART_MIN_M,
   promenadeVers, propositionsAutour, composerVers,
   AUTOUR_MIN_M, AUTOUR_MAX_M, DETOUR_MAX, BOUCLE_PAR_ALLER, ECART_MAX_M,
   type Graphe,
@@ -261,6 +262,50 @@ describe.skipIf(!dispo)("sur le graphe réel de la presqu'île", () => {
        ⭐ un garde qui recopie sa mesure crie au premier affinage du réseau. */
     expect(trois / praticables).toBeGreaterThan(0.7);
   }, 60_000);
+
+  it("🔴 trois destinations, jamais deux fois le même endroit", () => {
+    /* 🔴 LE DÉFAUT QUI S'EST SIGNALÉ PAR UN DÉTAIL DE DESSIN — 5/11/2026.
+       Depuis « Menhirs de Kerziou », les pastilles 2 et 3 se recouvraient
+       sur la carte : leurs destinations, « Leitstand I » et « Belvédère de
+       Kerdéniel », sont à 14 m l'une de l'autre. Mesuré sur 83 sites,
+       9,6 % en proposaient deux à moins de 50 m, 20,5 % à moins de 100 m.
+       ⭐ Un site sur cinq promettait trois endroits où aller et en offrait
+          deux. Le dessin ne faisait que le rendre visible.
+       ⚠️ CE GARDE VIT ICI, SUR LE GRAPHE RÉEL, et pas sur une fixture :
+          l'inventaire porte de vrais doublons de lieu — deux œuvres au même
+          carrefour, une fontaine et son lavoir — qu'aucune fixture écrite à
+          la main n'aurait pensé à reproduire. */
+    const { g, ix, pos, acc } = reel();
+    let paires = 0;
+    for (let i = 0; i < pos.length; i += 7) {
+      if (!accroche(acc[i])) continue;
+      const props = propositionsAutour(g, ix, acc[i], pos, pos, acc, { sauf: i });
+      for (let a = 0; a < props.length; a++) for (let b = a + 1; b < props.length; b++) {
+        paires++;
+        const ecart = metres(pos[props[a].i], pos[props[b].i]);
+        /* 🔴 UN PLANCHER LITTÉRAL, PAS LA CONSTANTE — et c'est la mutation
+           qui l'a exigé. Écrit en `>= PROPOSITIONS_ECART_MIN_M`, ce garde a
+           PASSÉ la mutation qui ramène le seuil à 10 m : il lisait le
+           réglage qu'il était censé protéger, donc il bougeait avec lui.
+           ⭐ Il ne prouvait que la cohérence du code avec lui-même. Le
+              plancher dit la PROMESSE — « trois endroits différents » — et
+              laisse le réglage libre entre 100 et ce qu'on voudra. Même
+              forme que « le garde porte un plancher large, pas la valeur »
+              deux tests plus haut. */
+        expect(ecart, `depuis le lieu ${i} : deux propositions au même endroit`)
+          .toBeGreaterThanOrEqual(100);
+        expect(ecart).toBeGreaterThanOrEqual(PROPOSITIONS_ECART_MIN_M);
+      }
+    }
+    /* ⚠️ Et le réglage reste dans la fourchette où le plancher a un sens :
+       au-dessus de 400 m on retirerait des destinations qui SONT distinctes
+       (les deux bouts d'une plage), mesuré le 5/11. */
+    expect(PROPOSITIONS_ECART_MIN_M).toBeGreaterThanOrEqual(100);
+    expect(PROPOSITIONS_ECART_MIN_M).toBeLessThanOrEqual(400);
+    /* ⚠️ Et on vérifie qu'on a VRAIMENT comparé des paires : une boucle qui
+       n'itère pas passe tous les `expect` du monde. */
+    expect(paires, "aucune paire examinée — le garde ne garde rien").toBeGreaterThan(50);
+  }, 120_000);
 
   it("⛔ aucune proposition ne tombe sous le plancher de la bande", () => {
     const { g, ix, pos, acc } = reel();

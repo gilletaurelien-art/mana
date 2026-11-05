@@ -84,6 +84,7 @@ import type { Graphe } from "./composition";
    fait le plus d'usage ; les deux écrans l'importent. `cadrage.ts` dit
    pourquoi la projection a dû sortir d'ici. */
 import { cadrer, vuePour, R_LAT, ZOOM_MIN, ZOOM_MAX, type Vue } from "./cadrage";
+import { placerPastilles } from "./pastilles";
 
 const BASE = import.meta.env.VITE_GRAPHE_BASE ?? "https://mana.bzh/bretagne/g";
 
@@ -1358,6 +1359,16 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
          tombées dans le pâle sans qu'aucune ne soit mise en avant — une
          carte qui a l'air éteinte, sans cause visible. */
       const retenu = propChoisie !== null && propChoisie < propositions.length ? propChoisie : null;
+      /* 🔴 LES NUMÉROS SE PLACENT ENSEMBLE, PAS CHACUN DE SON CÔTÉ —
+         5/11/2026, défaut relevé par le fondateur. Posé au bout de son
+         propre tracé sans rien savoir des autres, le n° 3 tombait à 2 px du
+         n° 2 et le cachait : une promenade sur trois perdait son lien avec
+         la carte. Un placement qui ignore ses voisins ne peut pas les
+         éviter. `pastilles.ts` dit ce qu'il fait et pourquoi la cause
+         principale, elle, a été réparée ailleurs. */
+      const ancres = placerPastilles(
+        propositions.map((p) => p.parcours.contour.map(([lon, lat]) => [X(lon), Y(lat)] as const)),
+      );
       propositions.forEach((p, k) => {
         const retenue = retenu === k;
         const efface = retenu !== null && !retenue;
@@ -1392,9 +1403,9 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
         ctx.stroke();
         ctx.setLineDash([]);
 
-        const bout = p.parcours.contour[p.parcours.contour.length - 1];
-        if (bout) {
-          const x = X(bout[0]), y = Y(bout[1]);
+        const ancre = ancres[k];
+        if (ancre && Number.isFinite(ancre.x)) {
+          const { x, y } = ancre;
           ctx.globalAlpha = efface ? 0.35 : 1;
           ctx.beginPath(); ctx.arc(x, y, retenue ? 11 : 9, 0, Math.PI * 2);
           ctx.fillStyle = trace; ctx.fill();

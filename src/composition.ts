@@ -260,7 +260,12 @@ export function composanteAtteint(ix: Index, depart: number, seuil: number): boo
 }
 
 const R = 6371000;
-export function metres(p: [number, number], q: [number, number]): number {
+/* ⚠️ `readonly` DES DEUX CÔTÉS : la fonction ne fait que LIRE, et la refuser
+   à un tuple immuable obligeait l'appelant à écrire un `as [number, number]`
+   — c'est-à-dire à mentir au vérificateur pour contourner une promesse trop
+   étroite. Un paramètre en lecture seule accepte aussi les tuples mutables ;
+   aucun appelant existant ne change. */
+export function metres(p: readonly [number, number], q: readonly [number, number]): number {
   const la1 = (p[1] * Math.PI) / 180, la2 = (q[1] * Math.PI) / 180;
   const dLa = la2 - la1, dLo = ((q[0] - p[0]) * Math.PI) / 180;
   const h = Math.sin(dLa / 2) ** 2 + Math.cos(la1) * Math.cos(la2) * Math.sin(dLo / 2) ** 2;
@@ -1107,6 +1112,39 @@ export const DETOUR_MAX = 1.2;
 export const BOUCLE_PAR_ALLER = 2.6;
 
 /**
+ * 🔴 DEUX DESTINATIONS NE SONT PAS DEUX CHOIX SI C'EST LE MÊME ENDROIT —
+ *    5/11/2026, et le nombre est mesuré comme les quatre d'au-dessus.
+ *
+ * Le défaut s'est signalé par un détail de dessin : depuis « Menhirs de
+ * Kerziou », les pastilles 2 et 3 se recouvraient sur la carte. Mesuré :
+ * leurs destinations — « Leitstand I » et « Belvédère de Kerdéniel » — sont
+ * à **14 m** l'une de l'autre. Ce n'était pas deux pastilles mal placées,
+ * c'était la même promenade proposée deux fois sous deux noms.
+ *
+ * ⭐ ET CE N'ÉTAIT PAS UN CAS ISOLÉ. Sur un échantillon de 83 sites (1 sur
+ *    5, graphes réels soudés, fermetures en vigueur) :
+ *      deux destinations à moins de  50 m : **9,6 %** des sites
+ *                                   100 m : 20,5 %
+ *                                   200 m : 32,5 %
+ *                                   300 m : 47,0 %
+ *    Les plus serrées sont sans appel : « Per Guillou » et « Jude Le
+ *    Paboul » à 5 m, « Musée Breizh Odyssée » et « Anne de Bretagne » à
+ *    11 m, « Grotte du Grand Hôtel de la Mer » et « Grotte de Roméo » à
+ *    49 m. Un site sur cinq promettait trois endroits et en offrait deux.
+ *
+ * ⚠️ 150 m, ET LE SEUIL SE PAIE EN RIEN. Au-delà de 150 m on retire des
+ *    destinations qui SONT distinctes (les deux bouts d'une plage) ; en
+ *    dessous de 100 m on laisse passer le même carrefour. Et surtout : la
+ *    bande 600–4 000 m contient largement de quoi repêcher — mesuré sur
+ *    l'échantillon, **aucun site** ne perd sa troisième proposition. Le
+ *    remplaçant est simplement le suivant dans l'ordre des distances.
+ * ⛔ L'ÉCART SE MESURE ENTRE LES LIEUX, PAS ENTRE LES CHEMINS. Deux
+ *    destinations voisines peuvent s'atteindre par deux routes opposées —
+ *    ça reste un seul endroit où aller, et c'est l'endroit qu'on propose.
+ */
+export const PROPOSITIONS_ECART_MIN_M = 150;
+
+/**
  * OÙ UN POINT DU MONDE TOUCHE LE RÉSEAU.
  *
  * 🔴 L'ÉCART SE MESURE AU CHEMIN, PAS AU NŒUD — et l'écart entre les deux
@@ -1503,7 +1541,10 @@ export function propositionsAutour<T>(
      *    choix légitime.
      */
     sauf,
-  }: { combien?: number; min?: number; max?: number; sauf?: number } = {},
+    /** voir `PROPOSITIONS_ECART_MIN_M` — deux destinations trop proches sont
+     *  le même endroit, donc une seule proposition */
+    ecartMin = PROPOSITIONS_ECART_MIN_M,
+  }: { combien?: number; min?: number; max?: number; sauf?: number; ecartMin?: number } = {},
 ): Proposition<T>[] {
   if (!accroche(depuis)) return [];
   const { lon } = dijkstraNu(g, ix, depuis.noeud);
@@ -1525,6 +1566,11 @@ export function propositionsAutour<T>(
      rendrait alors deux propositions là où le territoire en portait trois. */
   const out: Proposition<T>[] = [];
   for (const { i } of bande) {
+    /* ⛔ ÉCARTÉ AVANT D'ÊTRE COMPOSÉ, et c'est l'ordre qui compte : une
+       destination trop proche d'une déjà retenue n'a pas besoin qu'on lui
+       calcule un chemin pour être refusée. Un `metres()` contre deux
+       voisins, au lieu d'un Dijkstra complet. */
+    if (out.some((q) => metres(positions[i], positions[q.i]) < ecartMin)) continue;
     const p = promenadeVers(g, ix, depuis, accroches[i], positions[i] as [number, number]);
     if (p.etat !== "ok") continue;
     /* ⚠️ LA BANDE SE JUGE SUR LE TOTAL, PAS SUR LA PRÉSÉLECTION. Le filtre
