@@ -31,7 +31,7 @@
 #    s'empilent indéfiniment.
 #
 # ⚠️ ET LE BLOC CADDY N'EST PAS POSÉ PAR CE SCRIPT. Il vit sur la machine
-#    (`/home/debian/bascule/mana-bzh-ks5.caddy`) et dans `manafrance-app`
+#    (le fichier que `MANA_BZH_CADDY` désigne) et dans `manafrance-app`
 #    (`infra/caddy/ks5/`), deux dépôts que celui-ci ne connaît pas. Ce script
 #    CONTRÔLE qu'il est en place et refuse de se taire s'il manque — déposer
 #    des fichiers que rien ne sert est le genre de succès qui endort.
@@ -40,10 +40,38 @@
 #          ./deploiement/deployer-mana-bzh.sh --verifier   (ne dépose rien)
 set -euo pipefail
 
-HOTE="${MANA_KS5:-debian@147.135.254.25}"
-CLE="${MANA_SSH_KEY:-$HOME/.ssh/mana_scaleway}"
-CIBLE="/home/debian/bascule/volumes/www/_app-bzh"
 RACINE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# ══ OÙ L'ON DÉPOSE — HORS DE CE FICHIER ═══════════════════════════════════
+#
+# 🔴 CE DÉPÔT EST PUBLIC (GitHub Pages l'exige), ET J'AI MIS UNE JOURNÉE À LE
+#    VÉRIFIER. La première version écrivait ici l'adresse du serveur, son
+#    utilisateur et l'arborescence de production. Aucun secret — l'accès est
+#    par clé, le mot de passe est refusé — mais du renseignement offert sur
+#    une page indexée : une adresse, un compte, les chemins.
+# ⭐ LA VALEUR PAR DÉFAUT EST LE PIÈGE. Un `${VAR:-valeur}` a l'air
+#    paramétrable et publie quand même : il rend la variable facultative,
+#    donc personne ne la pose, donc c'est la valeur écrite qui sert. Ici
+#    elles sont EXIGÉES — le script refuse de tourner sans elles, ce qui est
+#    la seule façon qu'un paramètre soit vraiment un paramètre.
+#
+# Posez-les dans votre environnement, ou dans `deploiement/cible.local.sh`,
+# qui est hors git :
+#
+#     MANA_KS5=utilisateur@adresse
+#     MANA_BZH_CIBLE=/chemin/du/dossier/_app-bzh
+#     MANA_BZH_CADDY=/chemin/du/fichier.caddy
+#     MANA_SSH_KEY=$HOME/.ssh/votre_cle        # facultatif
+#
+[ -f "$RACINE/deploiement/cible.local.sh" ] && . "$RACINE/deploiement/cible.local.sh"
+
+: "${MANA_KS5:?⛔ MANA_KS5 n'est pas posée — voir l'en-tête de ce script}"
+: "${MANA_BZH_CIBLE:?⛔ MANA_BZH_CIBLE n'est pas posée — voir l'en-tête de ce script}"
+: "${MANA_BZH_CADDY:?⛔ MANA_BZH_CADDY n'est pas posée — voir l'en-tête de ce script}"
+
+HOTE="$MANA_KS5"
+CLE="${MANA_SSH_KEY:-$HOME/.ssh/id_ed25519}"
+CIBLE="$MANA_BZH_CIBLE"
 
 vert()  { printf '\033[32m%s\033[0m\n' "$*"; }
 rouge() { printf '\033[31m%s\033[0m\n' "$*"; }
@@ -78,13 +106,13 @@ if grep -q '"/mana/"' site/index.html || grep -q 'src="/mana/' site/index.html; 
 fi
 
 # ── 3. le bloc est-il POSÉ sur la machine ? ─────────────────────────────────
-if ssh_ 'grep -q appbzh /home/debian/bascule/mana-bzh-ks5.caddy' 2>/dev/null; then
+if ssh_ "grep -q appbzh $(printf '%q' "$MANA_BZH_CADDY")" 2>/dev/null; then
   vert "✓ le bloc @appbzh est en place sur le serveur"
 else
   rouge "⛔ @appbzh est ABSENT du Caddyfile de production."
   rouge "   Déposer les fichiers ne servirait à rien : aucune URL ne les sert."
   rouge "   Posez le fragment deploiement/mana-bzh.caddy dans"
-  rouge "   /home/debian/bascule/mana-bzh-ks5.caddy, puis rechargez Caddy."
+  rouge "   \$MANA_BZH_CADDY sur le serveur, puis rechargez Caddy."
   exit 1
 fi
 

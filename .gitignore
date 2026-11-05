@@ -9,3 +9,6 @@ tsconfig.tsbuildinfo
 # graphe local pour vérification — 2,36 Mo, servi en production par mana.bzh
 public/bretagne/
 .env.local
+
+# la cible de déploiement : propre à chaque machine, jamais publiée
+deploiement/cible.local.sh
