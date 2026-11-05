@@ -12,7 +12,8 @@
     "preview": "vite preview",
     "carte:style": "node scripts/carte-style.mjs",
     "carte:verifier": "node scripts/carte-style.mjs --verifier && node scripts/carte-ortho.mjs --verifier",
-    "carte:ortho": "node scripts/carte-ortho.mjs"
+    "carte:ortho": "node scripts/carte-ortho.mjs",
+    "deploy:bzh": "./deploiement/deployer-mana-bzh.sh"
   },
   "dependencies": {
     "maplibre-gl": "^4.7.1",

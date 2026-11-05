@@ -1148,6 +1148,24 @@
   box-shadow: var(--ombre-levee), var(--bulle-eclat);
   padding: var(--sp-2);
   font-size: var(--t-xs);
+  /* 🔴 « Y ALLER » ÉTAIT INVISIBLE DEPUIS SA POSE — 5/11/2026, mesuré à
+     **1,15** de contraste pour un seuil de 4,5. `.m-action-fine` nomme
+     `--texte` et `--trait-fort`, les rôles du fond CLAIR ; posés sur la
+     bulle dorée sombre, ça donne du sombre sur sombre. Le bouton existait,
+     répondait au doigt, se lisait au lecteur d'écran — et ne se voyait pas.
+     ⭐ QUATRIÈME SURFACE IMMERSIVE À DEMANDER EXACTEMENT CE REMÈDE (voir la
+        même redéfinition dans `styles.css`, qui annonçait « la troisième »).
+        Ce n'est plus un accident : toute surface qui prend la matière de la
+        bulle doit retraduire ces trois rôles, sinon le premier composant
+        partagé qu'on y pose tombe dans le même trou.
+     ⛔ Et il a traversé deux vérifications en production. Je l'ai cherché
+        comme une régression de mana.bzh ; il était identique sur GitHub
+        Pages depuis le début. Une capture d'écran ne dit pas qu'un bouton
+        manque quand il est seulement invisible — c'est la MESURE du
+        contraste qui l'a dit, pas l'œil. */
+  --texte: var(--bulle-texte);
+  --trait-fort: var(--bulle-trait-fort);
+  --texte-action: var(--bulle-action);
 }
 
 /* ── la feuille ────────────────────────────────────────────────────────── */
