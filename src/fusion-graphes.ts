@@ -105,7 +105,68 @@ export function fusionnerGraphes(graphes: Graphe[], territoire: string): Graphe 
   const a: Graphe["a"] = [];
   const l: LieuAccroche[] = [];
 
-  for (const g of graphes) {
+  /**
+   * ── ON N'INDEXE QUE LÀ OÙ DEUX GRAPHES PEUVENT SE RENCONTRER ──────────
+   *
+   * 🔴 Troisième écriture de cette soudure. Mesuré A/B, même machine, même
+   *    charge, parce qu'un chiffre absolu ne vaut rien ici — ce poste a
+   *    rendu 433 ms et 948 ms pour le MÊME code à deux heures d'écart :
+   *
+   *        soudure exhaustive   948 ms
+   *        bande                245 ms      ≈ 3,9× plus rapide
+   *
+   * ⚠️ NE PAS RECOPIER CES MILLISECONDES. Le rapport tient, les valeurs
+   *    non : j'ai annoncé « 89 ms » sur la foi d'un banc lancé une nuit plus
+   *    tôt sur une machine calme, puis « 780 ms » d'une mesure prise dans
+   *    vitest sous charge 34. Les deux étaient justes et incomparables.
+   *
+   * ⭐ LE RAISONNEMENT EST GÉOMÉTRIQUE, PAS STATISTIQUE. Un nœud ne peut
+   *    avoir de jumeau que si un AUTRE graphe couvre sa longitude. Sur
+   *    186 506 nœuds, 51 053 sont dans la bande commune — les 135 453 autres
+   *    n'ont, par construction, personne à rencontrer. Les passer à la
+   *    table de hachage était un travail dont le résultat était connu
+   *    d'avance.
+   *
+   * ⚠️ L'ÉTENDUE SE RELÈVE SUR LES NŒUDS, PAS SUR `territoires.ts`. Les
+   *    emprises déclarées sont celles de la MOISSON ; le graphe les déborde
+   *    de 1,5 km à l'est et 1,2 km au nord, parce qu'un chemin coupé par la
+   *    limite garde ses nœuds d'au-delà. Une bande tirée des emprises
+   *    raterait les soudures de ce débord — c'est-à-dire exactement celles
+   *    qui comptent.
+   *
+   * ⛔ CE QUE ÇA CHANGE, MESURÉ ET VÉRIFIÉ : 166 637 nœuds au lieu de
+   *    166 635. Les deux de différence sont des doublons INTERNES à
+   *    `presquile.json`, hors bande, que la soudure exhaustive fondait.
+   *    Je les ai ouverts avant de décider, et aucun n'est un carrefour :
+   *      · nœuds 844/71526 — le second n'existe que comme POINT DE FORME
+   *        dans la polyligne d'une arête qui se termine déjà sur le premier ;
+   *      · nœuds 76508/76509 — deux points de forme CONSÉCUTIFS et
+   *        identiques de la même arête.
+   *    Aucune jonction n'est créée ni perdue : la topologie est la même, à
+   *    deux points de dessin près. ⭐ C'est la question qu'il fallait poser,
+   *    et elle n'est pas « combien de nœuds » mais « quelles ARÊTES se
+   *    touchent » — un compte de nœuds ne dit rien d'un réseau.
+   * ⭐ Et ça rapproche `/carte` de `/promenades`, qui ne soude rien et garde
+   *    ces doublons depuis toujours.
+   */
+  const etendues = graphes.map((g) => {
+    let min = Infinity, max = -Infinity;
+    for (const [lon] of g.n) { if (lon < min) min = lon; if (lon > max) max = lon; }
+    return [min, max] as const;
+  });
+  const bandes = graphes.map((_, k) => {
+    let lo = Infinity, hi = -Infinity;
+    for (let j = 0; j < graphes.length; j++) {
+      if (j === k) continue;
+      const debut = Math.max(etendues[j][0], etendues[k][0]);
+      const fin = Math.min(etendues[j][1], etendues[k][1]);
+      if (debut <= fin) { lo = Math.min(lo, debut); hi = Math.max(hi, fin); }
+    }
+    return [lo, hi] as const;
+  });
+
+  for (const [k, g] of graphes.entries()) {
+    const [bMin, bMax] = bandes[k];
     /* ⚠️ RELEVÉ AVANT D'AJOUTER LES ARÊTES DE CE GRAPHE : c'est le rang de sa
        première arête dans la table fusionnée, donc exactement ce qu'il faut
        ajouter à ses `lieu.a`. Relevé après, il vaudrait le rang de la
@@ -115,6 +176,8 @@ export function fusionnerGraphes(graphes: Graphe[], territoire: string): Graphe 
     /* La table locale → fusionnée. Un nœud déjà vu rend son rang d'origine :
        c'est la soudure. */
     const remap = g.n.map(([lon, lat]) => {
+      /* hors bande : personne à rencontrer, on pousse sans indexer */
+      if (lon < bMin || lon > bMax) { n.push([lon, lat]); return n.length - 1; }
       let parLat = vus.get(lon);
       if (parLat === undefined) {
         parLat = new Map();

@@ -211,6 +211,65 @@ const lireLesGraphes = () =>
 describe.skipIf(!presents)("la couture sur les graphes réellement moissonnés", () => {
 
   /**
+   * 🔴 LA BANDE NE CHANGE PAS LE RÉSEAU — 5/11/2026, et c'est la seule
+   *    propriété qui autorisait l'optimisation.
+   *
+   * La soudure n'indexe plus que les nœuds dont la longitude tombe dans la
+   * bande commune aux deux graphes (3,9× plus rapide). Elle rend donc DEUX
+   * nœuds de plus — des doublons internes à `presquile.json`, hors bande.
+   * ⭐ Un compte de nœuds ne dit rien d'un réseau : ce qu'il faut tenir,
+   *    c'est que les mêmes ARÊTES se touchent. Les deux doublons sont des
+   *    POINTS DE FORME (l'un dans la polyligne d'une arête qui finit déjà
+   *    sur son jumeau, l'autre deux fois de suite dans la même polyligne) —
+   *    aucun n'est un carrefour, donc aucune jonction n'apparaît ni ne
+   *    disparaît. Vérifié A/B : mêmes trois plus grandes composantes
+   *    (26 017, 296, 180) dans les deux implémentations.
+   */
+  it("🔴 la soudure croise toujours les deux graphes, et le réseau est le même", () => {
+    const f = fusionnerGraphes(lireLesGraphes(), "tout");
+    const brut = lireLesGraphes().reduce((s, g) => s + g.n.length, 0);
+
+    /* ⛔ LE CHIFFRE QUI COMPTE EST LE NOMBRE DE SOUDURES, pas le nombre de
+       nœuds restants : c'est lui qui dit que les deux moitiés se sont
+       rencontrées. Une bande mal calculée le ferait tomber à zéro en
+       laissant un compte de nœuds parfaitement plausible. */
+    expect(brut - f.n.length, "les deux graphes ne se soudent plus")
+      .toBeGreaterThan(19_000);
+
+    /* La couture ne crée ni ne détruit d'arête ni de lieu. */
+    expect(f.a.length).toBe(lireLesGraphes().reduce((s, g) => s + g.a.length, 0));
+    expect(f.l.length).toBe(lireLesGraphes().reduce((s, g) => s + g.l.length, 0));
+
+    /* 🔴 LE GARDE SE CALIBRE SUR LA SOUDURE EXHAUSTIVE, PAS SUR UN NOMBRE.
+       Première écriture : « plus de 19 000 soudures ». Elle a LAISSÉ PASSER
+       la mutation qui tire la bande des emprises déclarées de
+       `territoires.ts` au lieu des nœuds — 19 152 soudures au lieu de
+       19 869, soit **717 perdues** dans le débord à l'est, et un compte
+       parfaitement plausible.
+       ⭐ Un seuil choisi à la main vieillit à la première moisson et ne sait
+          pas ce qu'il devrait valoir. Ici le test RECALCULE la référence :
+          la bande a le droit de manquer les doublons INTERNES à un fichier
+          (hors bande, donc jamais confrontés), et rien d'autre. */
+    const exhaustif = (() => {
+      const vus = new Set<string>();
+      let total = 0, soudes = 0;
+      for (const g of lireLesGraphes()) {
+        for (const [lon, lat] of g.n) {
+          total++;
+          const k = `${lon},${lat}`;
+          if (vus.has(k)) soudes++; else vus.add(k);
+        }
+      }
+      return { total, soudes };
+    })();
+    const interneHorsBande = 2;   // mesuré : deux POINTS DE FORME de presquile.json
+    expect(
+      exhaustif.soudes - (exhaustif.total - f.n.length),
+      "la bande rate des soudures que la couture exhaustive trouve — elle est mal calculée",
+    ).toBeLessThanOrEqual(interneHorsBande);
+  }, 120_000);
+
+  /**
    * ⚠️ LA DISTANCE SE MESURE À LA POLYLIGNE, PAS AUX DEUX BOUTS — et la
    *    première écriture de ce test faisait l'erreur. Une arête du graphe
    *    n'est pas un segment : c'est un chemin avec ses points intermédiaires
