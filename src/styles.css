@@ -3355,8 +3355,22 @@ body:has(.jeu), body:has(.terr) { padding-bottom: 0; }
      carte cachée sous la barre de navigation.
      ⚠️ Le repli à 240px ne s'applique qu'avant la première mesure (ou sans
      ResizeObserver) : il doit être PLAUSIBLE, pas exact. */
-  height: calc(100svh - var(--reserve-barre) - var(--cp-entete-h, 240px));
-  min-height: 300px;
+  /* 🔄 6/11, DEUXIÈME PASSE : la scène prend TOUT l'écran. Elle valait
+     « l'écran moins l'en-tête » tant que l'en-tête vivait au-dessus ; il est
+     descendu DEDANS, en flottant, comme `.jeu-haut` sur `/carte`. Rien n'est
+     plus à soustraire — et c'est ce qui fait la différence entre un outil et
+     un document : `/carte` ne met rien au-dessus de sa carte. */
+  /* 🔄 6/11, TROISIÈME MESURE. `.page` pose `padding: var(--sp-6) 0 …` —
+     48 px en haut, pour TOUS les écrans-documents. La scène commençait donc
+     à 48 px et finissait 48 px trop bas : ses boutons passaient sous la
+     barre flottante (mesuré : actions à 708-756, barre à 740-796).
+     ⭐ On ANNULE le retrait plutôt qu'on ne le compense : la scène remonte à
+        zéro et reprend sa hauteur pleine. Compenser aurait laissé deux
+        valeurs à garder d'accord, et c'est ainsi qu'une marge se remet à
+        diverger six mois plus tard. */
+  margin-top: calc(var(--sp-6) * -1);
+  height: calc(100svh - var(--reserve-barre));
+  min-height: 420px;
   position: relative; overflow: hidden; isolation: isolate;
   /* ⛔ ELLE SORT DE LA COLONNE DE LECTURE. `.wrap` borne le document à sa
      largeur ; une carte « plein écran » qui s'arrête à 720 px n'est pas
@@ -3375,6 +3389,51 @@ body:has(.jeu), body:has(.terr) { padding-bottom: 0; }
    ⚠️ POSÉ EN BAS, pas en haut : les commandes de zoom de maplibre vivent en
    bas à droite et la barre de navigation est juste dessous. On laisse donc
    la droite libre et on s'arrête au-dessus de la réserve. */
+/* ── l'en-tête, FLOTTANT sur la carte ───────────────────────────────────
+   ⚠️ Il porte le champ de recherche, donc le seul moyen de changer de
+   départ : il reste cliquable même quand la carte, elle, ne l'est pas. */
+.cp-scene-haut {
+  position: absolute; z-index: 26;
+  left: 0; right: 0; top: 0;
+  /* ⚠️ MÊME BORNE QUE LE PANNEAU DU BAS. Mesuré à 1 100 px : le champ
+     s'étirait sur toute la largeur pendant que les commandes du bas
+     s'arrêtaient à 560. Deux flottants d'un même écran qui ne s'accordent pas
+     sur leur largeur se lisent comme deux couches différentes. */
+  max-width: calc(560px + var(--sp-2) * 2);
+  max-height: 100%; overflow-y: auto;
+  pointer-events: none;
+}
+.cp-scene-haut > * { pointer-events: auto; }
+/* ⛔ L'EN-TÊTE PERD SON SOL ET SON VOILE : posés sur une bande en haut d'un
+   document, ils tenaient la lisibilité du titre. Sur la carte, ils
+   masqueraient le paysage qu'on vient de rendre plein écran. Chaque bulle
+   porte désormais son propre fond — même grammaire que `/carte`. */
+/* 🔴 LA MARGE NÉGATIVE DOIT PARTIR AVEC LE DÉMÉNAGEMENT. `.cp-entree` porte
+   `margin: calc(var(--sp-6) * -1) calc(var(--sp-2) * -1) 0` — mesuré −48 px
+   en haut — pour remonter le hero sous l'en-tête du site quand il ouvrait le
+   DOCUMENT. Dans la scène, elle tirait le champ de recherche 32 px au-dessus
+   de son conteneur, à moitié caché.
+   ⭐ Une règle de POSITION écrite pour un emplacement ne survit pas au
+      déménagement de ce qu'elle positionne — et elle ne se plaint pas : elle
+      déplace, c'est son métier. */
+.cp-scene .cp-entree {
+  margin: 0; padding: var(--sp-2); background: none; overflow: visible;
+}
+.cp-scene .cp-entree::before { display: none; }
+/* ⭐ LE TITRE ET LE COMPTEUR PARTENT — ils nommaient un écran que la barre du
+   bas nomme déjà, et « 329 lieux d'où partir » est une mesure, pas un geste.
+   Sur un téléphone ils coûtaient 110 px de carte. */
+.cp-scene .cp-titre, .cp-scene .cp-compte { display: none; }
+/* La ligne « Depuis X », elle, reste : c'est l'état courant de l'écran. */
+.cp-scene .cp-depart-mot {
+  display: inline-block; margin: 6px 0 0;
+  padding: 6px 12px; border-radius: var(--r-rond);
+  background: color-mix(in srgb, var(--bulle-unie) 88%, transparent);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--bulle-trait);
+  color: var(--bulle-texte); font-size: var(--t-xs);
+}
+
 .cp-scene-bas {
   position: absolute; z-index: 25;
   left: var(--sp-2); right: var(--sp-2); bottom: var(--sp-2);
