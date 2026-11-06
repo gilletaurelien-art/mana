@@ -35,7 +35,12 @@ export const LONGUEUR_MIN = 2;
  *  choisir, elle cache ce qu'on cherchait. */
 export const RESULTATS_MAX = 8;
 
+/** Une commune : [nom, lon, lat]. ⚠️ Le nom vient de la source nationale,
+ *  qui écrit « Faou » et « Hôpital-Camfrout » SANS leur article. */
+export type Commune = readonly [string, number, number];
+
 export type Resultat =
+  | { genre: "commune"; nom: string; detail: string; g: [number, number] }
   | { genre: "promenade"; nom: string; detail: string; slug: string; g: [number, number] }
   /* ⚠️ `desc` et `wiki` VOYAGENT AVEC LE RÉSULTAT. Sans eux, le même lieu
      rendait une fiche riche au clic et une fiche nue à la recherche : deux
@@ -56,6 +61,12 @@ export interface Index {
     etapes: { nom: string; categorie: string; lon: number; lat: number }[];
   }[];
   lieux?: Lieu[];
+  /** 🔴 6/11/2026 — le champ de l'accueil promet « Une commune, un lieu… » et
+   *  n'en rendait AUCUNE : il ne cherchait que dans l'inventaire des sites.
+   *  ⭐ Ce qu'on affiche dit ce qu'on promet. Un libellé qui annonce une
+   *     entrée inexistante est un mensonge d'interface — et c'est le
+   *     fondateur qui l'a vu, pas les tests. */
+  communes?: readonly Commune[];
   libelle: (cle: string) => string;
 }
 
@@ -73,6 +84,25 @@ export function chercher(requete: string, index: Index): Resultat[] {
   if (q.length < LONGUEUR_MIN) return [];
 
   const walks = index.promenades ?? [];
+
+  /* ⚠️ « LE FAOU » DOIT TROUVER « FAOU ». La source nationale stocke les
+     communes sans leur article : « Faou », « Hôpital-Camfrout ». Qui tape le
+     nom tel qu'il se dit — et c'est la façon normale de le dire — n'aurait
+     rien trouvé. On compare donc aussi la requête débarrassée de son article.
+     ⭐ Un index ne se juge pas sur ce qu'il contient mais sur ce que les gens
+        TAPENT ; la règle est déjà écrite plus haut, et elle vaut ici. */
+  const sansArticle = q.replace(/^(l'|le |la |les |d'|du |de )+/u, "").trim();
+  const colle = (nom: string) => {
+    const n = plat(nom);
+    return n.includes(q) || (sansArticle.length >= LONGUEUR_MIN && n.includes(sansArticle));
+  };
+
+  /* ⭐ LA COMMUNE PASSE AVANT LE POINT qui porte son nom : qui tape « Crozon »
+     cherche la commune, pas le « Menhir de Crozon ». Même raison que pour les
+     promenades — on rend d'abord la réponse la plus large. */
+  const communes: Resultat[] = (index.communes ?? [])
+    .filter((c) => colle(c[0]))
+    .map((c) => ({ genre: "commune" as const, nom: c[0], detail: "Commune", g: [c[1], c[2]] as [number, number] }));
 
   const promenades: Resultat[] = walks
     .filter((w) => plat(w.titre).includes(q) || plat(w.lieu).includes(q))
@@ -106,7 +136,7 @@ export function chercher(requete: string, index: Index): Resultat[] {
      en effacerait trois. Mais une étape de promenade et le point OSM
      correspondant sont le même endroit — eux, il faut les fondre. */
   const vus = new Set<string>();
-  return [...promenades, ...etapes, ...lieux]
+  return [...promenades, ...communes, ...etapes, ...lieux]
     .filter((r) => {
       const clef = `${plat(r.nom)}@${r.g[0].toFixed(4)},${r.g[1].toFixed(4)}`;
       if (vus.has(clef)) return false;

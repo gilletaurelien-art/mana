@@ -3278,6 +3278,29 @@ body:has(.jeu), body:has(.terr) { padding-bottom: 0; }
   color: var(--bulle-texte-doux); cursor: pointer;
 }
 .rech-vider:hover { color: var(--bulle-texte); }
+/* ── LES DEUX PORTES DE L'ACCUEIL, AU REPOS — 6/11/2026 ────────────────
+   🔄 Demande du fondateur : « composer une promenade = fais en bouton », et
+   « créer un bouton les balades, lien vers OT ». C'était un lien de texte au
+   milieu d'une phrase : il se lisait comme une note, pas comme une porte.
+   ⭐ DEUX POIDS, PAS DEUX JUMEAUX. Composer est le geste du produit ;
+      les balades de l'Office sont celles d'un partenaire, qu'on crédite sans
+      s'approprier. Deux boutons de même poids diraient que c'est pareil. */
+.rech-portes { display: flex; gap: 8px; flex-wrap: wrap; }
+.rech-porte {
+  flex: 1 1 auto; min-height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 16px; border-radius: var(--r-rond);
+  background: var(--ocre); color: var(--nuit);
+  border: 1px solid transparent; text-decoration: none;
+  font: inherit; font-size: var(--t-xs); font-weight: 500;
+  text-align: center;
+}
+.rech-porte-fine {
+  background: color-mix(in srgb, var(--bulle-unie) 88%, transparent);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border-color: var(--bulle-trait); color: var(--craie);
+}
+.rech-porte:focus-visible { outline: 2px solid var(--ocre); outline-offset: 2px; }
 .rech-mot { margin: 0; padding: 0 14px; font-size: var(--t-xs); color: var(--bulle-texte-doux); }
 .rech-liste {
   list-style: none; margin: 0; padding: 6px; display: grid; gap: 2px;

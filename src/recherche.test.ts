@@ -128,3 +128,51 @@ describe("chercher — les trois inventaires, et leur ordre", () => {
     expect(chercher("plage", { lieux: beaucoup, libelle: lib })).toHaveLength(RESULTATS_MAX);
   });
 });
+
+describe("🔴 6/11/2026 — le champ promettait « une commune » et n'en rendait aucune", () => {
+  /* ⭐ « Ce qu'on affiche dit ce qu'on promet. » Le libellé du champ annonce
+     « Une commune, un lieu… » depuis le 1/11 ; le moteur ne cherchait que
+     dans l'inventaire des sites, qui ne porte pas de communes. Un libellé qui
+     annonce une entrée inexistante est un mensonge d'interface — et c'est le
+     fondateur qui l'a vu, pas les tests. */
+  const COMMUNES = [
+    ["Crozon", -4.5316, 48.2313],
+    ["Camaret-sur-Mer", -4.589, 48.266],
+    ["Faou", -4.1792, 48.2947],
+  ] as const;
+  const idx = { communes: COMMUNES, libelle: lib };
+
+  it("une commune se trouve par son nom", () => {
+    const r = chercher("camaret", idx);
+    expect(r.map((x) => x.nom)).toEqual(["Camaret-sur-Mer"]);
+    expect(r[0].genre).toBe("commune");
+    expect(r[0].detail).toBe("Commune");
+  });
+
+  /* 🔴 LE TEST QUI COMPTE. La source nationale stocke « Faou » et
+     « Hôpital-Camfrout » SANS leur article. Qui tape « Le Faou » — c'est-à-
+     dire la façon normale de le dire — n'aurait rien trouvé, et aurait conclu
+     que la commune n'est pas couverte. ⭐ Un index ne se juge pas sur ce
+     qu'il contient, mais sur ce que les gens TAPENT. */
+  it("« Le Faou » trouve « Faou » — la source stocke les communes sans article", () => {
+    expect(chercher("le faou", idx).map((x) => x.nom)).toEqual(["Faou"]);
+    expect(chercher("faou", idx).map((x) => x.nom)).toEqual(["Faou"]);
+  });
+
+  /* ⭐ Qui tape « Crozon » cherche la COMMUNE, pas le « Menhir de Crozon ».
+     On rend d'abord la réponse la plus large — même règle que les promenades
+     devant les points. */
+  it("la commune passe avant le point qui porte son nom", () => {
+    const r = chercher("crozon", {
+      communes: COMMUNES,
+      lieux: [lieu("Menhir de Crozon", "megalithe", [-4.5, 48.24])],
+      libelle: lib,
+    });
+    expect(r[0].genre).toBe("commune");
+    expect(r.map((x) => x.nom)).toEqual(["Crozon", "Menhir de Crozon"]);
+  });
+
+  it("sans communes fournies, le moteur se tait au lieu de lever", () => {
+    expect(() => chercher("crozon", { libelle: lib })).not.toThrow();
+  });
+});

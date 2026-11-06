@@ -325,10 +325,51 @@ describe("le jeu de cartes des balades", () => {
        ⭐ Ce qu'elle protégeait reste vrai sous une forme VÉRIFIABLE, et la
           voici juste en dessous : deux contrôles ne se font concurrence que
           s'ils sont visibles EN MÊME TEMPS. */
+    /* 🔄 RETOURNÉ LE 6/11/2026, EN LE SACHANT — demande explicite du
+       fondateur : « créer un bouton les balades, lien vers OT ». Ce chemin
+       EST un onglet de la barre du bas, donc l'ancienne règle le refusait.
+       Elle avait raison en septembre et elle est trop large aujourd'hui.
+
+       🔴 CE QU'ELLE PROTÉGEAIT : « Voir les balades » et « Voir sur la
+          carte », deux boutons TEXTE voisins sur l'accueil, que seul le
+          libellé distinguait, menant au même écran. Ce défaut-là reste
+          interdit, et la clause juste en dessous le tient.
+       ⭐ CE QU'ELLE ATTRAPAIT EN TROP : un onglet de la barre qui n'est
+          QU'UNE ICÔNE. `/balades-office` y est un pictogramme d'étincelles
+          dont le libellé est `sr-only` — personne ne devine qu'il mène chez
+          l'Office de tourisme. Nommer cette destination sur l'accueil n'est
+          pas répéter un contrôle, c'est en révéler un que rien ne nomme.
+       ➜ La règle devient donc : un chemin de l'accueil ne peut doubler un
+         onglet que si cet onglet est MUET. Doubler un onglet qui porte déjà
+         son nom à l'écran resterait le défaut de septembre. */
+    const app2 = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
+    const muet = (chemin: string) => {
+      const m = app2.match(
+        new RegExp(`<a[^>]*href=\\{\`\\$\\{B\\}${chemin.replace(/[/-]/g, "\\$&")}\`\\}[\\s\\S]{0,320}?</a>`),
+      );
+      // pas d'onglet trouvé → rien à doubler ; un onglet dont TOUT le texte
+      // est en `sr-only` est muet à l'écran.
+      return !m || !/>[^<>]*[A-Za-zÀ-ÿ][^<>]*</.test(m[0].replace(/<span className="sr-only">[^<]*<\/span>/g, ""));
+    };
     for (const l of liens) {
-      expect(barre.map((b) => b.split("?")[0]), `« ${l} » est déjà un onglet de la barre du bas`)
-        .not.toContain(l);
+      const double = barre.map((b) => b.split("?")[0]).includes(l);
+      if (!double) continue;
+      expect(muet(l), `« ${l} » double un onglet de la barre qui porte DÉJÀ son nom à l'écran`)
+        .toBe(true);
     }
+
+    /* ⛔ ET DEUX PORTES VISIBLES NE MÈNENT JAMAIS AU MÊME ENDROIT — le défaut
+       de septembre, entier.
+       ⚠️ ON COMPTE LES BOUTONS, PAS LES OCCURRENCES DE TEXTE. Je m'étais déjà
+          fait prendre ce matin : `/promenades` apparaît trois fois dans le
+          moteur de recherche (un lieu choisi, une requête libre, la porte au
+          repos) et ce sont les BRANCHES d'un seul contrôle. Un comptage
+          textuel ne sait pas distinguer une branche d'un jumeau — il refusait
+          du travail juste. Les portes, elles, portent une classe. */
+    const portes = [...accueil().matchAll(/className="rech-porte[^"]*"\s+href=\{`\$\{base\}([^`]*)`\}/g)]
+      .map((m) => m[1]);
+    expect(portes.length, "l'accueil n'a plus de bouton d'entrée").toBeGreaterThan(0);
+    expect(new Set(portes).size, `boutons en double : ${portes.join(" ")}`).toBe(portes.length);
     // ⭐ et l'écran sait entrer par `?vue=carte`, que la barre emploie, sinon le lien ment
     expect(barre).toContain("/carte?vue=carte");
     const ecranT = readFileSync(new URL("./EcranTerritoire.tsx", import.meta.url), "utf8");

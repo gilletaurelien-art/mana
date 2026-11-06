@@ -32,6 +32,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { chargerLieux, type Inventaire } from "./lieux";
 import { chercher, LONGUEUR_MIN, type Resultat } from "./recherche";
+/* ⚠️ UN JSON S'IMPORTE EN `(string | number)[][]`, pas en tuple : TypeScript
+   ne peut pas deviner qu'un tableau de trois cases est [nom, lon, lat]. On
+   NOMME la forme ici, une fois — plutôt que de la forcer à chaque usage.
+   ⭐ Et c'est `tsc` qui l'a dit, pas le build : vite ne vérifie pas les
+      types. Deuxième fois aujourd'hui. */
+import communesBrutes from "./communes.json";
+import type { Commune } from "./recherche";
+const communes = communesBrutes as unknown as Commune[];
 import { libelleCategorie } from "./categories";
 
 export function RechercheAccueil({ base }: { base: string }) {
@@ -53,6 +61,11 @@ export function RechercheAccueil({ base }: { base: string }) {
   const resultats = useMemo<Resultat[]>(
     () => (inv ? chercher(requete, {
       lieux: inv.lieux,
+      /* ⭐ 724 OCTETS, EMBARQUÉS. La source nationale fait 1,1 Mo pour 35 413
+         communes ; `scripts/communes.mjs` n'en garde que celles des emprises
+         réellement moissonnées — 23. Charger la France entière sur un écran
+         qui prend soin de différer 110 Ko aurait été absurde. */
+      communes,
       libelle: (c) => inv.libelles[c] ?? libelleCategorie(c),
     }) : []),
     [requete, inv],
@@ -129,9 +142,25 @@ export function RechercheAccueil({ base }: { base: string }) {
           ⚠️ Elle ne dépend d'AUCUNE donnée : elle existe même si
              l'inventaire n'arrive jamais. */}
       {!requete && (
-        <p className="rech-ou">
-          ou <a className="rech-porte" href={`${base}/promenades`}>composer une promenade</a>
-        </p>
+        <nav className="rech-portes" aria-label="Entrer">
+          {/* 🔄 6/11/2026, demande du fondateur : « composer une promenade =
+              fais en bouton », et « créer un bouton les balades, lien vers
+              OT ». C'était un lien de texte au milieu d'une phrase — il se
+              lisait comme une note, pas comme une porte. */}
+          <a className="rech-porte" href={`${base}/promenades`}>
+            Composer une promenade
+          </a>
+          {/* ⛔ CE BOUTON DOUBLE UN ONGLET DE LA BARRE DU BAS, et c'est
+              assumé — voir le garde retourné dans `swipe.test.ts`. La barre
+              ne porte qu'une ICÔNE sans libellé : personne ne devine que les
+              étincelles mènent aux balades de l'Office. Un libellé qui nomme
+              le partenaire n'est pas le doublon de septembre (deux boutons
+              TEXTE voisins vers le même écran) ; c'est le seul endroit de
+              l'accueil où l'Office est nommé comme une destination. */}
+          <a className="rech-porte rech-porte-fine" href={`${base}/balades-office`}>
+            Les balades de l’Office
+          </a>
+        </nav>
       )}
 
       {resultats.length > 0 && (
