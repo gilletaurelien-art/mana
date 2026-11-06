@@ -1349,6 +1349,29 @@ body { padding-bottom: var(--reserve-barre); }
   .trace:hover { stroke-opacity: .9; }
   .trace:hover .trace-ligne { stroke-width: 4; }
 }
+/* ⚠️ L'ÉTIQUETTE BASCULE À GAUCHE PRÈS DU BORD DROIT. `row-reverse` remet le
+   point SUR le lieu pendant que le nom s'étend vers l'intérieur de la carte —
+   le décalage de −100 % est posé par le composant, qui seul connaît la
+   largeur réelle du nom. */
+.carte-repere[data-cote="gauche"] { flex-direction: row-reverse; }
+/* ⚠️ BORNÉE À LA PLACE RÉELLEMENT DISPONIBLE, que seul le composant connaît
+   (elle dépend d'où le point tombe à l'écran). La troncature ne sert plus que
+   le cas impossible : un nom plus large que la carte. */
+/* ⭐ ELLE PASSE À LA LIGNE PLUTÔT QUE DE SE COUPER. Bornée à la place
+   disponible, « Plaque commémorative "Tante Yvonne" » tenait encore trois
+   pixels de trop et finissait en « …Tante Yvon… ». Or c'est l'ARRIVÉE : le
+   seul nom qu'on a besoin de lire en entier. Deux lignes coûtent douze
+   pixels de carte ; un nom coupé ne nomme rien.
+   ⚠️ Le clamp à deux lignes reste, en dernier recours — un toponyme plus
+      long que deux lignes existe, et il vaut mieux l'abréger que laisser
+      l'étiquette manger le paysage. */
+.carte-etiquette {
+  max-width: var(--etiquette-max, none);
+  white-space: normal; overflow-wrap: anywhere; text-align: left;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
 /* L'arrivée prend la couleur de SON tracé — le seul lien entre un chemin et
    son but. ⚠️ Le liseré et l'ombre restent au thème. */
 .carte-repere-arrivee[style*="--repere-couleur"] .carte-pastille {

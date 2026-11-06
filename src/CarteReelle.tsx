@@ -143,7 +143,36 @@ export function CarteReelle({
      une fermeture créée une seule fois, à la naissance de la carte. */
   const tracesRef = useRef<TraceCarte[] | undefined>(traces);
   tracesRef.current = traces;
+  /* 🔴 `walk` AUSSI PASSE PAR UNE RÉFÉRENCE — 6/11/2026, et c'est un VRAI
+     défaut trouvé par le fondateur : « la carte s'efface ? ». Elle s'effaçait.
+     `walk` est un `useMemo` du compositeur qui dépend de la proposition
+     choisie : il change d'identité à CHAQUE clic sur un tracé. Tant qu'il
+     était dans les dépendances de l'effet, chaque clic appelait `m.remove()`
+     puis reconstruisait une carte WebGL entière — tuiles, style, sources. La
+     plupart du temps ça repassait ; parfois la nouvelle carte restait vide,
+     et il ne restait que le fond kaki et les traits SVG. Exactement sa
+     capture.
+     ⭐ Un défaut qui « repasse la plupart du temps » n'est pas un défaut
+        rare : c'est un défaut permanent dont on ne voit que les ratés. */
+  const walkRef = useRef(walk);
+  walkRef.current = walk;
   const clefTraces = (traces ?? []).map((t) => t.nom).join("|");
+  /* ⚠️ Pour les écrans à UNE promenade (fiche, en-chemin), l'identité tient
+     au slug et au nombre de points : deux promenades différentes ne partagent
+     pas les deux. */
+  /* 🔴 ET CETTE CLÉ N'ÉTAIT PAS STABLE — corrigé après mesure. Je l'avais
+     bâtie sur `walk.points.length`, en croyant identifier LA promenade. Or
+     sur cet écran le slug vaut toujours « composee » et le NOMBRE DE POINTS
+     change d'une proposition à l'autre : la clé bougeait à chaque clic, et la
+     carte était reconstruite malgré le correctif. Mesuré en marquant le
+     canvas : `memeCanvas: false` après quatre clics.
+     ⭐ Une clé « stable » qu'on n'a pas vue tenir ne tient pas. Le témoin
+        posé sur le canvas a dit en une mesure ce que trois relectures du code
+        n'avaient pas vu.
+     ➜ Quand l'écran montre PLUSIEURS tracés, c'est leur ensemble qui décide,
+       et lui seul ; `walk` n'y a plus voix. */
+  const clefWalk = traces?.length ? "" : `${walk.slug}:${walk.points.length}`;
+
 
 
 
@@ -152,7 +181,7 @@ export function CarteReelle({
     const m = new CarteML({
       container: plan.current,
       style: STYLE,
-      center: [walk.points[0].lon, walk.points[0].lat],
+      center: [walkRef.current.points[0].lon, walkRef.current.points[0].lat],
       zoom: 12,
       attributionControl: false,
     });
@@ -195,6 +224,7 @@ export function CarteReelle({
         return;
       }
       if (!sous || !trait) return;
+      const walk = walkRef.current;
       // ⛔ UN SOUS-CHEMIN PAR MORCEAU — « M … L … M … L … », jamais un seul
       //    « M » suivi de tous les points. Un itinéraire breton est stocké en
       //    portions, et 123 jointures sur 575 ont un écart de plus de 50 m
@@ -226,7 +256,7 @@ export function CarteReelle({
          laisserait les deux autres hors de l'écran : on ne choisit pas entre
          des chemins qu'on ne voit pas. */
       const t = tracesRef.current;
-      const b = bbox(t?.length ? t.flatMap((x) => x.points) : walk.points);
+      const b = bbox(t?.length ? t.flatMap((x) => x.points) : walkRef.current.points);
       const dLon = (b.lonMax - b.lonMin) * marge;
       const dLat = (b.latMax - b.latMin) * marge;
       m.fitBounds(
@@ -251,10 +281,13 @@ export function CarteReelle({
       m.remove();
       setCarte(null);
     };
-    /* ⚠️ `clefTraces` et non `traces` : l'ensemble des propositions change
-       quand on change de départ (il faut recadrer), le CHOIX ne change que
-       des couleurs (il ne faut surtout pas recadrer). */
-  }, [walk, marge, clefTraces]);
+    /* ⚠️ NI `walk` NI `traces` DANS LES DÉPENDANCES, et c'est tout le
+       correctif. On ne reconstruit la carte que lorsque l'ENSEMBLE change :
+       un autre départ, donc d'autres propositions (`clefTraces`), ou une
+       autre promenade sur les écrans qui n'en montrent qu'une (`clefWalk`).
+       Un simple changement de CHOIX ne touche que des couleurs et des
+       classes, que React rend — la carte, elle, ne bouge pas. */
+  }, [marge, clefTraces, clefWalk]);
 
   const depart = walk.points[0];
   const arrivee = walk.points[walk.points.length - 1];
@@ -389,7 +422,51 @@ function Repere({
     if (!m || !li.current) return;
     const placer = () => {
       const q = m.project([point.lon, point.lat]);
-      if (li.current) li.current.style.transform = `translate(${q.x}px, ${q.y}px)`;
+      const el = li.current;
+      if (!el) return;
+      /* 🔴 L'ÉTIQUETTE SE RETOURNE AU BORD — 6/11/2026, signalé par le
+         fondateur : « "Plage …" est tronqué ». Elle se posait TOUJOURS à
+         droite du point ; une arrivée près du bord droit passait sous le
+         `overflow: hidden` du conteneur, et il ne restait qu'un mot coupé.
+         ⭐ Un toponyme tronqué ne nomme pas à moitié : il ne nomme pas. Et
+            c'est justement l'arrivée qu'on a le plus besoin de lire.
+         ⚠️ LA BASCULE SE MESURE, ELLE NE SE DEVINE PAS. Un seuil en dur
+            (« au-delà de 160 px du bord ») serait juste pour « Plage du
+            Porzic » et faux pour « Plaque commémorative "Tante Yvonne" ».
+            On lit la largeur RÉELLE de l'étiquette, qui dépend du nom. */
+      /* 🔴 BASCULER NE SUFFIT PAS — mesuré. Première version : on passait à
+         gauche dès que ça dépassait à droite, et « Plaque commémorative
+         "Tante Yvonne" » sortait alors par la GAUCHE. Un débordement
+         déplacé n'est pas un débordement corrigé.
+         ➜ On choisit le côté où il reste le PLUS de place, et on borne
+           l'étiquette à cette place. La troncature ne subsiste que dans le
+           cas réellement impossible — un nom plus large que la carte — au
+           lieu d'être la règle. */
+      const large = m.getContainer().clientWidth;
+      const etq = el.querySelector<HTMLElement>(".carte-etiquette");
+      /* ⚠️ `scrollWidth` et non `offsetWidth` : l'étiquette est bornée par
+         `max-width`, donc sa largeur VISIBLE est déjà le résultat du calcul
+         précédent. La mesurer reviendrait à se répondre à soi-même. */
+      /* ⚠️ L'étiquette passe à la ligne : `scrollWidth` vaut alors la
+         largeur BORNÉE, pas la largeur voulue. On mesure donc le texte sans
+         contrainte, le temps d'une mesure. */
+      const voulu = (() => {
+        if (!etq) return 0;
+        const avant = etq.style.maxWidth;
+        etq.style.maxWidth = "none";
+        const w = etq.scrollWidth;
+        etq.style.maxWidth = avant;
+        return w;
+      })();
+      const pastille = el.offsetWidth - (etq?.offsetWidth ?? 0);
+      const resteD = large - q.x - pastille - 8;
+      const resteG = q.x - pastille - 8;
+      const aGauche = voulu > resteD && resteG > resteD;
+      el.dataset.cote = aGauche ? "gauche" : "droite";
+      el.style.setProperty("--etiquette-max", `${Math.max(40, aGauche ? resteG : resteD)}px`);
+      el.style.transform = aGauche
+        ? `translate(${q.x}px, ${q.y}px) translateX(-100%)`
+        : `translate(${q.x}px, ${q.y}px)`;
     };
     placer();
     m.on("render", placer);
@@ -398,7 +475,16 @@ function Repere({
       m.off("render", placer);
       m.off("move", placer);
     };
-  }, [carte, point.lat, point.lon]);
+    /* 🔴 `libelle` DANS LES DÉPENDANCES — et c'est le reste du défaut
+       « "Plage …" est tronqué ». La bascule gauche/droite se décide sur la
+       LARGEUR MESURÉE de l'étiquette ; or le nom n'apparaît qu'au moment où
+       le tracé devient le choisi. Sans cette dépendance, `placer` ne
+       retournait jamais après coup : il avait mesuré une étiquette VIDE
+       (14 px), conclu « il y a la place », et le nom débordait ensuite de
+       64 px sans que rien ne le reprenne.
+       ⭐ Une mesure prise avant que la chose mesurée existe est une mesure
+          fausse qui a l'air juste — et elle ne se corrige pas toute seule. */
+  }, [carte, point.lat, point.lon, libelle]);
 
   return (
     <li

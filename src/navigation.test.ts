@@ -686,3 +686,50 @@ describe("🔴 6/11/2026 — le parcours de /promenades, pour qui arrive sans ri
     expect(nu).toMatch(/cp-depart-etiquette/);
   });
 });
+
+describe("🔴 6/11/2026 — « la carte s'efface ? » : deux défauts trouvés par le fondateur", () => {
+  const carte = readFileSync(new URL("./CarteReelle.tsx", import.meta.url), "utf8");
+
+  /* 🔴 LA CARTE ÉTAIT DÉTRUITE ET RECONSTRUITE À CHAQUE CLIC. `walk` est un
+     `useMemo` du compositeur qui dépend de la proposition choisie : tant
+     qu'il figurait dans les dépendances de l'effet, chaque clic appelait
+     `m.remove()` puis rebâtissait une carte WebGL entière — tuiles, style,
+     sources. La plupart du temps ça repassait ; parfois la nouvelle carte
+     restait vide, et il ne restait que le fond kaki et les traits SVG.
+     ⭐ Un défaut qui « repasse la plupart du temps » n'est pas rare : c'est un
+        défaut permanent dont on ne voit que les ratés.
+     ⚠️ Mesuré en marquant le canvas d'un témoin et en cliquant six fois :
+        `memeCanvas` doit rester vrai. Ce test-ci tient la CAUSE, faute de
+        pouvoir monter maplibre sans navigateur. */
+  it("⛔ ni `walk` ni `traces` dans les dépendances de l'effet qui crée la carte", () => {
+    const deps = carte.match(/\n\s*\}, \[([^\]]*)\]\);/g) ?? [];
+    const creation = deps.find((d) => /marge/.test(d));
+    expect(creation, "l'effet qui crée la carte est introuvable").toBeTruthy();
+    expect(creation, "`walk` recrée la carte à chaque choix").not.toMatch(/\bwalk\b/);
+    expect(creation, "`traces` recrée la carte à chaque choix").not.toMatch(/\btraces\b(?!Ref)/);
+    // et la géométrie se relit donc par référence, à chaque image
+    expect(carte).toMatch(/tracesRef\.current/);
+    expect(carte).toMatch(/walkRef\.current/);
+  });
+
+  /* 🔴 « "Plage …" EST TRONQUÉ ». L'étiquette se posait TOUJOURS à droite du
+     point ; au bord, le `overflow: hidden` du conteneur la coupait net.
+     ⚠️ ET BASCULER À GAUCHE NE SUFFISAIT PAS — mesuré : « Plaque
+        commémorative "Tante Yvonne" » sortait alors par la gauche. Un
+        débordement déplacé n'est pas corrigé. On choisit le côté où il reste
+        le plus de place, on borne à cette place, et le nom passe à la ligne
+        plutôt que de se couper : c'est l'ARRIVÉE, le seul nom qu'on ait
+        besoin de lire en entier. */
+  it("⛔ l'étiquette choisit son côté sur la place RÉELLE, et ne se coupe pas", () => {
+    expect(carte, "le côté n'est pas choisi sur la place restante").toMatch(/resteG > resteD/);
+    expect(carte, "l'étiquette n'est pas bornée à la place disponible")
+      .toMatch(/--etiquette-max/);
+    /* 🔴 Et la mesure doit être reprise quand le NOM apparaît : sans cette
+       dépendance, `placer` mesurait une étiquette VIDE (14 px), concluait
+       « il y a la place », et le nom débordait ensuite de 64 px sans que rien
+       ne le reprenne. ⭐ Une mesure prise avant que la chose mesurée existe
+       est une mesure fausse qui a l'air juste. */
+    expect(carte, "la bascule ne se recalcule pas quand le nom apparaît")
+      .toMatch(/\[carte, point\.lat, point\.lon, libelle\]/);
+  });
+});
