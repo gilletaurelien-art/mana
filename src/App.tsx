@@ -63,7 +63,6 @@ const B = baseUrl();
 const MODULES = [
   {
     glyphe: GlyphNavigation,
-    num: "01",
     titre: "Navigation & cartographie hors ligne",
     accroche: "Le parcours dans la poche.",
     texte:
@@ -76,22 +75,20 @@ const MODULES = [
     cta: { label: "Voir les sentiers", href: "/promenades" },
   },
   {
-    glyphe: GlyphSecurite,
-    num: "02",
-    titre: "Sécurité sur la côte",
-    accroche: "Prudence honnête.",
+    glyphe: GlyphSentier,
+    titre: "Carnet, export GPX et circuits balisés",
+    accroche: "Gardez la trace.",
     texte:
-      "Un bouton d’appel au 112 prépare un SMS contenant votre position GPS, à envoyer aux secours ou à un proche — vous relisez avant d’envoyer, rien ne part tout seul. Les marées et la météo ne sont jamais calculées ici : l’application renvoie au SHOM et à Météo-France. Une prévision simulée sur un sentier de falaise n’est pas une approximation, c’est un danger.",
+      "Chaque promenade s’exporte en GPX, lisible par toutes les montres et applications de randonnée. Le carnet garde vos balades dans ce navigateur, sans compte ni adresse : ce qui n’est pas stocké ne fuit pas. L’application présente aussi les 46 circuits balisés par l’Office de tourisme Presqu’île de Crozon – Aulne Maritime, crédités comme tels — MANA ne s’attribue rien et ne recommande rien.",
     faits: [
-      "SOS 112 : la position est écrite dans le SMS, pas envoyée à un serveur.",
-      "Marées : renvoi au SHOM. Météo : renvoi aux sources officielles. Aucune donnée simulée.",
-      "Le relief et le trait de côte ne sont pas dessinés : nous n’affichons que ce que la donnée contient.",
+      "46 circuits balisés, 708 km, sur 11 communes : Crozon, Camaret-sur-Mer, Roscanvel, Landévennec, Argol, Telgruc-sur-Mer, Lanvéoc, Le Faou, Pont-de-Buis-lès-Quimerch, Plomodiern, Hanvec.",
+      "25 à pied, 12 en VTT, 5 à vélo, 4 en trail. Durées et dénivelés déclarés par l’Office.",
+      "Export GPX, fonctionne hors ligne. Aucun compte, aucune donnée personnelle enregistrée.",
     ],
-    cta: { label: "Découvrir", href: "/promenades" },
+    cta: { label: "Ouvrir un parcours", href: "/promenades" },
   },
   {
     glyphe: GlyphDecouverte,
-    num: "03",
     titre: "Patrimoine de la presqu’île",
     accroche: "Ce qu’on croise en chemin.",
     /* 🔴 CE TEXTE PROMETTAIT LES FILTRES « POUSSETTE/PMR » ET « CHIENS »,
@@ -111,18 +108,17 @@ const MODULES = [
     cta: { label: "Explorer les lieux", href: "/carte?vue=carte" },
   },
   {
-    glyphe: GlyphSentier,
-    num: "04",
-    titre: "Carnet, export GPX et circuits balisés",
-    accroche: "Gardez la trace.",
+    glyphe: GlyphSecurite,
+    titre: "Sécurité sur la côte",
+    accroche: "Prudence honnête.",
     texte:
-      "Chaque promenade s’exporte en GPX, lisible par toutes les montres et applications de randonnée. Le carnet garde vos balades dans ce navigateur, sans compte ni adresse : ce qui n’est pas stocké ne fuit pas. L’application présente aussi les 46 circuits balisés par l’Office de tourisme Presqu’île de Crozon – Aulne Maritime, crédités comme tels — MANA ne s’attribue rien et ne recommande rien.",
+      "Un bouton d’appel au 112 prépare un SMS contenant votre position GPS, à envoyer aux secours ou à un proche — vous relisez avant d’envoyer, rien ne part tout seul. Les marées et la météo ne sont jamais calculées ici : l’application renvoie au SHOM et à Météo-France. Une prévision simulée sur un sentier de falaise n’est pas une approximation, c’est un danger.",
     faits: [
-      "46 circuits balisés, 708 km, sur 11 communes : Crozon, Camaret-sur-Mer, Roscanvel, Landévennec, Argol, Telgruc-sur-Mer, Lanvéoc, Le Faou, Pont-de-Buis-lès-Quimerch, Plomodiern, Hanvec.",
-      "25 à pied, 12 en VTT, 5 à vélo, 4 en trail. Durées et dénivelés déclarés par l’Office.",
-      "Export GPX, fonctionne hors ligne. Aucun compte, aucune donnée personnelle enregistrée.",
+      "SOS 112 : la position est écrite dans le SMS, pas envoyée à un serveur.",
+      "Marées : renvoi au SHOM. Météo : renvoi aux sources officielles. Aucune donnée simulée.",
+      "Le relief et le trait de côte ne sont pas dessinés : nous n’affichons que ce que la donnée contient.",
     ],
-    cta: { label: "Ouvrir un parcours", href: "/promenades" },
+    cta: { label: "Découvrir", href: "/promenades" },
   },
 ];
 
@@ -401,8 +397,7 @@ export default function App() {
             {MODULES.map((m) => {
               const G = m.glyphe;
               return (
-              <section key={m.num} className="landing-section bulle">
-                <p className="section-num">{m.num}</p>
+              <section key={m.titre} className="landing-section bulle">
                 <G size={36} />
                 <h2 className="section-title">{m.titre}</h2>
                 <p className="section-accroche-courte">{m.accroche}</p>
@@ -424,9 +419,8 @@ export default function App() {
               );
             })}
 
-            {/* 05 — MANAradio : en ligne */}
+            {/* MANAradio : en ligne */}
             <section className="landing-section bulle">
-              <p className="section-num">05</p>
               <GlyphRadio size={36} />
               <h2 className="section-title">MANAradio</h2>
               <div className="sous-bulle">

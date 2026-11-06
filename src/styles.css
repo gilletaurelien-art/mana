@@ -449,13 +449,6 @@ a { color: var(--texte-action); text-underline-offset: 3px; }
 /* ===== Sections ===== */
 .landing-section { padding: var(--sp-2) var(--sp-4); }
 .landing-section + .landing-section { margin-top: var(--sp-2); }
-.section-num {
-  font-size: var(--t-xs);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--primary-texte);
-  margin: 0 0 var(--sp-2);
-}
 .section-title {
   font-family: var(--serif);
   font-size: var(--t-xl);
