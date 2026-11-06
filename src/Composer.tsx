@@ -1401,11 +1401,22 @@ export function Composer() {
                       <button
                         className="cp-pin"
                         onClick={localiser}
-                        aria-label="Partir d'où je suis"
                         title="Partir d'où je suis"
                         disabled={!ix}
                       >
                         <SvgRepere />
+                        {/* 🔴 CE BOUTON N'ÉTAIT QU'UNE ICÔNE — 6/11/2026.
+                            C'est pourtant l'entrée la PLUS FACILE de l'écran :
+                            un geste, et le départ est le lieu où l'on se
+                            trouve. Un repère sans mot ne se devine pas, et
+                            celui qui ne le devine pas doit taper un nom de
+                            lieu breton pour commencer.
+                            ⭐ L'`aria-label` disait « Partir d'où je suis » :
+                               la bonne phrase existait, elle n'était lue que
+                               par les lecteurs d'écran. Quand un libellé
+                               accessible explique mieux que l'écran, c'est
+                               l'écran qu'il faut corriger. */}
+                        <span className="cp-pin-mot">Autour de moi</span>
                       </button>
                       <label className="cp-depart-champ">
                         <span className="sr-only">Chercher un lieu qui vous plaît</span>
@@ -1428,9 +1439,21 @@ export function Composer() {
                       </ul>
                     )}
                     {motGps && <p className="cp-depart-mot">{motGps}</p>}
+                    {/* 🔴 RIEN NE DISAIT CE QUE FAIT CET ÉCRAN — 6/11/2026.
+                        On y arrive sur une carte, un départ déjà choisi qu'on
+                        n'a pas choisi, et trois bulles. Le MÉCANISME — un
+                        point de départ, trois promenades autour — n'était
+                        écrit nulle part : il fallait le deviner en cliquant.
+                        ⭐ Une phrase. C'est le prix d'un écran qui se lit sans
+                           mode d'emploi, et il est plus bas que celui d'un
+                           utilisateur qui repart. */}
+                    <p className="cp-mode-emploi">
+                      Choisissez un départ : nous proposons trois promenades autour.
+                    </p>
                     {depart && (
                       <p className="cp-depart-mot">
-                        Depuis <strong>{depart.nom}</strong>
+                        <span className="cp-depart-etiquette">Départ</span>
+                        <strong>{depart.nom}</strong>
                         {/* ⚠️ LES MÈTRES QUI NE SONT PAS SUR LE TRACÉ SE DISENT.
                             Le parcours commence au premier nœud du réseau, qui
                             est à `ecartNoeud` du lieu choisi : médiane 30 m,

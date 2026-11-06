@@ -3516,15 +3516,52 @@ body:has(.jeu), body:has(.terr) { padding-bottom: 0; }
   border-color: var(--ocre);
   background: color-mix(in srgb, var(--ocre) 24%, var(--bulle-unie));
 }
-/* L'intitulé des trois choix, sur la carte. */
+/* ── LE HAUT DE LA SCÈNE : d'où l'on part ───────────────────────────────
+   ⭐ L'ORDRE DE LECTURE EST CELUI DU GESTE : ce que fait l'écran, puis par où
+      l'on commence, puis où l'on en est. Trois lignes, et la carte dessous. */
+/* 🔴 MESURÉ À 1,09 DE CONTRASTE — 6/11/2026. Ces deux libellés étaient posés
+   en craie, sans fond, avec une ombre portée, sur une carte CLAIRE : 1,09 sur
+   le vert des champs, 1,12 sur le blanc des routes. Invisibles, littéralement.
+   ⭐ UNE OMBRE PORTÉE N'EST PAS UN FOND. Elle sauve un gros titre en détourant
+      ses bords ; elle ne fait rien pour une ligne de petit texte. Et sur une
+      carte, le fond est INCONNU PAR CONSTRUCTION — il change au défilement, au
+      zoom, et selon qu'on est en plan ou en orthophoto.
+   ⛔ C'est pourquoi `/carte` met TOUT en bulle. Je l'ai contourné deux fois
+      pour « rester discret », et discret a voulu dire absent. Troisième
+      contraste raté du même écran dans la journée, toujours de la même façon :
+      un traitement choisi sur une surface dont on ne décide pas la couleur. */
+.cp-scene .cp-mode-emploi,
 .cp-scene .cp-choix-titre {
-  margin: 0 0 2px; padding: 0 4px;
-  font-size: var(--t-2xs); letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--craie);
-  /* ⚠️ Posé sur la carte sans bulle : une ombre portée suffit à le tenir
-     lisible sur un fond clair comme sur un fond sombre, là où une bulle de
-     plus aurait ajouté une surface pour quatre mots. */
-  text-shadow: 0 1px 3px rgb(13 16 12 / 70%);
+  display: inline-block; width: fit-content;
+  margin: 0 0 6px; padding: 5px 12px;
+  border-radius: var(--r-rond);
+  background: color-mix(in srgb, var(--bulle-unie) 92%, transparent);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--bulle-trait);
+  color: var(--bulle-texte); text-shadow: none;
+  font-size: var(--t-2xs);
+}
+/* 🔴 LE REPÈRE N'ÉTAIT QU'UNE ICÔNE. Il porte son mot — et il garde sa place
+   dans la rangée, à côté du champ, parce que ce sont les DEUX façons de poser
+   un départ : celle qui ne demande rien, et celle qui demande un nom. */
+.cp-scene .cp-pin { width: auto; gap: 8px; padding: 0 14px; }
+.cp-scene .cp-pin-mot { font-size: var(--t-2xs); white-space: nowrap; }
+/* ⚠️ Sous 340 px, le mot cède sa place au champ : mieux vaut une icône
+   qu'un champ de recherche de trois centimètres. */
+@media (max-width: 340px) { .cp-scene .cp-pin-mot { display: none; } }
+.cp-scene .cp-depart-etiquette {
+  margin-right: 8px; font-size: var(--t-2xs);
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--bulle-texte-doux);
+}
+
+/* L'intitulé des trois choix — même bulle que la phrase du haut, voir
+   plus haut pourquoi. ⚠️ Le commentaire qui vivait ici promettait qu'« une
+   ombre portée suffit à le tenir lisible sur un fond clair comme sur un fond
+   sombre ». Mesuré : 1,09. Une description confiante ne remplace pas une
+   mesure — elle l'empêche. */
+.cp-scene .cp-choix-titre {
+  letter-spacing: 0.08em; text-transform: uppercase;
 }
 /* ⭐ LA DISTANCE, À DROITE DE CHAQUE CHOIX. Le nom prend la place qu'il peut,
    le chiffre ne se coupe jamais : c'est lui qui départage. */

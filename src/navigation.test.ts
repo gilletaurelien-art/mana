@@ -580,3 +580,50 @@ describe("🔴 6/11/2026 — l'écran de l'offre promenade doit se lire sans mod
     expect(nu).toMatch(/toLocaleString\("fr-FR"/);
   });
 });
+
+describe("🔴 6/11/2026 — le parcours de /promenades, pour qui arrive sans rien savoir", () => {
+  const compo = readFileSync(new URL("./Composer.tsx", import.meta.url), "utf8");
+  const nu = compo.replace(/\{\/\*[\s\S]*?\*\/\}/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+  const css = readFileSync(new URL("./styles.css", import.meta.url), "utf8");
+
+  /* 🔴 L'ENTRÉE LA PLUS FACILE N'ÉTAIT QU'UNE ICÔNE. Un geste suffit pour
+     partir d'où l'on se trouve ; sans mot, il faut le deviner — et qui ne le
+     devine pas doit taper un toponyme breton pour commencer.
+     ⭐ L'`aria-label` disait DÉJÀ « Partir d'où je suis ». Quand un libellé
+        accessible explique mieux que l'écran, c'est l'écran qu'on corrige. */
+  it("le bouton « autour de moi » porte un mot visible, pas seulement un aria-label", () => {
+    expect(nu).toMatch(/cp-pin-mot/);
+    expect(nu).toMatch(/Autour de moi/);
+  });
+
+  /* 🔴 RIEN NE DISAIT CE QUE FAIT L'ÉCRAN. On y arrive sur une carte, un
+     départ déjà choisi qu'on n'a pas choisi, et trois bulles. Le mécanisme —
+     un point de départ, trois promenades autour — n'était écrit nulle part :
+     il fallait le deviner en cliquant. */
+  it("l'écran dit son mécanisme, une fois", () => {
+    expect(nu).toMatch(/cp-mode-emploi/);
+    expect(nu).toMatch(/trois promenades autour/);
+  });
+
+  /* 🔴 LE GARDE QUI GÉNÉRALISE L'ERREUR. Les deux libellés flottants ont été
+     posés en craie claire, SANS FOND, avec une ombre portée, sur une carte
+     CLAIRE : mesuré 1,09 et 1,12 de contraste — invisibles.
+     ⭐ UNE OMBRE PORTÉE N'EST PAS UN FOND. Elle détoure un gros titre ; elle
+        ne fait rien pour une ligne de petit texte. Et sur une carte le fond
+        est INCONNU PAR CONSTRUCTION : il change au défilement, au zoom, et
+        selon qu'on affiche le plan ou l'orthophoto. C'est pour cela que
+        `/carte` met TOUT en bulle — contourné deux fois « pour rester
+        discret », et discret a voulu dire absent. */
+  it("⛔ aucun libellé flottant ne compte sur une ombre portée pour être lu", () => {
+    const bloc = css.match(/\.cp-scene \.cp-mode-emploi,[\s\S]{0,700}?\}/)?.[0] ?? "";
+    expect(bloc, "le bloc des libellés flottants est introuvable").not.toBe("");
+    expect(bloc, "un libellé flottant sans fond propre").toMatch(/background:/);
+    expect(bloc, "une ombre portée tient lieu de fond").toMatch(/text-shadow:\s*none/);
+  });
+
+  /* ⚠️ Le départ est un ÉTAT, pas une phrase : il porte son étiquette, comme
+     « Arrivée » sur la carte. « Depuis X » se lisait comme un commentaire. */
+  it("le départ s'annonce comme un départ", () => {
+    expect(nu).toMatch(/cp-depart-etiquette/);
+  });
+});
