@@ -35,23 +35,43 @@ import donnees from "./fonds/fonds.json";
    silencieusement autre chose. ⭐ Un import masqué par une locale homonyme ne
    se signale pas : il se résout, simplement ailleurs. */
 import { battre as diffuserBattement } from "./horloge-fond";
+import { couchesAu, coucheVisible, type Phase } from "./fond-rotation";
 
 type Variante = { fichier: string; largeur: number; format: string; octets: number };
 type Fond = { id: string; variantes: Variante[] };
 
 /**
- * LA RÈGLE D'AFFICHAGE — arrêtée le 31/10/2026 :
- *     chaque fond apparaît NEUF secondes, plus UNE seconde de fondu.
+ * LA RÈGLE D'AFFICHAGE : chaque fond apparaît `VISIBLE_MS`, plus `FONDU_MS`
+ * de fondu. ⚠️ LES DURÉES NE SONT PAS RECOPIÉES ICI, et c'est délibéré — ce
+ * paragraphe annonçait « NEUF secondes » depuis le 31/10 et est devenu faux
+ * à la minute où le fondateur a demandé trois. Une note qui recopie une
+ * valeur vivante vieillit deux fois plus vite que la valeur : elle DÉSIGNE
+ * les deux constantes, elle ne les cite pas.
  *
  * ⭐ ELLE EST ÉCRITE COMME UNE SOMME, PAS COMME DEUX NOMBRES. La règle porte
  *    sur le temps où l'image est PLEINEMENT VISIBLE ; la durée du cycle s'en
  *    déduit. Écrire `DUREE = 10000` et `FONDU = 1000` côte à côte laisserait
  *    deux valeurs indépendantes que la prochaine main changerait séparément —
- *    et « 9 secondes » deviendrait 8, ou 11, sans que personne ne le voie.
+ *    et le temps pleinement visible deviendrait autre chose sans que
+ *    personne ne le voie.
  *    Ici, modifier l'une des deux garde la règle vraie par construction.
  */
-const VISIBLE_MS = 9000;
+/* 🔄 6/11/2026, demande du fondateur : « 1 fond d'écran = 3 secondes, et la
+   transition entre chaque = 1 seconde en fondu enchaîné ». Neuf secondes
+   venaient du 31/10.
+   ⚠️ ET LE COÛT EST DIT : le préchargement de l'image suivante disposait de
+      huit secondes, il n'en a plus que deux et demie (le palier moins le
+      fondu et sa marge). Sur un réseau lent, l'image entrante peut n'être
+      pas décodée à temps. C'est un arbitrage, pas un oubli — et c'est la
+      raison pour laquelle le préchargement part dès la FIN du fondu, au plus
+      tôt possible, et non au milieu du palier. */
+const VISIBLE_MS = 3000;
 const FONDU_MS = 1000;
+/* ⚠️ La couche sortante disparaît d'un coup EXACTEMENT à `FONDU_MS` (son
+   `transition-delay`). Lui changer son image à cet instant précis courrait
+   contre le navigateur : la marge garantit qu'elle est bien recouverte et à
+   zéro avant qu'on y touche. */
+const MARGE_MS = 150;
 /** le palier complet : ce qui sépare deux déclenchements */
 const DUREE_MS = VISIBLE_MS + FONDU_MS;
 
@@ -101,7 +121,7 @@ function Couche({ fond, visible, premier }: { fond: Fond; visible: boolean; prem
 export function Fond() {
   const [liste, setListe] = useState<Fond[]>(() => melanger(FONDS));
   const [i, setI] = useState(0);
-  const [visible, setVisible] = useState(0);
+  const [phase, setPhase] = useState<Phase>("repos");
   const tour = useRef(0);
 
   /* ⚠️ `matchMedia` est lu À CHAQUE RENDU et écouté : quelqu'un qui active la
@@ -126,7 +146,7 @@ export function Fond() {
         // ⚠️ Onglet caché : on ne tourne pas, et on ne télécharge pas.
         if (document.visibilityState === "visible") {
           setI((n) => n + 1);
-          setVisible((v) => 1 - v);
+          setPhase("fondu");
         }
         battre();
       }, DUREE_MS);
@@ -151,6 +171,16 @@ export function Fond() {
    */
   useEffect(() => { if (i > 0) diffuserBattement(i); }, [i]);
 
+  /* ⭐ LA PHASE REVIENT AU REPOS UNE FOIS LA SORTANTE RECOUVERTE, et c'est
+     seulement là que la couche cachée change d'image pour précharger la
+     suivante. Pendant le fondu elle garde la sienne : c'est tout le
+     correctif de l'éclair du 6/11. */
+  useEffect(() => {
+    if (i === 0) return;
+    const id = window.setTimeout(() => setPhase("repos"), FONDU_MS + MARGE_MS);
+    return () => clearTimeout(id);
+  }, [i]);
+
   /* ⭐ Le remélange se fait À LA FIN DU TOUR, et il garantit que la première
      du nouveau tour n'est pas la dernière de l'ancien — sinon la seule
      répétition qu'on voit jamais serait exactement celle qui se remarque. */
@@ -167,13 +197,16 @@ export function Fond() {
   }, [i, liste]);
 
   const n = liste.length;
-  const courant = liste[i % n];
-  const apres = liste[(i + 1) % n];
-  // la couche visible porte l'image courante, l'autre précharge la suivante
-  const couches = useMemo(
-    () => (visible === 0 ? [courant, apres] : [apres, courant]),
-    [courant, apres, visible],
-  );
+  /* 🔴 LA RÈGLE VIT DANS `fond-rotation.ts`, PURE ET TESTÉE. Elle tenait ici
+     en une ligne — `visible === 0 ? [courant, apres] : [apres, courant]` —
+     et cette ligne donnait l'image i+2 à la couche SORTANTE, qui reste
+     opaque une seconde entière sous la nouvelle. D'où l'éclair.
+     ⭐ Elle n'était pas observable depuis un banc : la rotation se suspend
+        quand l'onglet est caché. Une règle qu'on ne peut pas regarder doit
+        pouvoir se LIRE — d'où la fonction pure, et ses sept tests. */
+  const [a, b] = couchesAu(i, phase, n);
+  const visible = coucheVisible(i);
+  const couches = useMemo(() => [liste[a], liste[b]], [liste, a, b]);
 
   return (
     <div
