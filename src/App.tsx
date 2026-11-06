@@ -85,6 +85,19 @@ const MODULES = [
       "25 à pied, 12 en VTT, 5 à vélo, 4 en trail. Durées et dénivelés déclarés par l’Office.",
       "Export GPX, fonctionne hors ligne. Aucun compte, aucune donnée personnelle enregistrée.",
     ],
+    /* 🔴 LE LIEN SORTANT VERS L'OFFICE EST DESCENDU ICI LE 6/11/2026.
+       Il vivait dans la fiche de balade de l'accueil, que le moteur de
+       recherche remplace — et `InvitationBalade.tsx` le disait lui-même :
+       « c'est aussi le seul chemin vers leur fiche depuis l'accueil ».
+       ⭐ Il n'est pas allé sous le champ de recherche : créditer sous un
+          bloc qui n'affiche AUCUNE de leurs données dilue la mention au lieu
+          de l'honorer. Il est allé sous la seule section qui montre leur
+          travail — 46 circuits, 708 km, leurs durées et leurs dénivelés.
+       ⛔ Ce n'est pas une courtoisie : ces chiffres sont LEUR donnée, et une
+          carte qui les montre sans les nommer devient une fiche MANA au
+          premier coup d'œil. */
+    source: { label: "Office de tourisme Presqu’île de Crozon – Aulne Maritime",
+              href: "https://www.crozon-tourisme.bzh/" },
     cta: { label: "Ouvrir un parcours", href: "/promenades" },
   },
   {
@@ -410,6 +423,14 @@ export default function App() {
                 <ul className="section-faits">
                   {m.faits.map((f) => <li key={f}>{f}</li>)}
                 </ul>
+                {m.source && (
+                  <p className="section-source">
+                    Source :{" "}
+                    <a href={m.source.href} target="_blank" rel="noreferrer">
+                      {m.source.label}
+                    </a>
+                  </p>
+                )}
                 <div className="est-actions">
                   <a className="btn btn-primary" href={`${B}${m.cta.href}`}>
                     {m.cta.label}

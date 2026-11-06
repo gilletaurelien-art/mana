@@ -220,118 +220,148 @@ describe("le jeu de cartes des balades", () => {
   });
 
   /**
-   * ⛔ LA FICHE DE L'ACCUEIL PORTE LES MÊMES MENTIONS QUE CELLE DU TERRITOIRE.
-   *    Une fiche qui se déplace sans elles devient une fiche MANA au premier
-   *    coup d'œil — et c'est exactement ce qu'on s'interdit sur la donnée d'un
-   *    tiers, à cinq jours d'un rendez-vous où l'accord se négocie.
-   * ⚠️ Et elle ne charge PAS l'inventaire : la ligne « à moins de 150 m » vaut
-   *    ses 110 Ko sur un écran qu'on feuillette, pas sur une page d'accueil
-   *    qu'on traverse.
+   * ═══ L'ACCUEIL, APRÈS LE 6/11/2026 ═══════════════════════════════════
+   *
+   * 🔴 CES QUATRE GARDES SONT RETOURNÉS, PAS SUPPRIMÉS — et la façon dont
+   *    ils ont failli mourir mérite d'être écrite. Ils lisaient
+   *    `InvitationBalade.tsx` SUR LE DISQUE. Quand la fiche de balade a cédé
+   *    la place au moteur de recherche, le composant a cessé d'être rendu
+   *    mais le FICHIER est resté : les quatre sont restés VERTS en gardant
+   *    quelque chose que plus personne n'affichait.
+   *
+   * ⭐ L'un d'eux portait déjà, écrit noir sur blanc, « TROISIÈME FOIS QU'UN
+   *    GARDE NOMME UN FICHIER PLUTÔT QU'UNE RÈGLE ». Il venait de
+   *    recommencer une quatrième fois, en silence, dans son propre fichier.
+   *    **Un garde qui s'est déjà trompé de cible une fois ne s'en souvient
+   *    pas tout seul : nommer le défaut dans un commentaire ne l'empêche pas
+   *    de se reproduire à la ligne du dessous.**
+   *
+   * ➜ Ils lisent désormais CE QUE L'ACCUEIL REND : `Invitation.tsx` et les
+   *   composants qu'il importe vraiment, suivis par le code. Renommer,
+   *   scinder ou remplacer un composant de l'accueil ne peut plus endormir
+   *   ces règles — seul le fait de retirer la règle le peut, et cela se voit.
    */
-  it("la fiche de l'accueil crédite l'Office et ne charge pas l'inventaire", () => {
-    const inv = readFileSync(new URL("./InvitationBalade.tsx", import.meta.url), "utf8");
-    const net = inv.replace(/\/\*[\s\S]*?\*\//g, "")
-      .split("\n").filter((l) => !/^\s*(\/\/|\*)/.test(l)).join("\n");
-    /* ⛔ LE CRÉDIT DE L'OFFICE RESTE, ET IL EST UN LIEN. Le nom du circuit,
-       la durée et le dénivelé affichés sur l'accueil sont LEUR donnée : une
-       carte qui les montre sans les nommer devient une fiche MANA au premier
-       coup d'œil. C'est aussi le seul chemin vers leur fiche depuis là. */
-    expect(net).toMatch(/Office de tourisme/);
-    expect(net).toMatch(/href=\{w\?\.source/);
-    /* ⭐ LES ATTRIBUTIONS DE CARTE, ELLES, N'Y SONT PLUS — et c'est juste :
-       cette bulle n'affiche AUCUNE cartographie, ni tuile ni tracé. Créditer
-       OpenStreetMap et l'IGN sous un bloc qui ne montre pas leur travail
-       dilue la mention là où elle compte, sur les fiches de balade — qui la
-       portent toutes, et un test le tient plus haut. */
-    expect(net).not.toMatch(/ATTRIBUTION\[/);
-    expect(net).not.toMatch(/chargerLieux|lieuxProches/);
-    // ⛔ et aucun libellé qui promette une rotation qu'on ne fait pas
-    expect(net).not.toMatch(/balade du jour|coup de c(œ|oe)ur|sélection/i);
+  const accueil = () => {
+    const lire = (f: string) => readFileSync(new URL(f, import.meta.url), "utf8");
+    const racine = lire("./Invitation.tsx");
+    const importes = [...racine.matchAll(/from "\.\/([A-Za-z0-9_-]+)"/g)].map((m) => m[1]);
+    const rendus = importes.filter((n) => racine.includes(`<${n} `) || racine.includes(`<${n}/`));
+    return [racine, ...rendus.map((n) => lire(`./${n}.tsx`))].join("\n");
+  };
+  const sansCommentaires = (t: string) =>
+    t.replace(/\{\/\*[\s\S]*?\*\/\}/g, "").replace(/\/\*[\s\S]*?\*\//g, "")
+     .split("\n").filter((l) => !/^\s*(\/\/|\*)/.test(l)).join("\n");
+
+  /**
+   * ⛔ LE CRÉDIT DE L'OFFICE NE DISPARAÎT PAS AVEC LE BLOC QUI LE PORTAIT.
+   *    Il vivait dans la fiche de balade — « c'est aussi le seul chemin vers
+   *    leur fiche depuis l'accueil », disait-elle. En la remplaçant, le lien
+   *    sortant est DESCENDU dans la section qui montre leurs 46 circuits et
+   *    leurs 708 km, et pas sous le champ de recherche : créditer sous un
+   *    bloc qui n'affiche AUCUNE de leurs données dilue la mention.
+   * 🔴 Ces chiffres sont LEUR donnée. Une page qui les montre sans les nommer
+   *    devient une fiche MANA au premier coup d'œil.
+   */
+  it("l'accueil nomme l'Office ET mène chez lui", () => {
+    const app = sansCommentaires(readFileSync(new URL("./App.tsx", import.meta.url), "utf8"));
+    expect(app).toMatch(/Office de tourisme Presqu’île de Crozon – Aulne Maritime/);
+    expect(app).toMatch(/crozon-tourisme\.bzh/);
+    expect(app).toMatch(/MANA ne s’attribue rien et ne recommande rien/);
   });
 
   /**
-   * 🔴 LES DEUX PORTES DE L'ACCUEIL MENAIENT AU MÊME ENDROIT. « Voir les
-   *    balades » et « Voir sur la carte » pointaient toutes deux `/carte` :
-   *    deux boutons voisins, une seule destination, que seul le libellé
-   *    distinguait. ⭐ Deux contrôles côte à côte se comparent par leur
-   *    LIBELLÉ, jamais par leur URL — c'est ce qui rend ce doublon-là
-   *    invisible, et c'est le fondateur qui l'a vu, pas les tests.
-   * ⚠️ La carte du territoire n'était qu'un ÉTAT interne : elle a désormais
-   *    une adresse (`?vue=carte`), sans quoi on ne pouvait pas y mener.
+   * 🔴 RETOURNÉ LE 6/11 — ET SA RAISON SURVIT INTACTE. Il disait : l'accueil
+   *    « ne charge PAS l'inventaire — ses 110 Ko valent sur un écran qu'on
+   *    feuillette, pas sur une page d'accueil qu'on traverse ». La recherche
+   *    a BESOIN de l'inventaire ; la règle, elle, parlait du COÛT POUR QUI
+   *    TRAVERSE, pas de l'existence de l'appel.
+   * ⭐ Un interdit en test se franchit en le sachant : celui-ci a été lu,
+   *    compris, et retourné vers la propriété qu'il protégeait vraiment —
+   *    rien au premier rendu, l'inventaire au premier GESTE.
+   */
+  it("l'accueil ne paie l'inventaire qu'au premier geste, jamais au premier rendu", () => {
+    const net = sansCommentaires(accueil());
+    expect(net, "l'accueil doit savoir chercher").toMatch(/chargerLieux/);
+    /* ⛔ Aucun chargement au montage : ni `useEffect` d'ouverture, ni appel
+       nu dans le corps du composant. Il doit pendre à un geste. */
+    expect(net).not.toMatch(/useEffect\(\(\) => \{[^}]*chargerLieux/);
+    expect(net).toMatch(/on(Focus|Change)=/);
+  });
+
+  /**
+   * 🔴 LES DEUX PORTES DE L'ACCUEIL MENAIENT AU MÊME ENDROIT, en septembre :
+   *    « Voir les balades » et « Voir sur la carte » pointaient toutes deux
+   *    `/carte`. ⭐ Deux contrôles côte à côte se comparent par leur LIBELLÉ,
+   *    jamais par leur URL — c'est ce qui rend ce doublon invisible, et c'est
+   *    le fondateur qui l'a vu, pas les tests.
+   * ⚠️ Le défaut n'a jamais été « combien de portes » mais « deux contrôles
+   *    pour un seul endroit » : on compte donc les doublons, pas les portes.
    */
   it("aucune porte de l'accueil ne double un onglet de la barre du bas", () => {
-    /* ⚠️ TROISIÈME FOIS QU'UN GARDE NOMME UN FICHIER PLUTÔT QU'UNE RÈGLE.
-       Il lisait `Invitation.tsx` ; les deux portes ont déménagé dans la fiche
-       le 1/11 et il a crié « 0 porte ». ⭐ Ce qui doit rester vrai, c'est que
-       L'ACCUEIL offre deux portes vers deux endroits — pas qu'un fichier
-       donné les contienne. On lit donc l'accueil ET ce qu'il rend. */
-    const net = ["./Invitation.tsx", "./InvitationBalade.tsx"]
-      .map((f) => readFileSync(new URL(f, import.meta.url), "utf8"))
-      .join("\n")
-      .replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
-    const liens = [...net.matchAll(/href=\{`\$\{base\}([^`]*)`\}/g)].map((m) => m[1]);
-    const portes = liens.filter((h) => h.startsWith("/carte"));
-    expect(portes.length, "l'accueil n'offre plus aucune porte").toBeGreaterThan(0);
-
-    /* 🔴 LE TEST A ÉTÉ RETOURNÉ LE 1/11, PAS SUPPRIMÉ. Il exigeait DEUX
-       portes ; le fondateur en a retiré une — « CARTE » doublait le premier
-       onglet de la barre du bas. ⭐ Ce qu'il protégeait reste vrai sous une
-       autre forme, et sous une forme PLUS JUSTE : le défaut n'était jamais
-       « combien de portes », c'était « deux contrôles pour un seul endroit ».
-       Un compte figé l'aurait dit ; cette règle-ci le dit ET couvre le cas
-       que le compte ratait, celui du doublon avec la barre du bas. */
-    const barre = [...readFileSync(new URL("./App.tsx", import.meta.url), "utf8")
-      .matchAll(/<a[^>]*href=\{`\$\{B\}([^`]*)`\}[^>]*aria-current/g)].map((m) => m[1]);
+    const net = accueil().replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
+    /* ⚠️ ON LIT TOUTES LES DESTINATIONS, PAS SEULEMENT LES `href` LITTÉRAUX.
+       Le moteur de recherche bâtit son URL dans une fonction
+       (`${base}/promenades?lon=…`) : un motif collé à `href={` ne l'aurait
+       jamais vue, et ce garde aurait annoncé « aucune porte » d'un accueil
+       qui en a trois. ⭐ Un garde qui ne reconnaît qu'une FORME d'écriture
+       ne garde que cette forme-là. */
+    const liens = [...net.matchAll(/\$\{base\}(\/[a-z0-9-]*)/g)].map((m) => m[1]);
+    const app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
+    const barre = [...app.matchAll(/<a[^>]*href=\{`\$\{B\}([^`]*)`\}[^>]*aria-current/g)].map((m) => m[1]);
     expect(barre.length, "les onglets de la barre du bas").toBeGreaterThanOrEqual(4);
 
-    expect(new Set(portes).size, `portes en double : ${portes.join(" ")}`).toBe(portes.length);
-    for (const p of portes) {
-      expect(barre, `« ${p} » est déjà un onglet de la barre du bas`).not.toContain(p);
-    }
+    expect(liens.length, "l'accueil n'offre plus aucune porte").toBeGreaterThan(0);
 
+    /* 🔴 LA CLAUSE « AUCUNE DESTINATION EN DOUBLE » EST RETIRÉE, ET IL FAUT
+       DIRE POURQUOI PLUTÔT QUE DE LA LAISSER MOURIR. Elle comptait les
+       occurrences de texte. Depuis le 6/11, le moteur de recherche mène à
+       `/promenades` par TROIS chemins — un lieu choisi, une requête libre,
+       et la porte au repos — qui sont les BRANCHES D'UN SEUL contrôle, pas
+       trois contrôles. Un comptage textuel ne sait pas distinguer une
+       branche d'un jumeau : maintenu, il refusait du travail juste.
+       ⭐ Ce qu'elle protégeait reste vrai sous une forme VÉRIFIABLE, et la
+          voici juste en dessous : deux contrôles ne se font concurrence que
+          s'ils sont visibles EN MÊME TEMPS. */
+    for (const l of liens) {
+      expect(barre.map((b) => b.split("?")[0]), `« ${l} » est déjà un onglet de la barre du bas`)
+        .not.toContain(l);
+    }
     // ⭐ et l'écran sait entrer par `?vue=carte`, que la barre emploie, sinon le lien ment
     expect(barre).toContain("/carte?vue=carte");
-    /* 🔴 RETOURNÉ LE 3/11/2026 — demande du fondateur : la carte est devenue
-       le DÉFAUT de cet écran (elle ne l'était pas quand ce garde a été écrit),
-       et `?vue=carte` y mène donc toujours, mais sans plus être la branche
-       que le code compare explicitement — c'est `?vue=jeu` qui, désormais,
-       distingue l'autre vue. Le lien de la barre ne ment pas tant que
-       l'écran n'exige PAS `vue === "jeu"` pour y entrer. */
-    const ecran = readFileSync(new URL("./EcranTerritoire.tsx", import.meta.url), "utf8");
-    expect(ecran).toMatch(/get\("vue"\) === "jeu"/);
+    const ecranT = readFileSync(new URL("./EcranTerritoire.tsx", import.meta.url), "utf8");
+    expect(ecranT).toMatch(/get\("vue"\) === "jeu"/);
   });
 
   /**
-   * ⭐ UNE SEULE HORLOGE. La fiche de l'accueil change EN MÊME TEMPS que
-   *    l'image de fond — pas « toutes les dix secondes elle aussi ». Deux
-   *    minuteries de même durée ne donnent pas la même heure : elles donnent
-   *    deux heures qui se ressemblent de moins en moins, parce que l'onglet
-   *    caché gèle l'une et pas l'autre, qu'un rendu redémarre l'une, et que
-   *    le navigateur étale les réveils.
-   * ⛔ La fiche ne doit donc posséder AUCUNE minuterie de rotation : elle
-   *    s'abonne au battement de `Fond`.
+   * 🔴 CE GARDE REMPLACE LE COMPTAGE D'URL EN DOUBLE, et il dit la vraie
+   *    règle : le défaut de septembre — « Voir les balades » et « Voir sur
+   *    la carte », deux boutons voisins, une seule destination — tenait à ce
+   *    qu'ils étaient VISIBLES ENSEMBLE. Deux contrôles côte à côte se
+   *    comparent par leur libellé, jamais par leur URL.
+   * ⭐ La porte au repos et la liste de résultats mènent toutes deux à
+   *    `/promenades`, et ce n'est PAS ce défaut : elles s'excluent. L'une ne
+   *    paraît que le champ vide, l'autre que le champ rempli.
    */
-  it("la fiche de l'accueil tourne sur l'horloge du fond, pas sur la sienne", () => {
-    const f = readFileSync(new URL("./InvitationBalade.tsx", import.meta.url), "utf8");
-    const net = f.replace(/\/\*[\s\S]*?\*\//g, "").split("\n")
-      .filter((l) => !/^\s*(\/\/|\*)/.test(l)).join("\n");
-    expect(net).toMatch(/ecouter\(/);
-    expect(net).not.toMatch(/setInterval|setTimeout/);
-    // et c'est bien `Fond` qui diffuse, à l'instant où l'image change
+  it("la porte au repos et les résultats ne paraissent jamais ensemble", () => {
+    const rech = readFileSync(new URL("./RechercheAccueil.tsx", import.meta.url), "utf8");
+    expect(rech, "la porte doit être conditionnée au champ VIDE").toMatch(/\{!requete && \(/);
+    expect(rech, "les résultats au champ REMPLI").toMatch(/\{resultats\.length > 0 && \(/);
+  });
+
+  /**
+   * ⭐ UNE SEULE HORLOGE, et la règle survit à la disparition de la fiche qui
+   *    l'avait motivée. Deux minuteries de même durée ne donnent pas la même
+   *    heure : l'onglet caché gèle l'une et pas l'autre, un rendu redémarre
+   *    l'une, le navigateur étale les réveils. `Fond` bat, les autres
+   *    s'abonnent.
+   * 🔴 Et c'est devenu PLUS strict qu'avant : aucun composant de l'accueil,
+   *    quel qu'il soit, ne possède de minuterie. L'ancien garde ne le
+   *    demandait qu'à un fichier nommé.
+   */
+  it("aucun composant de l'accueil ne tient sa propre minuterie", () => {
+    expect(sansCommentaires(accueil())).not.toMatch(/setInterval|setTimeout/);
     const fond = readFileSync(new URL("./Fond.tsx", import.meta.url), "utf8");
     expect(fond).toMatch(/diffuserBattement\(n \+ 1\)/);
-  });
-
-  /**
-   * 🔴 UN GEL QUI NE TIENT QUE PAR LE SURVOL NE PROTÈGE PERSONNE SUR UN
-   *    TÉLÉPHONE — c'est-à-dire là où cette application se regarde. La
-   *    première version n'écoutait que `onPointerEnter`.
-   * ⭐ Un garde qui ne protège que la souris ne protège pas les marcheurs.
-   */
-  it("la rotation se gèle au doigt, pas seulement au survol", () => {
-    const f = readFileSync(new URL("./InvitationBalade.tsx", import.meta.url), "utf8");
-    expect(f).toMatch(/onPointerDown=\{\(\) => setFige\(true\)\}/);
-    expect(f).toMatch(/onFocusCapture=\{\(\) => setFige\(true\)\}/);
   });
 
   /** ⛔ « À proximité » n'est pas « sur le chemin » : le seuil est DIT. */

@@ -3227,3 +3227,72 @@ body:has(.jeu), body:has(.terr) { padding-bottom: 0; }
    « une chapelle… ». Mesuré, pas deviné : un élément flex sans `flex-grow`
    prend la taille de ce qu'il porte, et personne ne l'a écrit nulle part. */
 .cp-entree-dire { flex: 1 1 auto; width: 100%; }
+
+/* ── LE MOTEUR DE RECHERCHE SUR L'ACCUEIL — 6/11/2026 ─────────────────
+   Il remplace la fiche de balade. ⭐ Il reprend la GRAMMAIRE du champ de la
+   carte (`.jeu-chercher`) parce que c'est le MÊME contrôle : même hauteur,
+   mêmes jetons de bulle, même rayon. Deux dessins pour une seule fonction,
+   c'est ce qui fait croire à deux fonctions.
+   ⚠️ Mais pas les mêmes règles de POSITION : là-bas la liste flotte au-dessus
+   d'une carte (sinon elle en changerait la taille à chaque frappe), ici elle
+   est dans le flux — l'accueil n'a rien dessous qu'elle doive épargner. */
+.rech { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.rech-forme {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 14px; height: 46px; border-radius: var(--r-rond);
+  background: color-mix(in srgb, var(--bulle-unie) 88%, transparent);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--bulle-trait);
+  color: var(--bulle-texte);
+}
+.rech-forme:focus-within { border-color: var(--ocre); }
+.rech-loupe, .rech-vider svg {
+  width: 20px; height: 20px; flex: none;
+  fill: none; stroke: currentColor; stroke-width: 1.8;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.rech-loupe { opacity: 0.8; }
+.rech-champ {
+  flex: 1 1 auto; min-width: 0;
+  background: none; border: none; color: inherit; font: inherit;
+  font-size: var(--t-s);
+}
+.rech-champ:focus { outline: none; }
+.rech-champ:focus-visible { outline: 2px solid var(--ocre); outline-offset: 2px; }
+.rech-champ::placeholder { color: var(--bulle-texte-doux); }
+/* ⚠️ La croix native de `type="search"` double le bouton « Effacer » et ne se
+   stylise pas : on la retire plutôt que d'en montrer deux. */
+.rech-champ::-webkit-search-cancel-button { display: none; }
+.rech-vider {
+  flex: none; display: grid; place-items: center;
+  width: 32px; height: 32px; padding: 0;
+  background: none; border: none; border-radius: var(--r-rond);
+  color: var(--bulle-texte-doux); cursor: pointer;
+}
+.rech-vider:hover { color: var(--bulle-texte); }
+.rech-mot { margin: 0; padding: 0 14px; font-size: var(--t-xs); color: var(--bulle-texte-doux); }
+.rech-liste {
+  list-style: none; margin: 0; padding: 6px; display: grid; gap: 2px;
+  border-radius: var(--r-l);
+  background: color-mix(in srgb, var(--bulle-unie) 94%, transparent);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--bulle-trait);
+  box-shadow: 0 14px 34px rgb(13 16 12 / 42%);
+  /* ⚠️ Huit résultats peuvent dépasser un petit écran : la liste défile chez
+     elle, la page ne bouge pas sous le doigt qui cherche. */
+  max-height: 46vh; overflow-y: auto;
+}
+.rech-item {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+  padding: 10px 12px; min-height: 44px;
+  border-radius: var(--r-m); color: var(--bulle-texte); text-decoration: none;
+}
+.rech-item:hover, .rech-item:focus-visible {
+  background: color-mix(in srgb, var(--craie) 10%, transparent);
+}
+.rech-item-nom { font-family: var(--titre); font-size: var(--t-s); }
+.rech-item-detail { font-size: var(--t-2xs); color: var(--bulle-texte-doux); flex: none; }
+
+/* Le crédit sortant d'une source, sous la section qui affiche SA donnée. */
+.section-source { margin: var(--sp-2) 0 0; font-size: var(--t-xs); color: var(--texte-doux); }
+.section-source a { color: inherit; }

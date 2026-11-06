@@ -31,6 +31,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { TERRITOIRES, TOUT, territoireDe, urlGraphe } from "./territoires";
 import { chargerOT, type ItineraireOT } from "./ot";
 import { chargerLieux, lienWiki, type Inventaire, type Lieu } from "./lieux";
+import { chercher, type Resultat } from "./recherche";
 import {
   libelleCategorie, couleurCategorie, COULEUR_CATEGORIE, COULEUR_CATEGORIE_DEFAUT,
 } from "./categories";
@@ -700,82 +701,26 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
    *    Vierge ». `normalize("NFD")` puis retrait des diacritiques — sans ça,
    *    la moitié des toponymes bretons sont introuvables à qui tape vite.
    */
-  const plat = (t: string) =>
-    t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-
-  /**
-   * 🔴 TROIS INVENTAIRES, ET LE PREMIER JET N'EN AVAIT QU'UN — LE MAUVAIS.
-   *    La recherche ne lisait que les 339 lieux du graphe. Or « Île Vierge »,
-   *    « Pointe des Espagnols », « Pen-Hir » n'y figurent pas : ce sont les
-   *    noms de nos PROMENADES et de leurs étapes. Mesuré le 31/10 — « Île
-   *    Vierge » rendait zéro résultat sur un site qui propose la Balade
-   *    Sonore de l'Île Vierge. Et la moitié des 339 sont génériques :
-   *    « Point de vue », « Calvaire », quatre « menhir ».
-   *    ⭐ Un index n'est pas « les données qu'on a sous la main » : c'est ce
-   *       que les gens tapent. On cherche donc d'abord dans les promenades,
-   *       puis dans leurs étapes, puis dans le graphe — et l'ordre du rendu
-   *       est cet ordre-là, parce qu'une promenade répond mieux qu'un point.
-   */
-  type Resultat =
-    | { genre: "promenade"; nom: string; detail: string; slug: string; g: [number, number] }
-    /* ⚠️ `desc` et `wiki` VOYAGENT AVEC LE RÉSULTAT. Sans eux, le même lieu
-       rendait une fiche riche au clic et une fiche nue à la recherche : deux
-       chemins vers le même endroit, deux niveaux de détail, et rien pour le
-       dire. ⭐ Une donnée attachée à un lieu doit suivre le lieu, pas la
-       façon dont on l'a trouvé. */
-    | { genre: "lieu"; nom: string; detail: string; g: [number, number];
-        desc?: string; wiki?: string };
-
-  const resultats = useMemo<Resultat[]>(() => {
-    const q = plat(requete.trim());
-    if (q.length < 2) return [];
-
-    const promenades: Resultat[] = VITRINE
-      .filter((w) => plat(w.titre).includes(q) || plat(w.lieu).includes(q))
-      .map((w) => ({
-        genre: "promenade", nom: w.titre, slug: w.slug,
-        detail: `${w.lieu} · ${w.distanceKm.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} km`,
-        g: [w.points[0].lon, w.points[0].lat],
-      }));
-
-    const etapes: Resultat[] = VITRINE.flatMap((w) =>
-      w.etapes.filter((e) => plat(e.nom).includes(q)).map((e) => ({
-        genre: "lieu" as const, nom: e.nom,
-        detail: `${libelleCategorie(e.categorie)} · sur ${w.titre}`,
-        g: [e.lon, e.lat] as [number, number],
-      })),
-    );
-
-    /* ⭐ LA RECHERCHE PUISE DANS L'INVENTAIRE, pas seulement dans les lieux
-       accrochés au réseau. Le graphe n'en porte que ceux qui touchent un
-       chemin ; l'inventaire porte tout — y compris une épave, un îlot ou une
-       baie, qu'aucun sentier ne longe.
-       ⚠️ Et seulement les NOMMÉS : chercher « plage » ne doit pas rendre
-          cinquante résultats tous intitulés « Plage ». Les anonymes se voient
-          sur la carte, ils ne se cherchent pas par leur nom. */
-    const lieux: Resultat[] = sitesIci
-      .filter((l) => l.n && plat(l.n).includes(q))
-      .map((l) => ({
-        genre: "lieu" as const, nom: l.n!,
-        detail: inv?.libelles[l.c] ?? l.c, g: l.g,
-        desc: l.desc, wiki: l.wiki,
-      }));
-
-    /* ⚠️ Dédoublonnage par NOM + POSITION ARRONDIE, pas par nom seul : il y a
-       quatre « menhir » distincts sur la presqu'île, et les fondre en un seul
-       en effacerait trois. Mais une étape de promenade et le point OSM
-       correspondant sont le même endroit — eux, il faut les fondre. */
-    const vus = new Set<string>();
-    return [...promenades, ...etapes, ...lieux]
-      .filter((r) => {
-        const clef = `${plat(r.nom)}@${r.g[0].toFixed(4)},${r.g[1].toFixed(4)}`;
-        if (vus.has(clef)) return false;
-        vus.add(clef); return true;
-      })
-      // ⚠️ Plafonné à huit : une liste qui recouvre la carte n'aide plus à
-      //    choisir, elle cache ce qu'on cherchait.
-      .slice(0, 8);
-  }, [requete, graphe, sitesIci, inv]);
+  /* 🔴 LE MOTEUR A QUITTÉ CE FICHIER LE 6/11/2026 → `recherche.ts`.
+     L'accueil en redemandait un : `Invitation.tsx` portait depuis le 1/11 la
+     note « le site a perdu son entrée par le nom de lieu […] c'est écrit ici
+     pour qu'on ne l'oublie pas en trouvant l'accueil plus beau ». Le réécrire
+     là-bas aurait donné DEUX moteurs.
+     ⭐ Ce dépôt sait ce que coûtent deux moteurs pour un même travail : les
+        plages du monde sont restées à 5 % pendant seize jours parce que le
+        pipeline français prenait `nwr` pendant que le pipeline monde prenait
+        `node`. Le bon geste existait, à côté du mauvais, et rien ne les
+        confrontait.
+     ⚠️ DÉPLACEMENT, PAS RÉÉCRITURE : la logique est identique, et elle a reçu
+        ses treize tests À L'EXTRACTION — elle n'en avait aucun ici. */
+  const resultats = useMemo<Resultat[]>(
+    () => chercher(requete, {
+      promenades: VITRINE,
+      lieux: sitesIci,
+      libelle: (c) => inv?.libelles[c] ?? libelleCategorie(c),
+    }),
+    [requete, sitesIci, inv],
+  );
 
   /** ⭐ Un résultat « promenade » SÉLECTIONNE la promenade — le tracé
    *     s'allume, la feuille s'ouvre sur sa fiche. Un résultat « lieu » pose

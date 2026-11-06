@@ -24,7 +24,7 @@
  *    précédente : « Autour de moi », « ou », un champ, et un lien vers la
  *    carte, cela faisait quatre décisions sur un écran qui en demande une.
  */
-import { InvitationBalade } from "./InvitationBalade";
+import { RechercheAccueil } from "./RechercheAccueil";
 
 export function Invitation({ base }: { base: string }) {
   /* 🔴 « AUTOUR DE MOI » EST PARTI LE 1/11/2026, sur demande du fondateur, et
@@ -85,12 +85,21 @@ export function Invitation({ base }: { base: string }) {
           </p>
         </div>
 
-        {/* ⭐ LA FICHE DU TERRITOIRE, SUR L'ACCUEIL. C'est la même feuille que
-            l'écran suivant — mêmes chiffres, mêmes mentions, même dessin : le
-            seul moyen que l'accueil ne promette pas autre chose que ce qu'on
-            trouvera. ⚠️ Elle arrive après le premier rendu et ne porte rien :
-            si `ot.json` n'arrive pas, l'accueil reste entier. */}
-        <InvitationBalade base={base} />
+        {/* 🔴 LA FICHE DE BALADE A CÉDÉ LA PLACE AU MOTEUR DE RECHERCHE —
+            6/11/2026, demande du fondateur. Elle PROPOSAIT un circuit ; le
+            champ fait ENTRER par le nom du lieu qu'on a en tête.
+            ⭐ Et c'est la note du 1/11, vingt lignes plus haut, qui se
+               referme : « le site a perdu son entrée par le nom de lieu […]
+               c'est écrit ici pour qu'on ne l'oublie pas en trouvant
+               l'accueil plus beau ». Elle a attendu cinq jours.
+            ⚠️ CE QUE LA FICHE EMPORTAIT AVEC ELLE, ET QU'IL A FALLU REPOSER :
+               elle portait le SEUL lien sortant vers l'Office de tourisme
+               depuis l'accueil. Il n'est pas venu ici — créditer sous un
+               champ de recherche, qui n'affiche aucune de leurs données,
+               diluerait la mention au lieu de l'honorer. Il est descendu
+               dans la section « Carnet, export GPX et circuits balisés »,
+               celle qui montre leurs 46 circuits et leurs 708 km. */}
+        <RechercheAccueil base={base} />
 
 
       </div>
