@@ -72,14 +72,45 @@ import type { Walk, WalkPoint } from "./walks";
    ici, où le dispositif est le plus long à comprendre. */
 import { STYLE_CARTE as STYLE } from "./carte-fond";
 
+/**
+ * UN TRACÉ POSÉ SUR LA CARTE — 6/11/2026, demande du fondateur :
+ * « affiche le tracé 1 en plein et le tracé 2 dans une autre couleur […]
+ *  donne à l'arrivée la même couleur que la couleur du tracé. Tout doit se
+ *  lire et se comprendre sur la carte. Pour choisir un tracé, cliquer sur le
+ *  tracé, tout simplement. »
+ *
+ * ⭐ C'EST LA CARTE QUI DEVIENT L'INTERFACE. Les trois propositions vivaient
+ *    en pastilles posées DEVANT le paysage : on lisait trois noms et trois
+ *    distances, et on ne voyait qu'un seul chemin. Les dessiner toutes les
+ *    trois répond à la question qu'on se pose vraiment — « lequel va où ? » —
+ *    sans un mot.
+ *
+ * ⚠️ L'ARRIVÉE PORTE LA COULEUR DE SON TRACÉ, et ce n'est pas décoratif :
+ *    c'est le SEUL lien entre un bout de chemin et son but. Trois arrivées de
+ *    la même couleur rendraient les trois tracés anonymes.
+ */
+export interface TraceCarte {
+  nom: string;
+  points: WalkPoint[];
+  /** ⚠️ Un trait par morceau — voir `redessiner` : les enchaîner en une
+   *  ligne unique dessinerait des droites à travers la Bretagne. */
+  traits?: WalkPoint[][];
+  couleur: string;
+  choisie: boolean;
+  onChoisir?: () => void;
+}
+
 export function CarteReelle({
   walk,
   moi,
   hauteur = 420,
   marge = 0,
+  traces,
 }: {
   walk: Walk;
   moi?: WalkPoint | null;
+  /** Trois chemins à la fois. Absent = un seul, celui de `walk`. */
+  traces?: TraceCarte[];
   /** ⭐ UN NOMBRE (des pixels) OU UNE LONGUEUR CSS. Depuis le 6/11/2026,
    *  l'écran de l'offre promenade donne à la carte TOUTE la scène : sa
    *  hauteur ne se compte pas en pixels, elle se prend du conteneur.
@@ -108,6 +139,13 @@ export function CarteReelle({
   //    silence — et rien ne le relançait. Mesuré en ligne : huit repères
   //    présents dans le DOM, `style.transform` vide sur les huit.
   const [carte, setCarte] = useState<CarteML | null>(null);
+  /* ⭐ Mise à jour À CHAQUE RENDU, hors effet : `redessiner` la lit depuis
+     une fermeture créée une seule fois, à la naissance de la carte. */
+  const tracesRef = useRef<TraceCarte[] | undefined>(traces);
+  tracesRef.current = traces;
+  const clefTraces = (traces ?? []).map((t) => t.nom).join("|");
+
+
 
   useEffect(() => {
     if (!plan.current) return;
@@ -131,7 +169,31 @@ export function CarteReelle({
     const sous = svg.current?.querySelector<SVGPathElement>("#trace-sous");
     const trait = svg.current?.querySelector<SVGPathElement>("#trace-trait");
 
+    /* ⚠️ `redessiner` LIT UNE RÉFÉRENCE, PAS LA PROP. Choisir un tracé change
+       `traces` ; si l'effet en dépendait, chaque clic DÉTRUIRAIT ET
+       RECONSTRUIRAIT la carte — tuiles rechargées, cadrage perdu, et le
+       chemin qu'on vient de choisir hors de l'écran. La sélection ne touche
+       que des classes et des couleurs, que React rend ; la géométrie, elle,
+       se recalcule à chaque image sans recréer quoi que ce soit. */
+    const chemin = (pts: WalkPoint[], morceaux?: WalkPoint[][]) =>
+      (morceaux?.length ? morceaux : [pts])
+        .filter((m2) => m2.length > 0)
+        .map((m2) => "M " + m2.map((pt) => {
+          const q = m.project([pt.lon, pt.lat]);
+          return `${q.x.toFixed(1)} ${q.y.toFixed(1)}`;
+        }).join(" L "))
+        .join(" ");
+
     const redessiner = () => {
+      const t = tracesRef.current;
+      if (t?.length) {
+        for (const el of svg.current?.querySelectorAll<SVGPathElement>("[data-trace]") ?? []) {
+          const i = Number(el.dataset.trace);
+          const d = t[i] ? chemin(t[i].points, t[i].traits) : "";
+          el.setAttribute("d", d);
+        }
+        return;
+      }
       if (!sous || !trait) return;
       // ⛔ UN SOUS-CHEMIN PAR MORCEAU — « M … L … M … L … », jamais un seul
       //    « M » suivi de tous les points. Un itinéraire breton est stocké en
@@ -160,7 +222,11 @@ export function CarteReelle({
 
     const cadrer = () => {
       m.resize();
-      const b = bbox(walk.points);
+      /* ⭐ LE CADRAGE ENGLOBE LES TROIS. Cadrer sur le seul tracé choisi
+         laisserait les deux autres hors de l'écran : on ne choisit pas entre
+         des chemins qu'on ne voit pas. */
+      const t = tracesRef.current;
+      const b = bbox(t?.length ? t.flatMap((x) => x.points) : walk.points);
       const dLon = (b.lonMax - b.lonMin) * marge;
       const dLat = (b.latMax - b.latMin) * marge;
       m.fitBounds(
@@ -185,7 +251,10 @@ export function CarteReelle({
       m.remove();
       setCarte(null);
     };
-  }, [walk, marge]);
+    /* ⚠️ `clefTraces` et non `traces` : l'ensemble des propositions change
+       quand on change de départ (il faut recadrer), le CHOIX ne change que
+       des couleurs (il ne faut surtout pas recadrer). */
+  }, [walk, marge, clefTraces]);
 
   const depart = walk.points[0];
   const arrivee = walk.points[walk.points.length - 1];
@@ -193,9 +262,52 @@ export function CarteReelle({
   return (
     <figure className="carte-reelle">
       <div className="carte-plan" style={{ height: hauteur }} ref={plan}>
-        <svg className="carte-calque" ref={svg} aria-hidden="true">
-          <path id="trace-sous" />
-          <path id="trace-trait" />
+        <svg
+          className={`carte-calque${traces?.length ? " carte-calque-choisir" : ""}`}
+          ref={svg}
+          aria-hidden={traces?.length ? undefined : true}
+        >
+          {traces?.length ? (
+            /* ⭐ LE CHOISI EN DERNIER, DONC AU-DESSUS. Trois chemins se
+               croisent forcément : celui qu'on tient doit passer par-dessus
+               les deux autres, sinon on le perd aux croisements. */
+            [...traces.keys()]
+              .sort((a2, b2) => Number(traces[a2].choisie) - Number(traces[b2].choisie))
+              .map((i) => {
+                const t = traces[i];
+                return (
+                  <g key={t.nom} className={t.choisie ? "trace est-choisie" : "trace"}>
+                    <path data-trace={i} className="trace-halo" />
+                    <path data-trace={i} className="trace-ligne" style={{ stroke: t.couleur }} />
+                    {/* ⛔ UNE CIBLE DE CLIC LARGE ET INVISIBLE. Un trait de
+                        3 px ne se touche pas au pouce : la règle des 44 px
+                        vaut aussi pour une ligne. Ce chemin-ci ne se voit
+                        pas, il s'attrape.
+                        ⚠️ Et il est FOCALISABLE au clavier, avec un nom : le
+                           fondateur demande « cliquer sur le tracé, tout
+                           simplement » — ce qui ne doit pas vouloir dire
+                           « à la souris seulement ». */}
+                    <path
+                      data-trace={i}
+                      className="trace-cible"
+                      role="button"
+                      tabIndex={0}
+                      aria-pressed={t.choisie}
+                      aria-label={`Promenade vers ${t.nom}`}
+                      onClick={t.onChoisir}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); t.onChoisir?.(); }
+                      }}
+                    />
+                  </g>
+                );
+              })
+          ) : (
+            <>
+              <path id="trace-sous" />
+              <path id="trace-trait" />
+            </>
+          )}
         </svg>
         <ul className="carte-reperes">
           {/* ⚠️ SUR UNE BOUCLE, DÉPART ET ARRIVÉE SONT LE MÊME POINT : deux
@@ -218,9 +330,28 @@ export function CarteReelle({
           {walk.etapes.map((e, i) => (
             <Repere key={e.nom} point={e} libelle={String(i + 1)} carte={carte} variante="etape" titre={e.nom} />
           ))}
-          {!walk.boucle && (
-            <Repere point={arrivee} libelle="Arrivée" carte={carte} variante="arrivee" />
-          )}
+          {/* ⭐ UNE ARRIVÉE PAR TRACÉ, À LA COULEUR DE SON TRACÉ. C'est le
+              seul lien entre un bout de chemin et son but : trois arrivées
+              de la même couleur rendraient les trois chemins anonymes.
+              ⚠️ Celle du tracé choisi porte son NOM ; les deux autres ne
+                 portent qu'un point. Trois étiquettes de toponymes bretons
+                 sur une carte de téléphone se recouvrent — et une étiquette
+                 illisible ne nomme rien. */}
+          {traces?.length
+            ? traces.map((t) => (
+                <Repere
+                  key={t.nom}
+                  point={t.points[t.points.length - 1]}
+                  libelle={t.choisie ? t.nom : ""}
+                  carte={carte}
+                  variante="arrivee"
+                  titre={t.nom}
+                  couleur={t.couleur}
+                />
+              ))
+            : !walk.boucle && (
+                <Repere point={arrivee} libelle="Arrivée" carte={carte} variante="arrivee" />
+              )}
           {moi && <Repere point={moi} libelle="Moi" carte={carte} variante="moi" />}
         </ul>
       </div>
@@ -240,12 +371,16 @@ function Repere({
   carte,
   variante,
   titre,
+  couleur,
 }: {
   point: WalkPoint;
   libelle: string;
   carte: CarteML | null;
   variante: string;
   titre?: string;
+  /** ⚠️ Passée en variable CSS, pas en `background` : la pastille a aussi un
+   *  liseré et une ombre, que le thème décide. On ne lui donne que la teinte. */
+  couleur?: string;
 }) {
   const li = useRef<HTMLLIElement | null>(null);
 
@@ -266,7 +401,15 @@ function Repere({
   }, [carte, point.lat, point.lon]);
 
   return (
-    <li ref={li} className={`carte-repere carte-repere-${variante}`} title={titre ?? libelle}>
+    <li
+      ref={li}
+      className={`carte-repere carte-repere-${variante}`}
+      title={titre ?? libelle}
+      /* ⚠️ Une VARIABLE, pas un `background` : la pastille porte aussi un
+         liseré et une ombre que le thème décide. On ne lui donne que la
+         teinte, elle garde son dessin. */
+      style={couleur ? ({ ["--repere-couleur" as string]: couleur }) : undefined}
+    >
       {variante === "etape" ? (
         <span className="carte-pastille carte-numero">{libelle}</span>
       ) : (

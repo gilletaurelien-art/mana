@@ -1313,6 +1313,48 @@ body { padding-bottom: var(--reserve-barre); }
 #trace-trait { fill: none; stroke: var(--ocre); stroke-width: 3;
                stroke-linecap: round; stroke-linejoin: round; }
 
+/* ══ TROIS TRACÉS SUR LA CARTE — 6/11/2026 ══════════════════════════════
+   Demande du fondateur : « affiche le tracé 1 en plein et le tracé 2 dans une
+   autre couleur […] tout doit se lire et se comprendre sur la carte. Pour
+   choisir un tracé, cliquer sur le tracé, tout simplement. »
+   ⭐ La carte DEVIENT l'interface : les trois propositions ne sont plus des
+      pastilles posées devant le paysage, elles sont le paysage. */
+.trace-halo, .trace-ligne, .trace-cible {
+  fill: none; stroke-linecap: round; stroke-linejoin: round;
+}
+.trace-halo { stroke: var(--craie); stroke-width: 7; stroke-opacity: .85; }
+.trace-ligne { stroke-width: 3; }
+/* ⛔ UNE CIBLE DE CLIC LARGE ET INVISIBLE : un trait de 3 px ne s'attrape pas
+   au pouce. La règle des 44 px vaut aussi pour une ligne — ici 22 px de part
+   et d'autre, ce qui donne une bande de 44. */
+.trace-cible {
+  stroke: transparent; stroke-width: 44;
+  cursor: pointer; pointer-events: stroke;
+}
+.carte-calque-choisir { pointer-events: none; }
+.carte-calque-choisir .trace-cible { pointer-events: stroke; }
+.trace-cible:focus-visible { outline: none; }
+.trace-cible:focus-visible + * , .trace:focus-within .trace-ligne {
+  stroke-dasharray: 1 6; stroke-width: 5;
+}
+/* ⚠️ LES NON-CHOISIS S'EFFACENT SANS DISPARAÎTRE. Les masquer reviendrait à
+   ne plus proposer que le choix en cours ; les laisser pleins ferait trois
+   chemins de même poids, et on ne saurait plus lequel on tient. */
+.trace { stroke-opacity: .55; }
+.trace .trace-halo { stroke-width: 5; stroke-opacity: .5; }
+.trace.est-choisie { stroke-opacity: 1; }
+.trace.est-choisie .trace-halo { stroke-width: 8; stroke-opacity: .9; }
+.trace.est-choisie .trace-ligne { stroke-width: 4.5; }
+@media (hover: hover) {
+  .trace:hover { stroke-opacity: .9; }
+  .trace:hover .trace-ligne { stroke-width: 4; }
+}
+/* L'arrivée prend la couleur de SON tracé — le seul lien entre un chemin et
+   son but. ⚠️ Le liseré et l'ombre restent au thème. */
+.carte-repere-arrivee[style*="--repere-couleur"] .carte-pastille {
+  background: var(--repere-couleur);
+}
+
 .carte-reperes { list-style: none; margin: 0; padding: 0; }
 .carte-repere {
   position: absolute; top: 0; left: 0;

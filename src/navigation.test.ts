@@ -558,17 +558,46 @@ describe("🔴 6/11/2026 — l'écran de l'offre promenade doit se lire sans mod
   it("l'écran dit où l'on va, sans l'écrire sur la carte", () => {
     expect(nu, "le champ ne pose plus la question du départ")
       .toMatch(/placeholder="D'où partez-vous/);
-    expect(nu, "les pastilles ne portent plus leur distance")
-      .toMatch(/cp-choix-lieu-km/);
+  });
+
+  /* 🔴 LE GARDE QUI COMPTE LE PLUS DANS CETTE REFONTE. « Cliquer sur le
+     tracé, tout simplement » ne doit pas vouloir dire « à la souris
+     seulement ». Les pastilles étaient des boutons : focalisables, nommés,
+     actionnables au clavier. En les remplaçant par des traits dessinés, tout
+     cela se perd par défaut — un `<path>` n'est rien pour un clavier.
+     ⭐ Un changement d'interface qui gagne en évidence pour l'œil peut tout
+        retirer à qui n'a pas de souris, et rien ne le signale. */
+  it("⛔ on choisit un tracé au clavier aussi, et il porte son nom", () => {
+    const carte = readFileSync(new URL("./CarteReelle.tsx", import.meta.url), "utf8");
+    expect(carte).toMatch(/tabIndex=\{0\}/);
+    expect(carte).toMatch(/aria-label=\{`Promenade vers \$\{t\.nom\}`\}/);
+    expect(carte, "la touche Entrée ne choisit rien").toMatch(/e\.key === "Enter"/);
+    expect(carte, "l'état choisi n'est pas annoncé").toMatch(/aria-pressed=\{t\.choisie\}/);
   });
 
   /* ⭐ ON CHOISIT ENTRE 1,7 KM ET 2,4 KM, PAS ENTRE TROIS NOMS. Sans la
      distance sur CHAQUE bouton, il fallait les cliquer tous les trois pour
      comparer — et chaque clic recalculait un parcours entier pour répondre à
      une question de deux chiffres. */
-  it("chaque proposition annonce sa distance avant qu'on la choisisse", () => {
-    expect(nu).toMatch(/cp-choix-lieu-km/);
-    expect(nu).toMatch(/km\(x\.metres\)/);
+  /* 🔄 RETOURNÉ LE 6/11/2026 — demande du fondateur : « pour choisir un
+     tracé, cliquer sur le tracé, tout simplement ». Les trois pastilles sont
+     parties DANS la carte.
+     ⭐ CE QU'IL PROTÉGEAIT : on doit pouvoir COMPARER les trois avant d'en
+        choisir un. C'était vrai par les chiffres ; c'est vrai désormais par
+        le dessin — trois chemins, trois couleurs, trois arrivées de la même
+        couleur que leur chemin. La question qu'on se pose est « lequel va
+        où ? », et une forme y répond mieux qu'un nombre.
+     ⚠️ CE QU'ON PERD, ET IL FAUT LE DIRE : la distance de chaque option n'est
+        plus écrite. Seule celle du tracé tenu l'est, dans la ligne de faits.
+        On compare des longueurs à l'œil au lieu de lire trois nombres. C'est
+        le prix demandé pour désencombrer la carte ; si cela manque, c'est ici
+        qu'il faudra revenir. */
+  it("les trois propositions se comparent AVANT d'être choisies", () => {
+    const compoCarte = readFileSync(new URL("./CarteReelle.tsx", import.meta.url), "utf8");
+    expect(nu, "les trois tracés ne sont pas passés à la carte").toMatch(/traces=\{tracesCarte\}/);
+    expect(nu, "les trois tracés n'ont pas de couleurs distinctes").toMatch(/COULEURS_TRACE/);
+    expect(compoCarte, "l'arrivée ne prend pas la couleur de son tracé")
+      .toMatch(/couleur=\{t\.couleur\}/);
   });
 
   /* 🔴 DEUX BOUTONS VOISINS SE COMPARENT PAR LEUR LIBELLÉ. « Commencer » et

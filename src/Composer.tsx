@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
 import { lienYAller, plateformeDe } from "./y-aller";
+import type { TraceCarte } from "./CarteReelle";
 import { indexer, composerVers, metres, fondreRencontres, ECART_MAX_M, noeudLePlusProche, traits, formeDeLaBoucle, SOURCE_MAREES, cheminDeRetour, composanteAtteint, accrocherTous, accrocherUn, accroche, propositionsAutour, promenadeVers, AUTOUR_MIN_M, AUTOUR_MAX_M, BOUCLE_PAR_ALLER } from "./composition";
 import { enGpx, telecharger } from "./Promenade";
 import type { Graphe, Boucle, Retour, Visee, Parcours, Accroche, Proposition } from "./composition";
@@ -1075,6 +1076,36 @@ export function Composer() {
     return lesProps.map((p) => rencontresLeLong(p.parcours.contour, inventaire.lieux).length);
   }, [graphe, lesProps, inventaire]);
 
+  /* ══ LES TROIS TRACÉS DE LA CARTE — 6/11/2026 ═══════════════════════════
+     ⭐ TROIS COULEURS PRISES DANS LA PALETTE DES LIEUX (`categories.ts`),
+        pas inventées : elles ont été choisies pour se distinguer les unes des
+        autres SUR UNE CARTE, ce qui est exactement le problème ici. L'ocre
+        reste au premier — c'est la couleur d'action de la charte, et le
+        premier tracé est celui qu'on propose.
+     ⚠️ Elles doivent tenir sur le plan (vert clair) ET sur l'orthophoto
+        (sombre, bruitée) : d'où un halo craie sous chaque trait, qui les
+        détoure des deux côtés. */
+  const COULEURS_TRACE = ["#c69a48", "#a357d9", "#2f9ed6"];
+
+  const tracesCarte = useMemo<TraceCarte[]>(() => {
+    /* ⚠️ PAS DE TROIS TRACÉS QUAND UNE BOUCLE EST ACTIVE. La boucle remplace
+       l'aller : afficher les trois propositions à côté d'elle montrerait des
+       chemins qu'on ne tient plus. Un seul tracé, celui qu'on a demandé. */
+    if (!graphe || !lesProps || laBoucle) return [];
+    return lesProps.map((x, i) => ({
+      nom: spots[x.i].n ?? "ce lieu",
+      points: x.parcours.contour.map(([lon, lat]) => ({ lon, lat })),
+      traits: traits(graphe, x.parcours).map((l) => l.map(([lon, lat]) => ({ lon, lat }))),
+      couleur: COULEURS_TRACE[i % COULEURS_TRACE.length],
+      choisie: i === choisie,
+      onChoisir: () => {
+        setChoisie(i);
+        /* ⚠️ Changer de destination annule la boucle — elle menait ailleurs. */
+        setEnBoucle(false); setBoucleVisee(null);
+      },
+    }));
+  }, [graphe, lesProps, laBoucle, choisie, spots]);
+
   // La carte attend un `Walk` : on lui en fabrique un, avec les TRAITS
   // séparés — jamais une ligne unique (voir Walk.traits).
   const walk: Walk | null = useMemo(() => {
@@ -1198,7 +1229,7 @@ export function Composer() {
                   répond mieux que du gris. */}
               {b && walk && !horsLigne && (
                 <CarteOuSchema schema={<WalkMap walk={walk} />}>
-                  <CarteReelle walk={walk} hauteur="100%" />
+                  <CarteReelle walk={walk} hauteur="100%" traces={tracesCarte} />
                 </CarteOuSchema>
               )}
 
@@ -1258,41 +1289,18 @@ export function Composer() {
                    si ce sont des lieux qu'on croise, des filtres ou des
                    destinations. Quatre mots rendent la question que la refonte
                    avait emportée avec le document. */}
-            <ul className="cp-choix-lieux">
-                  {lesProps.map((x, i) => {
-                    const lieu = spots[x.i];
-                    return (
-                      <li key={x.i}>
-                        <button
-                          type="button"
-                          className={`cp-choix-lieu${i === choisie ? " est-choisie" : ""}`}
-                          aria-pressed={i === choisie}
-                          onClick={() => {
-                            setChoisie(i);
-                            /* ⚠️ CHANGER DE DESTINATION ANNULE LA BOUCLE, et ne la
-                               recalcule pas en silence : la boucle d'avant menait
-                               ailleurs. Garder le bouton enfoncé afficherait un
-                               parcours qui ne correspond plus au lieu nommé
-                               au-dessus. */
-                            setEnBoucle(false); setBoucleVisee(null);
-                          }}
-                        >
-                          <SvgLieu type={lieu.c} />
-                          <span className="cp-choix-lieu-nom">{lieu.n}</span>
-                          {/* ⭐ LA DISTANCE SUR CHAQUE CHOIX, pas seulement sur
-                              celui qu'on tient. Sans elle il fallait cliquer
-                              les trois pour comparer — et chaque clic
-                              recalculait un parcours entier pour répondre à
-                              une question de deux chiffres. On choisit entre
-                              1,7 km et 4,2 km, pas entre trois noms. */}
-                          <span className="cp-choix-lieu-km">
-                            {km(x.metres)} km
-                          </span>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
+            {/* 🔴 LES TROIS PASTILLES SONT PARTIES DANS LA CARTE — 6/11/2026,
+                demande du fondateur : « pour choisir un tracé, cliquer sur le
+                tracé, tout simplement ».
+                ⭐ Elles posaient trois noms et trois distances DEVANT le
+                   paysage, et laissaient la question sans réponse : lequel va
+                   où ? Les trois chemins dessinés, chacun de sa couleur, avec
+                   son arrivée de la même couleur, répondent sans un mot — et
+                   rendent à la carte les 150 px qu'elles lui prenaient.
+                ⚠️ LE CLAVIER N'EST PAS OUBLIÉ : chaque tracé est focalisable
+                   et porte son nom (`CarteReelle`). « Cliquer, tout
+                   simplement » ne doit pas vouloir dire « à la souris
+                   seulement ». */}
 
                 {/* ⚠️ CE QUI VIVAIT DANS CHAQUE CARTE NE DISPARAÎT PAS : la
                     distance, ce qu'on croise en chemin, le bord de mer, la marée,
