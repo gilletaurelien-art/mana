@@ -85,8 +85,14 @@ describe("le poste de radio", () => {
   });
 });
 
-describe("les cinq sections de l'accueil", () => {
-  const app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
+describe("les cinq sections de la page de l'application", () => {
+  /* 🔄 6/11/2026 — elles ont quitté l'accueil pour `/l-application`, une page
+     à elles, indexable. ⭐ Le DÉPLACEMENT N'AFFAIBLIT PAS CE GARDE, il le
+     rend plus juste : ce qu'il mesure — assez de matière pour être cité,
+     des chiffres qui concordent avec les artefacts — est une propriété du
+     TEXTE, pas de la page qui l'héberge. Il ne nommait l'accueil que parce
+     que le texte y habitait. */
+  const app = readFileSync(new URL("./LApplication.tsx", import.meta.url), "utf8");
 
   /**
    * ⭐ CE QU'UN MOTEUR DE RÉPONSE SAIT EXTRAIRE, C'EST UNE PHRASE QUI RÉPOND.
@@ -141,7 +147,7 @@ describe("les cinq sections de l'accueil", () => {
        place du code. ⭐ Le helper `nu()` existait déjà en haut de ce
        fichier : l'oublier une fois de plus n'est pas une étourderie, c'est
        que le réflexe n'est pas encore pris. */
-    const net = nu("./App.tsx");
+    const net = nu("./LApplication.tsx");
     for (const mort of [/poussette/i, /\bPMR\b/, /accessible aux chiens/i, /temps réel/i]) {
       expect(net, String(mort)).not.toMatch(mort);
     }

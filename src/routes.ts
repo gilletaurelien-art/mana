@@ -34,6 +34,7 @@ export const ROUTES_APP = [
   "/composer",
   "/balades-office",
   "/territoire",
+  "/l-application",
   "/reglages",
   "/contact",
   "/mentions-legales",

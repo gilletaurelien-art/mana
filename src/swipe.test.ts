@@ -262,8 +262,11 @@ describe("le jeu de cartes des balades", () => {
    * 🔴 Ces chiffres sont LEUR donnée. Une page qui les montre sans les nommer
    *    devient une fiche MANA au premier coup d'œil.
    */
-  it("l'accueil nomme l'Office ET mène chez lui", () => {
-    const app = sansCommentaires(readFileSync(new URL("./App.tsx", import.meta.url), "utf8"));
+  it("la page qui montre les circuits nomme l'Office ET mène chez lui", () => {
+    /* 🔄 6/11 : le crédit a suivi les sections sur `/l-application`. Il n'a
+       jamais eu à rester sur l'accueil — il doit rester COLLÉ aux 46
+       circuits et aux 708 km, c'est-à-dire à leur donnée. */
+    const app = sansCommentaires(readFileSync(new URL("./LApplication.tsx", import.meta.url), "utf8"));
     expect(app).toMatch(/Office de tourisme Presqu’île de Crozon – Aulne Maritime/);
     expect(app).toMatch(/crozon-tourisme\.bzh/);
     expect(app).toMatch(/MANA ne s’attribue rien et ne recommande rien/);

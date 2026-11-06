@@ -60,6 +60,29 @@ export function Reglages({ base }: { base: string }) {
           </p>
         </section>
 
+        {/* ── CE QUE FAIT L'APPLICATION ────────────────────────────────
+            🔴 6/11/2026 — le fondateur a demandé que les cinq sections de
+            l'accueil « partent dans Réglages ». Elles sont parties, mais sur
+            une page À ELLES — `/l-application` —, et Réglages y MÈNE.
+            ⭐ LA RAISON EST CELLE QUI A MOTIVÉ LEUR ÉCRITURE. Elles ont été
+               rédigées le 1/11 pour être lues par des machines : déclaratives
+               courtes, entités nommées, nombres réels. Les recopier ici en
+               aurait fait le MÊME TEXTE À DEUX ADRESSES — ce qui abîme
+               exactement le référencement qu'elles servent. Un lien, jamais
+               une copie. */}
+        <section className="reg-bloc">
+          <h2 className="reg-titre">Ce que fait l’application</h2>
+          <p className="reg-mot">
+            Le hors-ligne, la sécurité sur la côte, le carnet et l’export GPX,
+            les 1 358 sites recensés, les 46 circuits balisés de l’Office de
+            tourisme, MANAradio : ce que l’application fait, avec les chiffres
+            et les sources.
+          </p>
+          <p className="reg-mot">
+            <a href={`${base}/l-application`}>Lire la page</a>
+          </p>
+        </section>
+
         {/* ── LES SOURCES ──────────────────────────────────────────────── */}
         <section className="reg-bloc">
           <h2 className="reg-titre">D’où vient ce que vous voyez</h2>
