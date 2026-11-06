@@ -3516,6 +3516,26 @@ body:has(.jeu), body:has(.terr) { padding-bottom: 0; }
   border-color: var(--ocre);
   background: color-mix(in srgb, var(--ocre) 24%, var(--bulle-unie));
 }
+/* L'intitulé des trois choix, sur la carte. */
+.cp-scene .cp-choix-titre {
+  margin: 0 0 2px; padding: 0 4px;
+  font-size: var(--t-2xs); letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--craie);
+  /* ⚠️ Posé sur la carte sans bulle : une ombre portée suffit à le tenir
+     lisible sur un fond clair comme sur un fond sombre, là où une bulle de
+     plus aurait ajouté une surface pour quatre mots. */
+  text-shadow: 0 1px 3px rgb(13 16 12 / 70%);
+}
+/* ⭐ LA DISTANCE, À DROITE DE CHAQUE CHOIX. Le nom prend la place qu'il peut,
+   le chiffre ne se coupe jamais : c'est lui qui départage. */
+.cp-scene .cp-choix-lieu { justify-content: space-between; }
+.cp-scene .cp-choix-lieu-km {
+  flex: none; margin-left: 10px;
+  font-size: var(--t-2xs); font-variant-numeric: tabular-nums;
+  color: var(--bulle-texte-doux);
+}
+.cp-scene .cp-choix-lieu.est-choisie .cp-choix-lieu-km { color: var(--bulle-texte); }
+
 /* ⚠️ `.cp-choix-lieu-nom` porte un `-webkit-line-clamp: 2`, voulu pour le
    dessin « en document » où les trois cartes s'alignaient en colonnes. Dans
    une pastille posée sur la carte, deux lignes font un bouton de 56 px qui

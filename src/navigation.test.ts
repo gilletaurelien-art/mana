@@ -532,3 +532,51 @@ describe("la distance, pas la durée", () => {
       .toMatch(/proposer\(accrocherUn\(/);
   });
 });
+
+describe("🔴 6/11/2026 — l'écran de l'offre promenade doit se lire sans mode d'emploi", () => {
+  const compo = readFileSync(new URL("./Composer.tsx", import.meta.url), "utf8");
+  const nu = compo.replace(/\{\/\*[\s\S]*?\*\/\}/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+
+  /* 🔴 LES TROIS CHOIX AVAIENT PERDU LEUR QUESTION. L'en-tête « Où vont vos
+     pas depuis X ? » a été retirée le 3/11, à juste titre : dans un DOCUMENT,
+     le titre de page et la phrase du dessus la posaient déjà.
+     ⭐ Sur une carte nue, plus rien ne la pose. Trois bulles sur un paysage ne
+        s'expliquent pas seules — filtres ? lieux croisés ? destinations ? */
+  it("les trois propositions portent une question, pas seulement des noms", () => {
+    expect(nu).toMatch(/cp-choix-titre/);
+    expect(nu).toMatch(/Où vont vos pas/);
+  });
+
+  /* ⭐ ON CHOISIT ENTRE 1,7 KM ET 2,4 KM, PAS ENTRE TROIS NOMS. Sans la
+     distance sur CHAQUE bouton, il fallait les cliquer tous les trois pour
+     comparer — et chaque clic recalculait un parcours entier pour répondre à
+     une question de deux chiffres. */
+  it("chaque proposition annonce sa distance avant qu'on la choisisse", () => {
+    expect(nu).toMatch(/cp-choix-lieu-km/);
+    expect(nu).toMatch(/km\(x\.metres\)/);
+  });
+
+  /* 🔴 DEUX BOUTONS VOISINS SE COMPARENT PAR LEUR LIBELLÉ. « Commencer » et
+     « Y aller » disaient tous deux « partir », alors que l'un ouvre l'écran de
+     marche et l'autre l'itinéraire ROUTIER vers le point de départ. Le choix
+     devenait un pari.
+     ⚠️ « Y aller » reste juste sur la carte du territoire, où il est SEUL.
+        C'est le voisinage qui décide du mot, pas l'uniformité du vocabulaire. */
+  it("les deux gestes ne disent pas la même chose", () => {
+    expect(nu).toMatch(/Aller au départ/);
+    const actions = nu.match(/cp-scene-actions[\s\S]{0,1400}?<\/div>/)?.[0] ?? "";
+    expect(actions, "la section des actions est introuvable").toContain("Commencer");
+    expect(actions, "« Y aller » est revenu à côté de « Commencer »")
+      .not.toMatch(/>\s*Y aller\s*</);
+  });
+
+  /* ⚠️ LE POINT DÉCIMAL N'EST PAS FRANÇAIS. Cet écran écrivait « 1.7 km » à
+     quatre endroits pendant qu'un autre écran employait `toLocaleString`.
+     ⭐ Le garde porte sur CET écran, pas sur l'application : deux fichiers
+        gardent le point, et c'est dit dans le code plutôt que tu. */
+  it("les distances de cet écran s'écrivent à la française", () => {
+    expect(nu, "un point décimal subsiste sur cet écran")
+      .not.toMatch(/\/ 1000\)\.toFixed\(1\)|distanceKm \* 2\)\.toFixed\(1\)/);
+    expect(nu).toMatch(/toLocaleString\("fr-FR"/);
+  });
+});

@@ -758,6 +758,17 @@ export function Composer() {
     return () => ro.disconnect();
   }, []);
 
+  /* 🔴 LE POINT DÉCIMAL N'EST PAS FRANÇAIS — 6/11/2026. Cet écran écrivait
+     « 1.7 km » à quatre endroits. Six au total dans l'application, et
+     `InvitationBalade` employait pourtant `toLocaleString("fr-FR")` : les
+     deux conventions coexistaient sans que rien ne les confronte.
+     ⚠️ Corrigé ICI, sur cet écran entier — le corriger à moitié l'aurait
+        rendu incohérent AVEC LUI-MÊME, la pastille en virgule et la ligne
+        juste dessous en point. `Rencontres.tsx` et `ProchaineEtape.tsx`
+        gardent le point : hors de ce chantier, et c'est dit plutôt que tu. */
+  const km = (metres: number) =>
+    (metres / 1000).toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
   const plateforme = useMemo(
     () => plateformeDe(navigator.userAgent, navigator.maxTouchPoints),
     [],
@@ -1238,7 +1249,17 @@ export function Composer() {
                     seule, celle du choix en cours, intéresse vraiment ; les
                     boutons tiennent sur une ligne, et le détail du choix se
                     développe juste en dessous, pour celui-là seulement. */}
-                <ul className="cp-choix-lieux">
+                {/* 🔴 LES TROIS CHOIX N'AVAIENT PLUS D'INTITULÉ — 6/11/2026.
+                L'en-tête « Où vont vos pas depuis X ? » a été retirée le 3/11,
+                à juste titre : dans un DOCUMENT, le titre de la page et la
+                phrase du dessus disaient déjà la question.
+                ⭐ Sur une carte nue, plus rien ne la dit. Trois bulles posées
+                   sur un paysage ne s'expliquent pas seules — on ne sait pas
+                   si ce sont des lieux qu'on croise, des filtres ou des
+                   destinations. Quatre mots rendent la question que la refonte
+                   avait emportée avec le document. */}
+            <p className="cp-choix-titre">Où vont vos pas&nbsp;?</p>
+            <ul className="cp-choix-lieux">
                   {lesProps.map((x, i) => {
                     const lieu = spots[x.i];
                     return (
@@ -1259,6 +1280,15 @@ export function Composer() {
                         >
                           <SvgLieu type={lieu.c} />
                           <span className="cp-choix-lieu-nom">{lieu.n}</span>
+                          {/* ⭐ LA DISTANCE SUR CHAQUE CHOIX, pas seulement sur
+                              celui qu'on tient. Sans elle il fallait cliquer
+                              les trois pour comparer — et chaque clic
+                              recalculait un parcours entier pour répondre à
+                              une question de deux chiffres. On choisit entre
+                              1,7 km et 4,2 km, pas entre trois noms. */}
+                          <span className="cp-choix-lieu-km">
+                            {km(x.metres)} km
+                          </span>
                         </button>
                       </li>
                     );
@@ -1272,7 +1302,7 @@ export function Composer() {
                     répétaient cette lecture trois fois pour n'en garder qu'une. */}
                 {prop && (
                   <p className="cp-choix-detail">
-                    <SvgRuban />{(prop.metres / 1000).toFixed(1)} km à pied
+                    <SvgRuban />{km(prop.metres)} km à pied
                     <span className="cp-choix-detail-sep" aria-hidden="true">·</span>
                     <SvgEtincelle />{comptes[choisie] ?? 0} lieu{(comptes[choisie] ?? 0) > 1 ? "x" : ""} sur le chemin{" "}
                     · {inventaire?.libelles[spots[prop.i].c] ?? LIBELLE[spots[prop.i].c] ?? spots[prop.i].c}
@@ -1312,7 +1342,18 @@ export function Composer() {
                         href={lienYAller(depart.g, depart.nom, plateforme)}
                         target="_blank" rel="noreferrer"
                       >
-                        Y aller
+                        {/* 🔴 « Y ALLER » DISAIT LA MÊME CHOSE QUE
+                            « COMMENCER » — 6/11/2026. Côte à côte, les deux se
+                            lisaient comme « démarrer », alors que l'un ouvre
+                            l'écran de marche et l'autre l'itinéraire ROUTIER
+                            vers le point de départ. Deux boutons voisins se
+                            comparent par leur LIBELLÉ : si les deux disent
+                            « partir », le choix devient un pari.
+                            ⚠️ « Y aller » reste le mot sur la carte du
+                               territoire, où il est SEUL et sans ambiguïté.
+                               Ici il a un voisin — c'est le voisinage qui
+                               décide du mot, pas l'uniformité du vocabulaire. */}
+                        Aller au départ
                       </a>
                     )}
                   </div>
@@ -1586,7 +1627,7 @@ export function Composer() {
               {!laBoucle && (
                 <p className="page-note">
                   C'est l'<strong>aller</strong>. Revenir sur ses pas en fait{" "}
-                  {(walk.distanceKm * 2).toFixed(1)} km — ou composez une
+                  {km(walk.distanceKm * 2000)} km — ou composez une
                   nouvelle promenade en arrivant.
                 </p>
               )}
@@ -1719,7 +1760,7 @@ export function Composer() {
                   : "Aucun lieu remarquable sur ce parcours — c'est la marche qui compte"}
                 {b.montee >= 40 && ` · ${Math.round(b.montee)} m de montée`}
                 {b.bordDeMer > 300 &&
-                  ` · ${(b.bordDeMer / 1000).toFixed(1)} km au bord de mer`}
+                  ` · ${km(b.bordDeMer)} km au bord de mer`}
                 {b.partRepetee > 0.1 && " · une portion se parcourt deux fois"}
                 {" · calculé en "}{duree} ms
               </p>
@@ -1766,7 +1807,7 @@ export function Composer() {
                   <strong>
                     {retour.metres < 100
                       ? "Vous y êtes."
-                      : `${(retour.metres / 1000).toFixed(1)} km pour rentrer.`}
+                      : `${km(retour.metres)} km pour rentrer.`}
                   </strong>{" "}
                   {retour.metres >= 100 &&
                     "Par le plus court — pas par le plus joli, c'est voulu."}
