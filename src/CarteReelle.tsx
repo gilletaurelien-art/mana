@@ -80,7 +80,14 @@ export function CarteReelle({
 }: {
   walk: Walk;
   moi?: WalkPoint | null;
-  hauteur?: number;
+  /** ⭐ UN NOMBRE (des pixels) OU UNE LONGUEUR CSS. Depuis le 6/11/2026,
+   *  l'écran de l'offre promenade donne à la carte TOUTE la scène : sa
+   *  hauteur ne se compte pas en pixels, elle se prend du conteneur.
+   *  ⚠️ Élargi au lieu d'être contourné par un `style` posé à côté : une
+   *     hauteur écrite à deux endroits finit par diverger, et c'est la carte
+   *     à 0 × 0 pixel déjà vue le 31/10 — rendue, donc « présente », et
+   *     invisible. */
+  hauteur?: number | string;
   /**
    * ⭐ DE COMBIEN ON ÉLARGIT LE CADRE AUTOUR DU PARCOURS, en multiples de son
    *    étendue. 0 = serré sur le tracé, ce qu'il faut quand on marche. 1,1 =

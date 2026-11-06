@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
+import { lienYAller, plateformeDe } from "./y-aller";
 import { indexer, composerVers, metres, fondreRencontres, ECART_MAX_M, noeudLePlusProche, traits, formeDeLaBoucle, SOURCE_MAREES, cheminDeRetour, composanteAtteint, accrocherTous, accrocherUn, accroche, propositionsAutour, promenadeVers, AUTOUR_MIN_M, AUTOUR_MAX_M, BOUCLE_PAR_ALLER } from "./composition";
 import { enGpx, telecharger } from "./Promenade";
 import type { Graphe, Boucle, Retour, Visee, Parcours, Accroche, Proposition } from "./composition";
@@ -734,6 +735,33 @@ export function Composer() {
    *    le plus fréquent quand on est déjà dehors.
    */
   const [depart, setDepart] = useState<{ a: Accroche; nom: string; g: [number, number] } | null>(null);
+  /* ⚠️ LUE UNE FOIS, PAS À CHAQUE RENDU : `navigator.userAgent` ne change pas
+     en cours de visite, et la relire à chaque image ne ferait que du bruit. */
+  /* 🔴 LA HAUTEUR DE L'EN-TÊTE EST MESURÉE, JAMAIS RECOPIÉE — 6/11/2026.
+     La scène doit prendre « l'écran moins l'en-tête », et l'en-tête change de
+     hauteur selon le texte : « Depuis Pointe de Pen-Hir · le chemin commence
+     à 119 m » passe sur deux lignes là où un nom court en tient une. Une
+     valeur en dur serait juste pour un lieu et fausse pour le suivant — et
+     fausse en silence, puisque le seul symptôme est une bande de carte sous
+     la barre de navigation.
+     ⭐ C'est la même règle que partout ici : une note qui recopie une valeur
+        vivante vieillit deux fois plus vite que la valeur. */
+  const entete = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const el = entete.current;
+    if (!el || typeof ResizeObserver !== "function") return;
+    const poser = () => document.documentElement.style.setProperty(
+      "--cp-entete-h", `${Math.round(el.getBoundingClientRect().height)}px`);
+    poser();
+    const ro = new ResizeObserver(poser);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const plateforme = useMemo(
+    () => plateformeDe(navigator.userAgent, navigator.maxTouchPoints),
+    [],
+  );
   /** Le lieu choisi qu'aucun chemin n'approche — refusé AVANT tout calcul. */
   const [refusDepart, setRefusDepart] = useState<{ nom: string; a: Accroche } | null>(null);
 
@@ -1125,7 +1153,7 @@ export function Composer() {
                sans savoir ce qu'il y avait dessous : il continue de le faire
                sur le fond tournant, comme `hero-label`/`page-titre` ailleurs
                dans l'app. */}
-        <header className="cp-entree">
+        <header className="cp-entree" ref={entete}>
           <div className="cp-entree-dire">
             <h1 className="cp-titre">Promenade</h1>
 
@@ -1369,120 +1397,151 @@ export function Composer() {
               </p>
             </section>
           ) : (
-            <section className="page-panel cp-carte-panneau" style={{ padding: 0, overflow: "hidden" }}>
+            <section className="cp-scene">
+              {/* 🔴 LA CARTE PREND L'ÉCRAN — 6/11/2026, demande du fondateur :
+                  « cet écran n'est pas beau comparé aux autres, il faut le
+                  lisser comme nos autres écrans = carte plein écran, boutons
+                  stylés sur la carte des 3 recommandations ».
+                  ⭐ IL AVAIT RAISON, ET LA RAISON EST STRUCTURELLE : `/carte`
+                     est un OUTIL qu'on tient debout, dehors — carte pleine,
+                     commandes flottantes. Celui-ci rendait la même matière
+                     dans une vignette posée au milieu d'un document. Deux
+                     grammaires pour deux écrans qui font le même métier. */}
               <CarteOuSchema schema={<WalkMap walk={walk} />}>
-                <CarteReelle
-                  walk={walk}
-                  hauteur={carteAgrandie ? HAUTEUR_CARTE.agrandie : HAUTEUR_CARTE.reduite}
-                />
+                <CarteReelle walk={walk} hauteur="100%" />
               </CarteOuSchema>
-              {/* 🔴 DANS LA CARTE, PAS SOUS ELLE — 3/11/2026, demande du
-                  fondateur. En haut à droite : les commandes de zoom de
-                  maplibre vivent en bas à droite (voir CarteReelle.tsx), et
-                  les deux cibles de 44 px au même coin se feraient de l'ombre
-                  — la leçon du zoom déjà posée là, appliquée ici. */}
-              <button
-                type="button"
-                className="cp-carte-agrandir"
-                onClick={() => setCarteAgrandie((v) => !v)}
-                aria-label={carteAgrandie ? "Réduire la carte" : "Agrandir la carte"}
-                title={carteAgrandie ? "Réduire la carte" : "Agrandir la carte"}
-              >
-                {carteAgrandie ? <SvgReduire /> : <SvgAgrandir />}
-              </button>
+
+              {/* ⛔ LE BOUTON « AGRANDIR » EST PARTI AVEC LA VIGNETTE : il
+                  basculait entre deux hauteurs de carte. La carte occupe
+                  désormais l'écran — il n'aurait plus rien à agrandir, et un
+                  bouton qui ne change rien coûte plus cher qu'un bouton
+                  absent. */}
+
+              {/* ⭐ TOUT CE QUI SE DÉCIDE FLOTTE SUR LA CARTE, et rien
+                  d'autre : les trois lieux, ce que coûte celui qu'on tient,
+                  et les deux gestes. Le reste du document continue dessous,
+                  pour qui veut lire — on lisse l'écran, on ne supprime pas
+                  son contenu. */}
+              <div className="cp-scene-bas">
+            {/* ══ C · LES TROIS PROPOSITIONS ══════════════════════════════
+                  🔴 TROIS LIEUX, PLUS TROIS BOUCLES — 2/11. Hier le compositeur
+                  rendait trois parcours vers un prétexte qu'il avait choisi ;
+                  aujourd'hui la personne a choisi son coin, et ce qu'on lui
+                  propose, c'est OÙ ALLER. Le choix porte donc sur une destination
+                  qui a un nom, pas sur une silhouette qu'il faut déchiffrer.
+                  ⭐ TROIS, ET NON « LA MEILLEURE » : mesuré le 2/11, les trois
+                     propositions s'écartent de 102° à 106° en médiane — elles
+                     partent vraiment dans des directions différentes. ⚠️ Mais pour
+                     10 % des lieux elles s'écartent de moins de 17°, et là le
+                     choix est largement illusoire ; c'est le prix du réseau, pas
+                     une qualité du produit.
+                  ⛔ ET L'IMAGE EST LE TRACÉ, PAS UNE PHOTOGRAPHIE. Nous n'avons
+                     aucune photographie de ces parcours et nous ne pouvons pas en
+                     avoir — celui-ci n'existait pas il y a trois secondes. Mettre
+                     une jolie côte bretonne sous un chemin qui ne la longe pas est
+                     le mensonge documentaire que ce dépôt refuse pour les fiches
+                     de balade ; il ne devient pas acceptable parce qu'il est
+                     plus petit.
+                  ⭐ LE VISAGE, C'EST LA SILHOUETTE. Elle est VRAIE, elle se
+                     dessine depuis nos propres données, et aucun catalogue de
+                     photographies ne peut la copier. */}
+            {lesProps && lesProps.length > 0 && (
+              <section className="cp-propositions">
+                {/* 🔴 L'EN-TÊTE EST PARTIE — 3/11/2026, demande du fondateur.
+                    « 3 lieux autour » et « Où vont vos pas depuis X ? »
+                    redisaient ce que les trois boutons, juste en dessous, disent
+                    déjà par leurs noms et leur présence : la question se voit,
+                    elle n'a plus besoin de se lire deux fois. */}
+                {/* 🔴 TROIS PETITS BOUTONS, PAS TROIS CARTES — 3/11/2026, demande
+                    du fondateur. Les grandes cartes (silhouette du tracé, fiche
+                    complète) répétaient la même information trois fois quand une
+                    seule, celle du choix en cours, intéresse vraiment ; les
+                    boutons tiennent sur une ligne, et le détail du choix se
+                    développe juste en dessous, pour celui-là seulement. */}
+                <ul className="cp-choix-lieux">
+                  {lesProps.map((x, i) => {
+                    const lieu = spots[x.i];
+                    return (
+                      <li key={x.i}>
+                        <button
+                          type="button"
+                          className={`cp-choix-lieu${i === choisie ? " est-choisie" : ""}`}
+                          aria-pressed={i === choisie}
+                          onClick={() => {
+                            setChoisie(i);
+                            /* ⚠️ CHANGER DE DESTINATION ANNULE LA BOUCLE, et ne la
+                               recalcule pas en silence : la boucle d'avant menait
+                               ailleurs. Garder le bouton enfoncé afficherait un
+                               parcours qui ne correspond plus au lieu nommé
+                               au-dessus. */
+                            setEnBoucle(false); setBoucleVisee(null);
+                          }}
+                        >
+                          <SvgLieu type={lieu.c} />
+                          <span className="cp-choix-lieu-nom">{lieu.n}</span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+
+                {/* ⚠️ CE QUI VIVAIT DANS CHAQUE CARTE NE DISPARAÎT PAS : la
+                    distance, ce qu'on croise en chemin, le bord de mer, la marée,
+                    la façon dont le sentier approche le lieu — tout reste dit,
+                    mais une seule fois, pour le choix en cours. Les trois cartes
+                    répétaient cette lecture trois fois pour n'en garder qu'une. */}
+                {prop && (
+                  <p className="cp-choix-detail">
+                    <SvgRuban />{(prop.metres / 1000).toFixed(1)} km à pied
+                    <span className="cp-choix-detail-sep" aria-hidden="true">·</span>
+                    <SvgEtincelle />{comptes[choisie] ?? 0} lieu{(comptes[choisie] ?? 0) > 1 ? "x" : ""} sur le chemin{" "}
+                    · {inventaire?.libelles[spots[prop.i].c] ?? LIBELLE[spots[prop.i].c] ?? spots[prop.i].c}
+                    {prop.parcours.bordDeMer > 300 && (
+                      <>
+                        <span className="cp-choix-detail-sep" aria-hidden="true">·</span>
+                        <SvgVague />{Math.round(prop.parcours.bordDeMer)} m au bord de l'eau
+                      </>
+                    )}
+                    {prop.parcours.marees > 0 && (
+                      <span className="cp-alerte">
+                        <span className="cp-choix-detail-sep" aria-hidden="true">·</span>
+                        <SvgVague />un passage dépend de la marée
+                      </span>
+                    )}
+                  </p>
+                )}
+              </section>
+            )}
+
+                {b && walk && (
+                  <div className="cp-scene-actions">
+                    {/* ⭐ « COMMENCER » EST L'ACTION, et c'est la même que le
+                        « Partir » qui vivait plus bas — DÉPLACÉE, jamais
+                        doublée. Deux boutons pour un seul geste est le défaut
+                        que le fondateur a déjà trouvé sur l'accueil en
+                        septembre, et qu'un test tient depuis. */}
+                    <button className="cp-scene-primaire" onClick={() => setEnMarche(true)}>
+                      <SvgPartir />Commencer
+                    </button>
+                    {/* ⚠️ « Y ALLER » MÈNE AU DÉPART, PAS À L'ARRIVÉE — c'est
+                        tout l'objet : on s'y rend en voiture, puis on marche.
+                        Mener à la destination ferait sauter la promenade. */}
+                    {depart && (
+                      <a
+                        className="cp-scene-secondaire"
+                        href={lienYAller(depart.g, depart.nom, plateforme)}
+                        target="_blank" rel="noreferrer"
+                      >
+                        Y aller
+                      </a>
+                    )}
+                  </div>
+                )}
+              </div>
             </section>
           )
         )}
 
-        {/* ══ C · LES TROIS PROPOSITIONS ══════════════════════════════
-              🔴 TROIS LIEUX, PLUS TROIS BOUCLES — 2/11. Hier le compositeur
-              rendait trois parcours vers un prétexte qu'il avait choisi ;
-              aujourd'hui la personne a choisi son coin, et ce qu'on lui
-              propose, c'est OÙ ALLER. Le choix porte donc sur une destination
-              qui a un nom, pas sur une silhouette qu'il faut déchiffrer.
-              ⭐ TROIS, ET NON « LA MEILLEURE » : mesuré le 2/11, les trois
-                 propositions s'écartent de 102° à 106° en médiane — elles
-                 partent vraiment dans des directions différentes. ⚠️ Mais pour
-                 10 % des lieux elles s'écartent de moins de 17°, et là le
-                 choix est largement illusoire ; c'est le prix du réseau, pas
-                 une qualité du produit.
-              ⛔ ET L'IMAGE EST LE TRACÉ, PAS UNE PHOTOGRAPHIE. Nous n'avons
-                 aucune photographie de ces parcours et nous ne pouvons pas en
-                 avoir — celui-ci n'existait pas il y a trois secondes. Mettre
-                 une jolie côte bretonne sous un chemin qui ne la longe pas est
-                 le mensonge documentaire que ce dépôt refuse pour les fiches
-                 de balade ; il ne devient pas acceptable parce qu'il est
-                 plus petit.
-              ⭐ LE VISAGE, C'EST LA SILHOUETTE. Elle est VRAIE, elle se
-                 dessine depuis nos propres données, et aucun catalogue de
-                 photographies ne peut la copier. */}
-        {lesProps && lesProps.length > 0 && (
-          <section className="cp-propositions">
-            {/* 🔴 L'EN-TÊTE EST PARTIE — 3/11/2026, demande du fondateur.
-                « 3 lieux autour » et « Où vont vos pas depuis X ? »
-                redisaient ce que les trois boutons, juste en dessous, disent
-                déjà par leurs noms et leur présence : la question se voit,
-                elle n'a plus besoin de se lire deux fois. */}
-            {/* 🔴 TROIS PETITS BOUTONS, PAS TROIS CARTES — 3/11/2026, demande
-                du fondateur. Les grandes cartes (silhouette du tracé, fiche
-                complète) répétaient la même information trois fois quand une
-                seule, celle du choix en cours, intéresse vraiment ; les
-                boutons tiennent sur une ligne, et le détail du choix se
-                développe juste en dessous, pour celui-là seulement. */}
-            <ul className="cp-choix-lieux">
-              {lesProps.map((x, i) => {
-                const lieu = spots[x.i];
-                return (
-                  <li key={x.i}>
-                    <button
-                      type="button"
-                      className={`cp-choix-lieu${i === choisie ? " est-choisie" : ""}`}
-                      aria-pressed={i === choisie}
-                      onClick={() => {
-                        setChoisie(i);
-                        /* ⚠️ CHANGER DE DESTINATION ANNULE LA BOUCLE, et ne la
-                           recalcule pas en silence : la boucle d'avant menait
-                           ailleurs. Garder le bouton enfoncé afficherait un
-                           parcours qui ne correspond plus au lieu nommé
-                           au-dessus. */
-                        setEnBoucle(false); setBoucleVisee(null);
-                      }}
-                    >
-                      <SvgLieu type={lieu.c} />
-                      <span className="cp-choix-lieu-nom">{lieu.n}</span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-
-            {/* ⚠️ CE QUI VIVAIT DANS CHAQUE CARTE NE DISPARAÎT PAS : la
-                distance, ce qu'on croise en chemin, le bord de mer, la marée,
-                la façon dont le sentier approche le lieu — tout reste dit,
-                mais une seule fois, pour le choix en cours. Les trois cartes
-                répétaient cette lecture trois fois pour n'en garder qu'une. */}
-            {prop && (
-              <p className="cp-choix-detail">
-                <SvgRuban />{(prop.metres / 1000).toFixed(1)} km à pied
-                <span className="cp-choix-detail-sep" aria-hidden="true">·</span>
-                <SvgEtincelle />{comptes[choisie] ?? 0} lieu{(comptes[choisie] ?? 0) > 1 ? "x" : ""} sur le chemin{" "}
-                · {inventaire?.libelles[spots[prop.i].c] ?? LIBELLE[spots[prop.i].c] ?? spots[prop.i].c}
-                {prop.parcours.bordDeMer > 300 && (
-                  <>
-                    <span className="cp-choix-detail-sep" aria-hidden="true">·</span>
-                    <SvgVague />{Math.round(prop.parcours.bordDeMer)} m au bord de l'eau
-                  </>
-                )}
-                {prop.parcours.marees > 0 && (
-                  <span className="cp-alerte">
-                    <span className="cp-choix-detail-sep" aria-hidden="true">·</span>
-                    <SvgVague />un passage dépend de la marée
-                  </span>
-                )}
-              </p>
-            )}
-          </section>
-        )}
 
         {b && walk && (
           <>
@@ -1525,10 +1584,15 @@ export function Composer() {
                      pas : une application qui garde ce qu'on y a fait n'est
                      pas celle qu'on veut écrire. Ce qui est à vous est à
                      vous — y compris quand vous partez avec. */}
+              {/* 🔴 « PARTIR » A QUITTÉ CE BLOC LE 6/11/2026 — il est MONTÉ
+                  sur la carte, sous le nom « Commencer », avec les trois
+                  propositions. Déplacé, jamais dupliqué : deux boutons pour un
+                  seul geste est précisément le défaut que le fondateur a
+                  trouvé sur l'accueil en septembre (« Voir les balades » et
+                  « Voir sur la carte » menaient au même écran), et qu'un test
+                  tient depuis. Ne pas le remettre ici « pour qu'il soit sous
+                  la main » : il l'est, en haut, en permanence. */}
               <div className="cp-emporter">
-                <button className="cp-primaire" onClick={() => setEnMarche(true)}>
-                  <SvgPartir />Partir
-                </button>
                 {/* ⭐ LA BOUCLE EST UN INTERRUPTEUR, PAS UNE AUTRE PROMENADE.
                     « Autre promenade » tirait une nouvelle graine au hasard :
                     utile quand le compositeur choisissait le prétexte, vide de

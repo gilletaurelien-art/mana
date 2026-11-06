@@ -2882,8 +2882,16 @@ body:has(.jeu), body:has(.terr) { padding-bottom: 0; }
    (classe + balise, plus spécifique que la seule classe `.btn-primary`)
    écrasait ce blanc par l'or sombre : texte à peu près de la même teinte que
    le bouton, « Ouvrir l'itinéraire » illisible. Mesuré : #7f6027 sur #94702e. */
+/* ⛔ `.cp-scene-secondaire` REJOINT `.btn` DANS L'EXCLUSION — 6/11/2026, et
+   c'est le MÊME défaut que ce fichier documente deux fois plus haut pour
+   `.btn` et `.cp-titre`. Cette règle est en (0,2,1) : elle bat toute classe
+   seule. « Y aller » flotte sur la carte, sur du kaki — l'or profond y
+   mesurait 3,60 de contraste, sous le seuil de 4,5.
+   ⭐ Ce dépôt a déjà payé ce bouton-là, à 1,15, sur la carte du territoire.
+      Une couleur de lien pensée pour un document ivoire ne suit pas le lien
+      quand il part flotter sur une carte. */
 .page-composer .apercu-label,
-.page-composer a:not(.btn) { color: var(--or-profond); }
+.page-composer a:not(.btn):not(.cp-scene-secondaire) { color: var(--or-profond); }
 
 /* ── A · l'entrée ───────────────────────────────────────────────────────── */
 .cp-entree {
@@ -3296,3 +3304,181 @@ body:has(.jeu), body:has(.terr) { padding-bottom: 0; }
 /* Le crédit sortant d'une source, sous la section qui affiche SA donnée. */
 .section-source { margin: var(--sp-2) 0 0; font-size: var(--t-xs); color: var(--texte-doux); }
 .section-source a { color: inherit; }
+
+/* ══ L'ÉCRAN DE L'OFFRE PROMENADE — LA SCÈNE ════════════════════════════
+   🔴 6/11/2026, demande du fondateur : « l'écran n'est pas beau comparé aux
+   autres, il faut le lisser comme nos autres écrans = carte plein écran,
+   boutons stylés sur la carte des 3 recommandations, avec l'option "y aller"
+   ou "Commencer" ». La carte vivait en vignette au milieu d'un document.
+   ⭐ IL AVAIT RAISON, ET LA RAISON EST STRUCTURELLE : `/carte` est un OUTIL
+      qu'on tient debout, dehors — carte pleine, commandes flottantes. Celui-ci
+      fait le même métier et le rendait dans une fiche. Deux grammaires pour
+      une seule fonction font croire à deux produits.
+   ⚠️ CE QUI N'EST PAS FAIT, ET C'EST DÉLIBÉRÉ : le document qui suit reste
+      entier, sous la scène. On lisse l'écran, on ne supprime pas le contenu —
+      la distance, le dénivelé, les marées, les secteurs fermés, les sources.
+      Les retirer pour alléger la maquette serait détruire ce que ces blocs
+      promettent, et c'est exactement ce que ce dépôt refuse ailleurs. */
+.cp-scene {
+  /* ⚠️ `100svh` et non `100vh` : sur un téléphone, `vh` compte la barre
+     d'adresse rétractée, donc la scène dépasse de sa hauteur au premier
+     rendu et saute quand on défile. `svh` est la petite hauteur, toujours
+     visible — même choix que `.terr`, pour la même raison. */
+  /* 🔴 « L'ÉCRAN MOINS L'EN-TÊTE », et l'en-tête est MESURÉ, pas recopié :
+     `--cp-entete-h` est posée par un ResizeObserver (voir Composer.tsx). Une
+     valeur en dur serait juste pour « Menhir de Crozon » et fausse pour
+     « Pointe de Pen-Hir · le chemin commence à 119 m », qui passe sur deux
+     lignes — et fausse EN SILENCE : le seul symptôme serait une bande de
+     carte cachée sous la barre de navigation.
+     ⚠️ Le repli à 240px ne s'applique qu'avant la première mesure (ou sans
+     ResizeObserver) : il doit être PLAUSIBLE, pas exact. */
+  height: calc(100svh - var(--reserve-barre) - var(--cp-entete-h, 240px));
+  min-height: 300px;
+  position: relative; overflow: hidden; isolation: isolate;
+  /* ⛔ ELLE SORT DE LA COLONNE DE LECTURE. `.wrap` borne le document à sa
+     largeur ; une carte « plein écran » qui s'arrête à 720 px n'est pas
+     plein écran. On annule la marge du conteneur sans toucher à `.wrap`,
+     qui sert trois autres écrans. */
+  margin-inline: calc(50% - 50vw);
+  width: 100vw;
+  background: var(--kaki);
+}
+/* La carte occupe toute la scène — maplibre tient sa hauteur du conteneur. */
+.cp-scene .carte-plan,
+.cp-scene .carte-reelle,
+.cp-scene > div:first-child { height: 100%; }
+
+/* ── ce qui flotte : les trois lieux, le coût, les deux gestes ───────────
+   ⚠️ POSÉ EN BAS, pas en haut : les commandes de zoom de maplibre vivent en
+   bas à droite et la barre de navigation est juste dessous. On laisse donc
+   la droite libre et on s'arrête au-dessus de la réserve. */
+.cp-scene-bas {
+  position: absolute; z-index: 25;
+  left: var(--sp-2); right: var(--sp-2); bottom: var(--sp-2);
+  display: flex; flex-direction: column; gap: 8px;
+  /* ⚠️ BORNÉ SUR GRAND ÉCRAN. Mesuré à 1 100 px : sans borne, « Commencer »
+     faisait 500 px de large et la ligne de faits traversait l'écran. Un
+     bouton qui s'étire sur toute la largeur cesse de se lire comme un bouton.
+     ⭐ La carte, elle, prend bien tout : c'est la commande qui se borne, pas
+        la vue — l'inverse aurait rendu la scène à sa vignette. */
+  max-width: 560px;
+  /* ⚠️ Le conteneur ne doit pas capter les gestes destinés à la carte :
+     seuls ses ENFANTS sont cliquables. Sans ça, une bande invisible de la
+     largeur de l'écran empêcherait de déplacer la carte par le bas. */
+  pointer-events: none;
+}
+.cp-scene-bas > * { pointer-events: auto; }
+
+/* Les trois propositions, en bulles — même grammaire que `.jeu-chercher`. */
+.cp-scene .cp-choix-lieux {
+  list-style: none; margin: 0; padding: 0;
+  /* 🔴 TROIS COLONNES ÉGALES, PAS UNE RANGÉE QUI DÉFILE — corrigé à l'écran
+     le 6/11. Le premier jet laissait la rangée défiler : mesuré sur 375 px,
+     « Plaque commémorative "Tante Yvonne" » sortait du cadre et la TROISIÈME
+     proposition n'était pas visible. Or la demande est de montrer les TROIS
+     recommandations sur la carte — une qu'il faut aller chercher du doigt
+     n'est pas proposée, elle est cachée.
+     ⭐ Un défilement horizontal ne se signale pas : rien ne dit qu'il reste
+        quelque chose à droite, et personne ne cherche ce qu'il ne voit pas. */
+  /* 🔴 TROIS LIGNES, PAS TROIS COLONNES — et c'est la MESURE qui a tranché
+     contre mon premier jet. À trois colonnes sur 375 px, chaque nom disposait
+     de 84 px : « Manoir de … », « Plage du P… », « Plaque co… ». Même après
+     avoir retiré l'icône et réduit la police, les TROIS restaient coupés —
+     84 px est le plafond dur, pas un réglage à affiner.
+     ⭐ Un bouton qui ne montre pas le nom du lieu ne propose pas ce lieu : il
+        demande de cliquer pour savoir ce qu'on choisit. Trois lignes coûtent
+        ~150 px de carte ; trois libellés illisibles coûtent la fonction.
+     ⚠️ La carte reste majoritaire à l'écran, et c'était la demande. */
+  display: grid; grid-template-columns: 1fr; gap: 6px;
+}
+/* 🔴 CE SONT LES `<li>` QUI SONT LES ENFANTS DE LA GRILLE, pas les boutons.
+   Un élément de grille vaut `min-width: auto` par défaut : il refuse de
+   descendre sous la largeur de son contenu, et « Plaque commémorative "Tante
+   Yvonne" » poussait donc la troisième colonne hors de l'écran MALGRÉ le
+   `minmax(0, 1fr)`. ⭐ `minmax(0, …)` borne la PISTE, pas l'élément posé
+   dedans : les deux doivent céder, sinon le plus rigide gagne. */
+.cp-scene .cp-choix-lieux > li { min-width: 0; display: flex; }
+.cp-scene .cp-choix-lieu { width: 100%; }
+/* ⛔ PAS D'ICÔNE DANS LA PASTILLE — mesuré à l'écran le 6/11 : sur 375 px,
+   l'icône et ses marges laissaient 45 px de texte, soit « Manoi… ». Un bouton
+   qui ne montre pas le nom du lieu ne propose rien.
+   ⭐ Et elle ne manque pas : le GENRE du lieu est écrit en toutes lettres sur
+      la ligne juste en dessous (« · Fortification »), pour celui qu'on tient.
+      Trois pictogrammes redisaient en petit ce qu'une ligne dit en grand. */
+.cp-scene .cp-choix-lieu .cp-choix-picto,
+.cp-scene .cp-choix-lieu svg { display: none; }
+.cp-scene .cp-choix-lieu { padding: 9px 14px; font-size: var(--t-xs); min-height: 40px; }
+.cp-scene .cp-choix-lieu {
+  /* ⚠️ ON REDÉFINIT CE QUE LA RÈGLE DE BASE POSE, pas seulement ce qu'on
+     ajoute. `.cp-choix-lieu` (le dessin « en document ») pose
+     `flex-direction: column`, `min-height: 76px`, `width: 100%` et un fond
+     clair : ne surcharger que `padding` laissait des blobs de 88 px de haut,
+     mesurés à l'écran. ⭐ Une surcharge qui ne nomme pas toutes les
+     propriétés qu'elle veut changer hérite du reste EN SILENCE. */
+  display: flex; flex-direction: row; align-items: center; gap: 6px;
+  width: auto; text-align: left;
+  padding: 10px 12px; min-height: 44px;
+  /* ⚠️ Trois noms bretons ne tiennent pas sur 375 px : chacun prend son
+     tiers et se coupe proprement. Mieux vaut trois noms tronqués et VISIBLES
+     qu'un nom entier et deux absents — on choisit entre trois endroits, pas
+     entre trois libellés. */
+  min-width: 0; overflow: hidden; text-overflow: ellipsis;
+  justify-content: flex-start;
+  border-radius: var(--r-rond); border: 1px solid var(--bulle-trait);
+  background: color-mix(in srgb, var(--bulle-unie) 88%, transparent);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  color: var(--bulle-texte); font: inherit; font-size: var(--t-xs);
+  white-space: nowrap; cursor: pointer;
+}
+.cp-scene .cp-choix-lieu.est-choisie {
+  border-color: var(--ocre);
+  background: color-mix(in srgb, var(--ocre) 24%, var(--bulle-unie));
+}
+/* ⚠️ `.cp-choix-lieu-nom` porte un `-webkit-line-clamp: 2`, voulu pour le
+   dessin « en document » où les trois cartes s'alignaient en colonnes. Dans
+   une pastille posée sur la carte, deux lignes font un bouton de 56 px qui
+   mange le paysage : une seule ligne, coupée proprement. */
+.cp-scene .cp-choix-lieu-nom {
+  display: block; -webkit-line-clamp: none;
+  min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cp-scene .cp-choix-detail {
+  margin: 0; padding: 8px 12px;
+  border-radius: var(--r-l); border: 1px solid var(--bulle-trait);
+  background: color-mix(in srgb, var(--bulle-unie) 94%, transparent);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  color: var(--bulle-texte); font-size: var(--t-xs);
+  /* ⚠️ `hyphens: manual` : l'application coupe les mots longs ailleurs, et
+     c'est bon dans un paragraphe. Sur une ligne de trois faits, « Forti-
+     fication » se lit comme une coquille. Un mot se coupe dans un texte, pas
+     dans une étiquette. */
+  hyphens: manual; text-wrap: balance;
+}
+
+/* ── les deux gestes ────────────────────────────────────────────────────
+   ⭐ « Commencer » est plein, « Y aller » est tenu : l'un marche, l'autre
+      conduit. Deux boutons de même poids laisseraient croire à deux façons
+      de faire la même chose. */
+.cp-scene-actions { display: flex; gap: 8px; }
+.cp-scene-primaire, .cp-scene-secondaire {
+  flex: 1 1 0; min-height: 48px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  border-radius: var(--r-rond); font: inherit; font-weight: 500;
+  text-decoration: none; cursor: pointer; border: 1px solid transparent;
+}
+.cp-scene-primaire { background: var(--ocre); color: var(--nuit); }
+.cp-scene-secondaire {
+  /* 🔴 MESURÉ À 3,60 DE CONTRASTE AU PREMIER JET — sous le seuil de 4,5.
+     `--bulle-texte` ne résout pas en craie sur `.page-composer` : cet écran
+     porte l'encre sombre, et le jeton y rendait de l'ocre sur du kaki.
+     ⭐ Ce dépôt a déjà payé exactement ce bouton-là : « Y aller » était à
+        1,15 sur la carte du territoire. Un jeton nommé pour un contexte ne
+        se transporte pas dans un autre sans qu'on remesure. */
+  border-color: var(--bulle-trait); color: var(--craie);
+  background: color-mix(in srgb, var(--bulle-unie) 88%, transparent);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+}
+.cp-scene-primaire:focus-visible, .cp-scene-secondaire:focus-visible,
+.cp-scene .cp-choix-lieu:focus-visible {
+  outline: 2px solid var(--ocre); outline-offset: 2px;
+}

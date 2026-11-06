@@ -403,10 +403,25 @@ describe("ce qu'on fait d'une promenade composée", () => {
      ⭐ Ce test tient les DEUX bords : l'action principale doit être de
         marcher, et la sortie doit exister. Un garde qui ne tiendrait que le
         premier laisserait supprimer le second au nom de la même idée. */
+  /* 🔄 RETOURNÉ LE 6/11/2026, ET IL AVAIT RAISON DE TOMBER. Il épinglait le
+     NOM DE CLASSE `cp-primaire`. L'action a déménagé sur la carte plein écran
+     et s'appelle désormais `cp-scene-primaire` — la règle, elle, n'a pas
+     bougé d'un mot : un bouton PRINCIPAL lance la marche.
+     ⭐ Un garde qui nomme l'implémentation se met en travers de la bonne
+        correction : il faut l'éteindre pour avancer, et c'est le moment où
+        l'on éteint aussi ce qu'il gardait vraiment. Il lit donc une classe
+        de PREMIER RANG, quel que soit l'écran qui la porte. */
   it("⛔ « Partir » est l'action principale, et le GPX reste atteignable", () => {
-    const principal = compo.match(/className="cp-primaire"[\s\S]{0,220}?<\/button>/g) ?? [];
+    const principal = compo.match(/className="cp-[a-z-]*primaire"[\s\S]{0,260}?<\/button>/g) ?? [];
     const partir = principal.find((x) => /setEnMarche\(true\)/.test(x));
     expect(partir, "aucun bouton principal ne lance la marche").toBeTruthy();
+
+    /* ⛔ ET UNE SEULE. Monter l'action sur la carte sans retirer celle d'en
+       bas aurait donné deux boutons pour un seul geste — le défaut trouvé sur
+       l'accueil en septembre, où « Voir les balades » et « Voir sur la carte »
+       menaient au même écran. Déplacer, jamais dupliquer. */
+    const lanceurs = principal.filter((x) => /setEnMarche\(true\)/.test(x));
+    expect(lanceurs.length, "deux boutons principaux lancent la marche").toBe(1);
 
     // la sortie existe toujours, et elle emporte un VRAI fichier
     expect(compo).toMatch(/enGpx\(walk\)/);
