@@ -542,9 +542,24 @@ describe("🔴 6/11/2026 — l'écran de l'offre promenade doit se lire sans mod
      le titre de page et la phrase du dessus la posaient déjà.
      ⭐ Sur une carte nue, plus rien ne la pose. Trois bulles sur un paysage ne
         s'expliquent pas seules — filtres ? lieux croisés ? destinations ? */
-  it("les trois propositions portent une question, pas seulement des noms", () => {
-    expect(nu).toMatch(/cp-choix-titre/);
-    expect(nu).toMatch(/Où vont vos pas/);
+  /* 🔄 RETOURNÉ LE 6/11/2026, QUELQUES HEURES APRÈS AVOIR ÉTÉ ÉCRIT. Il
+     exigeait un intitulé « Où vont vos pas ? » au-dessus des trois choix.
+     Le fondateur, voyant l'écran : « la carte est surchargée […] allège les
+     textes sur carte ». Il avait raison — j'avais empilé SEPT couches de
+     mobilier sur un fond qui change tous les mètres.
+     ⭐ CE QU'IL PROTÉGEAIT RESTE VRAI SOUS UNE AUTRE FORME, et plus courte :
+        l'écran doit dire son MÉCANISME — un départ, des promenades autour.
+        Il le dit désormais là où l'on tape, par le libellé du champ
+        (« D'où partez-vous ? »), et les pastilles portent chacune leur
+        distance. Zéro mot de plus sur la carte, la même question posée.
+     ⚠️ Un garde écrit le matin peut être juste et devenir faux l'après-midi :
+        ce n'est pas qu'il avait tort, c'est que le contexte a bougé — la
+        première version de l'écran n'était pas encore pleine. */
+  it("l'écran dit où l'on va, sans l'écrire sur la carte", () => {
+    expect(nu, "le champ ne pose plus la question du départ")
+      .toMatch(/placeholder="D'où partez-vous/);
+    expect(nu, "les pastilles ne portent plus leur distance")
+      .toMatch(/cp-choix-lieu-km/);
   });
 
   /* ⭐ ON CHOISIT ENTRE 1,7 KM ET 2,4 KM, PAS ENTRE TROIS NOMS. Sans la
@@ -600,10 +615,11 @@ describe("🔴 6/11/2026 — le parcours de /promenades, pour qui arrive sans ri
      départ déjà choisi qu'on n'a pas choisi, et trois bulles. Le mécanisme —
      un point de départ, trois promenades autour — n'était écrit nulle part :
      il fallait le deviner en cliquant. */
-  it("l'écran dit son mécanisme, une fois", () => {
-    expect(nu).toMatch(/cp-mode-emploi/);
-    expect(nu).toMatch(/trois promenades autour/);
-  });
+  /* 🔄 FUSIONNÉ LE 6/11 DANS LE GARDE CI-DESSUS. Il exigeait une PHRASE sur
+     la carte (« nous proposons trois promenades autour »). Le fondateur l'a
+     fait retirer avec le reste du mobilier : le mécanisme se dit maintenant
+     par le libellé du champ. Deux tests pour une même règle en auraient fait
+     tomber deux à la prochaine réécriture, pour une seule décision. */
 
   /* 🔴 LE GARDE QUI GÉNÉRALISE L'ERREUR. Les deux libellés flottants ont été
      posés en craie claire, SANS FOND, avec une ombre portée, sur une carte
@@ -614,11 +630,25 @@ describe("🔴 6/11/2026 — le parcours de /promenades, pour qui arrive sans ri
         selon qu'on affiche le plan ou l'orthophoto. C'est pour cela que
         `/carte` met TOUT en bulle — contourné deux fois « pour rester
         discret », et discret a voulu dire absent. */
+  /* 🔄 RÉÉCRIT LE 6/11 : il lisait UN BLOC CSS nommé, et ce bloc a disparu
+     avec les deux libellés que le fondateur a fait retirer. La règle, elle,
+     est la plus durable de la journée — et elle se vérifie mieux en négatif.
+     🔴 Les libellés flottants ont été posés en craie claire, SANS FOND, avec
+        une ombre portée, sur une carte CLAIRE : mesuré 1,09 et 1,12 de
+        contraste. Invisibles.
+     ⭐ UNE OMBRE PORTÉE N'EST PAS UN FOND. Elle détoure un gros titre ; elle
+        ne fait rien pour une ligne de petit texte. Et sur une carte le fond
+        est INCONNU PAR CONSTRUCTION : il change au défilement, au zoom, et
+        selon qu'on affiche le plan ou l'orthophoto. Tout ce qui flotte sur
+        cette carte porte donc sa propre bulle — et une `text-shadow` qui
+        réapparaît dans `.cp-scene` est le signe qu'on y renonce. */
   it("⛔ aucun libellé flottant ne compte sur une ombre portée pour être lu", () => {
-    const bloc = css.match(/\.cp-scene \.cp-mode-emploi,[\s\S]{0,700}?\}/)?.[0] ?? "";
-    expect(bloc, "le bloc des libellés flottants est introuvable").not.toBe("");
-    expect(bloc, "un libellé flottant sans fond propre").toMatch(/background:/);
-    expect(bloc, "une ombre portée tient lieu de fond").toMatch(/text-shadow:\s*none/);
+    const regles = [...css.matchAll(/\.cp-scene[^{]*\{[^}]*\}/g)].map((m) => m[0]);
+    expect(regles.length, "aucune règle `.cp-scene` : le sélecteur a changé de nom")
+      .toBeGreaterThan(5);
+    const avecOmbre = regles.filter((r) => /text-shadow:\s*(?!none)/.test(r));
+    expect(avecOmbre, `ombre portée sur la carte : ${avecOmbre.join(" | ").slice(0, 160)}`)
+      .toHaveLength(0);
   });
 
   /* ⚠️ Le départ est un ÉTAT, pas une phrase : il porte son étiquette, comme

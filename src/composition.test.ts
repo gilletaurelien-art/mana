@@ -842,9 +842,17 @@ describe("dire une boucle", () => {
     expect(descriptif(b({ bordDeMer: 100 }))).not.toContain("bord de l'eau");
   });
 
+  /* 🔄 RETOURNÉ LE 6/11/2026 — il épinglait les MOTS « au bord de l'eau ».
+     Le fondateur a demandé d'alléger les textes posés sur la carte ; la
+     formule est devenue « m de côte », trois mots au lieu de cinq. La RÈGLE
+     n'a pas bougé d'un pouce : au-delà de 300 m, la ligne de faits dit la mer.
+     ⭐ Un garde qui fige une tournure se met en travers de toute réécriture —
+        il faut l'éteindre pour alléger une phrase, et c'est le moment où l'on
+        éteint aussi ce qu'il gardait. Il lit donc le FAIT, pas la formule. */
   it("la ligne de faits de l'écran, elle, dit la mer dès 300 m", () => {
     const ecran = readFileSync("src/Composer.tsx", "utf8");
     expect(ecran).toMatch(/\.bordDeMer > 300 &&/);
-    expect(ecran).toMatch(/au bord de l'eau/);
+    expect(ecran, "la ligne de faits ne nomme plus la mer")
+      .toMatch(/de côte|bord de (l'eau|mer)|littoral/);
   });
 });

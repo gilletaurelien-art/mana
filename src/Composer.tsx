@@ -1258,7 +1258,6 @@ export function Composer() {
                    si ce sont des lieux qu'on croise, des filtres ou des
                    destinations. Quatre mots rendent la question que la refonte
                    avait emportée avec le document. */}
-            <p className="cp-choix-titre">Où vont vos pas&nbsp;?</p>
             <ul className="cp-choix-lieux">
                   {lesProps.map((x, i) => {
                     const lieu = spots[x.i];
@@ -1302,14 +1301,18 @@ export function Composer() {
                     répétaient cette lecture trois fois pour n'en garder qu'une. */}
                 {prop && (
                   <p className="cp-choix-detail">
-                    <SvgRuban />{km(prop.metres)} km à pied
-                    <span className="cp-choix-detail-sep" aria-hidden="true">·</span>
-                    <SvgEtincelle />{comptes[choisie] ?? 0} lieu{(comptes[choisie] ?? 0) > 1 ? "x" : ""} sur le chemin{" "}
-                    · {inventaire?.libelles[spots[prop.i].c] ?? LIBELLE[spots[prop.i].c] ?? spots[prop.i].c}
+{/* ⛔ LA DISTANCE NE SE REDIT PAS ICI : elle est sur la pastille
+                        choisie, trois centimètres plus haut. Deux fois le même
+                        chiffre, ce n'est pas de l'insistance, c'est une ligne
+                        de plus à lire sur une carte déjà chargée.
+                        ⚠️ « sur le chemin » part aussi : la ligne ne parle que
+                           du chemin, le préciser ne retire aucune ambiguïté. */}
+                    <SvgEtincelle />{comptes[choisie] ?? 0} lieu{(comptes[choisie] ?? 0) > 1 ? "x" : ""}
+                    {" · "}{inventaire?.libelles[spots[prop.i].c] ?? LIBELLE[spots[prop.i].c] ?? spots[prop.i].c}
                     {prop.parcours.bordDeMer > 300 && (
                       <>
                         <span className="cp-choix-detail-sep" aria-hidden="true">·</span>
-                        <SvgVague />{Math.round(prop.parcours.bordDeMer)} m au bord de l'eau
+                        <SvgVague />{Math.round(prop.parcours.bordDeMer)} m de côte
                       </>
                     )}
                     {prop.parcours.marees > 0 && (
@@ -1424,7 +1427,7 @@ export function Composer() {
                         <input
                           type="search"
                           value={requete}
-                          placeholder="un lieu, une plage, une chapelle…"
+                          placeholder="D'où partez-vous ?"
                           onChange={(e) => setRequete(e.target.value)}
                         />
                       </label>
@@ -1447,9 +1450,6 @@ export function Composer() {
                         ⭐ Une phrase. C'est le prix d'un écran qui se lit sans
                            mode d'emploi, et il est plus bas que celui d'un
                            utilisateur qui repart. */}
-                    <p className="cp-mode-emploi">
-                      Choisissez un départ : nous proposons trois promenades autour.
-                    </p>
                     {depart && (
                       <p className="cp-depart-mot">
                         <span className="cp-depart-etiquette">Départ</span>
@@ -1460,7 +1460,7 @@ export function Composer() {
                             jusqu'à 381 m. Les taire ferait commencer la promenade
                             ailleurs qu'on ne l'a demandée. */}
                         {depart.a.ecartNoeud > 60 &&
-                          ` · le chemin commence à ${Math.round(depart.a.ecartNoeud)} m`}
+                          ` · chemin à ${Math.round(depart.a.ecartNoeud)} m`}
                       </p>
                     )}
                   </>
