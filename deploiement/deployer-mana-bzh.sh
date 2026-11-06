@@ -63,7 +63,23 @@ RACINE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 #     MANA_BZH_CADDY=/chemin/du/fichier.caddy
 #     MANA_SSH_KEY=$HOME/.ssh/votre_cle        # facultatif
 #
-[ -f "$RACINE/deploiement/cible.local.sh" ] && . "$RACINE/deploiement/cible.local.sh"
+# 🔴 LE FICHIER LOCAL EST UN DÉFAUT, PAS UN ÉCRASEMENT — corrigé le
+#    6/11/2026. L'en-tête promet « posez-les dans votre environnement, OU dans
+#    cible.local.sh » ; le `.` les écrasait toutes, donc la première branche
+#    de cette phrase était fausse depuis toujours.
+# ⭐ Trouvé en essayant d'ÉPROUVER un garde : je voulais le confronter à une
+#    copie du Caddyfile serveur, et il a comparé le vrai fichier sans rien
+#    dire. Un garde qu'on ne peut pas pointer ailleurs est un garde qu'on ne
+#    peut pas voir refuser — et ce dépôt sait ce que vaut un garde jamais vu
+#    refuser.
+if [ -f "$RACINE/deploiement/cible.local.sh" ]; then
+  _ks5="${MANA_KS5-}"; _cible="${MANA_BZH_CIBLE-}"; _caddy="${MANA_BZH_CADDY-}"; _cle="${MANA_SSH_KEY-}"
+  . "$RACINE/deploiement/cible.local.sh"
+  [ -n "$_ks5" ]   && MANA_KS5="$_ks5"
+  [ -n "$_cible" ] && MANA_BZH_CIBLE="$_cible"
+  [ -n "$_caddy" ] && MANA_BZH_CADDY="$_caddy"
+  [ -n "$_cle" ]   && MANA_SSH_KEY="$_cle"
+fi
 
 : "${MANA_KS5:?⛔ MANA_KS5 n'est pas posée — voir l'en-tête de ce script}"
 : "${MANA_BZH_CIBLE:?⛔ MANA_BZH_CIBLE n'est pas posée — voir l'en-tête de ce script}"
@@ -105,16 +121,47 @@ if grep -q '"/mana/"' site/index.html || grep -q 'src="/mana/' site/index.html; 
   exit 1
 fi
 
-# ── 3. le bloc est-il POSÉ sur la machine ? ─────────────────────────────────
-if ssh_ "grep -q appbzh $(printf '%q' "$MANA_BZH_CADDY")" 2>/dev/null; then
-  vert "✓ le bloc @appbzh est en place sur le serveur"
-else
-  rouge "⛔ @appbzh est ABSENT du Caddyfile de production."
+# ── 3. le bloc en ligne PORTE-T-IL LES MÊMES CHEMINS ? ──────────────────────
+# 🔴 CE GARDE NE VÉRIFIAIT QUE LA PRÉSENCE DU MOT `appbzh` — corrigé le
+#    6/11/2026, après l'avoir vu dire « ✓ en place » le matin même alors qu'il
+#    manquait `/l-application` au serveur. C'est moi qui l'ai trouvé en
+#    comparant les deux fichiers à la main, pas lui.
+# ⭐ UN GARDE QUI VÉRIFIE QU'UNE CHOSE EXISTE NE DIT RIEN DE CE QU'ELLE
+#    CONTIENT. Celui-ci aurait signé un bloc amputé de trois chemins : les
+#    pages existeraient dans l'application et tomberaient sur l'app
+#    historique — un 404 qui rend la coquille d'un AUTRE produit, sans la
+#    moindre erreur serveur. C'est exactement l'accident de /balades-office,
+#    resté invisible du 2 au 5/11, que l'étape 1 empêche CÔTÉ DÉPÔT et que
+#    personne ne surveillait CÔTÉ MACHINE.
+# ⚠️ LES DEUX SENS COMPTENT. Un chemin qui MANQUE rend l'ancienne app ; un
+#    chemin EN TROP vole une adresse aux 63 885 pages d'agrégat et leur rend
+#    notre coquille — « les balades » servies à qui demandait « les
+#    associations à Abbeville ». Le second est le pire : il a l'air de marcher.
+chemins_du() { tr ' ' '\n' | grep -E '^/' | LC_ALL=C sort -u; }
+
+EN_LIGNE="$(ssh_ "awk '/@appbzh[[:space:]]*\\{/,/^[[:space:]]*\\}/' $(printf '%q' "$MANA_BZH_CADDY") | grep -E '^[[:space:]]*path '" 2>/dev/null || true)"
+if [ -z "$EN_LIGNE" ]; then
+  rouge "⛔ @appbzh est ABSENT du Caddyfile de production (ou sa ligne `path`)."
   rouge "   Déposer les fichiers ne servirait à rien : aucune URL ne les sert."
   rouge "   Posez le fragment deploiement/mana-bzh.caddy dans"
   rouge "   \$MANA_BZH_CADDY sur le serveur, puis rechargez Caddy."
   exit 1
 fi
+
+ATTENDU="$(grep -E '^[[:space:]]*path ' deploiement/mana-bzh.caddy | chemins_du)"
+OBTENU="$(printf '%s\n' "$EN_LIGNE" | chemins_du)"
+MANQUE="$(comm -23 <(printf '%s\n' "$ATTENDU") <(printf '%s\n' "$OBTENU"))"
+EN_TROP="$(comm -13 <(printf '%s\n' "$ATTENDU") <(printf '%s\n' "$OBTENU"))"
+
+if [ -n "$MANQUE" ] || [ -n "$EN_TROP" ]; then
+  rouge "⛔ le bloc @appbzh EN LIGNE ne porte pas les mêmes chemins que le dépôt."
+  [ -n "$MANQUE" ]  && { rouge "   MANQUENT sur le serveur (l'ancienne app répondra) :"; printf '     %s\n' $MANQUE; }
+  [ -n "$EN_TROP" ] && { rouge "   EN TROP sur le serveur (adresses volées aux pages d'agrégat) :"; printf '     %s\n' $EN_TROP; }
+  rouge "   Mettez à jour \$MANA_BZH_CADDY, puis : sudo caddy validate --config /etc/caddy/Caddyfile"
+  rouge "   --adapter caddyfile && sudo systemctl reload caddy"
+  exit 1
+fi
+vert "✓ le bloc @appbzh porte les $(printf '%s\n' "$ATTENDU" | wc -l | tr -d ' ') chemins attendus"
 
 if [ "$VERIFIER" = "1" ]; then vert "✓ --verifier : rien n'a été déposé"; exit 0; fi
 
