@@ -55,10 +55,27 @@ export function regarder(etalon, accueil, mesure) {
   const discrimine =
     etalon.temoin != null && accueil.temoin != null && etalon.temoin !== accueil.temoin;
   if (discrimine) return mesure.temoin !== etalon.temoin;
-  /* Sans témoin utile, l'empreinte ne tranche que si l'hôte distingue seulement
-     ses adresses — ce qu'on éprouve sur un cas négatif connu. */
+
+  /* 🔴 UNE DIFFÉRENCE EST CONCLUANTE MÊME SUR UN HÔTE AVEUGLE, et ma première
+     version ne le voyait pas : elle rendait `null` pour TOUT dès que l'hôte
+     servait la même enveloppe à sa racine et à un chemin impossible.
+     ⛔ Trouvé en lisant mon propre relevé après la pose de `@manalove_pages` :
+        `/radio` rendait 24 277 o contre 45 595 à l'étalon — une page bien
+        réelle, et mon garde l'annonçait « NON MESURABLE ».
+     ⭐ L'aveuglement n'est pas symétrique. Rendre AUTRE CHOSE qu'un chemin
+        qui n'existe pas ne peut vouloir dire qu'une seule chose : il y a
+        quelque chose ici. C'est l'égalité qui est ambiguë — elle peut être
+        une page morte comme une page que seul le JavaScript dessine.
+     ⚠️ Un garde prudent doit l'être là où il ne sait pas, et NULLE PART
+        AILLEURS : la prudence appliquée à un cas tranché est une mesure
+        perdue, et six « non mesurable » qui en cachent un vrai, c'est un
+        relevé qu'on cesse de lire. */
+  if (mesure.empreinte !== etalon.empreinte) return true;
+
+  /* Égalité : concluante seulement si l'hôte distingue ses adresses — ce
+     qu'on éprouve sur un cas négatif connu. */
   if (accueil.empreinte === etalon.empreinte) return null;
-  return mesure.empreinte !== etalon.empreinte;
+  return false;
 }
 
 /* ⛔ LA RÈGLE NE S'EXÉCUTE PAS QUAND ON LA LIT. Sans ce garde, importer ce
