@@ -82,3 +82,17 @@ export const signature = () => (visage() === "love" ? "mana.love" : "MANA.bzh");
       n'existe pas — le courrier serait parti nulle part, sans rebond visible
       pour nous. */
 export const courriel = () => (visage() === "love" ? "welcome@mana.love" : "contact@mana.bzh");
+
+/**
+ * 🔴 LE TITRE, SIGNÉ PAR L'HÔTE — extrait d'`App.tsx` le 7/11 au soir, après
+ *    qu'une relecture adversariale a montré que ce geste n'était gardé par
+ *    RIEN. Il vivait en une ligne dans un effet :
+ *      `document.title = titre.replace(/MANA\.bzh/g, signature())`
+ *    Retirer le point d'échappement, ou la lettre « b », laissait tous les
+ *    tests verts et rendait « — MANA.bzh » à mana.love.
+ * ⭐ Un geste qui n'a qu'un seul point de pose doit être une FONCTION, sinon
+ *    il n'a pas de nom et on ne peut pas l'interroger. Celle-ci est pure : on
+ *    lui donne le titre de la table et elle rend celui de l'hôte.
+ */
+export const titrePourLHote = (titre: string) =>
+  titre.replace(/MANA\.bzh/g, signature());

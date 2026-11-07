@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { ROUTES_APP, ROUTES_LOVE, ROUTE_OFFICE, ROUTES_HORS_LOVE } from "./routes";
+import { visage, avecOffice, signature, courriel, titrePourLHote } from "./visage";
 
 const lire = (f: string) => readFileSync(new URL(f, import.meta.url), "utf8");
 const nu = (f: string) =>
@@ -177,31 +178,81 @@ describe("🔴 rien de ce qui est RENDU sur les deux hôtes ne nomme un domaine 
      rendrait la même chose des deux côtés passerait le garde ci-dessus en
      n'ayant rien réparé — le domaine serait simplement caché dans une
      fonction. */
+  /* ════════════════════════════════════════════════════════════════════
+     🔴 CES GARDES APPELLENT LES FONCTIONS. LES PRÉCÉDENTS LISAIENT LE TEXTE.
+     ════════════════════════════════════════════════════════════════════
+     Une relecture adversariale a muté, dans `visage.ts`, l'ÉCHANGE des deux
+     branches : mana.love signait « MANA.bzh » et écrivait à `contact@mana.bzh`
+     — et les gardes restaient VERTS, parce qu'ils vérifiaient que les deux
+     valeurs sont PRÉSENTES dans le fichier, jamais laquelle répond à quel
+     hôte. C'est la troisième fois de la journée que le même trou apparaît :
+     ⭐ un garde qui lit un fichier ne dit rien de ce que le code DÉCIDE.
+     ⚠️ `visage()` lit `location`. On la remplace donc par une vraie `URL` le
+        temps du test — c'est ce que fait le navigateur, en plus petit. */
+  const surLHote = <T,>(hote: string, faire: () => T): T => {
+    const avant = Object.getOwnPropertyDescriptor(globalThis, "location");
+    Object.defineProperty(globalThis, "location", {
+      value: new URL(`https://${hote}/promenades`), configurable: true, writable: true });
+    try { return faire(); }
+    finally {
+      if (avant) Object.defineProperty(globalThis, "location", avant);
+      else delete (globalThis as Record<string, unknown>).location;
+    }
+  };
+
+  it("⛔ chaque hôte reçoit SA signature, et pas celle de l'autre", () => {
+    expect(surLHote("mana.bzh", signature)).toBe("MANA.bzh");
+    expect(surLHote("mana.love", signature)).toBe("mana.love");
+  });
+
   /* 🔴 L'ADRESSE EXACTE, PAS UN GABARIT — Aurélien, 7/11 : « pour le mail
      c'est welcome@mana.love ». J'avais écrit `contact@mana.love` par
      transposition : changer le domaine, garder la boîte.
      ⭐ Une adresse électronique n'est pas dérivable de son domaine. La partie
         gauche est un choix éditorial ; `contact@` aurait eu l'air juste et
-        désigné une boîte qui n'existe pas — le courrier serait parti nulle
-        part, sans rebond visible pour nous.
-     ⚠️ Et le garde d'à côté ne pouvait pas l'attraper : il vérifie que les
-        DEUX domaines sont nommés, ce qui était vrai de la mauvaise adresse.
-        Mutation faite : `welcome@` → `contact@` passait. D'où ce test-ci, qui
-        épingle la valeur parce qu'elle vient d'une décision et non d'une
-        règle — un interdit en test se franchit en le sachant. */
-  it("⛔ les deux adresses sont celles qu'on a données, à la lettre", () => {
-    const v = nu("./visage.ts");
-    expect(v, "l'adresse de mana.love n'est plus welcome@").toContain('"welcome@mana.love"');
-    expect(v, "l'adresse de mana.bzh a changé").toContain('"contact@mana.bzh"');
+        désigné une boîte qui n'existe pas — le courrier parti nulle part,
+        sans rebond visible pour nous. */
+  it("⛔ chaque hôte reçoit SON adresse, à la lettre", () => {
+    expect(surLHote("mana.bzh", courriel)).toBe("contact@mana.bzh");
+    expect(surLHote("mana.love", courriel)).toBe("welcome@mana.love");
   });
 
-  it("⛔ la signature et le courriel CHANGENT selon l'hôte", () => {
-    const v = nu("./visage.ts");
-    for (const nom of ["signature", "courriel"]) {
-      const m = v.match(new RegExp(`export const ${nom} = [^;]+;`));
-      expect(m, `${nom} a disparu`).not.toBeNull();
-      expect(m![0], `${nom} ne distingue pas les deux hôtes`).toMatch(/love/);
-      expect(m![0], `${nom} ne nomme pas les deux domaines`).toMatch(/bzh/);
+  /* ⛔ ET LE TITRE EST SIGNÉ PAR L'HÔTE. Ce geste n'avait qu'un seul point de
+     pose, dans un effet d'`App.tsx`, et il n'était gardé par rien : retirer
+     le point d'échappement de la recherche laissait tous les tests verts et
+     rendait « — MANA.bzh » à mana.love. */
+  it("⛔ le titre d'une page porte la signature de l'hôte qui la sert", () => {
+    const t = "Composer une promenade — presqu'île de Crozon — MANA.bzh";
+    expect(surLHote("mana.bzh", () => titrePourLHote(t))).toContain("MANA.bzh");
+    const love = surLHote("mana.love", () => titrePourLHote(t));
+    expect(love, "mana.love signe encore du nom de l'autre site").not.toMatch(/MANA\.bzh/i);
+    expect(love).toContain("mana.love");
+    /* ⚠️ Et le SUJET du titre ne doit pas être abîmé au passage : une
+       substitution trop large signerait juste et dirait n'importe quoi. */
+    expect(love).toContain("Composer une promenade");
+  });
+
+  /* 🔴 ET LE PRÉDICAT DE L'OFFICE : ses deux gardes vérifiaient qu'il EXISTE
+     et qu'on l'APPELLE, jamais ce qu'il RÉPOND. L'inverser passait. */
+  it("⛔ l'Office répond oui sur mana.bzh et non sur mana.love", () => {
+    expect(surLHote("mana.bzh", avecOffice), "l'Office a quitté mana.bzh").toBe(true);
+    expect(surLHote("mana.love", avecOffice), "l'Office est apparu sur mana.love").toBe(false);
+  });
+
+  /* ⚠️ Et la porte de secours `?visage=love` doit continuer de fonctionner :
+     une branche que personne ne peut regarder est une branche que personne
+     ne corrige. */
+  it("la bascule par paramètre reste praticable hors production", () => {
+    const avant = Object.getOwnPropertyDescriptor(globalThis, "location");
+    Object.defineProperty(globalThis, "location", {
+      value: new URL("https://mana.bzh/promenades?visage=love"),
+      configurable: true, writable: true });
+    try {
+      expect(visage()).toBe("love");
+      expect(avecOffice()).toBe(false);
+    } finally {
+      if (avant) Object.defineProperty(globalThis, "location", avant);
+      else delete (globalThis as Record<string, unknown>).location;
     }
   });
 });

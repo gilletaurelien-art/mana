@@ -29,7 +29,7 @@
     path / /carte /promenades /composer /balades-office /territoire /l-application /reglages /contact /mentions-legales /espace /radio /promenade/* /app/* /paysages/* /images/* /carte-style.json /carte-ortho.json /fermetures.json /sw.js
 }
 handle @appbzh {
-    root * /srv/www/_app-bzh
+    root * /home/debian/bascule/volumes/www/_app-bzh
     try_files {path} {path}/index.html /index.html
     file_server
 }
@@ -46,7 +46,7 @@ handle @appbzh {
     path /carte /promenades /composer /territoire /l-application /promenade/* /app/* /paysages/* /images/* /carte-style.json /carte-ortho.json /fermetures.json
 }
 handle @applove {
-    root * /srv/www/_app-bzh
+    root * /home/debian/bascule/volumes/www/_app-bzh
     try_files {path} {path}/index.html /index.html
     file_server
 }

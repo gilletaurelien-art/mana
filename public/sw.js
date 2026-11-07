@@ -45,7 +45,12 @@
    caches déjà posés pointent vers des fichiers qui n'existent plus : les
    garder ne servirait à rien et occuperait la place. Le ménage d'activation
    les emporte avec l'ancienne clé. */
-const CACHE = "mana-bzh-v6";
+/* ⚠️ v6 → v7 LE 7/11 : la liste de pré-cache a changé (le manifeste a
+   déménagé sous `app/`). Sans ce changement de nom, `activate` ne supprime
+   rien — il ne retire que les caches dont la CLÉ diffère — et l'ancienne
+   entrée `./manifest.webmanifest` survivrait sous une adresse que plus
+   personne ne demande. */
+const CACHE = "mana-bzh-v7";
 
 /* ═══════════════════════════════════════════════════════════════════════
    🔴 CE QUI EST À NOUS — COPIE DE `src/routes.ts`, TENUE PAR UN TEST.
@@ -151,6 +156,17 @@ const DONNEES = [
   /\/bretagne\/index\.json$/,
   /\/bretagne\/t\/[^/]+\.json$/,
   /\/promenades\/communes\.json$/,
+  /* 🔴 LE MANIFESTE ET L'ICÔNE SONT SOUS `app/` DEPUIS LE 7/11, ET ILS NE
+     PORTENT PAS DE HACHAGE DANS LEUR NOM. Or `IMMUABLES` attrape TOUT
+     `/app/` — c'est la règle des bundles, qui sont hachés : leur nom change
+     quand leur contenu change, donc « garder sans fin » est sans risque.
+     ⛔ Appliquée à un nom FIXE, la même règle sert une version périmée.
+     ⭐ Ils passent donc par `DONNEES`, qui est consulté AVANT `IMMUABLES` :
+        réseau d'abord, cache en secours. Un manifeste pèse 434 octets — le
+        coût est nul, et la justification écrite du régime immuable (« le
+        nom porte sa version ») redevient vraie pour tout ce qui y reste. */
+  /\/app\/manifest\.webmanifest$/,
+  /\/app\/icon\.svg$/,
 ];
 
 /** Ce qui est immuable et lourd : on le garde, on le rafraîchit derrière. */
@@ -211,17 +227,29 @@ const TUILES = [/^\/carte\//];
 
 const correspond = (motifs, url) => motifs.some((m) => m.test(url.pathname));
 
+/* 🔴 `./index.html` A QUITTÉ CE PRÉ-CACHE LE 7/11, ET IL N'Y ÉTAIT JAMAIS
+   ENTRÉ. Mesuré sur les deux hôtes : `/index.html` répond **301** — le
+   serveur le redirige vers `/`. Or `cache.put()` REFUSE une réponse
+   redirigée, donc `addAll` rejetait, le rattrapage ci-dessous prenait la
+   main, et cette entrée-là échouait seule, en silence.
+   ⛔ ET LE REPLI HORS LIGNE ALLAIT LA CHERCHER. `caches.match("./index.html")`
+      ne trouvait rien : une navigation hors ligne vers une page jamais
+      visitée ne rendait RIEN, alors que le hors-ligne est notre argument.
+   ⭐ `./` est la bonne adresse, et c'est la seule : c'est elle qui est
+      servie, elle qui est gardée, et elle qui porte la coquille. Une liste
+      unique, nommée, sert au pré-cache ET au repli — pour qu'ils ne puissent
+      plus désigner des choses différentes.
+   ⚠️ Le rattrapage reste, et il reste utile : une entrée manquante ne doit
+      pas faire échouer TOUTE l'installation. Mais il EFFAÇAIT une erreur
+      réelle — c'est pour ça que la liste est maintenant tenue par un test. */
+const COQUILLE = "./";
+const PRECACHE = [COQUILLE, "./app/manifest.webmanifest", "./fermetures.json"];
+
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE).then((c) =>
-      c.addAll(["./", "./index.html", "./app/manifest.webmanifest", "./fermetures.json"])
-        // ⚠️ Une entrée manquante ne doit pas faire échouer TOUTE l'installation :
-        //    sans ce rattrapage, un seul 404 laisse l'application sans cache du
-        //    tout, et le hors-ligne tombe en silence.
-        .catch(() => Promise.all(
-          ["./", "./index.html", "./app/manifest.webmanifest", "./fermetures.json"]
-            .map((u) => c.add(u).catch(() => null))
-        ))
+      c.addAll(PRECACHE)
+        .catch(() => Promise.all(PRECACHE.map((u) => c.add(u).catch(() => null))))
     )
   );
   self.skipWaiting();
@@ -282,7 +310,7 @@ self.addEventListener("fetch", (event) => {
           }
           return res;
         })
-        .catch(() => caches.match(req).then((hit) => hit || caches.match("./index.html")))
+        .catch(() => caches.match(req).then((hit) => hit || caches.match(COQUILLE)))
     );
     return;
   }

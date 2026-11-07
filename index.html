@@ -10,17 +10,17 @@
     <meta property="og:title" content="MANA.bzh — Promenades & découvertes en Bretagne" />
     <meta property="og:description" content="Promenades bretonnes hors ligne : GPS et sécurité sur le littoral, audio-guide du patrimoine, export GPX. MANAradio au centre." />
     <meta name="theme-color" content="#1b2a4a" />
-    <!-- 🔴 SOUS `app/`, PAS À LA RACINE — 7/11/2026. Sur mana.love la racine
-         appartient à l'autre application : `/manifest.webmanifest` y rendait sa
-         coquille (26 008 o de HTML) et le navigateur refusait le manifeste.
-         ⭐ `app/` est DÉJÀ à nous sur les deux hôtes, par le préfixe des chemins `app/` du
-            bloc Caddy : la réparation tient en un chemin, sans faire voyager un
-            fichier entre deux blocs de serveur ni toucher à celui d'en face.
+    <!-- 🔴 LE MANIFESTE N'EST PAS POSÉ ICI — il est ajouté plus bas, et
+         SEULEMENT sur mana.bzh. Voir la raison au script.
+         ⭐ L'icône, elle, reste statique et vaut pour les deux hôtes : une
+            icône n'installe rien, elle nomme l'onglet de NOS pages. Sous
+            `app/`, qui est à nous des deux côtés par le préfixe du bloc
+            Caddy — à la racine, mana.love rendait sa coquille (26 008 o de
+            HTML) et le favicon était mort.
          ATTENTION : ne pas écrire la forme étoilée du préfixe dans ce
          fichier. Les gardes qui le relisent retirent d'abord les commentaires
          de CODE, et cette séquence ouvre un commentaire qui avale la ligne
          suivante — la balise d'à côté disparaissait du texte examiné. -->
-    <link rel="manifest" href="%BASE_URL%app/manifest.webmanifest" />
     <link rel="icon" href="%BASE_URL%app/icon.svg" type="image/svg+xml" />
   </head>
   <body>
@@ -42,6 +42,31 @@
         var p = location.pathname.slice(b.length - 1) || "/";
         document.documentElement.dataset.fond =
           (p === "/" || /\/en-chemin\/?$/.test(p)) ? "immersif" : "lecture";
+
+        /* 🔴 LE MANIFESTE SEULEMENT SUR mana.bzh — 7/11/2026, trouvé par une
+           relecture adversariale AVANT déploiement, et c'était un défaut
+           bloquant.
+           ⛔ Un manifeste est un fichier STATIQUE : il est servi aux deux
+              hôtes, octet pour octet. Son `start_url` vaut la racine du site.
+              Sur mana.love la racine appartient à l'AUTRE application —
+              installer « MANA — Promenades » depuis mana.love/promenades
+              aurait donc créé une icône qui ouvre SA page d'accueil. Rien
+              n'échoue : l'application s'installe, elle se lance, et elle
+              lance autre chose.
+           ⭐ ET LA BONNE RÉPONSE N'EST PAS DE BRICOLER LE `start_url`. Sur
+              mana.love nous sommes un INVITÉ : deux écrans dans le site de
+              quelqu'un d'autre. Un invité ne propose pas d'installer la
+              maison. L'application installable de ce domaine est la sienne.
+           ⚠️ Posé en JS et non en HTML parce qu'un seul fichier sert les deux
+              hôtes. C'est avant tout chargement et avant toute invite
+              d'installation — la seule chose qu'un `<link rel="manifest">`
+              déclenche plus tard. */
+        if (location.hostname !== "mana.love") {
+          var m = document.createElement("link");
+          m.rel = "manifest";
+          m.href = b + "app/manifest.webmanifest";
+          document.head.appendChild(m);
+        }
       })();
     </script>
     <script type="module" src="/src/main.tsx"></script>

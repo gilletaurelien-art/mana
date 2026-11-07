@@ -241,10 +241,30 @@ describe("🔴 le manifeste d'installation, là où il vit maintenant", () => {
   const CHEMIN = "public/app/manifest.webmanifest";
   const m = JSON.parse(readFileSync(CHEMIN, "utf8"));
 
-  it("index.html le demande bien sous `app/`, par le préfixe de Vite", () => {
+  /* 🔄 RETOURNÉ AVANT MÊME D'ÊTRE DÉPLOYÉ. Il exigeait une balise
+     `<link rel="manifest">` statique — et une relecture adversariale a montré
+     que cette balise était le défaut : servie aux deux hôtes, elle faisait
+     installer depuis mana.love une application dont le `start_url` ouvre LA
+     LANDING DE L'AUTRE. Le manifeste est donc posé en JS, et seulement sur
+     mana.bzh. ⭐ Sur mana.love nous sommes un invité : un invité ne propose
+     pas d'installer la maison. */
+  it("⛔ le manifeste n'est PAS posé sur mana.love", () => {
     const html = nu(lire("index.html"));
-    expect(html).toContain('href="%BASE_URL%app/manifest.webmanifest"');
-    expect(html).toContain('href="%BASE_URL%app/icon.svg"');
+    expect(html, "la balise statique est revenue : elle vaut pour les deux hôtes")
+      .not.toMatch(/<link[^>]*rel="manifest"/);
+    expect(html, "le manifeste n'est plus posé du tout").toContain('"manifest"');
+    expect(html, "il n'est plus conditionné à l'hôte")
+      .toMatch(/location\.hostname !== "mana\.love"/);
+    /* ⚠️ Et il doit passer par le préfixe de Vite, pas par un chemin écrit à
+       la main — sinon GitHub Pages ne le trouve pas. */
+    expect(html).toMatch(/b \+ "app\/manifest\.webmanifest"/);
+  });
+
+  /* ⭐ L'ICÔNE, ELLE, RESTE STATIQUE ET VAUT POUR LES DEUX. Une icône
+     n'installe rien : elle nomme l'onglet de NOS pages, et nos pages sont
+     bien à nous sur les deux hôtes. */
+  it("l'icône est servie aux deux hôtes, sous `app/`", () => {
+    expect(nu(lire("index.html"))).toContain('href="%BASE_URL%app/icon.svg"');
   });
 
   /* ⚠️ La recette, éprouvée sur LES DEUX bases — c'est tout l'intérêt du

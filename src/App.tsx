@@ -13,7 +13,7 @@ import {
 } from "./Glyphs";
 import { Invitation } from "./Invitation";
 import { LApplication } from "./LApplication";
-import { avecOffice, signature, visage } from "./visage";
+import { avecOffice, visage, titrePourLHote } from "./visage";
 import { entreesBarre, liensPied } from "./barre";
 import { Reglages } from "./Reglages";
 import { EcranTerritoire } from "./EcranTerritoire";
@@ -124,7 +124,7 @@ export default function App() {
        dans la table. Dix chaînes à corriger à la main divergeraient au
        premier titre ajouté — et en silence, puisqu'un titre faux s'affiche
        parfaitement. La table dit le sujet, l'hôte dit la signature. */
-    if (titre) document.title = titre.replace(/MANA\.bzh/g, signature());
+    if (titre) document.title = titrePourLHote(titre);
   }, [path]);
 
   const barreRef = useRef<HTMLElement | null>(null);

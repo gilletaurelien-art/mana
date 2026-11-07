@@ -139,6 +139,19 @@ if (cheminsLove.length !== chemins.length - retires) {
     `changé de nom dans src/routes.ts ?`);
 }
 
+/* 🔴 LA RACINE DU SERVEUR, ET ELLE N'EST PAS CELLE QU'ON CROYAIT — corrigée
+   le 7/11 au soir. Ce générateur écrivait `/srv/www/_app-bzh` ; vérifié sur
+   le KS-5, ce dossier **n'existe pas**. La production sert depuis
+   `/home/debian/bascule/volumes/www/_app-bzh` depuis la bascule du 2/11.
+   ⛔ ET LE GARDE DE DÉPLOIEMENT NE POUVAIT PAS LE VOIR : il ne compare que la
+      ligne `path` des deux blocs, jamais leur `root`. La divergence vivait
+      donc depuis cinq jours, et quiconque aurait posé ce fragment tel quel
+      aurait servi un dossier vide — en 404, sur toute l'application.
+   ⚠️ Elle se surcharge par l'environnement, parce qu'une valeur qui dépend de
+      la cible en dépend PARTOUT : GitHub Pages ne sert pas depuis un dossier
+      du KS-5. */
+const RACINE = process.env.MANA_RACINE ?? "/home/debian/bascule/volumes/www/_app-bzh";
+
 const entete = readFileSync(new URL("../deploiement/mana-bzh.caddy", import.meta.url), "utf8")
   .split("@appbzh {")[0];
 
@@ -188,7 +201,7 @@ writeFileSync(
     path ${chemins.join(" ")}
 }
 handle @appbzh {
-    root * /srv/www/_app-bzh
+    root * ${RACINE}
     try_files {path} {path}/index.html /index.html
     file_server
 }
@@ -205,7 +218,7 @@ handle @appbzh {
     path ${cheminsLove.join(" ")}
 }
 handle @applove {
-    root * /srv/www/_app-bzh
+    root * ${RACINE}
     try_files {path} {path}/index.html /index.html
     file_server
 }

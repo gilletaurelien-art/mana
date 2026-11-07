@@ -179,6 +179,29 @@ if [ -n "$MANQUE" ] || [ -n "$EN_TROP" ]; then
 fi
 vert "✓ le bloc @appbzh porte les $(printf '%s\n' "$ATTENDU" | wc -l | tr -d ' ') chemins attendus"
 
+# 🔴 ET LA RACINE, QUE CE GARDE NE LISAIT PAS — ajouté le 7/11 au soir.
+#    Il comparait les `path` des deux blocs et jamais leur `root`. Le dépôt
+#    écrivait `/srv/www/_app-bzh`, qui N'EXISTE PAS sur le KS-5 ; la
+#    production sert depuis `/home/debian/bascule/volumes/www/_app-bzh` depuis
+#    la bascule du 2/11. La divergence a vécu cinq jours.
+# ⛔ Elle n'est pas théorique : qui aurait reposé le fragment du dépôt aurait
+#    servi un dossier vide — 404 sur toute l'application, sur les deux hôtes.
+# ⭐ Et c'est le même aveuglement que partout ailleurs aujourd'hui : un garde
+#    qui vérifie une PARTIE de ce qu'il prétend garder endort sur le reste.
+RACINE_DEPOT="$(grep -m1 -E '^[[:space:]]*root \*' deploiement/mana-bzh.caddy | awk '{print $3}')"
+RACINE_SERVEUR="$(ssh_ "grep -A4 'handle @appbzh' $(printf '%q' "$MANA_BZH_CADDY") | grep -m1 -E '^[[:space:]]*root \*' | awk '{print \$3}'" 2>/dev/null || true)"
+if [ -z "$RACINE_SERVEUR" ]; then
+  note "· racine du bloc @appbzh illisible sur le serveur — comparaison sautée."
+elif [ "$RACINE_DEPOT" != "$RACINE_SERVEUR" ]; then
+  rouge "⛔ la racine du bloc DIVERGE entre le dépôt et le serveur."
+  rouge "   dépôt   : $RACINE_DEPOT"
+  rouge "   serveur : $RACINE_SERVEUR"
+  rouge "   Reposer le fragment servirait un dossier vide — 404 sur toute l'app."
+  exit 1
+else
+  vert "✓ la racine du bloc concorde ($RACINE_SERVEUR)"
+fi
+
 # ── 3bis. et @applove, s'il est déjà posé ───────────────────────────────────
 LOVE_EN_LIGNE="$(lire_bloc @applove)"
 if [ -n "$LOVE_EN_LIGNE" ]; then
@@ -193,6 +216,30 @@ if [ -n "$LOVE_EN_LIGNE" ]; then
     exit 1
   fi
   vert "✓ le bloc @applove porte les $(printf '%s\n' "$LOVE_ATTENDU" | wc -l | tr -d ' ') chemins attendus"
+
+  # 🔴 ET SA POSITION, QUI EST TOUT L'ENJEU — ajouté le 7/11 au soir, après
+  #    qu'une relecture a remarqué que ce garde vérifiait l'ENSEMBLE des
+  #    chemins et jamais leur RANG.
+  # ⛔ Les `handle` d'un même site sont mutuellement exclusifs et évalués DANS
+  #    L'ORDRE DU FICHIER. `@manalove` est un attrape-tout : placé avant
+  #    `@applove`, il gagne sur tout et l'application n'est jamais atteinte.
+  # ⭐ Et l'échec serait MUET : mana.love répondrait 200 sur /carte et
+  #    /promenades, avec une page d'accueil qui s'affiche très bien. Les
+  #    chemins seraient tous là, le garde d'au-dessus serait vert, et le
+  #    produit serait mort. Un garde qui vérifie la liste sans le rang vérifie
+  #    la moitié qui ne décide pas.
+  RANG_APPLOVE="$(ssh_ "grep -n '@applove[[:space:]]*{' $(printf '%q' "$MANA_BZH_CADDY") | head -1 | cut -d: -f1" 2>/dev/null || true)"
+  RANG_MANALOVE="$(ssh_ "grep -n '@manalove[[:space:]]*{' $(printf '%q' "$MANA_BZH_CADDY") | head -1 | cut -d: -f1" 2>/dev/null || true)"
+  if [ -z "$RANG_APPLOVE" ] || [ -z "$RANG_MANALOVE" ]; then
+    note "· impossible de relever le rang des deux blocs — vérification d'ordre sautée."
+  elif [ "$RANG_APPLOVE" -gt "$RANG_MANALOVE" ]; then
+    rouge "⛔ @applove (ligne $RANG_APPLOVE) est APRÈS l'attrape-tout @manalove (ligne $RANG_MANALOVE)."
+    rouge "   mana.love rendrait la coquille sur /carte et /promenades — en 200,"
+    rouge "   avec une page qui s'affiche. Déplacez @applove AVANT @manalove."
+    exit 1
+  else
+    vert "✓ @applove (ligne $RANG_APPLOVE) précède bien @manalove (ligne $RANG_MANALOVE)"
+  fi
 else
   note "· @applove absent du serveur — mana.love ne sert pas encore l'application (état attendu avant la bascule)."
 fi

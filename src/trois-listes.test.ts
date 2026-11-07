@@ -167,7 +167,25 @@ describe("les trois listes de chemins", () => {
           « # host mana.bzh », ce garde restait au vert. */
     const nuCaddy = caddy.split("\n").filter((l) => !/^\s*#/.test(l)).join("\n");
     expect(nuCaddy).toMatch(/^\s*host mana\.bzh$/m);
-    expect(nuCaddy).toMatch(/root \* \/srv\/www\/_app-bzh/);
+
+    /* 🔴 CE GARDE ÉPINGLAIT `/srv/www/_app-bzh` — une racine qui N'EXISTE PAS
+       sur le serveur depuis la bascule du 2/11. Il ne gardait donc pas la
+       production : il VERROUILLAIT une valeur périmée, et aurait refusé la
+       correction.
+       ⭐ Un garde qui épingle une valeur de cible se retourne contre elle au
+          premier déménagement. Celui-ci garde ce qui doit rester vrai : les
+          DEUX blocs servent la MÊME racine, et elle vient du générateur —
+          pas d'une chaîne recopiée dans un test. La valeur juste, elle, se
+          vérifie contre le serveur au déploiement, là où le serveur est
+          joignable. */
+    const racines = [...nuCaddy.matchAll(/^\s*root \* (\S+)$/gm)].map((m) => m[1]);
+    expect(racines.length, "il manque la racine d'un des deux blocs").toBe(2);
+    expect(racines[0], "les deux blocs servent des racines différentes").toBe(racines[1]);
+    expect(racines[0], "la racine n'est pas un chemin absolu").toMatch(/^\//);
+    const gen = readFileSync("scripts/caddy-bloc.mjs", "utf8");
+    const declaree = gen.match(/const RACINE = process\.env\.MANA_RACINE \?\? "([^"]+)"/);
+    expect(declaree, "le générateur ne déclare plus de racine").not.toBeNull();
+    expect(racines[0], "le bloc en dépôt ne vient pas du générateur").toBe(declaree![1]);
   });
 
   it("chaque adresse du routeur est revendiquée, et rien de plus", () => {
@@ -348,6 +366,127 @@ describe("🔴 7/11/2026 — le SECOND visage : mana.love, tenu par l'autre app"
        trop gourmande passerait pour une réussite. */
     for (const c of ROUTES_LOVE) expect(love(c), `${c} a été perdu`).toBe(true);
     for (const f of FICHIERS_LOVE) expect(love(f), `${f} a été perdu`).toBe(true);
+  });
+
+  /* 🔴 LE RÉGIME DE CACHE SE DEMANDE AU CODE, PAS À SES LISTES — 7/11 au
+     soir, trouvé par une relecture adversariale avant déploiement.
+     `IMMUABLES` attrape TOUT `/app/`, parce que les bundles y sont HACHÉS :
+     leur nom change avec leur contenu, donc « garder sans fin » est sans
+     risque. Le manifeste et l'icône viennent d'y déménager, et leur nom est
+     FIXE — la même règle leur aurait servi une version périmée.
+     ⭐ On n'éprouve pas la présence d'un motif dans une liste : on demande au
+        fichier, pour une adresse donnée, QUEL régime il choisit. Un motif
+        peut exister dans la bonne liste et être masqué par l'ordre des
+        aiguillages, ce qu'une lecture de liste ne voit jamais. */
+  it("🔴 ce qui n'a pas de hachage dans son nom n'est pas servi par le cache d'abord", () => {
+    const tete = swSrc.slice(0, swSrc.search(/self\.addEventListener/));
+    const faire = new Function("self", `${tete}
+      return (u) => correspond(TUILES, u) ? "tuiles"
+                  : correspond(DONNEES, u) ? "reseau-d-abord"
+                  : correspond(IMMUABLES, u) ? "cache-d-abord" : "reseau-seul";`);
+    const regime = faire({ location: new URL("https://mana.bzh/sw.js") }) as
+      (u: URL) => string;
+
+    for (const sans of ["/app/manifest.webmanifest", "/app/icon.svg"]) {
+      expect(regime(new URL(`https://mana.bzh${sans}`)),
+        `${sans} n'a pas de version dans son nom`).toBe("reseau-d-abord");
+    }
+    /* ⛔ Et les bundles, eux, DOIVENT rester en cache d'abord : c'est tout le
+       hors-ligne de l'application. Un garde qui corrige l'un en cassant
+       l'autre aurait l'air d'une réussite. */
+    expect(regime(new URL("https://mana.bzh/app/index-CI3wvUaU.js")))
+      .toBe("cache-d-abord");
+  });
+
+  /* 🔴 LE REPLI HORS LIGNE DOIT DÉSIGNER QUELQUE CHOSE QUI EST GARDÉ — et il
+     ne le faisait pas. Il allait chercher `./index.html`, que le pré-cache
+     croyait garder : mesuré, `/index.html` répond 301 sur les deux hôtes, et
+     `cache.put()` refuse une réponse redirigée. L'entrée échouait seule, le
+     rattrapage per-entrée effaçait l'erreur, et une navigation hors ligne
+     vers une page jamais visitée ne rendait RIEN.
+     ⭐ Le hors-ligne est notre argument de vente : un repli qui désigne une
+        adresse absente du cache est une promesse qui ne tient qu'en ligne. */
+  it("🔴 ce que le repli hors ligne cherche est bien ce que l'installation garde", () => {
+    const m = swSrc.match(/const PRECACHE = \[([^\]]*)\]/);
+    expect(m, "la liste de pré-cache a disparu").not.toBeNull();
+    /* ⚠️ LA LISTE MÊLE DES LITTÉRAUX ET DES CONSTANTES, et il faut résoudre
+       les deux — ma première version ne lisait que les chaînes entre
+       guillemets, donc elle ne voyait pas `COQUILLE` et accusait le code
+       d'un défaut qu'il n'avait pas. Un garde qui ne reconnaît qu'une FORME
+       d'écriture ne garde que cette forme-là. */
+    const resoudre = (e: string) => {
+      const litteral = e.match(/^"([^"]+)"$/);
+      if (litteral) return litteral[1];
+      const v = swSrc.match(new RegExp(`const ${e} = "([^"]+)"`));
+      expect(v, `${e} n'est pas résoluble`).not.toBeNull();
+      return v![1];
+    };
+    const garde = m![1].split(",").map((e) => e.trim()).filter(Boolean).map(resoudre);
+    const repli = swSrc.match(/hit \|\| caches\.match\(([^)]+)\)/);
+    expect(repli, "le repli hors ligne a disparu").not.toBeNull();
+    const cible = repli![1].trim();
+    /* Le repli nomme une CONSTANTE, pas une chaîne : c'est ce qui empêche les
+       deux listes de désigner des choses différentes. */
+    expect(cible, "le repli écrit une adresse au lieu de nommer la constante")
+      .toMatch(/^[A-Z_]+$/);
+    const valeur = swSrc.match(new RegExp(`const ${cible} = "([^"]+)"`));
+    expect(valeur, `${cible} n'est pas défini`).not.toBeNull();
+    expect(garde, `le repli cherche ${valeur![1]}, qui n'est pas pré-caché`)
+      .toContain(valeur![1]);
+    /* ⛔ Et `./index.html` ne doit pas revenir : il répond 301, donc il ne
+       peut PAS entrer dans un cache. */
+    expect(garde, "./index.html est revenu dans le pré-cache (il répond 301)")
+      .not.toContain("./index.html");
+
+    /* ⚠️ ET LA COQUILLE EST BIEN LA RACINE. Une mutation l'a montré : changer
+       `COQUILLE` pour « ./accueil » laissait ce garde VERT, parce qu'il
+       vérifie la COHÉRENCE des deux listes et non la justesse de l'adresse.
+       Les deux auraient désigné ensemble une adresse que le serveur ne sert
+       pas comme coquille — cohérentes et fausses.
+       ⭐ `./` est la seule adresse dont on sait qu'elle rend la coquille sur
+          les deux hôtes : elle est dans `ROUTES_APP`, dans les deux blocs
+          Caddy, et elle répond 200 sans redirection. */
+    expect(valeur![1], "la coquille n'est plus la racine").toBe("./");
+  });
+
+  /* 🔴 LE GARDE QUI EMPÊCHE DE METTRE LA COQUILLE EN CACHE SOUS LE NOM D'UN
+     BUNDLE — et il n'était nommé dans AUCUN test jusqu'au 7/11 au soir.
+     Le bloc Caddy porte `try_files {path} {path}/index.html /index.html` :
+     un fichier ABSENT sous `/app/` revient en **200 avec la coquille**.
+     `res.ok` ne voit rien — c'est bien un 200 — et le cache se remplit de
+     HTML sous le nom d'un bundle. L'application casse alors HORS LIGNE,
+     durablement, sans une erreur.
+     ⭐ C'est « un 200 ne prouve rien sur un site à repli SPA », pris du côté
+        du cache : le serveur peut mentir, c'est à celui qui garde de vérifier
+        ce qu'il garde. Un garde de cette importance qui n'est cité nulle part
+        peut disparaître dans une réécriture sans que rien ne tombe. */
+  it("🔴 le service worker REFUSE de garder une coquille sous le nom d'un bien", () => {
+    /* ⚠️ ON COUPE À L'ÉCOUTEUR `fetch`, PAS AU PREMIER. `estDeLaCoquille`
+       vit APRÈS `install` et `activate` : une tranche arrêtée au premier
+       `addEventListener` ne l'atteignait pas, et le test tombait en
+       « not defined » — ce qui ressemblait à un garde qui mord alors que
+       c'était le banc qui se trompait de borne. ⭐ Un `self.addEventListener`
+       muet laisse les enregistrements se faire sans rien exécuter : leurs
+       corps ne tournent qu'à l'événement. */
+    const tete = swSrc.slice(0, swSrc.search(/self\.addEventListener\("fetch"/));
+    const faire = new Function("self", `${tete}\nreturn estDeLaCoquille;`);
+    const coquille = faire({
+      location: new URL("https://mana.bzh/sw.js"),
+      addEventListener: () => {},
+    }) as (r: { headers: { get: (k: string) => string | null } }) => boolean;
+    const reponse = (type: string | null) => ({ headers: { get: () => type } });
+
+    expect(coquille(reponse("text/html; charset=utf-8")),
+      "du HTML servi à la place d'un bundle serait mis en cache").toBe(true);
+    /* ⛔ Et il ne doit pas refuser les biens légitimes : un garde trop large
+       viderait le hors-ligne au lieu de le protéger. */
+    for (const bon of ["application/javascript", "text/css", "application/json",
+                       "image/svg+xml", "font/woff2", "application/manifest+json"]) {
+      expect(coquille(reponse(bon)), `${bon} est pris pour une coquille`).toBe(false);
+    }
+    /* ⚠️ Un serveur peut ne rien dire du tout : l'absence d'en-tête n'est pas
+       une coquille, sinon on cesserait de garder au premier serveur avare. */
+    expect(coquille(reponse(null))).toBe(false);
   });
 
   /* ⚠️ Nos propres biens sont servis depuis l'hôte qui sert la page : sans
