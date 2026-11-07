@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { ROUTES_APP, ROUTES_LOVE, ROUTE_OFFICE, ROUTES_HORS_LOVE } from "./routes";
-import { visage, avecOffice, signature, courriel, titrePourLHote } from "./visage";
+import { visage, avecOffice, signature, courriel, titrePourLHote, canonique, poserCanonique } from "./visage";
 
 const lire = (f: string) => readFileSync(new URL(f, import.meta.url), "utf8");
 const nu = (f: string) =>
@@ -16,6 +16,19 @@ const nu = (f: string) =>
  *    travail, et les plages du monde sont restées à 5 % pendant seize jours
  *    parce que rien ne les confrontait.
  */
+/* ⭐ HISSÉ AU MODULE : deux blocs en ont besoin, et une copie locale
+   aurait divergé. */
+const surLHote = <T,>(hote: string, faire: () => T): T => {
+  const avant = Object.getOwnPropertyDescriptor(globalThis, "location");
+  Object.defineProperty(globalThis, "location", {
+    value: new URL(`https://${hote}/promenades`), configurable: true, writable: true });
+  try { return faire(); }
+  finally {
+    if (avant) Object.defineProperty(globalThis, "location", avant);
+    else delete (globalThis as Record<string, unknown>).location;
+  }
+};
+
 describe("les deux visages — ce qui change, et ce qui ne doit pas", () => {
   /* 🔴 CES DEUX TESTS SONT RETOURNÉS, PAS SUPPRIMÉS — 7/11, l'après-midi.
      Le matin ils exigeaient « love = bzh moins l'Office », et un écart de
@@ -189,16 +202,7 @@ describe("🔴 rien de ce qui est RENDU sur les deux hôtes ne nomme un domaine 
      ⭐ un garde qui lit un fichier ne dit rien de ce que le code DÉCIDE.
      ⚠️ `visage()` lit `location`. On la remplace donc par une vraie `URL` le
         temps du test — c'est ce que fait le navigateur, en plus petit. */
-  const surLHote = <T,>(hote: string, faire: () => T): T => {
-    const avant = Object.getOwnPropertyDescriptor(globalThis, "location");
-    Object.defineProperty(globalThis, "location", {
-      value: new URL(`https://${hote}/promenades`), configurable: true, writable: true });
-    try { return faire(); }
-    finally {
-      if (avant) Object.defineProperty(globalThis, "location", avant);
-      else delete (globalThis as Record<string, unknown>).location;
-    }
-  };
+
 
   it("⛔ chaque hôte reçoit SA signature, et pas celle de l'autre", () => {
     expect(surLHote("mana.bzh", signature)).toBe("MANA.bzh");
@@ -254,5 +258,110 @@ describe("🔴 rien de ce qui est RENDU sur les deux hôtes ne nomme un domaine 
       if (avant) Object.defineProperty(globalThis, "location", avant);
       else delete (globalThis as Record<string, unknown>).location;
     }
+  });
+});
+
+/* ════════════════════════════════════════════════════════════════════════
+   🔴 LA CANONIQUE — LE GARDE QUI MANQUAIT, ET IL MANQUAIT DEPUIS TOUJOURS
+   ════════════════════════════════════════════════════════════════════════
+   7/11/2026 au soir. Depuis la pose du bloc `@applove` le matin même, cinq
+   de nos chemins servent des octets IDENTIQUES sur deux domaines — mesuré,
+   4 482 o des deux côtés pour `/promenades`, `/carte`, `/territoire` — et
+   cette application n'émettait AUCUNE canonique.
+
+   ⭐ Aucun de mes gardes ne pouvait le voir : ils vérifient QUI SERT QUOI,
+      jamais CE QUE LA PAGE DÉCLARE ÊTRE. Nous avons traqué ce défaut toute
+      la soirée chez le voisin pendant qu'il vivait ici.
+*/
+describe("🔴 la canonique : une seule adresse fait foi", () => {
+  it("⛔ toujours mana.bzh, quel que soit l'hôte qui sert", () => {
+    for (const hote of ["mana.bzh", "mana.love"]) {
+      expect(surLHote(hote, () => canonique("/promenades")))
+        .toBe("https://mana.bzh/promenades");
+    }
+  });
+
+  /* ⚠️ Y COMPRIS SUR GITHUB PAGES, troisième adresse de cette application.
+     Une démo n'est pas un original — et c'est le cas qu'une règle « l'hôte
+     courant fait foi » aurait raté en silence. */
+  it("une démo n'est pas un original", () => {
+    expect(surLHote("gilletaurelien-art.github.io", () => canonique("/carte")))
+      .toBe("https://mana.bzh/carte");
+  });
+
+  /* ⛔ ET ELLE COUVRE LES PAGES DYNAMIQUES. C'est la différence avec le
+     titre : une fiche de promenade pose son propre titre, mais elle est
+     dupliquée sur les deux hôtes exactement comme `/carte`. */
+  it("les pages dynamiques aussi — ce sont elles, les plus nombreuses", () => {
+    expect(canonique("/promenade/pointe-de-pen-hir"))
+      .toBe("https://mana.bzh/promenade/pointe-de-pen-hir");
+  });
+
+  it("un chemin sans barre initiale ne produit pas une adresse recollée", () => {
+    expect(canonique("carte")).toBe("https://mana.bzh/carte");
+  });
+
+  /* ════════════════════════════════════════════════════════════════════
+     🔴 ON INTERROGE LA POSE, ON NE LA RELIT PLUS
+     ════════════════════════════════════════════════════════════════════
+     Trois gardes textuels écrits une heure plus tôt ne mordaient à AUCUNE
+     des trois mutations qui comptent. Ils sont remplacés par un faux
+     document : on donne un chemin, on regarde ce qui est écrit. */
+  const fauxDoc = () => {
+    const liens: { rel: string; href: string }[] = [];
+    return {
+      liens,
+      doc: {
+        querySelector: (sel: string) =>
+          sel.includes("canonical") ? liens.find((l) => l.rel === "canonical") ?? null : null,
+        createElement: () => ({ rel: "", href: "" }),
+        head: { appendChild: (l: { rel: string; href: string }) => liens.push(l) },
+      } as unknown as Document,
+    };
+  };
+
+  it("⛔ elle pose une balise `canonical`, et une seule", () => {
+    const { doc, liens } = fauxDoc();
+    poserCanonique(doc, "/carte");
+    poserCanonique(doc, "/promenades");
+    poserCanonique(doc, "/promenade/pen-hir");
+    expect(liens.length, "une balise par navigation, au lieu d'une seule").toBe(1);
+    expect(liens[0].rel, "ce n'est plus une canonique").toBe("canonical");
+    expect(liens[0].href, "la dernière navigation n'est pas reflétée")
+      .toBe("https://mana.bzh/promenade/pen-hir");
+  });
+
+  /* ⛔ LE CAS QUI A ÉCHAPPÉ AU GARDE TEXTUEL : une page dynamique, hors de
+     la table des titres. Si la pose était glissée sous `if (titre)`, elle
+     n'écrirait rien ici — et la fiche serait dupliquée sans canonique. */
+  it("⛔ une page dynamique reçoit la sienne, comme les autres", () => {
+    const { doc } = fauxDoc();
+    expect(poserCanonique(doc, "/promenade/pointe-de-dinan"))
+      .toBe("https://mana.bzh/promenade/pointe-de-dinan");
+  });
+
+  /* ⚠️ LE SEUL GARDE TEXTUEL QUI RESTE, ET IL EST ASSUMÉ. Le défaut qu'il
+     couvre n'est pas DANS la fonction mais dans son APPEL : glisser
+     `poserCanonique(document, path)` sous le `if (titre)` priverait de
+     canonique toutes les pages dynamiques — les plus nombreuses — et aucun
+     test de la fonction ne peut le voir, puisqu'elle n'est alors pas
+     appelée. Monter un rendu de `App` entier pour l'éprouver coûterait plus
+     que ce qu'il protège.
+     ⭐ On garde donc une PLACE, pas une forme : la ligne doit vivre au
+        niveau de l'effet. Toute garde ajoutée devant la change. */
+  it("⛔ l'appel n'est conditionné par rien, dans l'effet de route", () => {
+    const app = lire("./App.tsx");  // ⚠️ `lire` résout depuis src/, pas la racine
+    const lignes = app.split("\n").filter((l) => l.includes("poserCanonique(document"));
+    expect(lignes.length, "l'appel a disparu ou a été dupliqué").toBe(1);
+    expect(lignes[0], "une condition a été posée devant l'appel")
+      .toBe("    poserCanonique(document, path);");
+  });
+
+  /* ⚠️ ET LE CHEMIN COURANT EST BIEN CELUI QU'ON LUI DONNE — une pose qui
+     rendrait toujours la racine passerait tous les tests d'origine. */
+  it("elle reflète le chemin, pas seulement l'origine", () => {
+    const { doc } = fauxDoc();
+    expect(poserCanonique(doc, "/territoire")).toBe("https://mana.bzh/territoire");
+    expect(poserCanonique(doc, "/")).toBe("https://mana.bzh/");
   });
 });

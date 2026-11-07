@@ -13,7 +13,7 @@ import {
 } from "./Glyphs";
 import { Invitation } from "./Invitation";
 import { LApplication } from "./LApplication";
-import { avecOffice, visage, titrePourLHote } from "./visage";
+import { avecOffice, visage, titrePourLHote, poserCanonique } from "./visage";
 import { entreesBarre, liensPied } from "./barre";
 import { Reglages } from "./Reglages";
 import { EcranTerritoire } from "./EcranTerritoire";
@@ -125,6 +125,16 @@ export default function App() {
        premier titre ajouté — et en silence, puisqu'un titre faux s'affiche
        parfaitement. La table dit le sujet, l'hôte dit la signature. */
     if (titre) document.title = titrePourLHote(titre);
+
+    /* 🔴 LA CANONIQUE, POSÉE POUR TOUTES LES ADRESSES — y compris celles
+       qui ne sont pas dans la table des titres. C'est la différence qui
+       compte : le titre ne vaut que pour les pages statiques, puisqu'une
+       page dynamique pose le sien ; la canonique vaut pour TOUTES, car une
+       fiche de promenade est dupliquée sur les deux hôtes exactement comme
+       `/carte`.
+       ⚠️ HORS du `if (titre)`, et un test l'éprouve en appelant la fonction
+          plutôt qu'en relisant ces lignes. */
+    poserCanonique(document, path);
   }, [path]);
 
   const barreRef = useRef<HTMLElement | null>(null);

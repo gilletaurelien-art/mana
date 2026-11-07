@@ -96,3 +96,63 @@ export const courriel = () => (visage() === "love" ? "welcome@mana.love" : "cont
  */
 export const titrePourLHote = (titre: string) =>
   titre.replace(/MANA\.bzh/g, signature());
+
+/**
+ * 🔴 L'ADRESSE QUI FAIT FOI POUR UNE DE NOS PAGES — 7/11/2026 au soir,
+ *    arbitrage d'Aurélien : « mana.bzh fait foi ».
+ *
+ * ⛔ LE DÉFAUT QUE ÇA RÉPARE EST LE MIEN, ET IL DATAIT DU MATIN MÊME. Depuis
+ *    la pose du bloc `@applove`, cinq de nos chemins servent des octets
+ *    IDENTIQUES sur deux domaines — mesuré : `/promenades`, `/carte`,
+ *    `/territoire` rendent 4 482 o sur mana.bzh comme sur mana.love. Et
+ *    cette application n'émettait AUCUNE canonique, nulle part : rien ne
+ *    disait à un moteur laquelle des deux adresses est l'originale.
+ *
+ * ⭐ ET AUCUN DE MES GARDES NE POUVAIT LE VOIR. Ils vérifient QUI SERT QUOI —
+ *    le bloc Caddy, les trois listes, les ponts — jamais CE QUE LA PAGE
+ *    DÉCLARE ÊTRE. Nous avons passé la soirée à traquer ce défaut chez le
+ *    voisin pendant qu'il vivait ici, sur cinq adresses, créé le matin même.
+ *
+ * ⭐ UNE SEULE RÈGLE SUFFIT, ET C'EST POURQUOI ELLE EST JUSTE : le contenu
+ *    servi sur mana.love EST celui de mana.bzh — les promenades de la
+ *    presqu'île. L'original est donc toujours l'adresse bretonne, quel que
+ *    soit l'hôte qui la sert. Pas de branche par visage : une branche
+ *    supposerait que les deux hôtes portent des contenus différents, ce qui
+ *    sera vrai un jour et ne l'est pas aujourd'hui.
+ * ⚠️ Elle couvre aussi GitHub Pages (`…github.io/mana/`), troisième adresse
+ *    de cette application : une démo n'est pas un original.
+ * ⚠️ Et sur mana.bzh elle rend une canonique qui pointe sur elle-même —
+ *    c'est voulu, c'est la forme recommandée, et ça évite une branche qui
+ *    n'aurait rien à décider.
+ */
+export const ORIGINE = "https://mana.bzh";
+export const canonique = (chemin: string) =>
+  ORIGINE + (chemin.startsWith("/") ? chemin : `/${chemin}`);
+
+/**
+ * 🔴 LA POSE EST UNE FONCTION, PAS TROIS LIGNES DANS UN EFFET — et c'est une
+ *    mutation qui l'a exigé. Trois gardes écrits pour la version précédente
+ *    ne mordaient pas :
+ *      · glisser la pose sous `if (titre)` — les pages dynamiques perdaient
+ *        leur canonique, et le garde lisait le texte autour sans rien voir ;
+ *      · changer `rel="canonical"` en `rel="alternate"` — le garde cherchait
+ *        la chaîne, et la trouvait encore dans le SÉLECTEUR voisin ;
+ *      · faire dépendre `ORIGINE` de l'hôte — une `const` de module est
+ *        évaluée à l'IMPORT, donc un faux `location` posé par un test
+ *        n'avait aucun effet sur elle.
+ * ⭐ Les trois disparaissent dès qu'on peut INTERROGER la pose au lieu de la
+ *    relire : on lui donne un document, on regarde ce qu'elle y écrit.
+ * ⚠️ Elle prend le document en argument — sans ça, elle ne serait testable
+ *    que dans un navigateur, et un garde qui exige un navigateur ne tourne
+ *    pas dans `npm test`.
+ */
+export function poserCanonique(doc: Document, chemin: string): string {
+  let lien = doc.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+  if (!lien) {
+    lien = doc.createElement("link");
+    lien.rel = "canonical";
+    doc.head.appendChild(lien);
+  }
+  lien.href = canonique(chemin);
+  return lien.href;
+}
