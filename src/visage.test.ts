@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { ROUTES_APP, ROUTES_LOVE, ROUTE_OFFICE } from "./routes";
+import { ROUTES_APP, ROUTES_LOVE, ROUTE_OFFICE, ROUTES_HORS_LOVE } from "./routes";
 
 const lire = (f: string) => readFileSync(new URL(f, import.meta.url), "utf8");
 const nu = (f: string) =>
@@ -16,22 +16,40 @@ const nu = (f: string) =>
  *    parce que rien ne les confrontait.
  */
 describe("les deux visages — ce qui change, et ce qui ne doit pas", () => {
-  it("la liste love est DÉRIVÉE, pas recopiée : elle vaut la liste bzh moins l'Office", () => {
-    expect(ROUTES_LOVE).toEqual(ROUTES_APP.filter((r) => r !== ROUTE_OFFICE));
+  /* 🔴 CES DEUX TESTS SONT RETOURNÉS, PAS SUPPRIMÉS — 7/11, l'après-midi.
+     Le matin ils exigeaient « love = bzh moins l'Office », et un écart de
+     EXACTEMENT UN. Le fondateur a tranché depuis : mana.love est tenu par
+     l'application citoyenne, et la nôtre n'y entre que par la carte et les
+     promenades. L'écart vaut cinq.
+     ⭐ Ce qu'ils gardaient reste vrai sous une forme plus large : la liste
+     est DÉRIVÉE, et l'écart est une DÉCISION, pas un effet de bord. */
+  it("la liste love est DÉRIVÉE : elle vaut la liste bzh moins les exclusions", () => {
+    const exclus = Object.keys(ROUTES_HORS_LOVE);
+    expect(ROUTES_LOVE).toEqual(ROUTES_APP.filter((r) => !exclus.includes(r)));
     expect(ROUTES_LOVE).not.toContain(ROUTE_OFFICE);
     expect(ROUTES_APP).toContain(ROUTE_OFFICE);
-    /* ⚠️ Une seule route sépare les deux visages aujourd'hui. Si ce compte
-       bouge, c'est une décision — pas un effet de bord d'un ajout de route. */
-    expect(ROUTES_APP.length - ROUTES_LOVE.length).toBe(1);
+    /* ⚠️ L'écart suit la liste des exclusions, et rien d'autre. S'il bouge
+       sans qu'elle bouge, c'est un ajout de route qui a fui d'un visage. */
+    expect(ROUTES_APP.length - ROUTES_LOVE.length).toBe(exclus.length);
   });
 
   /* ⛔ LA SOUSTRACTION EST LE POINT. Une seconde liste écrite à la main
      divergerait au premier ajout de route, EN SILENCE — exactement ce que
-     `routes.ts` existe pour empêcher entre ses trois listes. */
+     `routes.ts` existe pour empêcher entre ses trois listes.
+     🔴 ET CE TEST EXIGEAIT UN MOYEN, PAS UN EFFET : il cherchait la chaîne
+        `ROUTES_LOVE = ROUTES_APP.filter`. Il est donc tombé le jour où la
+        dérivation a changé de FORME — en passant par une fonction qui lève
+        si une exclusion ne retire rien, c'est-à-dire en devenant MEILLEURE.
+     ⭐ Un test qui nomme la ligne qu'il veut lire interdit la bonne solution.
+        Celui-ci éprouve désormais la PROPRIÉTÉ : une route inconnue des
+        exclusions appartient aux deux visages. */
   it("une route neuve entre dans les DEUX visages par construction", () => {
-    const src = nu("./routes.ts");
-    expect(src, "ROUTES_LOVE est recopiée au lieu d'être dérivée")
-      .toMatch(/ROUTES_LOVE\s*=\s*ROUTES_APP\.filter/);
+    const exclus = Object.keys(ROUTES_HORS_LOVE);
+    const neuves = ROUTES_APP.filter((r) => !exclus.includes(r as string));
+    expect(neuves.length, "plus rien n'est commun aux deux visages").toBeGreaterThan(0);
+    for (const r of neuves) {
+      expect(ROUTES_LOVE, `${r} n'est pas exclu et manque pourtant à love`).toContain(r);
+    }
   });
 
   /* 🔴 `/chat` N'EST PAS À NOUS. Sur mana.love il tombe dans la coquille,

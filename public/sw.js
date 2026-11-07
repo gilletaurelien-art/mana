@@ -91,14 +91,30 @@ const relatif = (pathname) =>
    ⚠️ `self.location.hostname` et non une variable de construction : ce
       fichier est servi TEL QUEL, le même octet pour les deux hôtes. C'est
       l'hôte qui le sert qui décide, pas celui qui l'a construit. */
+/* 🔴 REVU LE JOUR MÊME : mana.love N'EST PAS « NOUS MOINS L'OFFICE ». C'est
+   l'application citoyenne qui tient cet hôte ; la nôtre n'y entre que par la
+   carte et les promenades. La soustraction porte sur CINQ routes et TROIS
+   fichiers de racine — la copie des exclusions est tenue par un test, comme
+   les listes elles-mêmes.
+   ⛔ `/sw.js` EST DANS LA SOUSTRACTION, et c'est le plus grave des trois :
+      ce fichier-ci ne devrait même pas être servi sur mana.love, sinon
+      l'enregistrement de l'autre application recevrait notre service worker
+      et remplacerait le sien en silence. La branche ci-dessous est donc une
+      SECONDE serrure — si un jour quelqu'un remet `/sw.js` dans la liste
+      blanche du serveur à la main, nous ne revendiquons toujours pas ses
+      écrans. */
 const ROUTE_OFFICE = "/balades-office";
+const ROUTES_HORS_LOVE = ["/", ROUTE_OFFICE, "/reglages", "/espace", "/radio"];
+const FICHIERS_HORS_LOVE = ["/sw.js", "/manifest.webmanifest", "/icon.svg"];
 const SANS_OFFICE = self.location.hostname === "mana.love";
 const routesDuVisage = () =>
-  SANS_OFFICE ? ROUTES_APP.filter((r) => r !== ROUTE_OFFICE) : ROUTES_APP;
+  SANS_OFFICE ? ROUTES_APP.filter((r) => !ROUTES_HORS_LOVE.includes(r)) : ROUTES_APP;
+const fichiersDuVisage = () =>
+  SANS_OFFICE ? FICHIERS_APP.filter((f) => !FICHIERS_HORS_LOVE.includes(f)) : FICHIERS_APP;
 
 const estANous = (pathname) => {
   const c = relatif(pathname);
-  return routesDuVisage().includes(c) || FICHIERS_APP.includes(c)
+  return routesDuVisage().includes(c) || fichiersDuVisage().includes(c)
       || PREFIXES_APP.some((p) => c.startsWith(p));
 };
 

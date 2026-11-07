@@ -37,11 +37,13 @@ handle @appbzh {
 # 🔴 mana.love SERT LA MÊME APPLICATION, SANS L'OFFICE DE TOURISME.
 # ⚠️ Ce bloc doit être posé AVANT l'attrape-tout @manalove, sinon la coquille
 #    love gagne sur tout et l'application n'est jamais atteinte.
-# ⭐ /balades-office est ABSENT ici, et c'est le point : on ne revendique
-#    pas une adresse dont cet hôte n'a pas la matière.
+# ⭐ La racine, l'Office, les réglages, l'espace et la radio sont ABSENTS
+#    ici, et c'est le point : on ne revendique pas une adresse dont cet hôte
+#    n'a pas la matière. /sw.js non plus — un service worker prend toute la
+#    portée de l'hôte et remplacerait celui de l'application citoyenne.
 @applove {
     host mana.love
-    path / /carte /promenades /composer /territoire /l-application /reglages /contact /mentions-legales /espace /radio /promenade/* /app/* /paysages/* /images/* /carte-style.json /carte-ortho.json /fermetures.json /icon.svg /manifest.webmanifest /sw.js
+    path /carte /promenades /composer /territoire /l-application /contact /mentions-legales /promenade/* /app/* /paysages/* /images/* /carte-style.json /carte-ortho.json /fermetures.json
 }
 handle @applove {
     root * /srv/www/_app-bzh

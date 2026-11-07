@@ -82,8 +82,9 @@ const liste = (nom) => {
   return chemins;
 };
 
-/* 🔴 DEUX HÔTES, DEUX LISTES — 7/11/2026. mana.love sert la même application
-   SANS l'Office : `/balades-office` n'est pas à nous là-bas.
+/* 🔴 DEUX HÔTES, DEUX LISTES — 7/11/2026. mana.love est tenu par
+   l'application citoyenne ; la nôtre n'y entre que par la carte et les
+   promenades. CINQ chemins et TROIS fichiers de racine n'y sont pas à nous.
    ⭐ ON NE REVENDIQUE PAS CE QU'ON NE SERT PAS. Garder les 22 chemins
       identiques « pour ne rien changer au garde » aurait fait répondre 200 à
       une adresse dont cet hôte n'a pas la matière — le pire des trois
@@ -93,21 +94,49 @@ const liste = (nom) => {
       neuve entre dans les deux par construction, seule l'exclusion est
       explicite. C'est la même règle que `ROUTES_LOVE` dans `routes.ts`, et
       le test ci-contre refuse qu'elles divergent. */
-const ROUTE_OFFICE = "/balades-office";
-const communs = [
-  ...liste("PREFIXES_APP").map((p) => `${p}*`),
-  ...liste("FICHIERS_APP"),
-];
-const chemins = [...liste("ROUTES_APP"), ...communs];
+/* ⭐ LES EXCLUSIONS SE LISENT DANS `routes.ts`, ELLES NE SE RECOPIENT PAS.
+   C'est tout l'objet de ce fichier : une liste recopiée dans un générateur
+   est une QUATRIÈME liste, et celle-là personne ne la relit. On extrait donc
+   les clés de `ROUTES_HORS_LOVE` et les entrées de `FICHIERS_HORS_LOVE`
+   depuis la source elle-même. */
+const exclusionsRoutes = (() => {
+  const m = src.match(/ROUTES_HORS_LOVE[^=]*=\s*\{([\s\S]*?)\n\};/);
+  if (!m) throw new Error("ROUTES_HORS_LOVE introuvable dans src/routes.ts");
+  const cles = [...m[1].matchAll(/^\s*(?:"([^"]+)"|\[([A-Za-z_][A-Za-z0-9_]*)\])\s*:/gm)]
+    .map((c) => c[1] ?? c[2]);
+  /* `[ROUTE_OFFICE]:` est une clé calculée — on la résout depuis sa
+     constante, au lieu d'écrire « /balades-office » une seconde fois. */
+  return cles.map((c) => {
+    if (c.startsWith("/")) return c;
+    const v = src.match(new RegExp(`const ${c}\\s*=\\s*"([^"]+)"`));
+    if (!v) throw new Error(`ROUTES_HORS_LOVE : clé « ${c} » non résoluble.`);
+    return v[1];
+  });
+})();
+const exclusionsFichiers = liste("FICHIERS_HORS_LOVE");
+
+const prefixes = liste("PREFIXES_APP").map((p) => `${p}*`);
+const fichiers = liste("FICHIERS_APP");
+const chemins = [...liste("ROUTES_APP"), ...prefixes, ...fichiers];
 const cheminsLove = [
-  ...liste("ROUTES_APP").filter((c) => c !== ROUTE_OFFICE),
-  ...communs,
+  ...liste("ROUTES_APP").filter((c) => !exclusionsRoutes.includes(c)),
+  ...prefixes,
+  ...fichiers.filter((c) => !exclusionsFichiers.includes(c)),
 ];
-if (cheminsLove.length !== chemins.length - 1) {
+
+/* ⚠️ LE GARDE EST SUR L'ÉCART, PAS SUR UN NOMBRE ÉCRIT ICI. Un `!== 21`
+   serait une valeur vivante recopiée : elle deviendrait fausse au premier
+   ajout de route et il faudrait la corriger à la main, donc elle serait
+   corrigée sans être comprise. On exige que la soustraction ait retiré
+   EXACTEMENT ce qu'elle annonce — si un chemin exclu n'existait pas, la
+   soustraction n'aurait rien retiré et le bloc love revendiquerait un chemin
+   qui n'est pas à nous, sans la moindre erreur. */
+const retires = exclusionsRoutes.length + exclusionsFichiers.length;
+if (cheminsLove.length !== chemins.length - retires) {
   throw new Error(
-    `caddy-bloc : la liste love devrait valoir la liste bzh moins ${ROUTE_OFFICE}, ` +
-    `or elle fait ${cheminsLove.length} contre ${chemins.length}. ` +
-    `Le chemin de l'Office a-t-il changé de nom ?`);
+    `caddy-bloc : ${retires} chemins devaient être retirés pour mana.love, ` +
+    `${chemins.length - cheminsLove.length} l'ont été. Un chemin exclu a-t-il ` +
+    `changé de nom dans src/routes.ts ?`);
 }
 
 const entete = readFileSync(new URL("../deploiement/mana-bzh.caddy", import.meta.url), "utf8")
@@ -167,8 +196,10 @@ handle @appbzh {
 # 🔴 mana.love SERT LA MÊME APPLICATION, SANS L'OFFICE DE TOURISME.
 # ⚠️ Ce bloc doit être posé AVANT l'attrape-tout @manalove, sinon la coquille
 #    love gagne sur tout et l'application n'est jamais atteinte.
-# ⭐ /balades-office est ABSENT ici, et c'est le point : on ne revendique
-#    pas une adresse dont cet hôte n'a pas la matière.
+# ⭐ La racine, l'Office, les réglages, l'espace et la radio sont ABSENTS
+#    ici, et c'est le point : on ne revendique pas une adresse dont cet hôte
+#    n'a pas la matière. /sw.js non plus — un service worker prend toute la
+#    portée de l'hôte et remplacerait celui de l'application citoyenne.
 @applove {
     host mana.love
     path ${cheminsLove.join(" ")}

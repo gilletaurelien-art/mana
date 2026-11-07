@@ -43,8 +43,17 @@ export const ROUTES_APP = [
 ] as const;
 
 /**
- * 🔴 LES CHEMINS DU VISAGE LOVE — 7/11/2026. mana.love prend cette app, sans
- *    l'Office de tourisme : `/balades-office` n'est PAS à nous sur cet hôte.
+ * 🔴 LES CHEMINS DU VISAGE LOVE — 7/11/2026, REVU LE MÊME JOUR. mana.love
+ *    n'est PAS « cette app moins l'Office » : c'est l'application citoyenne
+ *    (dépôt `manafrance-app`) qui tient cet hôte, et la nôtre n'y entre que
+ *    par la carte et les promenades. La soustraction est donc de CINQ
+ *    chemins, pas d'un.
+ *
+ * ⭐ ET LA PREMIÈRE VERSION DE CETTE LISTE ÉTAIT FAUSSE DANS LE SENS QUI NE
+ *    SE VOIT PAS : elle revendiquait `/`. Un hôte qui rend notre coquille sur
+ *    sa racine ne tombe pas en erreur — il affiche une application
+ *    plausible à la place d'une autre. Le défaut d'une liste blanche trop
+ *    LARGE a toujours l'air de marcher.
  *
  * ⭐ DÉRIVÉE PAR SOUSTRACTION, JAMAIS RECOPIÉE. Une seconde liste écrite à la
  *    main divergerait au premier ajout de route, et en SILENCE — exactement
@@ -52,16 +61,62 @@ export const ROUTES_APP = [
  *    route neuve entre dans les deux par construction ; seule l'exclusion est
  *    explicite, donc visible.
  *
- * ⚠️ ET ON NE REVENDIQUE PAS CE QU'ON NE SERT PAS. Laisser `/balades-office`
- *    dans la liste de mana.love pour « garder les 22 chemins identiques »
- *    aurait fait répondre 200 à une adresse dont cet hôte n'a pas la matière —
- *    le pire des trois désaccords décrits plus haut, parce qu'il a l'air de
- *    marcher. Le confort d'un garde qu'on n'a rien à réapprendre n'est pas
- *    une raison : un garde qu'on maintient vert en ne lui disant rien ne
- *    garde plus, et ne le dit pas.
+ * ⚠️ ET ON NE REVENDIQUE PAS CE QU'ON NE SERT PAS. Laisser un chemin dans la
+ *    liste de mana.love pour « garder les 22 identiques » ferait répondre 200
+ *    à une adresse dont nous n'avons pas la matière sur cet hôte. Le confort
+ *    d'un garde qu'on n'a rien à réapprendre n'est pas une raison : un garde
+ *    qu'on maintient vert en ne lui disant rien ne garde plus, et ne le dit
+ *    pas.
  */
 export const ROUTE_OFFICE = "/balades-office";
-export const ROUTES_LOVE = ROUTES_APP.filter((r) => r !== ROUTE_OFFICE);
+
+/** Ce que mana.love ne nous laisse pas, et POURQUOI — la raison vit à côté
+ *  du chemin, sinon le prochain qui relit la liste la croit arbitraire et
+ *  rend l'un d'eux « pour uniformiser ». */
+export const ROUTES_HORS_LOVE: Readonly<Record<string, string>> = {
+  "/": "la racine reste à l'application citoyenne : elle y porte sa landing, et mana.love est le sur-ensemble — sa porte doit montrer le sur-ensemble, pas la promenade seule",
+  [ROUTE_OFFICE]: "pas d'Office de tourisme sur mana.love",
+  "/reglages": "devient « Mon compte », tenu par l'application citoyenne",
+  "/espace": "le compte citoyen de mana.love est le sien, pas le nôtre",
+  "/radio": "mesuré : /radio existe DÉJÀ chez elle (trois fichiers), et le fondateur a dit « la radio reste radio »",
+};
+
+/**
+ * 🔴 ET LES FICHIERS DE RACINE SE SOUSTRAIENT AUSSI — c'est le piège que la
+ *    liste des ROUTES ne montre pas.
+ *
+ * ⚠️ `/sw.js` est le plus grave des trois. Un service worker n'est pas une
+ *    page : il est enregistré par la racine et PREND TOUTE LA PORTÉE de
+ *    l'hôte. Si Caddy rendait NOTRE `sw.js` sur mana.love, l'enregistrement
+ *    de l'application citoyenne recevrait notre fichier — son propre service
+ *    worker serait remplacé en silence, et ses écrans perdraient leur cache
+ *    hors ligne sans qu'une seule requête échoue. Le coût assumé est que nos
+ *    deux écrans n'ont pas de hors-ligne sur mana.love ; c'est le bon sens de
+ *    la perte.
+ * ⚠️ `/manifest.webmanifest` et `/icon.svg` pour la même raison, en plus
+ *    doux : ils nomment et dessinent l'application installée. Les rendre,
+ *    c'est faire installer « MANA promenades » à qui installe mana.love.
+ */
+export const FICHIERS_HORS_LOVE = [
+  "/sw.js",
+  "/manifest.webmanifest",
+  "/icon.svg",
+] as const;
+
+/** ⭐ La soustraction LÈVE si elle ne retire rien : le jour où un de ces
+ *  chemins sera renommé, la liste love le garderait en silence — et un chemin
+ *  gardé par erreur a l'air de marcher. */
+function sans<T extends string>(liste: readonly T[], retirer: readonly string[], ou: string): T[] {
+  for (const r of retirer) {
+    if (!(liste as readonly string[]).includes(r)) {
+      throw new Error(
+        `${ou} : « ${r} » n'est plus dans la liste — la soustraction ne retire ` +
+        `plus rien. A-t-il changé de nom ? Corrige l'exclusion plutôt que de ` +
+        `la laisser sans effet.`);
+    }
+  }
+  return liste.filter((c) => !retirer.includes(c));
+}
 
 /** Les familles d'adresses, par préfixe. */
 export const PREFIXES_APP = [
@@ -83,6 +138,14 @@ export const FICHIERS_APP = [
   "/manifest.webmanifest",
   "/sw.js",
 ];
+
+/* ⚠️ LES DEUX DÉRIVÉES VIVENT ICI, APRÈS `FICHIERS_APP`, et non à côté de
+   leur commentaire : les écrire plus haut les faisait lire une constante pas
+   encore initialisée. Une `const` n'est pas remontée — l'application serait
+   tombée au chargement, sur toute la planète, pour une question d'ordre de
+   lignes. */
+export const ROUTES_LOVE = sans(ROUTES_APP, Object.keys(ROUTES_HORS_LOVE), "ROUTES_LOVE");
+export const FICHIERS_LOVE = sans(FICHIERS_APP, FICHIERS_HORS_LOVE, "FICHIERS_LOVE");
 
 /** Ce chemin est-il à nous ? */
 export function estANous(chemin: string): boolean {

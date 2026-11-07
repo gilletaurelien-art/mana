@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { describe, it, expect } from "vitest";
-import { ROUTES_APP, PREFIXES_APP, FICHIERS_APP, estANous, ROUTE_OFFICE } from "./routes";
+import { ROUTES_APP, PREFIXES_APP, FICHIERS_APP, estANous, ROUTE_OFFICE,
+         ROUTES_HORS_LOVE, FICHIERS_HORS_LOVE, ROUTES_LOVE, FICHIERS_LOVE } from "./routes";
 
 /* ════════════════════════════════════════════════════════════════════════
    « QU'EST-CE QUI EST À NOUS ? » — TROIS RÉPONSES QUI DOIVENT CONCORDER
@@ -230,7 +231,7 @@ describe("les trois listes de chemins", () => {
   });
 });
 
-describe("🔴 7/11/2026 — le SECOND visage : mana.love, sans l'Office", () => {
+describe("🔴 7/11/2026 — le SECOND visage : mana.love, tenu par l'autre app", () => {
   const swSrc = readFileSync("public/sw.js", "utf8");
   const caddySrc = readFileSync("deploiement/mana-bzh.caddy", "utf8");
 
@@ -238,24 +239,115 @@ describe("🔴 7/11/2026 — le SECOND visage : mana.love, sans l'Office", () =>
      gagne une quatrième façon de l'être : revendiquer sur mana.love un
      chemin que cet hôte ne sert pas. La page répondrait 200, s'afficherait,
      et ne répondrait pas à la question posée. */
-  it("le bloc Caddy porte DEUX matchers, et celui de love n'a pas l'Office", () => {
+  /* 🔴 CES DEUX TESTS SONT RETOURNÉS, PAS SUPPRIMÉS — le matin du 7/11 ils
+     exigeaient « love = bzh moins /balades-office », et c'était la bonne
+     garde pour l'architecture de ce matin-là. Le fondateur a tranché
+     autrement dans la journée : la racine reste à l'application citoyenne.
+     ⭐ Ce qu'ils protégeaient reste vrai sous une forme plus large — « la
+     liste love est DÉRIVÉE, et elle ne revendique rien qu'on ne serve pas ».
+     Les effacer aurait rendu l'ancienne garde au néant au lieu de la faire
+     grandir. */
+  it("le bloc Caddy porte DEUX matchers, et love ne revendique aucun exclu", () => {
     const lignes = [...caddySrc.matchAll(/^\s*path (.+)$/gm)].map((m) => m[1].trim().split(" "));
     expect(lignes.length, "il manque un des deux blocs").toBe(2);
     const [bzh, love] = lignes;
     expect(bzh).toContain(ROUTE_OFFICE);
-    expect(love, "l'Office est revenu sur mana.love").not.toContain(ROUTE_OFFICE);
+    const exclus = [...Object.keys(ROUTES_HORS_LOVE), ...FICHIERS_HORS_LOVE];
+    for (const c of exclus) {
+      expect(bzh, `${c} devrait être à nous sur mana.bzh`).toContain(c);
+      expect(love, `${c} est revenu sur mana.love`).not.toContain(c);
+    }
     /* ⭐ DÉRIVÉE, PAS RECOPIÉE : tout le reste doit être identique, sinon les
        deux listes divergeront au premier ajout de route — en silence. */
-    expect(love).toEqual(bzh.filter((c) => c !== ROUTE_OFFICE));
+    expect(love).toEqual(bzh.filter((c) => !exclus.includes(c)));
+  });
+
+  /* ⛔ LE PIÈGE QUI NE SE VOIT PAS DANS LA LISTE DES ROUTES. Un service
+     worker est enregistré par la RACINE et prend toute la portée de l'hôte.
+     Servir le nôtre sur mana.love remplacerait celui de l'autre application
+     en silence : aucune requête n'échoue, et ses écrans perdent leur
+     hors-ligne. */
+  it("⛔ /sw.js n'est PAS servi sur mana.love", () => {
+    expect(FICHIERS_HORS_LOVE).toContain("/sw.js");
+    expect(FICHIERS_LOVE, "notre service worker remplacerait le sien")
+      .not.toContain("/sw.js");
+    const love = [...caddySrc.matchAll(/^\s*path (.+)$/gm)][1][1].trim().split(" ");
+    expect(love).not.toContain("/sw.js");
+  });
+
+  /* ⭐ ET LA RACINE EST LE CAS QUI A L'AIR DE MARCHER. Une liste blanche trop
+     LARGE ne tombe jamais en erreur : elle affiche une application plausible
+     à la place d'une autre. */
+  it("⛔ la racine de mana.love n'est pas à nous", () => {
+    expect(ROUTES_LOVE).not.toContain("/");
+    expect(ROUTES_APP, "elle reste à nous sur mana.bzh").toContain("/");
+  });
+
+  /* ⚠️ UNE EXCLUSION QUI NE RETIRE RIEN EST UNE EXCLUSION MORTE, et elle est
+     muette : le chemin renommé revient dans la liste love sans un mot. */
+  it("chaque exclusion retire bien quelque chose, et porte sa raison", () => {
+    for (const [c, pourquoi] of Object.entries(ROUTES_HORS_LOVE)) {
+      expect(ROUTES_APP as readonly string[], `${c} n'existe plus`).toContain(c);
+      expect(pourquoi.length, `${c} est exclu sans raison écrite`).toBeGreaterThan(20);
+    }
+    for (const f of FICHIERS_HORS_LOVE) expect(FICHIERS_APP).toContain(f);
+    expect(ROUTES_LOVE.length).toBe(ROUTES_APP.length - Object.keys(ROUTES_HORS_LOVE).length);
+    expect(FICHIERS_LOVE.length).toBe(FICHIERS_APP.length - FICHIERS_HORS_LOVE.length);
   });
 
   it("le service worker décide par l'hôte QUI LE SERT, pas par la construction", () => {
     expect(swSrc).toMatch(/self\.location\.hostname === "mana\.love"/);
-    expect(swSrc, "la liste du visage n'est pas dérivée")
-      .toMatch(/ROUTES_APP\.filter\(\(r\) => r !== ROUTE_OFFICE\)/);
-    /* ⛔ Et `estANous` doit consulter la liste DU VISAGE, pas la liste brute —
-       sinon la branche existe et ne décide de rien. */
+    /* ⭐ LA COPIE DES EXCLUSIONS EST TENUE, comme les listes elles-mêmes : le
+       service worker est servi tel quel, il ne peut pas importer routes.ts. */
+    const copieR = swSrc.match(/const ROUTES_HORS_LOVE = \[([^\]]*)\]/);
+    expect(copieR, "le SW ne porte plus les exclusions").not.toBeNull();
+    for (const c of Object.keys(ROUTES_HORS_LOVE)) {
+      if (c === ROUTE_OFFICE) continue;   // porté par sa constante
+      expect(copieR![1], `${c} manque à la copie du SW`).toContain(`"${c}"`);
+    }
+    const copieF = swSrc.match(/const FICHIERS_HORS_LOVE = \[([^\]]*)\]/);
+    expect(copieF).not.toBeNull();
+    for (const f of FICHIERS_HORS_LOVE) expect(copieF![1]).toContain(`"${f}"`);
+    /* ⛔ Et `estANous` doit consulter les listes DU VISAGE, pas les listes
+       brutes — sinon les branches existent et ne décident de rien. */
     expect(swSrc).toMatch(/routesDuVisage\(\)\.includes\(c\)/);
+    expect(swSrc).toMatch(/fichiersDuVisage\(\)\.includes\(c\)/);
+  });
+
+  /* 🔴 CE TEST EXISTE PARCE QU'UNE MUTATION N'A PAS MORDU. Les gardes
+     ci-dessus lisent le TEXTE du service worker : la copie des exclusions, et
+     le fait qu'`estANous` appelle bien `routesDuVisage()`. J'ai remplacé le
+     corps de `routesDuVisage` par `ROUTES_APP` — la liste brute — et les
+     seize tests sont restés verts. Tout ce qu'ils vérifiaient était encore
+     là ; la seule chose qui avait changé était ce que le code DÉCIDE.
+     ⭐ Un garde qui lit la forme d'une fonction ne dit rien de sa valeur. On
+     EXÉCUTE donc le fichier, avec un faux `self` par hôte, et on interroge sa
+     décision. */
+  it("🔴 on EXÉCUTE le service worker : sa décision diffère selon l'hôte", () => {
+    const decideur = (hostname: string) => {
+      /* On n'évalue que la tête du fichier — jusqu'aux écouteurs, qui
+         exigeraient un vrai service worker. C'est exactement la part qui
+         décide. */
+      const tete = swSrc.slice(0, swSrc.search(/self\.addEventListener/));
+      const faire = new Function("self", `${tete}\nreturn estANous;`);
+      /* ⚠️ `self.location` doit être une VRAIE URL : la tête du fichier
+         calcule `new URL("./", self.location)` pour sa base. Un objet plat
+         avec un `hostname` faisait lever « Invalid URL » — et ce n'était pas
+         le défaut cherché. */
+      return faire({ location: new URL(`https://${hostname}/sw.js`) }) as
+        (p: string) => boolean;
+    };
+    const bzh = decideur("mana.bzh");
+    const love = decideur("mana.love");
+
+    for (const c of [...Object.keys(ROUTES_HORS_LOVE), ...FICHIERS_HORS_LOVE]) {
+      expect(bzh(c), `${c} devrait être à nous sur mana.bzh`).toBe(true);
+      expect(love(c), `${c} est revendiqué sur mana.love`).toBe(false);
+    }
+    /* ⭐ Et le reste doit rester à nous des deux côtés, sinon une soustraction
+       trop gourmande passerait pour une réussite. */
+    for (const c of ROUTES_LOVE) expect(love(c), `${c} a été perdu`).toBe(true);
+    for (const f of FICHIERS_LOVE) expect(love(f), `${f} a été perdu`).toBe(true);
   });
 
   /* ⚠️ Nos propres biens sont servis depuis l'hôte qui sert la page : sans
