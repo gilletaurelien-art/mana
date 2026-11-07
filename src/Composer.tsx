@@ -323,6 +323,15 @@ const HAUTEUR_CARTE = { reduite: 210, agrandie: 420 };
  *    pas. Et le compte affiché à côté le contredisait sans que rien ne le dise.
  */
 const DUREE_SANS_LIMITE = 25;
+/* 🔴 LE SEUIL DU DÉNIVELÉ, NOMMÉ UNE FOIS — 7/11/2026. Il valait `40` en dur
+   à l'endroit qui AFFICHE la montée, et la note qui l'EXPLIQUE ne le
+   connaissait pas : elle se montrait toujours. Deux décisions sur la même
+   grandeur, dont une seule au courant. ⭐ Une valeur qui commande deux
+   affichages doit avoir un nom, sinon le second oublie le premier.
+   ⚠️ Sous 40 m, on se tait : la source (SRTM, 30 m) ne distingue pas un
+      vallon de son bruit, et annoncer « 12 m de montée » serait plus faux
+      que ne rien dire. */
+const MONTEE_DITE_M = 40;
 
 export function Composer() {
   /* ═══ LE CATALOGUE — état, effets et calcul fusionnés ici le 3/11/2026 ═══
@@ -1315,6 +1324,18 @@ export function Composer() {
                         de plus à lire sur une carte déjà chargée.
                         ⚠️ « sur le chemin » part aussi : la ligne ne parle que
                            du chemin, le préciser ne retire aucune ambiguïté. */}
+                    {/* 🔴 LA DISTANCE REMONTE SUR LA CARTE — 7/11/2026,
+                        demande du fondateur. Elle était partie avec les
+                        pastilles : depuis, « 1,7 km » n'existait plus que
+                        SOUS LA LIGNE DE FLOTTAISON. Il fallait faire défiler
+                        pour savoir combien on marche — sur l'écran dont c'est
+                        la question.
+                        ⭐ Désencombrer une carte ne veut pas dire en retirer
+                           ce qu'on vient y chercher. Le coût que j'avais
+                           annoncé en retirant les pastilles était réel ; il
+                           était simplement trop élevé. */}
+                    <SvgRuban />{km(prop.metres)} km
+                    <span className="cp-choix-detail-sep" aria-hidden="true">·</span>
                     <SvgEtincelle />{comptes[choisie] ?? 0} lieu{(comptes[choisie] ?? 0) > 1 ? "x" : ""}
                     {" · "}{inventaire?.libelles[spots[prop.i].c] ?? LIBELLE[spots[prop.i].c] ?? spots[prop.i].c}
                     {prop.parcours.bordDeMer > 300 && (
@@ -1762,11 +1783,25 @@ export function Composer() {
                      distants de 30 m donneraient une pente absurde ; on
                      préfère ne rien dire. Et les circuits de l'Office
                      gardent leur propre relevé, qui est mesuré au sol. */}
-              <p className="page-note">
-                Dénivelé d'après le modèle d'altitude SRTM (30&nbsp;m) —
-                il voit les vallons, pas les marches. Les circuits balisés de
-                l'Office portent leur propre relevé, mesuré au sol.
-              </p>
+              {/* 🔴 LA NOTE SUIT LE CHIFFRE QU'ELLE EXPLIQUE — 7/11/2026.
+                  Elle s'affichait SANS CONDITION, alors que le dénivelé ne
+                  paraît qu'au-delà de 40 m de montée. Sur une promenade plate
+                  — le cas le plus courant en presqu'île — on lisait une
+                  précaution sur une mesure absente.
+                  ⚠️ Et j'avais d'abord conclu qu'il fallait la SUPPRIMER :
+                     j'avais regardé UNE promenade, sans dénivelé, et
+                     généralisé « jamais affiché ». Le seuil des 40 m était à
+                     quatre lignes de là. ⭐ Une mesure sur un seul cas ne dit
+                     rien d'un affichage conditionnel — c'est le régime qu'on
+                     ne regarde pas qui porte le défaut, et ici il portait la
+                     raison d'être. */}
+              {b.montee >= MONTEE_DITE_M && (
+                <p className="page-note">
+                  Dénivelé d'après le modèle d'altitude SRTM (30&nbsp;m) —
+                  il voit les vallons, pas les marches. Les circuits balisés de
+                  l'Office portent leur propre relevé, mesuré au sol.
+                </p>
+              )}
               <p className="page-note">
                 {/* ⛔ L'ÉTALEMENT NE SE LIT QUE SUR UNE BOUCLE. C'est un
                     quotient isopérimétrique : il compare une aire à un
@@ -1786,14 +1821,24 @@ export function Composer() {
                     contredisait sa propre liste. ⭐ Un décompte qui qualifie
                     ses éléments doit tenir pour TOUS — sinon il faut qu'il
                     les compte sans les qualifier. */}
-                {rencontres.length > 0
-                  ? `${rencontres.length} lieu${rencontres.length > 1 ? "x" : ""} croisé${rencontres.length > 1 ? "s" : ""}`
-                  : "Aucun lieu remarquable sur ce parcours — c'est la marche qui compte"}
-                {b.montee >= 40 && ` · ${Math.round(b.montee)} m de montée`}
+                {/* ⛔ LE DÉCOMPTE NE SE REDIT PAS — 7/11/2026. La ligne de
+                    faits sur la carte annonce déjà « 2 lieux · Fortification ».
+                    ⚠️ Mais la phrase du cas VIDE reste : elle ne redit rien,
+                       elle dit le contraire — « aucun lieu remarquable » n'est
+                       écrit nulle part ailleurs, et c'est précisément le cas
+                       où l'on se demande si le calcul a échoué. */}
+                {rencontres.length === 0 &&
+                  "Aucun lieu remarquable sur ce parcours — c'est la marche qui compte"}
+                {b.montee >= MONTEE_DITE_M && ` · ${Math.round(b.montee)} m de montée`}
                 {b.bordDeMer > 300 &&
                   ` · ${km(b.bordDeMer)} km au bord de mer`}
                 {b.partRepetee > 0.1 && " · une portion se parcourt deux fois"}
-                {" · calculé en "}{duree} ms
+                {/* ⛔ « CALCULÉ EN N ms » EST PARTI — 7/11/2026, demande du
+                    fondateur. C'était de la fierté d'ingénieur : personne ne
+                    décide rien avec ce chiffre, et il occupait la fin d'une
+                    ligne que l'on lit pour savoir ce qu'on va voir.
+                    ⚠️ La mesure, elle, reste calculée (`duree`) : elle sert
+                       au banc. Ce qui part est son AFFICHAGE. */}
               </p>
             </section>
 

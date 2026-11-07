@@ -733,3 +733,68 @@ describe("🔴 6/11/2026 — « la carte s'efface ? » : deux défauts trouvés 
       .toMatch(/\[carte, point\.lat, point\.lon, libelle\]/);
   });
 });
+
+describe("🔴 7/11/2026 — quatre réparations sous la carte, et la distance remontée", () => {
+  const compo = readFileSync(new URL("./Composer.tsx", import.meta.url), "utf8");
+  const nu = compo.replace(/\{\/\*[\s\S]*?\*\/\}/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+  const carte = readFileSync(new URL("./CarteReelle.tsx", import.meta.url), "utf8");
+
+  /* 🔴 LE GARDE QUI CORRIGE MA PROPRE ERREUR DE DIAGNOSTIC. J'avais conclu
+     que la note SRTM expliquait un dénivelé « jamais affiché », et proposé de
+     la SUPPRIMER — après avoir regardé UNE promenade, plate. Le seuil des
+     40 m était à quatre lignes de là. La note n'était pas inutile : elle
+     s'affichait SANS CONDITION pour un chiffre CONDITIONNEL.
+     ⭐ Une mesure sur un seul cas ne dit rien d'un affichage conditionnel —
+        c'est le régime qu'on ne regarde pas qui porte le défaut.
+     ➜ On ne vérifie donc PAS un échantillon, qui mentirait de la même façon :
+       on exige que le chiffre et sa note dépendent de la MÊME constante
+       nommée. Une valeur qui commande deux affichages doit avoir un nom,
+       sinon le second oublie le premier. */
+  it("⛔ la note sur le dénivelé suit le dénivelé, et par la même constante", () => {
+    expect(nu, "le seuil n'est pas nommé").toMatch(/const MONTEE_DITE_M =/);
+    const gardes = nu.match(/b\.montee >= [A-Za-z0-9_]+/g) ?? [];
+    expect(gardes.length, "le dénivelé ou sa note n'est plus conditionné").toBe(2);
+    expect(new Set(gardes).size, `deux seuils différents : ${gardes.join(" / ")}`).toBe(1);
+    expect(gardes[0], "un seuil écrit en dur est revenu").toMatch(/MONTEE_DITE_M/);
+  });
+
+  /* ⛔ « calculé en N ms » était de la fierté d'ingénieur : personne ne décide
+     rien avec ce chiffre, et il occupait la fin d'une ligne qu'on lit pour
+     savoir ce qu'on va voir. ⚠️ La mesure reste CALCULÉE — elle sert au banc ;
+     ce qui part est son affichage. */
+  it("⛔ la durée de calcul ne s'affiche plus", () => {
+    expect(nu).not.toMatch(/calculé en/);
+    expect(nu, "la mesure elle-même a disparu avec son affichage").toMatch(/duree/);
+  });
+
+  /* ⛔ Le décompte des lieux est sur la carte (« 2 lieux · Fortification ») ;
+     le redire sous elle était une ligne de plus à lire.
+     ⚠️ La phrase du cas VIDE reste : elle ne redit rien, elle dit le
+        contraire — et c'est précisément le cas où l'on se demande si le
+        calcul a échoué. */
+  it("⛔ le décompte des lieux ne se redit pas sous la carte", () => {
+    expect(nu).not.toMatch(/lieux? croisés?/);
+    expect(nu, "le cas vide ne se dit plus").toMatch(/Aucun lieu remarquable/);
+  });
+
+  /* 🔴 UN ÉLÉMENT DE LISTE VIDE N'EST PAS DISCRET, IL EST MUET. Deux arrivées
+     sur trois ne portent pas leur nom à l'écran — elles se recouvriraient —
+     et leur `<li>` ne contenait plus que des pastilles sans texte. Un `title`
+     ne se lit ni au clavier ni au lecteur d'écran.
+     ⭐ Masquer un libellé à l'ŒIL ne doit pas le retirer à tout le monde. */
+  it("⛔ un repère sans nom visible porte quand même son nom", () => {
+    expect(carte).toMatch(/aria-label=\{libelle \? undefined : titre\}/);
+  });
+
+  /* 🔴 LA DISTANCE ÉTAIT PASSÉE SOUS LA LIGNE DE FLOTTAISON en même temps que
+     les pastilles. Il fallait faire défiler pour savoir combien on marche —
+     sur l'écran dont c'est la question.
+     ⭐ Désencombrer une carte ne veut pas dire en retirer ce qu'on vient y
+        chercher. Le coût que j'avais annoncé était réel ; il était trop
+        élevé. */
+  it("la distance se lit SUR la carte", () => {
+    const ligne = nu.match(/cp-choix-detail[\s\S]{0,400}/)?.[0] ?? "";
+    expect(ligne, "la ligne de faits de la carte est introuvable").not.toBe("");
+    expect(ligne, "la distance n'est pas sur la carte").toMatch(/km\(prop\.metres\)/);
+  });
+});

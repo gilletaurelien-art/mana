@@ -491,6 +491,17 @@ function Repere({
       ref={li}
       className={`carte-repere carte-repere-${variante}`}
       title={titre ?? libelle}
+      /* 🔴 UN ÉLÉMENT DE LISTE VIDE N'EST PAS DISCRET, IL EST MUET —
+         7/11/2026, repéré par le fondateur dans une copie de la page : six
+         puces vides. Depuis que deux arrivées sur trois ne portent pas leur
+         nom à l'écran (elles se recouvriraient), leur `<li>` ne contenait
+         plus que des pastilles sans texte. Un `title` ne se lit ni au
+         clavier ni au lecteur d'écran, et ne se copie pas.
+         ⭐ Masquer un libellé à l'ŒIL ne doit pas le retirer à tout le
+            monde : c'est le même geste que « Autour de moi », dont la bonne
+            phrase n'existait qu'en `aria-label`. Ici c'est l'inverse — elle
+            n'existait nulle part. */
+      aria-label={libelle ? undefined : titre}
       /* ⚠️ Une VARIABLE, pas un `background` : la pastille porte aussi un
          liseré et une ombre que le thème décide. On ne lui donne que la
          teinte, elle garde son dessin. */
