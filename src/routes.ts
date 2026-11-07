@@ -111,10 +111,18 @@ export const ROUTES_HORS_LOVE: Readonly<Record<string, string>> = {
  *    doux : ils nomment et dessinent l'application installée. Les rendre,
  *    c'est faire installer « MANA promenades » à qui installe mana.love.
  */
+/* ⭐ IL N'EN RESTE QU'UN, ET C'EST UNE RÉPARATION, PAS UN RECUL — 7/11 au
+   soir. Le manifeste et l'icône n'ont plus besoin d'être EXCLUS : ils ont
+   DÉMÉNAGÉ sous `app/`, qui est à nous sur les deux hôtes par le préfixe.
+   Une exclusion dit « cet hôte ne nous le sert pas » ; le déplacement dit
+   « il nous le sert ». La seconde réponse est meilleure — elle rend le
+   fichier au lieu de s'accommoder de son absence.
+   ⚠️ ET LES COMMENTAIRES VIVENT HORS DES TABLEAUX, pas dedans : le lecteur
+      de `scripts/caddy-bloc.mjs` a LEVÉ quand j'en avais mis un à
+      l'intérieur. Il a bien fait — un bloc Caddy sorti sans un chemin est
+      servi par l'ancien site, sans erreur et sans trace. */
 export const FICHIERS_HORS_LOVE = [
   "/sw.js",
-  "/manifest.webmanifest",
-  "/icon.svg",
 ] as const;
 
 /** ⭐ La soustraction LÈVE si elle ne retire rien : le jour où un de ces
@@ -148,8 +156,6 @@ export const FICHIERS_APP = [
   `/${NOM_STYLE_PLAN}`,
   `/${NOM_STYLE_ORTHO}`,
   "/fermetures.json",
-  "/icon.svg",
-  "/manifest.webmanifest",
   "/sw.js",
 ];
 

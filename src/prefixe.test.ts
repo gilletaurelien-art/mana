@@ -30,11 +30,30 @@ describe("le préfixe de service", () => {
     expect(vite).toMatch(/\?\?\s*"\/mana\/"/);
   });
 
+  /* 🔴 CE GARDE NOMMAIT SES FICHIERS, ET IL A GARDÉ UN FANTÔME — 7/11 au
+     soir. Il listait `public/manifest.webmanifest` ; le manifeste a déménagé
+     sous `public/app/`, et le test est tombé en ENOENT.
+     ⭐ Il a eu de la chance de tomber BRUYAMMENT. Un garde qui nomme un
+        fichier échoue de deux façons : il crie quand le fichier bouge, et il
+        se TAIT quand un fichier NEUF arrive — c'est la seconde qui coûte,
+        parce qu'elle ressemble à un succès. Quatre gardes de ce dépôt sont
+        restés verts des semaines sur un composant mort pour cette raison.
+     ⚠️ Il DÉCOUVRE donc ses porteurs au lieu de les nommer : tout ce que
+        `public/` contient en texte est copié TEL QUEL par Vite — qui ne le
+        traverse pas — donc un préfixe écrit là ne suivra jamais la base.
+        `index.html` est traversé, mais seulement via `%BASE_URL%`. */
   it("⛔ aucun fichier servi n'écrit « /mana » à la main", () => {
-    /* ⚠️ Les fichiers de `public/` sont copiés TELS QUELS : Vite ne les
-       traverse pas, donc un préfixe écrit là ne suivra jamais la base.
-       `index.html`, lui, est traversé — mais seulement via `%BASE_URL%`. */
-    const porteurs = ["index.html", "public/manifest.webmanifest", "public/sw.js"];
+    const TEXTE = /\.(json|webmanifest|js|txt|svg|html|css)$/;
+    const parcourir = (d: string): string[] =>
+      readdirSync(d, { withFileTypes: true }).flatMap((e) => {
+        const chemin = `${d}/${e.name}`;
+        if (e.isDirectory()) return parcourir(chemin);
+        return TEXTE.test(e.name) ? [chemin] : [];
+      });
+    const porteurs = ["index.html", ...parcourir("public")];
+    /* ⛔ Un garde qui ne lit rien dit oui : s'il ne trouve plus aucun
+       porteur, c'est le garde qui est cassé, pas le dépôt qui est propre. */
+    expect(porteurs.length, "aucun fichier servi trouvé").toBeGreaterThan(3);
     for (const f of porteurs) {
       expect(nu(lire(f)), `${f} écrit le préfixe à la main`).not.toMatch(/["'(/]\/mana\//);
     }
@@ -197,6 +216,62 @@ describe("les titres de page", () => {
     for (const f of dynamiques) {
       expect(nu(lire(f)), `${f} recopie le titre par défaut`)
         .not.toMatch(/document\.title\s*=\s*"MANA\.bzh/);
+    }
+  });
+});
+
+/* ════════════════════════════════════════════════════════════════════════
+   🔴 LE MANIFESTE A DÉMÉNAGÉ, ET SES CHEMINS SONT RELATIFS À LUI
+   ════════════════════════════════════════════════════════════════════════
+   Le 7/11, `/manifest.webmanifest` rendait la coquille de mana.love (26 008 o
+   de HTML) : la racine n'est pas à nous sur cet hôte. Il vit donc sous
+   `app/`, déjà à nous des deux côtés par le préfixe du bloc Caddy.
+
+   ⛔ ET LE DÉPLACER TEL QUEL AURAIT CASSÉ L'APPLICATION INSTALLÉE, EN SILENCE.
+      Ses chemins sont relatifs AU MANIFESTE : `start_url: "./"` valait la
+      racine tant qu'il y était, et serait devenu `/app/` une fois déplacé.
+      Une application installée dont la portée vaut `/app/` ne peut plus
+      naviguer vers `/carte` — elle s'ouvre, elle fonctionne, et chaque lien
+      sort de l'application vers le navigateur. Rien n'échoue.
+   ⭐ `"../"` est la bonne réponse parce qu'elle est relative DANS LES DEUX
+      déploiements : `/app/` → `/` sur mana.bzh, `/mana/app/` → `/mana/` sur
+      GitHub Pages. Une valeur absolue aurait cassé l'un des deux.
+*/
+describe("🔴 le manifeste d'installation, là où il vit maintenant", () => {
+  const CHEMIN = "public/app/manifest.webmanifest";
+  const m = JSON.parse(readFileSync(CHEMIN, "utf8"));
+
+  it("index.html le demande bien sous `app/`, par le préfixe de Vite", () => {
+    const html = nu(lire("index.html"));
+    expect(html).toContain('href="%BASE_URL%app/manifest.webmanifest"');
+    expect(html).toContain('href="%BASE_URL%app/icon.svg"');
+  });
+
+  /* ⚠️ La recette, éprouvée sur LES DEUX bases — c'est tout l'intérêt du
+     relatif, et c'est ce qu'un garde doit montrer plutôt qu'affirmer. */
+  it("⛔ sa portée et son départ retombent sur la RACINE du site, pas sur /app/", () => {
+    for (const base of ["/", "/mana/"]) {
+      const ou = new URL(`https://exemple.fr${base}app/manifest.webmanifest`);
+      expect(new URL(m.start_url, ou).pathname, `base ${base} : start_url`).toBe(base);
+      expect(new URL(m.scope, ou).pathname, `base ${base} : scope`).toBe(base);
+      /* ⭐ L'icône, elle, reste À CÔTÉ du manifeste : elle a déménagé avec
+         lui, pour la même raison et sous le même préfixe. */
+      expect(new URL(m.icons[0].src, ou).pathname, `base ${base} : icône`)
+        .toBe(`${base}app/icon.svg`);
+    }
+  });
+
+  it("l'icône qu'il désigne existe vraiment", () => {
+    expect(readFileSync("public/app/icon.svg", "utf8").length).toBeGreaterThan(50);
+  });
+
+  /* ⛔ ET IL NE NOMME AUCUN DOMAINE. Il est servi aux DEUX hôtes, octet pour
+     octet : « MANA.bzh — Promenades en Bretagne » aurait fait installer
+     MANA.bzh à qui installe mana.love. Un fichier statique ne peut pas
+     changer selon l'hôte — alors il ne promet que ce qui est vrai des deux. */
+  it("⛔ il ne nomme aucun domaine : il est servi aux deux hôtes", () => {
+    for (const champ of ["name", "short_name", "description"] as const) {
+      expect(m[champ], `${champ} nomme un domaine`).not.toMatch(/mana\.(bzh|love)/i);
     }
   });
 });

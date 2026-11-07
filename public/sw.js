@@ -71,7 +71,7 @@ const ROUTES_APP = [
 const PREFIXES_APP = ["/promenade/", "/app/", "/paysages/", "/images/"];
 const FICHIERS_APP = [
   "/carte-style.json", "/carte-ortho.json", "/fermetures.json",
-  "/icon.svg", "/manifest.webmanifest", "/sw.js",
+  "/sw.js",
 ];
 
 /** ⚠️ Le périmètre peut être « /mana/ » (GitHub Pages) ou « / » (mana.bzh) :
@@ -109,7 +109,7 @@ const ROUTE_OFFICE = "/balades-office";
    éditeur de son domaine (LCEN). Mesuré : notre page le nomme seize fois. */
 const ROUTES_HORS_LOVE = ["/", ROUTE_OFFICE, "/reglages", "/espace", "/radio",
                           "/contact", "/mentions-legales"];
-const FICHIERS_HORS_LOVE = ["/sw.js", "/manifest.webmanifest", "/icon.svg"];
+const FICHIERS_HORS_LOVE = ["/sw.js"];
 const SANS_OFFICE = self.location.hostname === "mana.love";
 const routesDuVisage = () =>
   SANS_OFFICE ? ROUTES_APP.filter((r) => !ROUTES_HORS_LOVE.includes(r)) : ROUTES_APP;
@@ -214,12 +214,12 @@ const correspond = (motifs, url) => motifs.some((m) => m.test(url.pathname));
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE).then((c) =>
-      c.addAll(["./", "./index.html", "./manifest.webmanifest", "./fermetures.json"])
+      c.addAll(["./", "./index.html", "./app/manifest.webmanifest", "./fermetures.json"])
         // ⚠️ Une entrée manquante ne doit pas faire échouer TOUTE l'installation :
         //    sans ce rattrapage, un seul 404 laisse l'application sans cache du
         //    tout, et le hors-ligne tombe en silence.
         .catch(() => Promise.all(
-          ["./", "./index.html", "./manifest.webmanifest", "./fermetures.json"]
+          ["./", "./index.html", "./app/manifest.webmanifest", "./fermetures.json"]
             .map((u) => c.add(u).catch(() => null))
         ))
     )

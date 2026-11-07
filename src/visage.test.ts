@@ -177,6 +177,24 @@ describe("🔴 rien de ce qui est RENDU sur les deux hôtes ne nomme un domaine 
      rendrait la même chose des deux côtés passerait le garde ci-dessus en
      n'ayant rien réparé — le domaine serait simplement caché dans une
      fonction. */
+  /* 🔴 L'ADRESSE EXACTE, PAS UN GABARIT — Aurélien, 7/11 : « pour le mail
+     c'est welcome@mana.love ». J'avais écrit `contact@mana.love` par
+     transposition : changer le domaine, garder la boîte.
+     ⭐ Une adresse électronique n'est pas dérivable de son domaine. La partie
+        gauche est un choix éditorial ; `contact@` aurait eu l'air juste et
+        désigné une boîte qui n'existe pas — le courrier serait parti nulle
+        part, sans rebond visible pour nous.
+     ⚠️ Et le garde d'à côté ne pouvait pas l'attraper : il vérifie que les
+        DEUX domaines sont nommés, ce qui était vrai de la mauvaise adresse.
+        Mutation faite : `welcome@` → `contact@` passait. D'où ce test-ci, qui
+        épingle la valeur parce qu'elle vient d'une décision et non d'une
+        règle — un interdit en test se franchit en le sachant. */
+  it("⛔ les deux adresses sont celles qu'on a données, à la lettre", () => {
+    const v = nu("./visage.ts");
+    expect(v, "l'adresse de mana.love n'est plus welcome@").toContain('"welcome@mana.love"');
+    expect(v, "l'adresse de mana.bzh a changé").toContain('"contact@mana.bzh"');
+  });
+
   it("⛔ la signature et le courriel CHANGENT selon l'hôte", () => {
     const v = nu("./visage.ts");
     for (const nom of ["signature", "courriel"]) {

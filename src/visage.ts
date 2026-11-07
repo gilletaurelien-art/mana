@@ -73,4 +73,12 @@ export const signature = () => (visage() === "love" ? "mana.love" : "MANA.bzh");
  *    j'écrivais, dans le commentaire même qui le retirait, que l'écran était
  *    « inatteignable ». Une description fidèle de la mauvaise chose.
  */
-export const courriel = () => (visage() === "love" ? "contact@mana.love" : "contact@mana.bzh");
+/* ⚠️ ET CE N'EST PAS `contact@` DES DEUX CÔTÉS — Aurélien, 7/11 :
+   « pour le mail c'est welcome@mana.love ». J'avais écrit `contact@mana.love`
+   par transposition, en changeant le domaine et en gardant la boîte.
+   ⭐ Une adresse électronique n'est pas un gabarit : la partie gauche est un
+      choix éditorial, pas une conséquence du domaine. Écrire
+      `contact@${domaine}` aurait eu l'air juste et désigné une boîte qui
+      n'existe pas — le courrier serait parti nulle part, sans rebond visible
+      pour nous. */
+export const courriel = () => (visage() === "love" ? "welcome@mana.love" : "contact@mana.bzh");
