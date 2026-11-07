@@ -1,6 +1,7 @@
 import {
   GlyphNavigation, GlyphSecurite, GlyphDecouverte, GlyphSentier, GlyphRadio,
 } from "./Glyphs";
+import { avecOffice } from "./visage";
 
 /**
  * CE QUE FAIT L'APPLICATION — la page dédiée, et indexable.
@@ -131,9 +132,19 @@ const MODULES = [
 ];
 
 export function LApplication({ base }: { base: string }) {
+  /* 🔴 LE CRÉDIT SUIT LA DONNÉE, PAS LA PAGE — 7/11/2026. Sur mana.love il n'y
+     a pas d'Office, donc ni ses 46 circuits ni ses 708 km : créditer un
+     partenaire dont on ne montre rien n'est pas de la rigueur, c'est du
+     bruit — et ça affaiblit la mention là où elle compte. La section entière
+     part avec sa matière. */
+  const office = avecOffice();
   return (
     <main className="wrap">
-      {MODULES.map((m) => {
+      {/* ⚠️ La section des circuits balisés part ENTIÈREMENT sur mana.love —
+          elle ne parle que de l'Office, de ses 46 circuits et de ses 708 km.
+          En garder la coquille sans sa matière promettrait un partenariat qui
+          n'existe pas sur cet hôte. */}
+      {MODULES.filter((m) => office || !m.source).map((m) => {
         const G = m.glyphe;
         return (
         <section key={m.titre} className="landing-section bulle">

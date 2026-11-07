@@ -13,6 +13,7 @@ import {
 } from "./Glyphs";
 import { Invitation } from "./Invitation";
 import { LApplication } from "./LApplication";
+import { avecOffice } from "./visage";
 import { Reglages } from "./Reglages";
 import { EcranTerritoire } from "./EcranTerritoire";
 import { Composer } from "./Composer";
@@ -201,10 +202,34 @@ export default function App() {
                 du bas — c'est `/carte` qui la porte désormais, par construction
                 du premier onglet. ⚠️ Toujours PAS vers `/carte` : l'icône n°1
                 y mène déjà. */}
-            <a href={`${B}/balades-office`} aria-current={path === "/balades-office" ? "page" : undefined}>
-              <GlyphEtincelles />
-              <span className="sr-only">Les balades de l'Office</span>
-            </a>
+            {/* 🔴 LA DEUXIÈME COLONNE CHANGE DE MÉTIER SELON L'HÔTE —
+                7/11/2026, demande d'Aurélien : « sur mana.love, balades de
+                l'OT devient chat MANA IA = déesses ». Elle se libère
+                exactement parce que l'Office n'existe pas sur cet hôte : ce
+                n'est pas une case qu'on prend, c'est une case qui reste.
+                ⚠️ `/chat` est HORS des chemins de cette app, à dessein : il
+                   tombe dans l'attrape-tout de mana.love et c'est la coquille
+                   love (manafrance-app) qui le sert. Le mettre dans
+                   `routes.ts` ferait revendiquer à cette app une adresse
+                   qu'elle ne sait pas rendre.
+                ⭐ ET LE LIBELLÉ EST VISIBLE. Les quatre autres onglets sont
+                   des icônes muettes (`sr-only`) ; celui-ci porte un mot,
+                   parce que personne ne devine qu'un pictogramme mène à une
+                   déesse. J'ai fait l'erreur inverse avant-hier sur le bouton
+                   de géolocalisation, dont la bonne phrase n'existait qu'en
+                   `aria-label` : quand un libellé accessible explique mieux
+                   que l'écran, c'est l'écran qu'on corrige. */}
+            {avecOffice() ? (
+              <a href={`${B}/balades-office`} aria-current={path === "/balades-office" ? "page" : undefined}>
+                <GlyphEtincelles />
+                <span className="sr-only">Les balades de l'Office</span>
+              </a>
+            ) : (
+              <a href={`${B}/chat`}>
+                <GlyphEtincelles />
+                <span className="nav-mot">Déesses</span>
+              </a>
+            )}
             {/* ⚠️ « MANA » seul ICI, « MANA.bzh » dans le pied : ce n'est pas
                 une incohérence. Le pied est l'endroit où l'on signe. */}
             <a className="brand" href={`${B}/`} aria-current={path === "/" ? "page" : undefined}>
@@ -214,9 +239,18 @@ export default function App() {
               <GlyphRadio />
               <span className="sr-only">MANAradio</span>
             </a>
+            {/* ⚠️ « Réglages » devient « Mon compte » sur mana.love —
+                7/11/2026, demande d'Aurélien. SEUL LE LIBELLÉ CHANGE ICI :
+                l'écran reste celui de cette app (fond de carte, langue,
+                sources, mentions). Le compte citoyen de mana.love vit dans
+                `manafrance-app` ; si c'est LUI qu'il faut atteindre, le lien
+                doit sortir des chemins de cette app comme `/chat`. Question
+                posée, pas devinée — un onglet nommé « Mon compte » qui ouvre
+                des réglages est précisément la promesse non tenue que ce
+                dépôt traque. */}
             <a href={`${B}/reglages`} aria-current={path === "/reglages" ? "page" : undefined}>
               <GlyphReglages />
-              <span className="sr-only">Réglages</span>
+              <span className="sr-only">{avecOffice() ? "Réglages" : "Mon compte"}</span>
             </a>
           </nav>
         </div>
@@ -252,7 +286,7 @@ export default function App() {
            fonctions pures que `Promenades.test.ts` vérifie
            (`surLaPresquile`, `PRESQUILE`) — plus de composant, plus de JSX. */
         <Composer />
-      ) : path === "/balades-office" ? (
+      ) : path === "/balades-office" && avecOffice() ? (
         /* 🔴 EXTRAIT DE `Composer.tsx` LE 3/11/2026 — demande du fondateur :
            carte = nos sites et nos propositions, second onglet = les
            balades de l'Office. Voir `BaladesOT.tsx`. */

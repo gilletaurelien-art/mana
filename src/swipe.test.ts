@@ -577,17 +577,43 @@ describe("la barre du bas", () => {
        content. ⭐ Un garde qui compare des chaînes là où le sujet est une
        DESTINATION laisse passer exactement le cas qu'il devait attraper —
        une requête suffit à déguiser un doublon. */
+    /* 🔄 DEUX VISAGES DEPUIS LE 7/11/2026 — la colonne 2 est `/balades-office`
+       sur mana.bzh et `/chat` sur mana.love (l'Office n'existe pas là-bas).
+       La barre porte donc SIX `href` pour CINQ colonnes, et la règle ne change
+       pas d'un mot : chaque visage mène à cinq endroits distincts.
+       ⭐ Un garde qui comptait « cinq liens » comptait l'IMPLÉMENTATION ; il
+          compte désormais les destinations PAR VISAGE, ce qui est ce qu'il a
+          toujours voulu dire. */
     const liens = [...barre.matchAll(/href=\{`\$\{B\}([^`]*)`\}/g)].map((m) => m[1]);
     const chemins = liens.map((h) => h.split("?")[0]);
-    expect(liens.length).toBe(5);
-    expect(new Set(chemins).size, `doublon parmi ${chemins.join(" · ")}`).toBe(5);
+    const office = chemins.filter((c) => c === "/balades-office");
+    const chat = chemins.filter((c) => c === "/chat");
+    expect(office.length, "la colonne de l'Office a disparu").toBe(1);
+    expect(chat.length, "la colonne du chat a disparu").toBe(1);
+
+    for (const [visage, exclu] of [["bzh", "/chat"], ["love", "/balades-office"]] as const) {
+      const vus = chemins.filter((c) => c !== exclu);
+      expect(vus.length, `visage ${visage} : ${vus.join(" · ")}`).toBe(5);
+      expect(new Set(vus).size, `visage ${visage}, doublon parmi ${vus.join(" · ")}`).toBe(5);
+    }
+
+    /* ⛔ ET `/chat` N'EST PAS À NOUS. Il doit tomber dans la coquille
+       mana.love, servie par manafrance-app : l'inscrire dans `routes.ts`
+       ferait revendiquer à cette app une adresse qu'elle ne sait pas rendre —
+       un 200 sur une page qu'on n'a pas. */
+    const routes = readFileSync(new URL("./routes.ts", import.meta.url), "utf8");
+    expect(routes, "`/chat` est entré dans les chemins de l'app").not.toMatch(/"\/chat"/);
   });
 
   /** ⭐ L'ordre est une décision du fondateur (1/11), pas une mise en page. */
   it("garde l'ordre : carte · sentiers · MANA · radio · réglages", () => {
+    /* 🔄 La colonne 2 porte le MÊME glyphe sur les deux visages (étincelles) :
+       seule sa destination et son libellé changent. L'ordre est donc toujours
+       une suite de cinq, avec un glyphe d'étincelles en double dans le source
+       — un par branche. */
     const ordre = [...barre.matchAll(/<Glyph(\w+)|className="brand"/g)]
       .map((m) => m[1] ?? "MANA");
-    expect(ordre).toEqual(["Carte", "Etincelles", "MANA", "Radio", "Reglages"]);
+    expect(ordre).toEqual(["Carte", "Etincelles", "Etincelles", "MANA", "Radio", "Reglages"]);
   });
 
   /**

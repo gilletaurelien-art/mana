@@ -42,6 +42,27 @@ export const ROUTES_APP = [
   "/radio",
 ] as const;
 
+/**
+ * 🔴 LES CHEMINS DU VISAGE LOVE — 7/11/2026. mana.love prend cette app, sans
+ *    l'Office de tourisme : `/balades-office` n'est PAS à nous sur cet hôte.
+ *
+ * ⭐ DÉRIVÉE PAR SOUSTRACTION, JAMAIS RECOPIÉE. Une seconde liste écrite à la
+ *    main divergerait au premier ajout de route, et en SILENCE — exactement
+ *    ce que ce fichier existe pour empêcher entre trois listes. Ici toute
+ *    route neuve entre dans les deux par construction ; seule l'exclusion est
+ *    explicite, donc visible.
+ *
+ * ⚠️ ET ON NE REVENDIQUE PAS CE QU'ON NE SERT PAS. Laisser `/balades-office`
+ *    dans la liste de mana.love pour « garder les 22 chemins identiques »
+ *    aurait fait répondre 200 à une adresse dont cet hôte n'a pas la matière —
+ *    le pire des trois désaccords décrits plus haut, parce qu'il a l'air de
+ *    marcher. Le confort d'un garde qu'on n'a rien à réapprendre n'est pas
+ *    une raison : un garde qu'on maintient vert en ne lui disant rien ne
+ *    garde plus, et ne le dit pas.
+ */
+export const ROUTE_OFFICE = "/balades-office";
+export const ROUTES_LOVE = ROUTES_APP.filter((r) => r !== ROUTE_OFFICE);
+
 /** Les familles d'adresses, par préfixe. */
 export const PREFIXES_APP = [
   "/promenade/",

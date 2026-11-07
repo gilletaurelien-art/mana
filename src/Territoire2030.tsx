@@ -32,6 +32,7 @@ import { TERRITOIRES, TOUT, territoireDe, urlGraphe } from "./territoires";
 import { chargerOT, type ItineraireOT } from "./ot";
 import { chargerLieux, lienWiki, type Inventaire, type Lieu } from "./lieux";
 import { chercher, type Resultat } from "./recherche";
+import { avecOffice } from "./visage";
 import {
   libelleCategorie, couleurCategorie, COULEUR_CATEGORIE, COULEUR_CATEGORIE_DEFAUT,
 } from "./categories";
@@ -315,7 +316,15 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
     }),
     [inv, terr],
   );
-  useEffect(() => { chargerOT().then((r) => setOt(r.itineraires)).catch(() => setOt([])); }, []);
+  /* 🔴 PAS D'OFFICE SUR mana.love — 7/11/2026. On ne se contente pas de
+     masquer le calque : on ne TÉLÉCHARGE PAS `ot.json` (264 Ko) sur un hôte
+     qui n'a rien à en faire. ⭐ Masquer coûte la bande passante de ce qu'on
+     cache ; ne pas charger coûte zéro, et rend le calque vide impossible à
+     oublier quelque part. */
+  useEffect(() => {
+    if (!avecOffice()) { setOt([]); return; }
+    chargerOT().then((r) => setOt(r.itineraires)).catch(() => setOt([]));
+  }, []);
 
   /* ── LES SITES, POSÉS DANS MAPLIBRE — 4/11/2026 ────────────────────────
      🔴 PLUS DE PROJECTION MAISON : chaque site est une coordonnée réelle,
