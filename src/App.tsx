@@ -13,7 +13,8 @@ import {
 } from "./Glyphs";
 import { Invitation } from "./Invitation";
 import { LApplication } from "./LApplication";
-import { avecOffice } from "./visage";
+import { avecOffice, signature, visage } from "./visage";
+import { entreesBarre, liensPied } from "./barre";
 import { Reglages } from "./Reglages";
 import { EcranTerritoire } from "./EcranTerritoire";
 import { Composer } from "./Composer";
@@ -119,7 +120,11 @@ export default function App() {
     /* ⚠️ Seulement les adresses de la table : une page dynamique pose le sien
        et ne doit pas se le faire écraser au prochain rendu. */
     const titre = TITRES[path];
-    if (titre) document.title = titre;
+    /* ⚠️ LA SIGNATURE EST SUBSTITUÉE AU MOMENT DE POSER, pas écrite dix fois
+       dans la table. Dix chaînes à corriger à la main divergeraient au
+       premier titre ajouté — et en silence, puisqu'un titre faux s'affiche
+       parfaitement. La table dit le sujet, l'hôte dit la signature. */
+    if (titre) document.title = titre.replace(/MANA\.bzh/g, signature());
   }, [path]);
 
   const barreRef = useRef<HTMLElement | null>(null);
@@ -188,70 +193,20 @@ export default function App() {
                    Garder le focus sous une icône de carte aurait déplacé
                    l'incohérence au lieu de la corriger — on arriverait sur
                    une carte avec un clavier qu'on n'a pas demandé. */}
-            <a href={`${B}/carte?vue=carte`}
-               aria-current={path === "/carte" ? "page" : undefined}>
-              <GlyphCarte />
-              <span className="sr-only">La carte du territoire</span>
-            </a>
-            {/* 🔴 ÉTINCELLES, DEUXIÈME ONGLET — 3/11/2026, demande du
-                fondateur : « carte = nos sites et nos propositions, premier
-                onglet ; les balades de l'Office, deuxième onglet ». Elle
-                menait à `/promenades` (compositeur + catalogue MANA) ;
-                `/promenades` reste atteignable (accueil, « Partir d'ici »
-                sur la carte du territoire), mais perd sa porte dans la barre
-                du bas — c'est `/carte` qui la porte désormais, par construction
-                du premier onglet. ⚠️ Toujours PAS vers `/carte` : l'icône n°1
-                y mène déjà. */}
-            {/* 🔴 LA DEUXIÈME COLONNE CHANGE DE MÉTIER SELON L'HÔTE —
-                7/11/2026, demande d'Aurélien : « sur mana.love, balades de
-                l'OT devient chat MANA IA = déesses ». Elle se libère
-                exactement parce que l'Office n'existe pas sur cet hôte : ce
-                n'est pas une case qu'on prend, c'est une case qui reste.
-                ⚠️ `/chat` est HORS des chemins de cette app, à dessein : il
-                   tombe dans l'attrape-tout de mana.love et c'est la coquille
-                   love (manafrance-app) qui le sert. Le mettre dans
-                   `routes.ts` ferait revendiquer à cette app une adresse
-                   qu'elle ne sait pas rendre.
-                ⭐ ET LE LIBELLÉ EST VISIBLE. Les quatre autres onglets sont
-                   des icônes muettes (`sr-only`) ; celui-ci porte un mot,
-                   parce que personne ne devine qu'un pictogramme mène à une
-                   déesse. J'ai fait l'erreur inverse avant-hier sur le bouton
-                   de géolocalisation, dont la bonne phrase n'existait qu'en
-                   `aria-label` : quand un libellé accessible explique mieux
-                   que l'écran, c'est l'écran qu'on corrige. */}
-            {avecOffice() ? (
-              <a href={`${B}/balades-office`} aria-current={path === "/balades-office" ? "page" : undefined}>
-                <GlyphEtincelles />
-                <span className="sr-only">Les balades de l'Office</span>
+            {entreesBarre(visage()).map((e) => (
+              <a key={e.clef}
+                 className={e.glyphe === "marque" ? "brand" : undefined}
+                 href={`${B}${e.chemin}`}
+                 aria-current={path === e.chemin.split("?")[0] ? "page" : undefined}>
+                {e.glyphe === "carte" && <GlyphCarte />}
+                {e.glyphe === "etincelles" && <GlyphEtincelles />}
+                {e.glyphe === "radio" && <GlyphRadio />}
+                {e.glyphe === "reglages" && <GlyphReglages />}
+                {e.glyphe === "marque"
+                  ? e.libelle
+                  : <span className={e.motVisible ? "nav-mot" : "sr-only"}>{e.libelle}</span>}
               </a>
-            ) : (
-              <a href={`${B}/chat`}>
-                <GlyphEtincelles />
-                <span className="nav-mot">Déesses</span>
-              </a>
-            )}
-            {/* ⚠️ « MANA » seul ICI, « MANA.bzh » dans le pied : ce n'est pas
-                une incohérence. Le pied est l'endroit où l'on signe. */}
-            <a className="brand" href={`${B}/`} aria-current={path === "/" ? "page" : undefined}>
-              MANA
-            </a>
-            <a href={`${B}/radio`} aria-current={path === "/radio" ? "page" : undefined}>
-              <GlyphRadio />
-              <span className="sr-only">MANAradio</span>
-            </a>
-            {/* ⚠️ « Réglages » devient « Mon compte » sur mana.love —
-                7/11/2026, demande d'Aurélien. SEUL LE LIBELLÉ CHANGE ICI :
-                l'écran reste celui de cette app (fond de carte, langue,
-                sources, mentions). Le compte citoyen de mana.love vit dans
-                `manafrance-app` ; si c'est LUI qu'il faut atteindre, le lien
-                doit sortir des chemins de cette app comme `/chat`. Question
-                posée, pas devinée — un onglet nommé « Mon compte » qui ouvre
-                des réglages est précisément la promesse non tenue que ce
-                dépôt traque. */}
-            <a href={`${B}/reglages`} aria-current={path === "/reglages" ? "page" : undefined}>
-              <GlyphReglages />
-              <span className="sr-only">{avecOffice() ? "Réglages" : "Mon compte"}</span>
-            </a>
+            ))}
           </nav>
         </div>
       </header>
@@ -382,13 +337,9 @@ export default function App() {
                 indexable qu'aucun lien interne ne désigne est une page que
                 les moteurs trouvent mal et que personne ne traverse. Le pied
                 est le seul endroit présent partout. */}
-            <a href={`${B}/l-application`}>Ce que fait l’application</a>
-            <a href={`${B}/promenades`}>Promenades</a>
-            <a href={`${B}/carte`}>La carte</a>
-            <a href={`${B}/radio`}>MANAradio</a>
-            <a href={`${B}/territoire`}>Le territoire</a>
-            <a href={`${B}/contact`}>Contact</a>
-            <a href={`${B}/mentions-legales`}>Mentions légales</a>
+            {liensPied(visage()).map((l) => (
+              <a key={l.chemin} href={`${B}${l.chemin}`}>{l.libelle}</a>
+            ))}
           </nav>
         </div>
       </footer>

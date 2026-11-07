@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { readFileSync } from "node:fs";
 import { ajouterAuCarnet, lireCarnet, viderCarnet } from "./carnet";
+import { entreesBarre } from "./barre";
 
 const ecran = readFileSync(new URL("./SwipeBalades.tsx", import.meta.url), "utf8");
 /** ⚠️ Les commentaires d'abord : une consigne EXPLIQUÉE dans un commentaire
@@ -309,8 +310,12 @@ describe("le jeu de cartes des balades", () => {
        qui en a trois. ⭐ Un garde qui ne reconnaît qu'une FORME d'écriture
        ne garde que cette forme-là. */
     const liens = [...net.matchAll(/\$\{base\}(\/[a-z0-9-]*)/g)].map((m) => m[1]);
-    const app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
-    const barre = [...app.matchAll(/<a[^>]*href=\{`\$\{B\}([^`]*)`\}[^>]*aria-current/g)].map((m) => m[1]);
+    /* 🔄 LA BARRE NE SE LIT PLUS DANS LE JSX — 7/11. Ses entrées viennent
+       d'`entreesBarre()` depuis qu'un garde textuel est resté vert pendant
+       qu'elle menait, en ligne, cinq fois à la même page. Ce garde-ci voulait
+       seulement « la barre a bien ses onglets » avant de comparer : il le
+       demande maintenant à la fonction qui décide. */
+    const barre = entreesBarre("bzh").map((e) => e.chemin);
     expect(barre.length, "les onglets de la barre du bas").toBeGreaterThanOrEqual(4);
 
     expect(liens.length, "l'accueil n'offre plus aucune porte").toBeGreaterThan(0);
@@ -569,51 +574,36 @@ describe("la barre du bas", () => {
    *    LIBELLÉ, jamais par leur URL — c'est ce qui rend ce doublon invisible à
    *    la relecture. Ce test lit les `href`.
    */
-  it("les cinq entrées mènent à cinq endroits", () => {
-    /* 🔴 ET ON COMPARE LES CHEMINS, PAS LES URL. Première version : elle
-       comparait `href` entier — donc `/carte?vue=carte&chercher=1` et
-       `/carte` comptaient pour deux. La mutation (étincelles ramenées sur
-       `/carte`) est PASSÉE : deux icônes vers la même page, et le garde
-       content. ⭐ Un garde qui compare des chaînes là où le sujet est une
-       DESTINATION laisse passer exactement le cas qu'il devait attraper —
-       une requête suffit à déguiser un doublon. */
-    /* 🔄 DEUX VISAGES DEPUIS LE 7/11/2026 — la colonne 2 est `/balades-office`
-       sur mana.bzh et `/chat` sur mana.love (l'Office n'existe pas là-bas).
-       La barre porte donc SIX `href` pour CINQ colonnes, et la règle ne change
-       pas d'un mot : chaque visage mène à cinq endroits distincts.
-       ⭐ Un garde qui comptait « cinq liens » comptait l'IMPLÉMENTATION ; il
-          compte désormais les destinations PAR VISAGE, ce qui est ce qu'il a
-          toujours voulu dire. */
-    const liens = [...barre.matchAll(/href=\{`\$\{B\}([^`]*)`\}/g)].map((m) => m[1]);
-    const chemins = liens.map((h) => h.split("?")[0]);
-    const office = chemins.filter((c) => c === "/balades-office");
-    const chat = chemins.filter((c) => c === "/chat");
-    expect(office.length, "la colonne de l'Office a disparu").toBe(1);
-    expect(chat.length, "la colonne du chat a disparu").toBe(1);
-
-    for (const [visage, exclu] of [["bzh", "/chat"], ["love", "/balades-office"]] as const) {
-      const vus = chemins.filter((c) => c !== exclu);
-      expect(vus.length, `visage ${visage} : ${vus.join(" · ")}`).toBe(5);
-      expect(new Set(vus).size, `visage ${visage}, doublon parmi ${vus.join(" · ")}`).toBe(5);
-    }
-
-    /* ⛔ ET `/chat` N'EST PAS À NOUS. Il doit tomber dans la coquille
-       mana.love, servie par manafrance-app : l'inscrire dans `routes.ts`
-       ferait revendiquer à cette app une adresse qu'elle ne sait pas rendre —
-       un 200 sur une page qu'on n'a pas. */
+  /* 🔴 CE GARDE EST RETOURNÉ — il lisait les `href` du JSX, et il est resté
+     VERT pendant que la barre, EN PRODUCTION sur mana.love, menait cinq fois
+     à la même page. Il comptait des chaînes distinctes dans un fichier ; cinq
+     chemins distincts peuvent très bien rendre un seul écran.
+     ⭐ Ce qu'il protégeait — « deux contrôles voisins se comparent par leur
+        dessin, jamais par leur URL » — reste vrai et vit désormais dans
+        `barre.test.ts`, contre la DÉCISION (`entreesBarre`) et non contre le
+        texte. Ici on garde la seule chose que ce fichier peut encore dire. */
+  it("⛔ `/chat` n'est pas entré dans les chemins de l'app", () => {
+    /* Il doit tomber dans la coquille mana.love, servie par manafrance-app :
+       l'inscrire dans `routes.ts` ferait revendiquer à cette app une adresse
+       qu'elle ne sait pas rendre — un 200 sur une page qu'on n'a pas. */
     const routes = readFileSync(new URL("./routes.ts", import.meta.url), "utf8");
     expect(routes, "`/chat` est entré dans les chemins de l'app").not.toMatch(/"\/chat"/);
   });
 
-  /** ⭐ L'ordre est une décision du fondateur (1/11), pas une mise en page. */
-  it("garde l'ordre : carte · sentiers · MANA · radio · réglages", () => {
-    /* 🔄 La colonne 2 porte le MÊME glyphe sur les deux visages (étincelles) :
-       seule sa destination et son libellé changent. L'ordre est donc toujours
-       une suite de cinq, avec un glyphe d'étincelles en double dans le source
-       — un par branche. */
-    const ordre = [...barre.matchAll(/<Glyph(\w+)|className="brand"/g)]
-      .map((m) => m[1] ?? "MANA");
-    expect(ordre).toEqual(["Carte", "Etincelles", "Etincelles", "MANA", "Radio", "Reglages"]);
+  /** ⭐ L'ordre est une décision du fondateur (1/11), pas une mise en page.
+   *  🔴 RETOURNÉ AUSSI : il comptait les balises `<Glyph…>` du source, donc il
+   *     comptait l'IMPLÉMENTATION — deux étincelles « une par branche », un
+   *     détail qui n'existait que dans le texte. La barre se rend désormais
+   *     depuis une liste ; l'ordre est celui de la liste, par visage. */
+  it("garde l'ordre : carte · étincelles · MANA · radio · réglages", () => {
+    expect(entreesBarre("bzh").map((e) => e.glyphe))
+      .toEqual(["carte", "etincelles", "marque", "radio", "reglages"]);
+    /* ⚠️ Sur love, les colonnes dont le pont est fermé manquent — mais celles
+       qui restent gardent LEUR RANG. Un masquage qui réordonnerait la barre
+       déplacerait les boutons sous le doigt des gens. */
+    const love = entreesBarre("love").map((e) => e.glyphe);
+    const rang = ["carte", "etincelles", "marque", "radio", "reglages"] as const;
+    expect(love).toEqual(rang.filter((g) => love.includes(g)) as string[]);
   });
 
   /**

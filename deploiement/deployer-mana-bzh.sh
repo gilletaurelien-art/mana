@@ -197,6 +197,22 @@ else
   note "· @applove absent du serveur — mana.love ne sert pas encore l'application (état attendu avant la bascule)."
 fi
 
+# ── 3ter. les ponts vers l'autre application sont-ils déclarés tels qu'ils sont ?
+# 🔴 LE SEUL GARDE DES PONTS QUI PUISSE MORDRE. `src/passerelle.ts` déclare
+#    quels chemins de mana.love sont EN LIGNE chez l'autre app, et un bouton
+#    de notre barre en dépend. Mutation faite le 7/11 : déclarer `/chat` en
+#    ligne à tort laisse les 53 tests VERTS — ils tournent sans réseau.
+# ⭐ ET L'ERREUR EST ARRIVÉE LE JOUR MÊME : « /chat existe » était vrai du
+#    dépôt et faux de l'hôte. Un commit dit qu'un travail est FAIT, pas qu'il
+#    est ARRIVÉ. Le déploiement est le moment où la déclaration rencontre
+#    l'hôte : c'est ici que ça se vérifie, pas dans `npm test`.
+# ⚠️ Il ne bloque PAS le déploiement — il ne décide que de boutons, et refuser
+#    d'expédier une carte réparée parce qu'un bouton voisin ment serait pire
+#    que le mensonge. Il parle fort, et c'est tout ce qu'on lui demande.
+if ! node scripts/verifier-ponts.mjs; then
+  note "· un pont est déclaré autrement qu'il n'est — corrigez src/passerelle.ts puis redéployez."
+fi
+
 if [ "$VERIFIER" = "1" ]; then vert "✓ --verifier : rien n'a été déposé"; exit 0; fi
 
 # ── 4. déposer ──────────────────────────────────────────────────────────────

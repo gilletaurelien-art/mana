@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { liensPied } from "./barre";
 import { readFileSync } from "node:fs";
 
 /* 🔄 6/11/2026 — CES GARDES ONT SUIVI LEUR CONTENU. Les cinq sections ont
@@ -91,8 +92,15 @@ describe("🔴 6/11/2026 — la page de l'application est indexable, donc elle d
   /* ⭐ UNE PAGE INDEXABLE QU'AUCUN LIEN NE DÉSIGNE EST UNE PAGE MORTE, et
      rien ne le dit : elle répond 200, elle a un titre, elle est jolie. Ce
      dépôt connaît la forme — « un écran orphelin ne se plaint jamais ». */
-  it("le pied de page y mène, sur toutes les pages", () => {
-    expect(lire("./App.tsx")).toContain(`\${B}${ROUTE}\``);
+  /* 🔄 LE PIED NE S'ÉCRIT PLUS DANS LE JSX — 7/11. Ses liens viennent de
+     `liensPied(visage())`, parce qu'ils doivent disparaître sur mana.love
+     quand leur destination n'y est pas servie. On interroge donc la fonction
+     qui décide, et sur LES DEUX visages : une page indexable qu'aucun lien
+     interne ne désigne est une page que les moteurs trouvent mal. */
+  it("le pied de page y mène, sur toutes les pages ET les deux visages", () => {
+    for (const v of ["bzh", "love"] as const) {
+      expect(liensPied(v).map((l) => l.chemin), `visage ${v}`).toContain(ROUTE);
+    }
   });
 
   it("Réglages y mène aussi — le fondateur les y cherchera", () => {

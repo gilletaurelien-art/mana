@@ -86,16 +86,30 @@ describe("les deux visages — ce qui change, et ce qui ne doit pas", () => {
      ⭐ Une mutation qui ne mord pas ne dit pas « c'est bon » : elle dit qu'il
         manque un garde. Celui-ci exige que la colonne de l'Office vive À
         L'INTÉRIEUR de la branche `avecOffice()`, et pas à côté. */
-  it("⛔ la colonne de l'Office est COMMANDÉE par le visage, pas seulement voisine", () => {
-    const app = nu("./App.tsx");
-    const nav = app.slice(app.indexOf('<nav className="nav">'), app.indexOf("</nav>"));
-    const branche = nav.match(/\{avecOffice\(\) \? \([\s\S]*?\) : \(/)?.[0] ?? "";
-    expect(branche, "la colonne 2 n'est plus commandée par `avecOffice()`").not.toBe("");
-    expect(branche, "la branche `avecOffice()` ne contient pas la colonne de l'Office")
-      .toMatch(/balades-office/);
-    /* ⛔ Et le chat est dans l'AUTRE branche, pas dans la même. */
-    const apres = nav.slice(nav.indexOf(branche) + branche.length);
-    expect(apres, "le chat n'est pas dans la branche love").toMatch(/\/chat/);
+  /* 🔴 RETOURNÉ LE JOUR MÊME, ET IL EST NÉ D'UNE MUTATION QUI N'AVAIT PAS
+     MORDU : hardcoder la condition de la colonne 2 à `true` laissait 37 tests
+     verts. Il exigeait donc que la colonne de l'Office vive À L'INTÉRIEUR de
+     la branche `avecOffice()` — en lisant le JSX.
+     ⭐ Et c'est précisément cette lecture du texte qui l'a rendu aveugle au
+        défaut suivant : la barre, en production sur mana.love, menait cinq
+        fois à la même page, et il était vert. Il gardait l'endroit où la
+        décision est écrite, pas la décision.
+     ⚠️ Ce qu'il protégeait reste entier — « la colonne 2 est COMMANDÉE par le
+        visage, pas seulement voisine » — et vit maintenant dans
+        `barre.test.ts`, interrogé sur `entreesBarre()`. Ici on garde la part
+        que ce fichier est seul à pouvoir dire : le prédicat existe, il est
+        nommé par ce qu'il décide, et rien ne décide de l'Office sans lui. */
+  it("⛔ rien ne décide de l'Office sans passer par le prédicat", () => {
+    const v = nu("./visage.ts");
+    expect(v).toMatch(/export const avecOffice/);
+    /* ⚠️ `barre.ts` reçoit le visage en ARGUMENT — c'est ce qui le rend pur
+       et testable sans navigateur. Il n'a donc pas à appeler le prédicat, et
+       l'exiger de lui interdirait exactement la bonne solution. */
+    const decideurs = ["./App.tsx"];
+    for (const f of decideurs) {
+      expect(nu(f), `${f} décide de l'Office sans passer par le prédicat`)
+        .toMatch(/avecOffice\(\)/);
+    }
   });
 
   /* ⚠️ ON NE MASQUE PAS, ON NE CHARGE PAS. Masquer le calque coûterait quand

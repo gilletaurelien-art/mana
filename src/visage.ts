@@ -43,3 +43,27 @@ export function visage(): Visage {
  *    qui change, pas ce prédicat.
  */
 export const avecOffice = () => visage() === "bzh";
+
+/**
+ * 🔴 LE NOM SOUS LEQUEL ON SIGNE, ET IL DÉPEND DE L'HÔTE — 7/11/2026.
+ *    Trouvé sur une capture : `mana.love/promenades` portait le `<title>`
+ *    « … — MANA.bzh ». C'est l'onglet du navigateur, et c'est surtout ce que
+ *    les moteurs indexent pour ce domaine.
+ * ⭐ MÊME FAMILLE QUE L'ÉDITEUR DES MENTIONS LÉGALES, EN MOINS GRAVE : là
+ *    c'était une déclaration due par la loi, ici c'est une marque qui annonce
+ *    le mauvais domaine. Les deux viennent du même défaut de pensée — une
+ *    valeur écrite quand il n'y avait qu'un seul site.
+ * ⚠️ Elle est nommée par ce qu'elle EST (la signature), pas par l'endroit où
+ *    on la pose : elle sert au titre, au pied, et au courriel de contact.
+ */
+export const signature = () => (visage() === "love" ? "mana.love" : "MANA.bzh");
+
+/* ⛔ PAS DE `courriel()` ICI, ET C'EST UNE DÉCISION. Je l'avais écrit pour
+   réparer `contact@mana.bzh` affiché sur mana.love — puis mesuré : `/contact`
+   n'est pas servi sur cet hôte, donc cet écran n'y est jamais atteint. Le
+   correctif portait sur une page inatteignable.
+   ⭐ Un helper exporté que rien n'appelle a l'air d'un garde posé : la
+      session suivante le lit comme « c'est traité », alors qu'il ne s'exécute
+      nulle part. Mieux vaut l'absence et cette note. Le jour où `/contact`
+      entrera dans la liste love, il faudra l'écrire — et ce paragraphe le
+      dit. */
