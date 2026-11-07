@@ -129,3 +129,61 @@ describe("les deux visages — ce qui change, et ce qui ne doit pas", () => {
     expect(l).toMatch(/MODULES\.filter\(\(m\) => office \|\| !m\.source\)/);
   });
 });
+
+/* ════════════════════════════════════════════════════════════════════════
+   🔴 LE GARDE QUI AURAIT VU LE COURRIEL — posé après coup, le 7/11 au soir
+   ════════════════════════════════════════════════════════════════════════
+   `mailto:contact@mana.bzh` s'affichait sur `mana.love/promenades`. Je l'avais
+   même « analysé » : j'ai écrit un `courriel()`, puis je l'ai RETIRÉ en
+   expliquant que `/contact` n'était pas servi sur mana.love — donc que
+   l'écran y était inatteignable.
+   ⛔ Vrai de la ROUTE, faux du RENDU : `ContactForm` n'est pas une page, c'est
+      un bloc DU PIED, présent partout. ⭐ Vérifier qu'une route n'existe pas
+      ne dit rien de ce qui est rendu — et c'est une capture d'écran en ligne
+      qui me l'a appris, après un déploiement.
+   ⚠️ Ce garde liste les composants rendus sur LES DEUX hôtes et refuse qu'un
+      nom de domaine y soit écrit en dur. Il ne lit pas les commentaires :
+      ceux-ci parlent abondamment des deux domaines, et c'est leur rôle.
+*/
+describe("🔴 rien de ce qui est RENDU sur les deux hôtes ne nomme un domaine en dur", () => {
+  /* ⚠️ Le pied et ses blocs : ce qui apparaît sur chaque écran. Un fichier
+     qui rejoint le pied rejoint cette liste — et s'il l'oublie, c'est le
+     prochain relevé en ligne qui le dira, comme cette fois. */
+  const RENDUS_PARTOUT = ["./ContactForm.tsx", "./barre.ts"];
+
+  /* ⚠️ `nu()` ne retire que les blocs `/* *\/` — PAS les lignes `//`. Ce
+     garde a crié à faux dès sa première exécution, sur l'en-tête de
+     `ContactForm` qui explique justement pourquoi le domaine ne doit plus y
+     être écrit. ⭐ C'est le piège inverse de celui qu'il traque, et ce dépôt
+     le connaît : une recherche qui compte les COMMENTAIRES ment dans l'autre
+     sens, et un garde qui crie à faux finit par être désarmé. */
+  const sansCommentaire = (f: string) =>
+    nu(f).split("\n").filter((l) => !/^\s*(\/\/|\*)/.test(l)).join("\n");
+
+  for (const f of RENDUS_PARTOUT) {
+    it(`${f} prend sa signature de l'hôte`, () => {
+      expect(sansCommentaire(f), `${f} écrit un domaine en dur`)
+        /* ⚠️ INSENSIBLE À LA CASSE, et c'est une mutation qui l'a exigé :
+           remplacer `{signature()}` par « MANA.bzh » passait le garde, parce
+           que le motif cherchait « mana. » en minuscules. Le domaine s'écrit
+           des DEUX façons dans ce dépôt — « MANA.bzh » comme marque dans les
+           textes, « mana.bzh » comme adresse. Un garde qui n'en connaît
+           qu'une n'en garde qu'une. */
+        .not.toMatch(/mana\.(bzh|love)/i);
+    });
+  }
+
+  /* ⛔ ET LE PRÉDICAT DOIT RENDRE DEUX VALEURS DIFFÉRENTES. Une signature qui
+     rendrait la même chose des deux côtés passerait le garde ci-dessus en
+     n'ayant rien réparé — le domaine serait simplement caché dans une
+     fonction. */
+  it("⛔ la signature et le courriel CHANGENT selon l'hôte", () => {
+    const v = nu("./visage.ts");
+    for (const nom of ["signature", "courriel"]) {
+      const m = v.match(new RegExp(`export const ${nom} = [^;]+;`));
+      expect(m, `${nom} a disparu`).not.toBeNull();
+      expect(m![0], `${nom} ne distingue pas les deux hôtes`).toMatch(/love/);
+      expect(m![0], `${nom} ne nomme pas les deux domaines`).toMatch(/bzh/);
+    }
+  });
+});

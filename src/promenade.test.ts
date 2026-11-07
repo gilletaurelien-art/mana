@@ -249,10 +249,11 @@ describe.skipIf(!dispo)("sur le graphe réel de la presqu'île", () => {
     }
   }, 60_000);
 
-  it("une majorité franche des spots reçoit TROIS propositions", () => {
+  it("une majorité franche des spots reçoit TROIS propositions", async () => {
     const { g, ix, pos, acc } = reel();
     let praticables = 0, trois = 0;
     for (let i = 0; i < pos.length; i += 5) {
+      await souffler();
       if (!accroche(acc[i])) continue;
       praticables++;
       if (propositionsAutour(g, ix, acc[i], pos, pos, acc).length >= 3) trois++;
@@ -263,7 +264,7 @@ describe.skipIf(!dispo)("sur le graphe réel de la presqu'île", () => {
     expect(trois / praticables).toBeGreaterThan(0.7);
   }, 60_000);
 
-  it("🔴 trois destinations, jamais deux fois le même endroit", () => {
+  it("🔴 trois destinations, jamais deux fois le même endroit", async () => {
     /* 🔴 LE DÉFAUT QUI S'EST SIGNALÉ PAR UN DÉTAIL DE DESSIN — 5/11/2026.
        Depuis « Menhirs de Kerziou », les pastilles 2 et 3 se recouvraient
        sur la carte : leurs destinations, « Leitstand I » et « Belvédère de
@@ -278,6 +279,7 @@ describe.skipIf(!dispo)("sur le graphe réel de la presqu'île", () => {
     const { g, ix, pos, acc } = reel();
     let paires = 0;
     for (let i = 0; i < pos.length; i += 7) {
+      await souffler();
       if (!accroche(acc[i])) continue;
       const props = propositionsAutour(g, ix, acc[i], pos, pos, acc, { sauf: i });
       for (let a = 0; a < props.length; a++) for (let b = a + 1; b < props.length; b++) {
@@ -307,10 +309,11 @@ describe.skipIf(!dispo)("sur le graphe réel de la presqu'île", () => {
     expect(paires, "aucune paire examinée — le garde ne garde rien").toBeGreaterThan(50);
   }, 120_000);
 
-  it("⛔ aucune proposition ne tombe sous le plancher de la bande", () => {
+  it("⛔ aucune proposition ne tombe sous le plancher de la bande", async () => {
     const { g, ix, pos, acc } = reel();
     let vues = 0;
     for (let i = 0; i < pos.length; i += 7) {
+      await souffler();
       if (!accroche(acc[i])) continue;
       for (const p of propositionsAutour(g, ix, acc[i], pos, pos, acc)) {
         vues++;
@@ -325,13 +328,14 @@ describe.skipIf(!dispo)("sur le graphe réel de la presqu'île", () => {
     expect(vues).toBeGreaterThan(50);
   }, 60_000);
 
-  it("la distance annoncée est celle du CHEMIN, et elle dépasse le vol d'oiseau", () => {
+  it("la distance annoncée est celle du CHEMIN, et elle dépasse le vol d'oiseau", async () => {
     /* ⛔ Le détour médian est de ×1,27 et monte à ×16 : un spot « à 200 m »
        de l'autre côté d'une anse coûte 3 km à pied. Annoncer le vol d'oiseau
        enverrait quelqu'un pour 200 m. */
     const { g, ix, pos, acc } = reel();
     let compares = 0, pireRapport = Infinity, plusGrandDetour = 0;
     for (let i = 0; i < pos.length; i += 7) {
+      await souffler();
       if (!accroche(acc[i])) continue;
       for (const p of propositionsAutour(g, ix, acc[i], pos, pos, acc)) {
         const vol = metres(pos[i], pos[p.i]);
@@ -356,7 +360,22 @@ describe.skipIf(!dispo)("sur le graphe réel de la presqu'île", () => {
     expect(plusGrandDetour).toBeGreaterThan(2);
   }, 60_000);
 
-  it("🔴 le tracé qu'on MESURE est celui qu'on MARCHE, sans saut inventé", () => {
+/* 🔴 CES TROIS TESTS RENDENT LA MAIN ENTRE LEURS ITÉRATIONS — 7/11/2026, et
+   ce n'est pas une coquetterie : c'est ce qui a bloqué un déploiement.
+   Ils parcourent le graphe réel et tiennent 7 à 16 SECONDES de calcul
+   synchrone chacun. Pendant ce temps la boucle d'événements du worker est
+   bloquée, donc vitest ne peut plus lui parler : « [vitest-worker]: Timeout
+   calling "onTaskUpdate" ». Les 445 tests PASSENT, et le processus sort en 1.
+   ⛔ Et `npm run build` est `npm test && tsc -b && vite build` : la chaîne
+      s'arrête là. `site/` restait au build précédent — exactement le piège
+      que ce dépôt documente, un déploiement qui expédie du code périmé sans
+      que rien ne le signale.
+   ⭐ Le défaut n'était PAS dans ce que ces tests mesurent : il était dans le
+      fait qu'ils ne respirent jamais. `await souffler()` entre deux
+      itérations suffit, et ne change rien à ce qui est éprouvé. */
+const souffler = () => new Promise((r) => setTimeout(r, 0));
+
+  it("🔴 le tracé qu'on MESURE est celui qu'on MARCHE, sans saut inventé", async () => {
     /* LE DÉFAUT DU 2/11, ET LE PLUS COÛTEUX DE LA JOURNÉE.
        L'écran donnait à mesurer `traits(g, b).flat()` — la géométrie STOCKÉE
        de chaque arête, toujours dans le sens a→b, jamais inversée. Or 52 %
@@ -379,6 +398,7 @@ describe.skipIf(!dispo)("sur le graphe réel de la presqu'île", () => {
     const { g, ix, pos, acc } = reel();
     let n = 0, sautMax = 0, coupables = 0;
     for (let i = 0; i < pos.length; i += 9) {
+      await souffler();
       if (!accroche(acc[i])) continue;
       for (const p of propositionsAutour(g, ix, acc[i], pos, pos, acc)) {
         n++;
@@ -417,7 +437,7 @@ describe.skipIf(!dispo)("sur le graphe réel de la presqu'île", () => {
     expect(r[1].ordre - r[0].ordre).toBeGreaterThan(0.5);
   });
 
-  it("🔴 le tracé passe AUSSI PRÈS QUE POSSIBLE du lieu, pas seulement à portée", () => {
+  it("🔴 le tracé passe AUSSI PRÈS QUE POSSIBLE du lieu, pas seulement à portée", async () => {
     /* Le défaut du 2/11, et il était muet parce que les deux cas restent
        sous les 150 m qui autorisent la phrase « vous passez devant » :
        en choisissant la traversée qui minimise la LONGUEUR, 78 % des
@@ -430,6 +450,7 @@ describe.skipIf(!dispo)("sur le graphe réel de la presqu'île", () => {
     const { g, ix, pos, acc } = reel();
     let n = 0, perdu = 0;
     for (let i = 0; i < pos.length; i += 7) {
+      await souffler();
       if (!accroche(acc[i])) continue;
       for (const p of propositionsAutour(g, ix, acc[i], pos, pos, acc)) {
         n++;
@@ -480,13 +501,14 @@ describe.skipIf(!dispo)("sur le graphe réel de la presqu'île", () => {
       .not.toBe(JSON.stringify(traits(g, p.parcours)));    // et c'est faux
   }, 60_000);
 
-  it("⭐ l'option « en boucle » dérive sa cible de l'aller, et elle tient", () => {
+  it("⭐ l'option « en boucle » dérive sa cible de l'aller, et elle tient", async () => {
     /* 🔴 LA LEÇON DU 2/11. La même fonction mesurée à 58 % de réussite le 1/11
        et à plus de 90 % ici : la différence n'est pas le code, c'est que la
        cible se DÉRIVE de l'aller au lieu d'être un budget décidé d'avance. */
     const { g, ix, pos, acc } = reel();
     let essais = 0, ok = 0;
     for (let i = 0; i < pos.length; i += 11) {
+      await souffler();
       if (!accroche(acc[i])) continue;
       for (const p of propositionsAutour(g, ix, acc[i], pos, pos, acc)) {
         essais++;

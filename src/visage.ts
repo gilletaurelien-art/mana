@@ -58,12 +58,19 @@ export const avecOffice = () => visage() === "bzh";
  */
 export const signature = () => (visage() === "love" ? "mana.love" : "MANA.bzh");
 
-/* ⛔ PAS DE `courriel()` ICI, ET C'EST UNE DÉCISION. Je l'avais écrit pour
-   réparer `contact@mana.bzh` affiché sur mana.love — puis mesuré : `/contact`
-   n'est pas servi sur cet hôte, donc cet écran n'y est jamais atteint. Le
-   correctif portait sur une page inatteignable.
-   ⭐ Un helper exporté que rien n'appelle a l'air d'un garde posé : la
-      session suivante le lit comme « c'est traité », alors qu'il ne s'exécute
-      nulle part. Mieux vaut l'absence et cette note. Le jour où `/contact`
-      entrera dans la liste love, il faudra l'écrire — et ce paragraphe le
-      dit. */
+/**
+ * 🔴 L'ADRESSE À LAQUELLE ON NOUS ÉCRIT, SUR CET HÔTE.
+ *
+ * ⛔ JE L'AVAIS ÉCRITE, PUIS RETIRÉE, POUR UNE RAISON FAUSSE — et c'est la
+ *    capture d'écran EN LIGNE qui me l'a appris, pas le code. J'avais
+ *    raisonné : « `/contact` n'est pas servi sur mana.love, donc cet écran
+ *    n'y est jamais atteint ». Vrai de la ROUTE, faux du RENDU :
+ *    `ContactForm` n'est pas une page, c'est un bloc DU PIED, présent sur
+ *    toutes les pages. `mailto:contact@mana.bzh` s'affichait donc sur
+ *    mana.love/promenades.
+ * ⭐ VÉRIFIER QU'UNE ROUTE N'EXISTE PAS NE DIT RIEN DE CE QUI EST RENDU. Un
+ *    composant n'a pas besoin d'une adresse pour être à l'écran — et
+ *    j'écrivais, dans le commentaire même qui le retirait, que l'écran était
+ *    « inatteignable ». Une description fidèle de la mauvaise chose.
+ */
+export const courriel = () => (visage() === "love" ? "contact@mana.love" : "contact@mana.bzh");
