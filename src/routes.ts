@@ -78,6 +78,20 @@ export const ROUTES_HORS_LOVE: Readonly<Record<string, string>> = {
   [ROUTE_OFFICE]: "pas d'Office de tourisme sur mana.love",
   "/reglages": "devient « Mon compte », tenu par l'application citoyenne",
   "/espace": "le compte citoyen de mana.love est le sien, pas le nôtre",
+  /* 🔴 CES DEUX-LÀ SONT ARRIVÉS APRÈS LA POSE, et par une question que j'ai
+     passée au lieu de la trancher : « mes mentions légales nomment mana.bzh,
+     les voulez-vous ? ». La réponse mesurée des deux côtés est pire que
+     l'arbitrage attendu — mana.love n'a de mentions légales NULLE PART, dans
+     aucun des deux dépôts, et la page de l'autre app nomme mana.bzh elle
+     aussi. Ce n'est pas un choix entre deux pages : c'est un TROU.
+     ⛔ Et le remplir avec les mentions d'un autre domaine serait une fausse
+        déclaration d'éditeur — la mienne nomme MANA.bzh seize fois. En France
+        c'est la LCEN, pas une page de confort. Un faux 200 sur une coquille
+        est un défaut ; un éditeur faux est une déclaration.
+     ⭐ Une question qu'on passe à qui elle revient trouve parfois un défaut
+        qui n'était chez aucun des deux. */
+  "/contact": "mana.love doit ses propres mentions d'éditeur ; servir les nôtres déclarerait MANA.bzh éditeur de son domaine",
+  "/mentions-legales": "idem — mesuré : notre page nomme MANA.bzh seize fois, et mana.love n'a de mentions légales dans aucun des deux dépôts",
   "/radio": "mesuré : /radio existe DÉJÀ chez elle (trois fichiers), et le fondateur a dit « la radio reste radio »",
 };
 

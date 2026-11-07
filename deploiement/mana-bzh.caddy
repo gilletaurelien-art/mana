@@ -43,7 +43,7 @@ handle @appbzh {
 #    portée de l'hôte et remplacerait celui de l'application citoyenne.
 @applove {
     host mana.love
-    path /carte /promenades /composer /territoire /l-application /contact /mentions-legales /promenade/* /app/* /paysages/* /images/* /carte-style.json /carte-ortho.json /fermetures.json
+    path /carte /promenades /composer /territoire /l-application /promenade/* /app/* /paysages/* /images/* /carte-style.json /carte-ortho.json /fermetures.json
 }
 handle @applove {
     root * /srv/www/_app-bzh

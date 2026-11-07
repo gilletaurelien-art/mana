@@ -104,7 +104,11 @@ const relatif = (pathname) =>
       blanche du serveur à la main, nous ne revendiquons toujours pas ses
       écrans. */
 const ROUTE_OFFICE = "/balades-office";
-const ROUTES_HORS_LOVE = ["/", ROUTE_OFFICE, "/reglages", "/espace", "/radio"];
+/* ⚠️ `/contact` et `/mentions-legales` ont rejoint la liste après la pose du
+   bloc Caddy : servir nos mentions sous mana.love déclarerait MANA.bzh
+   éditeur de son domaine (LCEN). Mesuré : notre page le nomme seize fois. */
+const ROUTES_HORS_LOVE = ["/", ROUTE_OFFICE, "/reglages", "/espace", "/radio",
+                          "/contact", "/mentions-legales"];
 const FICHIERS_HORS_LOVE = ["/sw.js", "/manifest.webmanifest", "/icon.svg"];
 const SANS_OFFICE = self.location.hostname === "mana.love";
 const routesDuVisage = () =>
