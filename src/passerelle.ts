@@ -20,12 +20,26 @@
  *    pas « en attendant », on ne la grise pas, on ne l'annonce pas comme
  *    « bientôt » : on ne la met pas.
  *
- * ⚠️ ET `enLigne` NE SE DEVINE PAS, IL SE MESURE. Chaque valeur `false`
- *    ci-dessous a été relevée en HTTP sur mana.love, pas supposée depuis un
- *    commit. La session qui tient l'autre application m'avait annoncé
- *    « /chat existe » — c'était vrai du dépôt et faux de l'hôte : son `dist/`
- *    avait deux jours de retard sur ses commits. ⭐ Un commit dit qu'un
- *    travail est FAIT, pas qu'il est ARRIVÉ.
+ * ⚠️ ET `enLigne` NE SE DEVINE PAS, IL SE MESURE. La session qui tient
+ *    l'autre application m'avait annoncé « /chat existe » — c'était vrai du
+ *    dépôt et faux de l'hôte : son `dist/` avait deux jours de retard.
+ *    ⭐ Un commit dit qu'un travail est FAIT, pas qu'il est ARRIVÉ.
+ *
+ * 🔴 ET « MESURER » A CHANGÉ DE SENS LE SOIR MÊME, PARCE QUE LE HTTP NE
+ *    SUFFIT PAS ICI. mana.love est une application à routage client : le
+ *    serveur rend la MÊME ENVELOPPE à tout le monde — mesuré, sa racine,
+ *    `/chat` et un chemin impossible rendent le même octet et le même MD5.
+ *    Le code ne prouve rien (tout est 200), le poids non plus. **Seul le
+ *    RENDU tranche.**
+ * ⭐ Les valeurs ci-dessous ont donc été relevées dans un NAVIGATEUR RÉEL,
+ *    chemin par chemin, après purge du service worker de l'autre application
+ *    — qui servait une coquille en cache et m'a d'abord fait croire que tout
+ *    était mort. Le `releve` de chaque pont cite ce qui s'affichait.
+ * ⚠️ ET J'AI FAILLI CONCLURE LE CONTRAIRE SUR UNE LECTURE PARTIELLE : mon
+ *    premier relevé lisait `<main>`, qui ne porte que la barre de navigation.
+ *    Trois mots identiques partout, et j'allais annoncer à la session voisine
+ *    que ses écrans n'existaient pas. Lire « la page » par un extracteur de
+ *    contenu principal n'est pas lire la page.
  */
 
 /** Un chemin que nous ne servons pas, et vers lequel nous proposons d'aller. */
@@ -53,16 +67,16 @@ export type Pont = {
 export const PONTS: Readonly<Record<string, Pont>> = {
   accueil: { chemin: "/", enLigne: true,
     releve: "7/11 — 200, 26 008 o : sa landing. En ligne depuis toujours, et c'est voulu — mana.love est le sur-ensemble, sa porte doit le montrer." },
-  chat: { chemin: "/chat", enLigne: false,
-    releve: "7/11 — 200 mais 26 008 o : l'accueil. Écrit et poussé chez elle, pas déployé." },
-  compte: { chemin: "/mon-compte", enLigne: false,
-    releve: "7/11 — 200 mais 26 008 o : l'accueil. Écrit et poussé chez elle, pas déployé." },
-  radio: { chemin: "/radio", enLigne: false,
-    releve: "7/11 — 200 mais 26 008 o. Chez elle la radio n'est pas un chemin mais un univers (?u=radio) : à écrire." },
-  contact: { chemin: "/contact", enLigne: false,
-    releve: "7/11 — 200 mais 26 008 o : l'accueil. À écrire pour ce domaine." },
-  mentions: { chemin: "/mentions-legales", enLigne: false,
-    releve: "7/11 — 200 mais 26 008 o. mana.love n'a de mentions légales dans AUCUN des deux dépôts." },
+  chat: { chemin: "/chat", enLigne: true,
+    releve: "7/11 au soir — VÉRIFIÉ AU RENDU, chemin par chemin, dans un navigateur réel : « MANA ouvre le Sanctuaire des Déesses de l'Amour · 9 €/mois · Activer MANA »" },
+  compte: { chemin: "/mon-compte", enLigne: true,
+    releve: "7/11 au soir — VÉRIFIÉ AU RENDU, chemin par chemin, dans un navigateur réel : « BIENVENUE CHEZ MANA · votre e-mail et votre mot de passe · Connexion »" },
+  radio: { chemin: "/radio", enLigne: true,
+    releve: "7/11 au soir — VÉRIFIÉ AU RENDU, chemin par chemin, dans un navigateur réel : « MANARADIO — L'antenne de l'Alliance MANA » (et le <title> change)" },
+  contact: { chemin: "/contact", enLigne: true,
+    releve: "7/11 au soir — VÉRIFIÉ AU RENDU, chemin par chemin, dans un navigateur réel : « écrire à contact@manahome.org · Ouvrir mon courrier »" },
+  mentions: { chemin: "/mentions-legales", enLigne: true,
+    releve: "7/11 au soir — VÉRIFIÉ AU RENDU, chemin par chemin, dans un navigateur réel : « Mentions légales · ÉDITEUR DU SERVICE · Association Alliance MANA »" },
 };
 
 /** Ce pont est-il praticable ? */

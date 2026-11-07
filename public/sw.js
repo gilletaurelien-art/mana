@@ -242,27 +242,6 @@ const correspond = (motifs, url) => motifs.some((m) => m.test(url.pathname));
    ⚠️ Le rattrapage reste, et il reste utile : une entrée manquante ne doit
       pas faire échouer TOUTE l'installation. Mais il EFFAÇAIT une erreur
       réelle — c'est pour ça que la liste est maintenant tenue par un test. */
-const COQUILLE = "./";
-const PRECACHE = [COQUILLE, "./app/manifest.webmanifest", "./fermetures.json"];
-
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE).then((c) =>
-      c.addAll(PRECACHE)
-        .catch(() => Promise.all(PRECACHE.map((u) => c.add(u).catch(() => null))))
-    )
-  );
-  self.skipWaiting();
-});
-
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
-      .then(() => self.clients.claim())
-  );
-});
-
 /**
  * ⛔ ON NE GARDE JAMAIS DU HTML À LA PLACE D'UN ACTIF.
  *
@@ -280,6 +259,54 @@ self.addEventListener("activate", (event) => {
  */
 const estDeLaCoquille = (res) =>
   (res.headers.get("content-type") || "").includes("text/html");
+
+const COQUILLE = "./";
+const PRECACHE = [COQUILLE, "./app/manifest.webmanifest", "./fermetures.json"];
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    /* 🔴 LE PRÉ-CACHE PASSE PAR LE MÊME GARDE QUE LE RESTE — 7/11 au soir,
+       trouvé par une relecture adversariale. `addAll` ne regardait PAS ce
+       qu'il gardait, alors que ce fichier définit `estDeLaCoquille` juste
+       au-dessus et l'applique aux deux autres régimes.
+       ⛔ Or les deux blocs Caddy portent `try_files {path} {path}/index.html
+          /index.html` : un fichier manquant sous `/app/` revient en **200
+          avec la coquille**, jamais en 404. `addAll` RÉUSSIT donc, le
+          rattrapage ne voit rien, et du HTML est gravé sous l'adresse du
+          manifeste.
+       ⭐ Un garde posé à deux endroits sur trois ne garde pas : c'est
+          exactement « compter les points de pose est le geste, pas poser le
+          garde ». Chaque entrée est donc demandée, VÉRIFIÉE, puis gardée.
+       ⚠️ Et une entrée refusée ne fait pas échouer l'installation : sans
+          cette tolérance, un seul chemin absent laisse l'application sans
+          cache du tout, et le hors-ligne tombe en silence. */
+    caches.open(CACHE).then((c) =>
+      Promise.all(PRECACHE.map((u) =>
+        fetch(u)
+          /* ⛔ LA COQUILLE EST DU HTML, ET C'EST NORMAL. Mon premier jet
+             appliquait le garde à TOUTES les entrées : il aurait rejeté
+             `./` — la seule page que le hors-ligne sert — et supprimé le
+             hors-ligne au lieu de le protéger. ⭐ Le garde ne dit pas « le
+             HTML est mauvais » : il dit « du HTML sous le nom d'un BIEN est
+             la coquille qu'on nous rend à la place ». Il ne s'applique donc
+             qu'aux entrées qui ne sont pas la coquille elle-même. */
+          .then((res) => (res.ok && (u === COQUILLE || !estDeLaCoquille(res))
+            ? c.put(u, res) : null))
+          .catch(() => null)))
+    )
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
+  );
+});
+
+
 
 self.addEventListener("fetch", (event) => {
   const req = event.request;

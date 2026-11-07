@@ -449,6 +449,33 @@ describe("🔴 7/11/2026 — le SECOND visage : mana.love, tenu par l'autre app"
     expect(valeur![1], "la coquille n'est plus la racine").toBe("./");
   });
 
+  /* 🔴 ET LE PRÉ-CACHE PASSE PAR CE GARDE — il ne le faisait pas, alors que
+     le fichier le définit pour cette raison exacte. Un fichier manquant sous
+     `/app/` revient en 200 avec la coquille : `addAll` réussissait, et du
+     HTML était gravé sous l'adresse du manifeste.
+     ⛔ MAIS LA COQUILLE ELLE-MÊME EST DU HTML. Mon premier correctif
+        appliquait le garde à toutes les entrées : il aurait rejeté `./`, la
+        seule page que le hors-ligne sert. Le garde dit « du HTML sous le nom
+        d'un BIEN », pas « le HTML est mauvais ». Ce test tient les deux sens
+        — sans quoi la réparation supprimerait ce qu'elle protège. */
+  it("🔴 le pré-cache refuse une coquille, SAUF pour la coquille elle-même", () => {
+    /* ⚠️ SANS LES COMMENTAIRES — troisième fois aujourd'hui qu'un garde
+       trébuche dessus, et ici dans le sens qui CRIE À FAUX : les trois
+       occurrences restantes d'`addAll` sont celles qui expliquent pourquoi
+       il est parti. Une recherche qui compte les commentaires ment dans
+       l'autre sens, et un garde qui crie à faux finit désarmé. */
+    const install = swSrc.slice(swSrc.indexOf('addEventListener("install"'),
+                                swSrc.indexOf('addEventListener("activate"'))
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .split("\n").filter((l) => !/^\s*(\/\/|\*)/.test(l)).join("\n");
+    expect(install, "le pré-cache ne vérifie pas ce qu'il garde")
+      .toMatch(/estDeLaCoquille\(res\)/);
+    expect(install, "le garde s'applique aussi à la coquille : le hors-ligne disparaît")
+      .toMatch(/u === COQUILLE \|\| !estDeLaCoquille\(res\)/);
+    /* ⚠️ Et `addAll` ne doit pas revenir : il garde sans regarder. */
+    expect(install, "addAll est revenu — il ne vérifie rien").not.toMatch(/addAll/);
+  });
+
   /* 🔴 LE GARDE QUI EMPÊCHE DE METTRE LA COQUILLE EN CACHE SOUS LE NOM D'UN
      BUNDLE — et il n'était nommé dans AUCUN test jusqu'au 7/11 au soir.
      Le bloc Caddy porte `try_files {path} {path}/index.html /index.html` :
