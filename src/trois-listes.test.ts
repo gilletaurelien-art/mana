@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { describe, it, expect } from "vitest";
-import { ROUTES_APP, PREFIXES_APP, FICHIERS_APP, estANous } from "./routes";
+import { ROUTES_APP, PREFIXES_APP, FICHIERS_APP, estANous, ROUTE_OFFICE } from "./routes";
 
 /* ════════════════════════════════════════════════════════════════════════
    « QU'EST-CE QUI EST À NOUS ? » — TROIS RÉPONSES QUI DOIVENT CONCORDER
@@ -227,5 +227,54 @@ describe("les trois listes de chemins", () => {
     expect(nav, "la branche de navigation").not.toBeNull();
     expect(nav![0], "une navigation en erreur ne doit pas être mise en cache")
       .toMatch(/if \(res\.ok\)/);
+  });
+});
+
+describe("🔴 7/11/2026 — le SECOND visage : mana.love, sans l'Office", () => {
+  const swSrc = readFileSync("public/sw.js", "utf8");
+  const caddySrc = readFileSync("deploiement/mana-bzh.caddy", "utf8");
+
+  /* ⛔ LE DÉSACCORD EST MUET DANS LES TROIS SENS, et sur un second hôte il
+     gagne une quatrième façon de l'être : revendiquer sur mana.love un
+     chemin que cet hôte ne sert pas. La page répondrait 200, s'afficherait,
+     et ne répondrait pas à la question posée. */
+  it("le bloc Caddy porte DEUX matchers, et celui de love n'a pas l'Office", () => {
+    const lignes = [...caddySrc.matchAll(/^\s*path (.+)$/gm)].map((m) => m[1].trim().split(" "));
+    expect(lignes.length, "il manque un des deux blocs").toBe(2);
+    const [bzh, love] = lignes;
+    expect(bzh).toContain(ROUTE_OFFICE);
+    expect(love, "l'Office est revenu sur mana.love").not.toContain(ROUTE_OFFICE);
+    /* ⭐ DÉRIVÉE, PAS RECOPIÉE : tout le reste doit être identique, sinon les
+       deux listes divergeront au premier ajout de route — en silence. */
+    expect(love).toEqual(bzh.filter((c) => c !== ROUTE_OFFICE));
+  });
+
+  it("le service worker décide par l'hôte QUI LE SERT, pas par la construction", () => {
+    expect(swSrc).toMatch(/self\.location\.hostname === "mana\.love"/);
+    expect(swSrc, "la liste du visage n'est pas dérivée")
+      .toMatch(/ROUTES_APP\.filter\(\(r\) => r !== ROUTE_OFFICE\)/);
+    /* ⛔ Et `estANous` doit consulter la liste DU VISAGE, pas la liste brute —
+       sinon la branche existe et ne décide de rien. */
+    expect(swSrc).toMatch(/routesDuVisage\(\)\.includes\(c\)/);
+  });
+
+  /* ⚠️ Nos propres biens sont servis depuis l'hôte qui sert la page : sans
+     mana.love dans la liste blanche, l'app n'aurait aucun hors-ligne là-bas. */
+  it("le service worker garde les biens des DEUX origines", () => {
+    const m = swSrc.match(/const ORIGINES = \[([^\]]*)\]/);
+    expect(m, "la liste blanche d'origines a disparu").not.toBeNull();
+    expect(m![1]).toContain("mana.bzh");
+    expect(m![1]).toContain("mana.love");
+  });
+
+  /* 🔴 LE GARDE SUR LE PRODUCTEUR, PAS SUR L'ARTEFACT. Le bloc en dépôt peut
+     rester juste pendant que le générateur, lui, est cassé — c'est arrivé le
+     2/11, et personne ne l'a vu parce que le test ne lisait que le résultat.
+     On FAIT TOURNER le générateur. */
+  it("le générateur rend bien ces deux blocs — on le lance, on ne le relit pas", () => {
+    const sortie = execFileSync("node", ["scripts/caddy-bloc.mjs", "--verifier"], {
+      encoding: "utf8", stdio: ["ignore", "pipe", "pipe"],
+    });
+    expect(sortie).toMatch(/les deux blocs concordent/);
   });
 });

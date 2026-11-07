@@ -80,16 +80,37 @@ const BASE = new URL("./", self.location).pathname;
 const relatif = (pathname) =>
   pathname.startsWith(BASE) ? pathname.slice(BASE.length - 1) : pathname;
 
+/* 🔴 DEUX VISAGES DEPUIS LE 7/11/2026. mana.love sert la même application,
+   SANS l'Office de tourisme : `/balades-office` n'est pas à nous là-bas.
+   ⛔ ET C'EST ICI QUE LE DÉFAUT SERAIT LE PIRE. Revendiquer ce chemin sur
+      mana.love ferait rendre NOTRE coquille, hors ligne, à quelqu'un qui
+      demandait une page de l'autre application — en 200, avec un écran qui
+      s'affiche et qui ne répond pas à la question posée. C'est le troisième
+      désaccord décrit en tête de ce fichier, et le seul qui ait l'air de
+      marcher.
+   ⚠️ `self.location.hostname` et non une variable de construction : ce
+      fichier est servi TEL QUEL, le même octet pour les deux hôtes. C'est
+      l'hôte qui le sert qui décide, pas celui qui l'a construit. */
+const ROUTE_OFFICE = "/balades-office";
+const SANS_OFFICE = self.location.hostname === "mana.love";
+const routesDuVisage = () =>
+  SANS_OFFICE ? ROUTES_APP.filter((r) => r !== ROUTE_OFFICE) : ROUTES_APP;
+
 const estANous = (pathname) => {
   const c = relatif(pathname);
-  return ROUTES_APP.includes(c) || FICHIERS_APP.includes(c)
+  return routesDuVisage().includes(c) || FICHIERS_APP.includes(c)
       || PREFIXES_APP.some((p) => c.startsWith(p));
 };
 
 /** Les origines dont on garde les biens. ⚠️ Liste BLANCHE explicite : un
  *  service worker qui mettrait en cache n'importe quelle origine garderait
  *  aussi ce qu'il ne doit pas garder. */
-const ORIGINES = ["https://mana.bzh"];
+/* ⚠️ mana.love REJOINT LA LISTE — 7/11/2026 : sur cet hôte, nos propres biens
+   (bundles, polices, paysages) sont servis depuis `https://mana.love`. Sans
+   lui, le service worker n'y garderait RIEN et l'app n'aurait pas de hors
+   ligne sur ce domaine. ⭐ Liste blanche explicite : un service worker qui
+   garderait n'importe quelle origine garderait aussi ce qu'il ne doit pas. */
+const ORIGINES = ["https://mana.bzh", "https://mana.love"];
 
 /** Ce qui décide, et qui doit donc être frais. */
 const DONNEES = [

@@ -91,6 +91,11 @@ CIBLE="$MANA_BZH_CIBLE"
 
 vert()  { printf '\033[32m%s\033[0m\n' "$*"; }
 rouge() { printf '\033[31m%s\033[0m\n' "$*"; }
+# ⚠️ Un état ATTENDU mais pas final n'est ni un succès vert ni une panne
+# rouge : mana.love sans @applove avant la bascule est légitime. Lui donner
+# la couleur du succès le ferait passer pour fini ; celle de l'erreur ferait
+# refuser un déploiement sain.
+note()  { printf '\033[33m%s\033[0m\n' "$*"; }
 ssh_()  { ssh -i "$CLE" -o IdentitiesOnly=yes -o ConnectTimeout=20 -o BatchMode=yes "$HOTE" "$@"; }
 
 VERIFIER=0
@@ -139,7 +144,18 @@ fi
 #    associations à Abbeville ». Le second est le pire : il a l'air de marcher.
 chemins_du() { tr ' ' '\n' | grep -E '^/' | LC_ALL=C sort -u; }
 
-EN_LIGNE="$(ssh_ "awk '/@appbzh[[:space:]]*\\{/,/^[[:space:]]*\\}/' $(printf '%q' "$MANA_BZH_CADDY") | grep -E '^[[:space:]]*path '" 2>/dev/null || true)"
+# 🔴 DEUX BLOCS DEPUIS LE 7/11/2026 — @appbzh (mana.bzh) et @applove
+#    (mana.love), ce dernier sans `/balades-office`. On contrôle LES DEUX :
+#    ne vérifier que le premier laisserait @applove dériver en silence, et
+#    c'est précisément sur mana.love que le chemin de l'Office ne doit pas
+#    revenir — il y rendrait une page dont cet hôte n'a pas la matière.
+# ⚠️ @applove peut être ABSENT du serveur tant que la bascule n'est pas faite :
+#    c'est un état légitime, pas une panne. On ne refuse que s'il EXISTE et
+#    diverge. ⭐ Un garde qui exige l'état final avant qu'on y soit empêche
+#    d'y aller.
+lire_bloc() { ssh_ "awk '/$1[[:space:]]*\\{/,/^[[:space:]]*\\}/' $(printf '%q' "$MANA_BZH_CADDY") | grep -E '^[[:space:]]*path '" 2>/dev/null || true; }
+
+EN_LIGNE="$(lire_bloc @appbzh)"
 if [ -z "$EN_LIGNE" ]; then
   rouge "⛔ @appbzh est ABSENT du Caddyfile de production (ou sa ligne `path`)."
   rouge "   Déposer les fichiers ne servirait à rien : aucune URL ne les sert."
@@ -162,6 +178,24 @@ if [ -n "$MANQUE" ] || [ -n "$EN_TROP" ]; then
   exit 1
 fi
 vert "✓ le bloc @appbzh porte les $(printf '%s\n' "$ATTENDU" | wc -l | tr -d ' ') chemins attendus"
+
+# ── 3bis. et @applove, s'il est déjà posé ───────────────────────────────────
+LOVE_EN_LIGNE="$(lire_bloc @applove)"
+if [ -n "$LOVE_EN_LIGNE" ]; then
+  LOVE_ATTENDU="$(awk '/@applove[[:space:]]*\{/,/^[[:space:]]*\}/' deploiement/mana-bzh.caddy | grep -E '^[[:space:]]*path ' | chemins_du)"
+  LOVE_OBTENU="$(printf '%s\n' "$LOVE_EN_LIGNE" | chemins_du)"
+  LOVE_MANQUE="$(comm -23 <(printf '%s\n' "$LOVE_ATTENDU") <(printf '%s\n' "$LOVE_OBTENU"))"
+  LOVE_TROP="$(comm -13 <(printf '%s\n' "$LOVE_ATTENDU") <(printf '%s\n' "$LOVE_OBTENU"))"
+  if [ -n "$LOVE_MANQUE" ] || [ -n "$LOVE_TROP" ]; then
+    rouge "⛔ le bloc @applove EN LIGNE ne porte pas les mêmes chemins que le dépôt."
+    [ -n "$LOVE_MANQUE" ] && { rouge "   MANQUENT sur mana.love :"; printf '     %s\n' $LOVE_MANQUE; }
+    [ -n "$LOVE_TROP" ]   && { rouge "   EN TROP sur mana.love (dont peut-être l'Office, qui n'y existe pas) :"; printf '     %s\n' $LOVE_TROP; }
+    exit 1
+  fi
+  vert "✓ le bloc @applove porte les $(printf '%s\n' "$LOVE_ATTENDU" | wc -l | tr -d ' ') chemins attendus"
+else
+  note "· @applove absent du serveur — mana.love ne sert pas encore l'application (état attendu avant la bascule)."
+fi
 
 if [ "$VERIFIER" = "1" ]; then vert "✓ --verifier : rien n'a été déposé"; exit 0; fi
 

@@ -82,11 +82,33 @@ const liste = (nom) => {
   return chemins;
 };
 
-const chemins = [
-  ...liste("ROUTES_APP"),
+/* 🔴 DEUX HÔTES, DEUX LISTES — 7/11/2026. mana.love sert la même application
+   SANS l'Office : `/balades-office` n'est pas à nous là-bas.
+   ⭐ ON NE REVENDIQUE PAS CE QU'ON NE SERT PAS. Garder les 22 chemins
+      identiques « pour ne rien changer au garde » aurait fait répondre 200 à
+      une adresse dont cet hôte n'a pas la matière — le pire des trois
+      désaccords, parce qu'il a l'air de marcher. Et un garde qu'on maintient
+      vert en ne lui apprenant rien ne garde plus.
+   ⚠️ La liste love est DÉRIVÉE de la liste bzh, jamais recopiée : toute route
+      neuve entre dans les deux par construction, seule l'exclusion est
+      explicite. C'est la même règle que `ROUTES_LOVE` dans `routes.ts`, et
+      le test ci-contre refuse qu'elles divergent. */
+const ROUTE_OFFICE = "/balades-office";
+const communs = [
   ...liste("PREFIXES_APP").map((p) => `${p}*`),
   ...liste("FICHIERS_APP"),
 ];
+const chemins = [...liste("ROUTES_APP"), ...communs];
+const cheminsLove = [
+  ...liste("ROUTES_APP").filter((c) => c !== ROUTE_OFFICE),
+  ...communs,
+];
+if (cheminsLove.length !== chemins.length - 1) {
+  throw new Error(
+    `caddy-bloc : la liste love devrait valoir la liste bzh moins ${ROUTE_OFFICE}, ` +
+    `or elle fait ${cheminsLove.length} contre ${chemins.length}. ` +
+    `Le chemin de l'Office a-t-il changé de nom ?`);
+}
 
 const entete = readFileSync(new URL("../deploiement/mana-bzh.caddy", import.meta.url), "utf8")
   .split("@appbzh {")[0];
@@ -107,15 +129,25 @@ const entete = readFileSync(new URL("../deploiement/mana-bzh.caddy", import.meta
  */
 if (process.argv.includes("--verifier")) {
   const actuel = readFileSync(new URL("../deploiement/mana-bzh.caddy", import.meta.url), "utf8");
-  const ligne = actuel.match(/^\s*path (.+)$/m);
-  const attendu = chemins.join(" ");
-  if (!ligne || ligne[1].trim() !== attendu) {
-    console.error("caddy-bloc --verifier : le bloc en dépôt ne correspond plus.");
-    console.error(`  engendré (${chemins.length}) : ${attendu}`);
-    console.error(`  en dépôt            : ${ligne ? ligne[1].trim() : "(ligne path absente)"}`);
+  /* ⚠️ LES DEUX BLOCS SE VÉRIFIENT, pas seulement le premier. Ne contrôler
+     qu'`@appbzh` laisserait `@applove` dériver en silence — et c'est sur
+     mana.love que le chemin de l'Office ne doit surtout pas revenir. */
+  const lignes = [...actuel.matchAll(/^\s*path (.+)$/gm)].map((m) => m[1].trim());
+  const attendus = [chemins.join(" "), cheminsLove.join(" ")];
+  const noms = ["@appbzh", "@applove"];
+  if (lignes.length !== attendus.length) {
+    console.error(`caddy-bloc --verifier : ${attendus.length} blocs attendus, ${lignes.length} lus.`);
     process.exit(1);
   }
-  console.log(`caddy-bloc --verifier : ${chemins.length} chemins, le bloc en dépôt concorde.`);
+  for (let i = 0; i < attendus.length; i++) {
+    if (lignes[i] !== attendus[i]) {
+      console.error(`caddy-bloc --verifier : ${noms[i]} ne correspond plus.`);
+      console.error(`  engendré : ${attendus[i]}`);
+      console.error(`  en dépôt : ${lignes[i]}`);
+      process.exit(1);
+    }
+  }
+  console.log(`caddy-bloc --verifier : ${chemins.length} chemins (bzh) et ${cheminsLove.length} (love), les deux blocs concordent.`);
   process.exit(0);
 }
 
@@ -131,6 +163,21 @@ handle @appbzh {
     try_files {path} {path}/index.html /index.html
     file_server
 }
+
+# 🔴 mana.love SERT LA MÊME APPLICATION, SANS L'OFFICE DE TOURISME.
+# ⚠️ Ce bloc doit être posé AVANT l'attrape-tout @manalove, sinon la coquille
+#    love gagne sur tout et l'application n'est jamais atteinte.
+# ⭐ /balades-office est ABSENT ici, et c'est le point : on ne revendique
+#    pas une adresse dont cet hôte n'a pas la matière.
+@applove {
+    host mana.love
+    path ${cheminsLove.join(" ")}
+}
+handle @applove {
+    root * /srv/www/_app-bzh
+    try_files {path} {path}/index.html /index.html
+    file_server
+}
 `,
 );
-console.log(`caddy-bloc: ${chemins.length} chemins engendrés depuis src/routes.ts`);
+console.log(`caddy-bloc: ${chemins.length} chemins (mana.bzh) et ${cheminsLove.length} (mana.love) engendrés depuis src/routes.ts`);
