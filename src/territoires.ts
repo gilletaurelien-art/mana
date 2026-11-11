@@ -1,10 +1,29 @@
 // Quel graphe charger, et pourquoi il y en a deux.
 //
-// ⭐ DEUX FICHIERS, CHARGÉS À LA DEMANDE. La communauté de communes fait
-//    955 km² contre 517 pour la seule presqu'île. Un graphe unique pèserait
-//    ~1,5 Mo gzip, et la promesse « ouvrez la fiche avant de partir »
-//    deviendrait « ouvrez-la et attendez ». Personne ne compose une boucle à
-//    Pont-de-Buis et au Cap de la Chèvre dans la même sortie.
+// ⭐ DEUX FICHIERS, CHARGÉS À LA DEMANDE — et la raison n'est pas celle qui
+//    était écrite ici.
+//
+// 🔴 « LA COMMUNAUTÉ DE COMMUNES FAIT 955 km² CONTRE 517 POUR LA SEULE
+//    PRESQU'ÎLE » : les deux nombres sont justes et la phrase est fausse. Ce
+//    sont les aires des RECTANGLES moissonnés, pas des territoires. Mesuré le
+//    11/11/2026 sur `commune_contours` : CCPCAM fait **280 km²** (10 communes)
+//    et la presqu'île **195 km²** (7 communes) ; les boîtes font 920 et 518.
+//    ⭐ Une emprise n'est pas un territoire — le rectangle qui contient la
+//    presqu'île contient aussi de la mer et le voisin. Le territoire était
+//    annoncé 3,4 fois plus grand qu'il n'est.
+//
+// 🔴 ET « UN GRAPHE UNIQUE PÈSERAIT ~1,5 Mo GZIP » EST DÉMENTI PAR LA MESURE.
+//    Produit le 11/11 sur l'union exacte des deux emprises, le fichier unique
+//    pèse **1,92 Mo gzip / 1,24 Mo brotli** — contre 2,05 / 1,32 pour la
+//    PAIRE. Il est donc plus LÉGER que les deux qu'il remplacerait, parce que
+//    le recouvrement de 4,5 km n'est plus payé deux fois.
+//
+// ⭐ CE QUI RESTE VRAI, ET C'EST LA SEULE RAISON DE GARDER DEUX FICHIERS :
+//    l'usage. Personne ne compose une boucle à Pont-de-Buis et au Cap de la
+//    Chèvre dans la même sortie, et une emprise = un interlocuteur (un office
+//    de tourisme, une intercommunalité). Le découpage est un choix de PRODUIT,
+//    pas une contrainte de poids — et il vaut mieux le dire, sinon on le
+//    défend avec un argument que la première mesure renverse.
 //
 // ⚠️ LES EMPRISES SE CHEVAUCHENT, ET CE N'EST PAS UNE NÉGLIGENCE. Sans
 //    recouvrement, un chemin coupé par la frontière finirait en cul-de-sac

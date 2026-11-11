@@ -64,8 +64,21 @@ describe("les sites que le chemin longe", () => {
    *    une ligne de moins.
    *    Mesuré le 31/10 sur les données réelles : 493 rapprochements, et AUCUN
    *    des 46 circuits sans un seul site nommé à 150 m.
+   *
+   * 🔄 RETOURNÉ LE 11/11/2026 — le recueil est passé à 77 circuits sur trois
+   *    offices, et UN seul n'a aucun site nommé à 150 m :
+   *    `randabers-4-balade-autour-du-lac-de-bourg-blanc`, une boucle
+   *    familiale de 2,8 km autour d'un plan d'eau de bourg, dont le plus
+   *    proche site nommé — l'église Notre-Dame — est à 371 m. Vérifié : c'est
+   *    une absence VRAIE, pas une couche de lieux trouée.
+   * ⭐ ON NOMME L'EXCEPTION, ON NE DESSERRE PAS LE SEUIL. Remplacer `toEqual([])`
+   *    par « au moins 90 % » aurait rendu le garde muet sur sept circuits
+   *    vides au lieu d'un, sans que personne ne s'en aperçoive. Une liste
+   *    explicite échoue dès qu'un HUITIÈME apparaît — et elle dit son nom.
    */
-  it("sur les données réelles, chaque circuit longe au moins un site nommé", () => {
+  it("sur les données réelles, chaque circuit longe au moins un site nommé — sauf ceux qu'on nomme", () => {
+    /** ⛔ Toute entrée ici se mérite par une VÉRIFICATION, pas par un échec. */
+    const SANS_SITE_A_150M = ["randabers-4-balade-autour-du-lac-de-bourg-blanc"];
     const vides: string[] = [];
     let total = 0;
     for (const w of ot.itineraires) {
@@ -73,7 +86,7 @@ describe("les sites que le chemin longe", () => {
       total += r.length;
       if (r.length === 0) vides.push(w.slug);
     }
-    expect(vides).toEqual([]);
+    expect(vides.sort()).toEqual([...SANS_SITE_A_150M].sort());
     expect(total).toBeGreaterThan(300);
   });
 });

@@ -123,15 +123,27 @@ describe("les cinq sections de la page de l'application", () => {
     const parCat = (nom: string) =>
       lx.lieux.filter((l: { c: string }) => lx.libelles[l.c] === nom).length;
 
-    expect(app).toContain(`${ot.itineraires.length} circuits balisés`);
-    expect(app).toContain(`${km} km`);
-    expect(app).toContain(`${communes.size} communes`);
-    expect(app).toContain("1 358 sites");
-    expect(lx.lieux.length).toBe(1358);
-    expect(app).toContain(`${nommes} portent un nom`);
-    expect(app).toContain(`${parCat("Fortification")} fortifications`);
-    expect(app).toContain(`${parCat("Plage")} plages`);
-    expect(app).toContain(`${parCat("Mégalithe")} mégalithes`);
+    /* 🔄 RETOURNÉ LE 11/11/2026 — DEUX défauts, et le second explique le
+       premier. (1) `1 358 sites` était écrit EN DUR à côté de huit
+       vérifications dérivées, et doublé d'un `expect(lx.lieux.length).toBe(1358)`
+       qui figeait l'artefact lui-même : étendre la couche de lieux faisait
+       échouer un test qui n'avait rien à dire là-dessus. (2) Et il était en dur
+       parce que la comparaison dérivée ne POUVAIT pas marcher : `${n} km` rend
+       « 1035 km » quand la typographie française écrit « 1 035 km ».
+       ⭐ Le garde avait raison sur le fond et tort sur la forme — on normalise
+       les espaces des DEUX côtés, et plus rien n'est figé. */
+    const sansEspaces = (x: string) => x.replace(/[\s\u00a0\u202f]/g, "");
+    const cite = (attendu: string) =>
+      expect(sansEspaces(app), attendu).toContain(sansEspaces(attendu));
+
+    cite(`${ot.itineraires.length} circuits balisés`);
+    cite(`${km} km`);
+    cite(`${communes.size} communes`);
+    cite(`${lx.lieux.length} sites`);
+    cite(`${nommes} portent un nom`);
+    cite(`${parCat("Fortification")} fortifications`);
+    cite(`${parCat("Plage")} plages`);
+    cite(`${parCat("Mégalithe")} mégalithes`);
   });
 
   /**

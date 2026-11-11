@@ -5,18 +5,28 @@
 //    l'Office de tourisme » : un FAIT qui se constate sur un poteau, pas un
 //    avis. MANA ne recommande rien et ne s'attribue rien.
 //
-// ⚠️ L'ACCORD DE REPRISE RESTE À OBTENIR. Les 49 GPX sont publiquement
-//    téléchargeables sur crozon-tourisme.bzh, ce qui ne veut pas dire
-//    redistribuables : aucun fichier ne porte de licence, ni la page qui les
-//    sert. La reprise est une décision du fondateur du 31/10/2026, et le sujet
-//    du rendez-vous du 6/11. ⭐ On l'écrit plutôt que de le taire : une donnée
-//    reprise sans accord se retire en une commande, à condition de savoir
-//    qu'elle est là.
+// ⚠️ L'ACCORD DE REPRISE RESTE À OBTENIR, ET IL CONCERNE MAINTENANT TROIS
+//    OFFICES. Les GPX sont publiquement téléchargeables, ce qui ne veut pas
+//    dire redistribuables : aucun fichier ne porte de licence, ni la page qui
+//    les sert. La reprise est une décision du fondateur du 31/10/2026 (Crozon)
+//    étendue le 11/11 au Pays des Abers et à la Côte des Légendes. ⭐ On
+//    l'écrit plutôt que de le taire : une donnée reprise sans accord se retire
+//    en une commande, à condition de savoir qu'elle est là.
+// ⭐ ET LES GPX NE SONT PAS HÉBERGÉS PAR LES OFFICES : ils vivent sur
+//    `cdt56`/`cdt29.media.tourinsoft.eu`, c'est-à-dire Tourinsoft/Cirkwi, le
+//    système d'information touristique départemental. L'interlocuteur de
+//    l'accord n'est donc peut-être pas celui qu'on croit — un seul accord
+//    pourrait couvrir les sept offices, ou aucun.
 //
 // ⚠️ 258 Ko : le fichier est chargé À LA DEMANDE (`import()`), jamais dans le
 //    lot principal. Quelqu'un qui lit l'accueil ne paie pas les 46 tracés.
 
 export interface ItineraireOT {
+  /** ⭐ QUEL office — posé le 11/11/2026, quand le recueil est passé de un à
+   *  trois. Sans lui, l'artefact crédite un office pour les tracés d'un
+   *  autre, et MANA ne crédite plus personne de juste. Voir `Recueil.offices`
+   *  pour le nom et le site. */
+  ot: string;
   slug: string;
   titre: string;
   /** le point de départ en toutes lettres, quand la fiche le donne (4 sur 46) */
@@ -50,6 +60,10 @@ export interface ItineraireOT {
 
 export interface Recueil {
   genere: string;
+  /** ⭐ LA LISTE VIVANTE DES OFFICES, pas une phrase recopiée. `source`
+   *  ci-dessous en est DÉRIVÉE à la production — un nom d'office écrit à deux
+   *  endroits vieillit à un seul. */
+  offices: { ot: string; nom: string; site: string }[];
   source: string;
   avertissement: string;
   itineraires: ItineraireOT[];

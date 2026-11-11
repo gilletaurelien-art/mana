@@ -4,6 +4,28 @@ import inventaire from "./lieux.json";
 import type { Inventaire } from "./lieux";
 import { nommer, lienWiki } from "./lieux";
 
+import otJson from "./ot.json";
+
+/** L'union des emprises déclarées par les offices dans `ot.json` —
+ *  [ouest, sud, est, nord]. ⭐ Dérivée, jamais recopiée. */
+const UNION: [number, number, number, number] = (() => {
+  const e = (otJson as { offices: { emprise: [number, number, number, number] }[] }).offices.map((o) => o.emprise);
+  return [
+    Math.min(...e.map((x) => x[0])), Math.min(...e.map((x) => x[1])),
+    Math.max(...e.map((x) => x[2])), Math.max(...e.map((x) => x[3])),
+  ];
+})();
+
+/** ⚠️ UNE MARGE, PARCE QUE L'EXTRACTION GARDE LES CHEMINS ENTIERS.
+ *  `osmium extract` applique par défaut `complete_ways` : un chemin coupé par
+ *  la bordure conserve TOUS ses nœuds, donc un lieu peut se poser juste en
+ *  dehors. Mesuré le 11/11/2026 : **5 lieux sur 5 064**, le pire à **667 m**
+ *  (« Plage du Ris »). ⭐ La marge vient donc de la mesure, pas d'un chiffre
+ *  rond choisi pour faire passer le test : 1 km couvre les 667 m constatés et
+ *  reste cent fois sous le défaut que ce garde existe pour attraper — un lieu
+ *  accroché à 43 km de son tracé. */
+const MARGE = 1 / 111; // ≈ 1 km en degrés de latitude
+
 const inv = inventaire as unknown as Inventaire;
 
 /**
@@ -41,10 +63,17 @@ describe("l'inventaire des sites remarquables", () => {
     for (const l of inv.lieux) {
       expect(inv.libelles[l.c], l.c).toBeTruthy();
       expect(l.osm, l.osm).toMatch(/^[nw]\d+$/);
-      expect(l.g[0]).toBeGreaterThan(-4.70);
-      expect(l.g[0]).toBeLessThan(-4.00);
-      expect(l.g[1]).toBeGreaterThan(48.10);
-      expect(l.g[1]).toBeLessThan(48.40);
+      /* 🔄 L'EMPRISE EST DÉRIVÉE, PLUS ÉCRITE — 11/11/2026. Ces quatre bornes
+         étaient celles de la seule CCPCAM ; la couche de lieux a été étendue
+         aux emprises du Pays des Abers et de la Côte des Légendes (jusqu'à
+         48,71 N), et le test a accusé des lieux parfaitement justes.
+         ⭐ La couche de lieux existe pour servir les tracés : sa borne est
+         donc l'union des emprises des offices, et `ot.json` la porte déjà.
+         Une borne recopiée ici vieillissait à chaque territoire ajouté. */
+      expect(l.g[0], `${l.n ?? l.c} hors de l'union des emprises`).toBeGreaterThan(UNION[0] - MARGE);
+      expect(l.g[0], `${l.n ?? l.c}`).toBeLessThan(UNION[2] + MARGE);
+      expect(l.g[1], `${l.n ?? l.c}`).toBeGreaterThan(UNION[1] - MARGE);
+      expect(l.g[1], `${l.n ?? l.c}`).toBeLessThan(UNION[3] + MARGE);
     }
   });
 
