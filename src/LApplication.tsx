@@ -21,14 +21,15 @@ import { avecOffice } from "./visage";
  *    à protéger.
  *
  * ⚠️ CHAQUE CHIFFRE A ÉTÉ COMPTÉ, JAMAIS RAPPELÉ — et recompté le 6/11 contre
- *    `ot.json` et `lieux.json` : 77 circuits · 1 035 km · 32 communes ·
- *    5 064 lieux · 2 165 nommés · 2 899 anonymes · 426 fortifications ·
- *    446 fontaines · 1 076 calvaires · 361 plages · 124 mégalithes.
- *    🔄 RELEVÉS À NOUVEAU LE 11/11/2026, quand le recueil est passé d'UN
- *    office à TROIS (Crozon, Pays des Abers, Côte des Légendes) et que la
- *    couche de lieux a été étendue à leurs emprises : TOUS les chiffres ont
- *    bougé, de +67 % à +679 %. ⭐ C'est `navigation.test.ts` qui l'a dit, pas
- *    une relecture — il compare ce texte aux artefacts. Un nombre écrit de mémoire
+ *    `ot.json` et `lieux.json` : 116 circuits · 1 537 km · 56 communes ·
+ *    5 676 lieux · 2 567 nommés · 519 fortifications · 491 fontaines ·
+ *    1 207 calvaires · 427 plages · 159 mégalithes.
+ *    🔄 RELEVÉS DEUX FOIS LE 11/11/2026 — le recueil est passé d'UN office à
+ *    TROIS (Crozon, Abers, Côte des Légendes) puis à CINQ (Iroise,
+ *    Landerneau-Daoulas), et la couche de lieux a suivi chaque fois. Entre le
+ *    matin et le soir : 46 → 116 circuits, 708 → 1 537 km, 1 358 → 5 676
+ *    sites. ⭐ C'est `navigation.test.ts` qui l'a dit chaque fois, pas une
+ *    relecture — il compare ce texte aux artefacts. Un nombre écrit de mémoire
  *    sur une page indexée est le faux témoin le plus coûteux qui soit : il est
  *    cité par des machines.
  */
@@ -39,13 +40,13 @@ import { avecOffice } from "./visage";
  *
  * ⭐ CE QU'UN MOTEUR DE RÉPONSE SAIT EXTRAIRE, C'EST UNE PHRASE QUI RÉPOND —
  *    pas une phrase qui vend. « Une expérience unique au cœur de la
- *    Bretagne » n'est citable par personne ; « 77 circuits balisés par trois
- *    Offices de tourisme, 1 035 km, sur 32 communes » l'est. D'où des
+ *    Bretagne » n'est citable par personne ; « 116 circuits balisés par cinq
+ *    Offices de tourisme, 1 537 km, sur 56 communes » l'est. D'où des
  *    déclaratives courtes, des entités nommées et des NOMBRES RÉELS.
  *
- * ⛔ ET CHAQUE CHIFFRE A ÉTÉ COMPTÉ DANS L'ARTEFACT, PAS RAPPELÉ. 77 · 1 035 km
- *    · 32 communes · 5 064 lieux · 2 165 nommés · 426 fortifications · 361
- *    plages · 124 mégalithes : tous relevés le 11/11 dans `ot.json` et
+ * ⛔ ET CHAQUE CHIFFRE A ÉTÉ COMPTÉ DANS L'ARTEFACT, PAS RAPPELÉ. 116 · 1 537 km
+ *    · 56 communes · 5 676 lieux · 2 567 nommés · 519 fortifications · 427
+ *    plages · 159 mégalithes : tous relevés le 11/11 dans `ot.json` et
  *    `lieux.json`. Un nombre écrit de mémoire sur une page d'accueil est le
  *    faux témoin le plus coûteux qui soit — il est cité par des machines.
  *
@@ -79,9 +80,9 @@ const MODULES = [
     titre: "Carnet, export GPX et circuits balisés",
     accroche: "Gardez la trace.",
     texte:
-      "Chaque promenade s’exporte en GPX, lisible par toutes les montres et applications de randonnée. Le carnet garde vos balades dans ce navigateur, sans compte ni adresse : ce qui n’est pas stocké ne fuit pas. L’application présente aussi les 77 circuits balisés par trois Offices de tourisme — Presqu’île de Crozon – Aulne Maritime, Pays des Abers, Côte des Légendes — crédités chacun comme tel, avec le lien vers sa fiche. MANA ne s’attribue rien et ne recommande rien.",
+      "Chaque promenade s’exporte en GPX, lisible par toutes les montres et applications de randonnée. Le carnet garde vos balades dans ce navigateur, sans compte ni adresse : ce qui n’est pas stocké ne fuit pas. L’application présente aussi les 116 circuits balisés par cinq Offices de tourisme du Pays de Brest — Presqu’île de Crozon – Aulne Maritime, Pays des Abers, Iroise Bretagne, Pays de Landerneau-Daoulas, Côte des Légendes — crédités chacun comme tel, avec le lien vers sa fiche. MANA ne s’attribue rien et ne recommande rien.",
     faits: [
-      "77 circuits balisés, 1 035 km, sur 32 communes — de la pointe de Pen-Hir aux dunes de Keremma, en passant par les abers.",
+      "116 circuits balisés, 1 537 km, sur 56 communes — de la pointe de Pen-Hir aux dunes de Keremma, du Conquet à la vallée de l’Élorn.",
       "25 à pied, 12 en VTT, 5 à vélo, 4 en trail. Durées et dénivelés déclarés par l’Office.",
       "Export GPX, fonctionne hors ligne. Aucun compte, aucune donnée personnelle enregistrée.",
     ],
@@ -92,7 +93,7 @@ const MODULES = [
        ⭐ Il n'est pas allé sous le champ de recherche : créditer sous un
           bloc qui n'affiche AUCUNE de leurs données dilue la mention au lieu
           de l'honorer. Il est allé sous la seule section qui montre leur
-          travail — 77 circuits, 1 035 km, leurs durées et leurs dénivelés.
+          travail — 116 circuits, 1 537 km, leurs durées et leurs dénivelés.
        ⛔ Ce n'est pas une courtoisie : ces chiffres sont LEUR donnée, et une
           carte qui les montre sans les nommer devient une fiche MANA au
           premier coup d'œil. */
@@ -112,9 +113,9 @@ const MODULES = [
           premier endroit où une fonction existe encore après sa mort, c'est
           la phrase qui la vendait. */
     texte:
-      "L’application recense 5 064 sites remarquables de la presqu’île de Crozon aux abers et à la Côte des Légendes, dont 2 165 portent un nom : fortifications du goulet, alignements mégalithiques, fontaines, calvaires, plages, pointes et épaves. Chaque fiche de balade indique les sites situés à moins de 150 mètres du tracé — à proximité, jamais « sur le chemin », parce qu’un détour annoncé comme une étape envoie chercher ce qui n’est pas là.",
+      "L’application recense 5 676 sites remarquables de la presqu’île de Crozon au pays d’Iroise, des abers à la Côte des Légendes et à la vallée de l’Élorn, dont 2 567 portent un nom : fortifications du goulet, alignements mégalithiques, fontaines, calvaires, plages, pointes et épaves. Chaque fiche de balade indique les sites situés à moins de 150 mètres du tracé — à proximité, jamais « sur le chemin », parce qu’un détour annoncé comme une étape envoie chercher ce qui n’est pas là.",
     faits: [
-      "426 fortifications, 446 fontaines et lavoirs, 1 076 calvaires, 361 plages, 124 mégalithes.",
+      "519 fortifications, 491 fontaines et lavoirs, 1 207 calvaires, 427 plages, 159 mégalithes.",
       "Les 734 sites sans nom sont dessinés sur la carte, mais ne sont jamais cités seuls.",
       "Sources : OpenStreetMap sous licence ODbL. Chaque lieu renvoie à son objet d’origine.",
     ],
@@ -137,7 +138,7 @@ const MODULES = [
 
 export function LApplication({ base }: { base: string }) {
   /* 🔴 LE CRÉDIT SUIT LA DONNÉE, PAS LA PAGE — 7/11/2026. Sur mana.love il n'y
-     a pas d'Office, donc ni ses 77 circuits ni ses 1 035 km : créditer un
+     a pas d'Office, donc ni ses 116 circuits ni ses 1 537 km : créditer un
      partenaire dont on ne montre rien n'est pas de la rigueur, c'est du
      bruit — et ça affaiblit la mention là où elle compte. La section entière
      part avec sa matière. */
@@ -145,7 +146,7 @@ export function LApplication({ base }: { base: string }) {
   return (
     <main className="wrap">
       {/* ⚠️ La section des circuits balisés part ENTIÈREMENT sur mana.love —
-          elle ne parle que des Offices, de leurs 77 circuits et de leurs 1 035 km.
+          elle ne parle que des Offices, de leurs 116 circuits et de leurs 1 537 km.
           En garder la coquille sans sa matière promettrait un partenariat qui
           n'existe pas sur cet hôte. */}
       {MODULES.filter((m) => office || !m.source).map((m) => {

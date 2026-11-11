@@ -21,8 +21,11 @@ describe("les itinéraires des Offices", () => {
      dans l'emprise de CET office, et les fichiers cassés doivent rester
      dehors. Le nombre, lui, n'était qu'un témoin. */
 
-  it("⚠️ témoin daté : 77 retenus sur 84 au 11/11/2026 — à recompter, pas à croire", () => {
-    expect(r.itineraires.length).toBe(77);
+  it("⚠️ témoin daté : 116 retenus sur 130 au 11/11/2026 — à recompter, pas à croire", () => {
+    /* 🔄 46 le 31/10 · 77 à trois offices · 116 à cinq, le même jour. ⭐ Un
+       témoin daté se met à jour sans drame — c'est tout l'intérêt de le
+       NOMMER témoin plutôt que de le faire passer pour une règle. */
+    expect(r.itineraires.length).toBe(116);
   });
 
   it("⛔ les fichiers cassés restent dehors — chacun pour un motif nommé", () => {
@@ -40,8 +43,9 @@ describe("les itinéraires des Offices", () => {
     expect(slugs).not.toContain("boucle-de-la-foulee-verte");
   });
 
-  it("les trois offices sont déclarés, et chaque tracé vient de l'un d'eux", () => {
-    expect(r.offices.map((o) => o.ot).sort()).toEqual(["abers", "crozon", "legendes"]);
+  it("les cinq offices sont déclarés, et chaque tracé vient de l'un d'eux", () => {
+    expect(r.offices.map((o) => o.ot).sort())
+      .toEqual(["abers", "crozon", "iroise", "landerneau", "legendes"]);
     const sites = new Map(r.offices.map((o) => [o.ot, o.site]));
     for (const i of r.itineraires) {
       const site = sites.get(i.ot);

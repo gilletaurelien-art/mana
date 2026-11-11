@@ -70,6 +70,46 @@ const OFFICES = [
     emprise: [-4.70, 48.42, -4.29, 48.67],
   },
   {
+    ot: "iroise",
+    nom: "Office de tourisme Iroise Bretagne",
+    site: "https://www.iroise-bretagne.bzh",
+    /* 🔴 LA PAGINATION DE CE SITE EST UN LEURRE — vérifié le 11/11/2026 :
+       `/sorganiser/randonnee/page/2/` et `/page/3/` rendent **HTTP 200 avec
+       les 20 MÊMES slugs**. Un parcours naïf croirait tourner les pages et
+       recompterait les mêmes fiches. ⚠️ L'office annonce 35 circuits ; on en
+       atteint 26 (20 + 6 par la page trail), le reste étant paginé en
+       JavaScript. ⭐ On l'écrit : une couverture partielle qu'on croit
+       complète est pire qu'une couverture partielle qu'on sait. */
+    listes: ["/sorganiser/randonnee/", "/liroise/a-laventure/trail-en-iroise-2/"],
+    /* ⚠️ `publie` SONDÉ SUR QUATRE FICHES, PUIS CORRIGÉ PAR LES 22. Le
+       sondage donnait dénivelé 0/4 et j'avais déclaré « non publié » ; la
+       passe complète en a trouvé UN — « Circuit trail n°20, à l'assaut du
+       fort de Toulbroc'h », 305 m, et c'est un vrai champ de la fiche
+       (« Distance 12 Km · Durée 2h · Difficulté Moyen · Dénivelé 305 m »).
+       ⭐ CET OFFICE LE PUBLIE SELON LA PRATIQUE, PAS SELON L'OFFICE : ses
+       circuits TRAIL portent un dénivelé, ses circuits de randonnée non.
+       `publie` est donc une granularité trop grossière pour lui — on déclare
+       le champ, et le garde dit alors seulement « si tu en lis zéro alors
+       qu'il en existe, tu lis mal ». ⏳ Affiner par pratique quand un
+       deuxième office posera la même question. */
+    publie: ["duree", "difficulte", "denivele"],
+    emprise: [-4.8294, 48.3053, -4.4681, 48.5946],
+  },
+  {
+    ot: "landerneau",
+    nom: "Office de tourisme du Pays de Landerneau-Daoulas",
+    site: "https://www.tourisme-landerneau-daoulas.fr",
+    listes: ["/trouver-son-activite/randonnee-et-velo/balades-et-randos/"],
+    /* 🔴 SONDÉ SUR QUATRE FICHES, ET LA PREMIÈRE M'AVAIT TROMPÉ. Sur une
+       seule page, la difficulté semblait absente ; sur quatre elle est là
+       3 fois. Un témoin unique aurait fait déclarer un champ absent qui
+       existe — et le garde aurait alors REFUSÉ les 3 valeurs justes.
+       Dénivelé : 0/4, absence vraie. Départ : 0/4, cet office ne le donne
+       pas en toutes lettres. */
+    publie: ["duree", "difficulte"],
+    emprise: [-4.3964, 48.2738, -4.0121, 48.5493],
+  },
+  {
     ot: "legendes",
     /* 🔴 CET OFFICE NE PUBLIE AUCUN DÉNIVELÉ — vérifié le 11/11/2026 sur la
        fiche « Circuit du phare » : distance, durée, difficulté, rien d'autre.

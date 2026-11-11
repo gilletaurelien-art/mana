@@ -77,8 +77,22 @@ describe("les sites que le chemin longe", () => {
    *    explicite échoue dès qu'un HUITIÈME apparaît — et elle dit son nom.
    */
   it("sur les données réelles, chaque circuit longe au moins un site nommé — sauf ceux qu'on nomme", () => {
-    /** ⛔ Toute entrée ici se mérite par une VÉRIFICATION, pas par un échec. */
-    const SANS_SITE_A_150M = ["randabers-4-balade-autour-du-lac-de-bourg-blanc"];
+    /** ⛔ Toute entrée ici se mérite par une VÉRIFICATION, pas par un échec.
+     *  Chacune porte la distance MESURÉE au site nommé le plus proche :
+     *  · `randabers-4` — 2,8 km autour d'un plan d'eau de bourg à Bourg-Blanc,
+     *    plus proche site l'église Notre-Dame à 371 m.
+     *  · `chemin-de-penguelen` — 8,3 km le long du Penguelen dans Landerneau,
+     *    plus proche site la chapelle Saint-Éloi à 722 m.
+     *  ⭐ Les deux sont des chemins de BOURG, et c'est le motif : un sentier
+     *  côtier croise des fortifications et des pointes tous les 300 m, un
+     *  chemin de ville ne croise rien de « remarquable ». L'exception n'est
+     *  pas un accident, c'est une famille — si une troisième arrive sur un
+     *  chemin de bourg, elle est légitime ; sur un sentier côtier, elle
+     *  dénonce un trou dans la couche de lieux. */
+    const SANS_SITE_A_150M = [
+      "randabers-4-balade-autour-du-lac-de-bourg-blanc",
+      "chemin-de-penguelen",
+    ];
     const vides: string[] = [];
     let total = 0;
     for (const w of ot.itineraires) {
