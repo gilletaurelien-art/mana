@@ -2181,8 +2181,25 @@ body { padding-bottom: var(--reserve-barre); }
       au-dessus d'elle est positionné par rapport à elle. `.jeu` avait déjà
       rencontré ça et rendu le verdict ; `.terr` est devenu plein écran sans
       hériter de la règle. */
-body:has(.jeu), body:has(.terr) { padding-bottom: 0; }
-.app-colonne:has(.jeu), .app-colonne:has(.terr) { min-height: 0; }
+/* 🔴 TROISIÈME ÉCRAN, TROISIÈME FOIS, MÊME DESSIN — `.cp-scene` rejoint le
+   12/11/2026. `.jeu` l'a rencontré le 31/10 et a rendu le verdict ; `.terr`
+   est devenu plein écran le 4/11 sans en hériter ; le compositeur est devenu
+   plein écran aujourd'hui, et la page mesurait 831 px dans une fenêtre de
+   743 — 88 px de rien à lire, qui font bouger l'écran sous le pouce.
+   ⛔ ET CE N'EST PAS COSMÉTIQUE : tout ce qui flotte sur ces cartes est en
+      `position: absolute` DANS la scène. Dès que la page défile, le rail
+      d'outils et ses volets défilent avec elle et se décrochent du point où
+      on les a posés. C'est exactement ce que `.terr` avait relevé — un
+      panneau qui glisse sous la barre de recherche, un bouton qui tombe dans
+      le vide.
+   ⚠️ CETTE LISTE EST L'ENDROIT QU'ON ÉTEND, et le seul. Un quatrième écran
+      plein écran devra s'y ajouter : trois l'ont déjà oublié, chacun à son
+      tour, parce que rien ne le rappelle au moment où l'on pose un
+      `100svh`. ⭐ La règle, en un mot : une réserve d'espace se prend UNE
+      fois, par l'élément qui sait ce qu'il lui faut. */
+body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
+.app-colonne:has(.jeu), .app-colonne:has(.terr),
+.app-colonne:has(.cp-scene) { min-height: 0; }
 
 .jeu {
   /* 🔴 `100svh` SEUL DÉBORDE : `body` réserve DÉJÀ la hauteur de la barre
@@ -2915,8 +2932,21 @@ body:has(.jeu), body:has(.terr) { padding-bottom: 0; }
       l'emploient, et une « petite » retouche de surface commune est
       exactement la manière dont une identité se défait sans décision. */
 .page-composer {
-  position: relative; isolation: isolate; min-height: 100vh;
+  position: relative; isolation: isolate;
   color: var(--nuit);
+  /* 🔴 PLUS DE RÉSERVE SOUS LA CARTE — 12/11/2026, « la carte est plein
+     écran ». `.page` pose `padding: var(--sp-6) 0 var(--sp-12)` pour tous les
+     écrans-documents ; la scène annulait déjà les 48 px du haut par une marge
+     négative, mais les 96 px du bas restaient — et avec le `min-height: 100vh`
+     d'ici, la page mesurait 839 px pour une vue de 743. ⭐ Quatre-vingt-seize
+     pixels de rien à lire, c'est-à-dire un écran qui bouge sous le pouce et
+     une barre de défilement qui dit « il y a autre chose en dessous ». Il n'y
+     a plus rien en dessous.
+     ⚠️ `min-height` PART AVEC : la scène porte sa propre hauteur
+     (`100svh - var(--reserve-barre)`), et un `100vh` posé par-dessus la
+     rallongeait de la barre d'adresse rétractée — les deux ne comptent pas la
+     même chose. Deux hauteurs pour un seul écran, c'est une de trop. */
+  padding-bottom: 0;
 }
 /* 🔴 LE SOL IVOIRE A QUITTÉ `.page-composer` POUR `.cp-corps` — 3/11/2026.
    Posé sur la page entière, il couvrait aussi `.cp-entree` et éteignait le

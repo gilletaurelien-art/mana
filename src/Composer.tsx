@@ -7,7 +7,7 @@ import type { Graphe, Boucle, Retour, Visee, Parcours, Accroche, Proposition } f
 import { chargerLieux, type Lieu, type Inventaire } from "./lieux";
 import { rencontresLeLong } from "./proches";
 import { DEFAUT, territoireDe, urlGraphe, positionDeDepart } from "./territoires";
-import { VITRINE, type Walk } from "./walks";
+import { type Walk } from "./walks";
 import { WalkMap } from "./WalkMap";
 import { CarteOuSchema } from "./CarteOuSchema";
 import { chargerFermetures, aretesTouchees, type Fermetures } from "./fermetures";
@@ -1950,105 +1950,28 @@ export function Composer() {
                OUTILS » dans la scène, plus haut. */}
         </div>
       </div>
-      {/* ══ LE CORPS, SUITE — sécurité, signature et catalogue ═════════════
-          🔴 3/11/2026 : CE second `.cp-corps` n'est PAS un second sol, c'est
-          le même, continué. `.cp-securite` et la signature rendent
-          DÉLIBÉRÉMENT hors de `.wrap` (styles `cp-…` propres, qui gèrent
-          déjà leur propre largeur) — mais hors de `.wrap` ne veut pas dire
-          hors du sol : sans lui, `.cp-signature`/`.cp-flanerie` (texte nu,
-          sans carte) retombaient sur le fond tournant, et `--nuit` n'y tient
-          pas toujours le contraste. Le catalogue (son propre `.wrap`, plus
-          bas) a le même besoin — une seule enveloppe continue plutôt que
-          trois sols recollés évite toute couture visible entre eux. */}
-      <div className="cp-corps">
-        {/* ══ E · CONDITIONS ET SÉCURITÉ — MONTÉES SUR LA CARTE ══════════
-            🔴 12/11/2026 : ce bloc est devenu l'icône « Sécurité » du rail,
-            au même endroit que la promenade qu'il concerne. Il faisait 862 px
-            en bas de page, dont 462 pour des secteurs dépliés en permanence ;
-            il avait déjà été replié le 6/11, il remonte aujourd'hui.
-            ⛔ RIEN N'EST RETIRÉ — et c'était déjà la règle en le repliant.
-               Le nombre, la conséquence la plus dure (les secteurs qu'on n'a
-               pas pu situer, que le calcul n'évite donc PAS), les arrêtés,
-               les autorités, les dates et les liens sont dans le volet, au
-               mot près. ⭐ Ce qui change, c'est qu'une ALERTE se voit sans
-               ouvrir : le bouton porte un point quand il y a quelque chose à
-               savoir. Une mise en garde qu'on découvre après avoir fait
-               défiler arrive après la décision. */}
-
-        {/* ⭐ LA SIGNATURE. Elle n'est pas un ornement : tout ce qui précède
-            calcule UN parcours, et sans elle l'objet rendu se lit comme un
-            itinéraire à exécuter — alors couper, s'arrêter ou changer d'avis
-            devient un échec. Ce n'en est pas un : c'est le propre de la
-            flânerie. */}
-        {graphe && (
-          <>
-            <p className="cp-signature">Une proposition, pas un programme</p>
-            <p className="cp-flanerie">
-              Prenez-en la moitié. Coupez où vous voulez. Faites demi-tour
-              pour la lumière. Rien ici ne compte vos pas.
-            </p>
-          </>
-        )}
-
-      {/* ══ F · LE RENVOI AUX CIRCUITS DE L'OFFICE ════════════════════════
-          🔴 LE CATALOGUE DES SENTIERS EST PARTI D'ICI LE 12/11/2026 — demande
-          du fondateur, nommée ligne à ligne : l'intro « 7 itinéraires tracés
-          d'après OpenStreetMap, 181 km. », le champ de recherche, le compte,
-          les filtres et les sept cartes de résultat. Il vivait sous le
-          compositeur depuis la fusion du 3/11 ; mesuré à l'écran avant de le
-          retirer : 5 847 px de défilement, dont 2 436 px pour sept panneaux
-          identiques de 348 px — trois lignes de texte et un bouton d'or
-          chacun, répétés sept fois sous la carte.
-          ⚠️ RIEN N'EST ORPHELIN DERRIÈRE. Les fiches restent servies à leur
-          adresse (`/promenade/<slug>`, `FichePromenade.tsx`) et le catalogue
-          lui-même (`catalogue.ts`, `chargerIndex`) n'a pas bougé : c'est son
-          AFFICHAGE ici qui s'arrête. ⭐ L'état, les effets et le calcul qui ne
-          servaient qu'à lui sont partis AVEC — un état laissé en place « au
-          cas où » continue de télécharger un index que plus rien ne montre,
-          et le lecteur suivant le prend pour une dépendance.
-          ⚠️ SON PROPRE `<div className="wrap">` : l'entrée, les propositions,
-          la carte et l'export vivent dans le `.wrap` ouvert plus haut, qui se
-          ferme avant la section « conditions et sécurité » — ⛔ celle-ci et la
-          signature rendent DÉLIBÉRÉMENT hors de `.wrap` (styles `cp-…`
-          propres). Ce second `.wrap` reste : le renvoi ci-dessous et la
-          vitrine dormante ont besoin du même gabarit. */}
-      <div className="wrap">
-        {/* ⚠️ VIDE DEPUIS LE 31/10 — `VITRINE` est une liste vide, et cette
-            section ne s'affiche donc pas. Elle reste écrite : le jour où les
-            promenades MANA reviennent, il n'y a rien à reconstruire.
-            ⭐ Une section conditionnée par ses données se tait toute seule ;
-               une section supprimée demande qu'on la réinvente. */}
-        {VITRINE.length > 0 && (
-          <section className="page-panel">
-            <p className="apercu-label">Vérifiées</p>
-            <p className="page-texte">
-              {VITRINE.length} promenade{VITRINE.length > 1 ? "s" : ""} vérifiée
-              {VITRINE.length > 1 ? "s" : ""}, hors ligne.
-            </p>
-            <div className="est-actions" style={{ marginBottom: 0 }}>
-              {VITRINE.map((w) => (
-                <a key={w.slug} className="btn btn-ghost" href={`${B}/promenade/${w.slug}`}>
-                  {w.titre}
-                </a>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* ── LES ITINÉRAIRES BALISÉS — PARTIS SUR LEUR PROPRE ADRESSE ═════
-            🔴 3/11/2026, demande du fondateur : carte = nos sites et nos
-            propositions, second onglet = les balades de l'Office. Vivre
-            après 1 032 itinéraires qui SONT les nôtres brouillait la
-            distinction que `BaladesOT.tsx` (et son garde `⛔ CE NE SONT PAS
-            LES NÔTRES`) tient depuis — une adresse à part la rend visible
-            dès la barre du bas, pas seulement en bas d'un défilement. */}
-        <p className="cp-second">
-          <a className="cp-lien" href={`${B}/balades-office`}>
-            <SvgEtincelle />Voir les circuits balisés par l'Office de tourisme
-          </a>
-        </p>
-        </div>
-      </div>
+      {/* ══ LE CORPS SOUS LA CARTE N'EXISTE PLUS ════════════════════════
+          🔴 12/11/2026, demande du fondateur : « la carte est plein écran ».
+          Ce second `.cp-corps` portait les trois dernières choses qui vivaient
+          sous la scène, et elles partent nommément :
+            · « Une proposition, pas un programme » et son appel à la flânerie,
+            · le renvoi « Voir les circuits balisés par l'Office de tourisme »,
+            · la vitrine des promenades vérifiées, dormante depuis le 31/10 et
+              vidée pour de bon le 12/11.
+          ⚠️ LE RENVOI N'ORPHELINE RIEN — vérifié avant de le retirer, pas
+             supposé : `/balades-office` est une entrée PERMANENTE de la barre
+             du bas (`barre.ts`) et une porte de l'accueil
+             (`RechercheAccueil.tsx`). On masque un chemin, on n'en supprime
+             aucun — c'est déjà le mot employé le 31/10 en masquant le pied de
+             page sur `/carte`.
+          ⭐ ET LA SIGNATURE N'EST PAS PERDUE PAR MÉGARDE : son commentaire
+             disait qu'elle « n'est pas un ornement », et c'était vrai d'un
+             écran-document qui se terminait par du texte. L'écran ne se
+             termine plus : il est une carte. Ce que la signature protégeait —
+             qu'un parcours est une proposition et non un programme — tient
+             maintenant par ce que l'écran FAIT : rien ne compte, rien ne
+             suit, rien ne rappelle à l'ordre. ⚠️ Si une surface de texte
+             revient un jour sous cette carte, elle revient avec. */}
     </main>
   );
 }

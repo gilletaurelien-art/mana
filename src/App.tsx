@@ -57,6 +57,17 @@ const B = baseUrl();
  * ⛔ Les pages DYNAMIQUES gardent le leur : le titre d'une promenade est son
  *    nom, il ne peut pas tenir dans une table. Un test tient la frontière.
  */
+/**
+ * ⭐ LES ÉCRANS QUI N'ONT PAS DE PIED DE PAGE — ce sont les écrans-CARTES.
+ *    Le territoire depuis le 31/10/2026, le compositeur depuis le 12/11, à la
+ *    demande du fondateur et avec le même argument : une carte se tient
+ *    debout, dehors, et un pied de site qui dépasse sous la barre flottante y
+ *    est un bout d'autre chose.
+ * ⚠️ Rien n'y devient inatteignable : mentions légales et contact vivent
+ *    aussi dans la barre du bas, sur toutes les pages.
+ */
+const SANS_PIED = new Set(["/carte", "/promenades", "/composer"]);
+
 export const TITRE_DEFAUT = "MANA.bzh — Promenades & découvertes en Bretagne";
 
 export const TITRES: Record<string, string> = {
@@ -314,18 +325,24 @@ export default function App() {
         </>
       )}
 
-      {/* ⭐ PAS DE PIED SUR L'ÉCRAN DU TERRITOIRE — 31/10/2026, demande du
-          fondateur : « masque le footer, carte en plein écran ». Le jeu de
-          cartes est un OUTIL qu'on tient debout, dehors : un pied de site qui
-          dépasse sous la barre flottante y est un bout d'autre chose.
+      {/* ⭐ PAS DE PIED SUR LES ÉCRANS-CARTES — 31/10/2026 pour le territoire,
+          12/11/2026 pour le compositeur, la même demande du fondateur mot
+          pour mot : « masque le footer, la carte est plein écran ». Une carte
+          est un OUTIL qu'on tient debout, dehors : un pied de site qui dépasse
+          sous la barre flottante y est un bout d'autre chose.
           ⚠️ CE QUE ÇA DÉPLACE, ET IL FAUT LE VÉRIFIER : les mentions légales
              et le contact vivent dans ce pied. Ils restent sur TOUTES les
              autres pages, atteignables en un geste par la barre du bas — on
              masque un chemin, on n'en supprime aucun.
           ⛔ L'attribution des données, elle, ne part PAS avec : elle est sur
              la carte elle-même, parce qu'elle doit voyager avec ce qu'elle
-             crédite et non avec la page. */}
-      {path !== "/carte" && (
+             crédite et non avec la page.
+          ⚠️ UNE LISTE, PAS UNE CHAÎNE DE `!==`. Les deux adresses du
+             compositeur y sont nommées SÉPARÉMENT (`/promenades` et
+             `/composer` rendent le même écran depuis la fusion du 3/11) :
+             les fondre en un préfixe masquerait le pied sur une adresse
+             future qui commencerait pareil, sans que personne l'ait voulu. */}
+      {!SANS_PIED.has(path) && (
       <footer className="site-footer">
         <div className="wrap footer-colonnes">
           <div>
