@@ -1,0 +1,829 @@
+{
+ "genere": "2026-11-12",
+ "source": "Espace Finis'Trail — destination Brest Terres Océanes",
+ "lien": "https://finistrail.bzh/",
+ "avertissement": "Catalogue de renvoi : chiffres relevés sur les fiches publiques, SANS les tracés — le téléchargement GPX est réservé par l'éditeur à la visite de sa page. Aucun accord de reprise n'a été demandé ni obtenu.",
+ "sans_trace": true,
+ "circuits": [
+  {
+   "id": "177412",
+   "nom": "circuit 1 - parcours swim  run xs",
+   "commune": "brignogan-plages",
+   "secteur": "La Côte des Légendes",
+   "pratique": "swimrun",
+   "difficulte": 1,
+   "km": 2.08,
+   "denivele": 6,
+   "descente": 6,
+   "minutes": [
+    15,
+    30
+   ],
+   "g": [
+    -4.32791,
+    48.67297
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/177412"
+  },
+  {
+   "id": "177411",
+   "nom": "circuit 2 - parcours swim  run s",
+   "commune": "brignogan-plages",
+   "secteur": "La Côte des Légendes",
+   "pratique": "swimrun",
+   "difficulte": 2,
+   "km": 4.18,
+   "denivele": 12,
+   "descente": 12,
+   "minutes": [
+    25,
+    45
+   ],
+   "g": [
+    -4.3278,
+    48.67312
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/177411"
+  },
+  {
+   "id": "177410",
+   "nom": "circuit 3 - a travers le chaos granitique",
+   "commune": "brignogan-plages",
+   "secteur": "La Côte des Légendes",
+   "pratique": null,
+   "difficulte": 2,
+   "km": 12.68,
+   "denivele": 37,
+   "descente": 37,
+   "minutes": [
+    65,
+    130
+   ],
+   "g": [
+    -4.32802,
+    48.67285
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/177410"
+  },
+  {
+   "id": "177407",
+   "nom": "circuit 4 - de la plage des crapauds a l'ile aux vaches",
+   "commune": "brignogan-plages",
+   "secteur": "La Côte des Légendes",
+   "pratique": null,
+   "difficulte": 3,
+   "km": 25.41,
+   "denivele": 86,
+   "descente": 86,
+   "minutes": [
+    120,
+    240
+   ],
+   "g": [
+    -4.32802,
+    48.67285
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/177407"
+  },
+  {
+   "id": "177413",
+   "nom": "circuit 5 - boucle du curnic",
+   "commune": "guisseny",
+   "secteur": "La Côte des Légendes",
+   "pratique": null,
+   "difficulte": 2,
+   "km": 14.63,
+   "denivele": 110,
+   "descente": 110,
+   "minutes": [
+    80,
+    160
+   ],
+   "g": [
+    -4.40906,
+    48.63406
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/177413"
+  },
+  {
+   "id": "177414",
+   "nom": "circuit 6 - les hauteurs de guisseny",
+   "commune": "guisseny",
+   "secteur": "La Côte des Légendes",
+   "pratique": null,
+   "difficulte": 3,
+   "km": 20.8,
+   "denivele": 177,
+   "descente": 177,
+   "minutes": [
+    120,
+    240
+   ],
+   "g": [
+    -4.40906,
+    48.63406
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/177414"
+  },
+  {
+   "id": "211967",
+   "nom": "circuit 7 - les sous bois de l'aber wrac'h",
+   "commune": "lanarvily",
+   "secteur": "La Côte des Légendes",
+   "pratique": null,
+   "difficulte": 1,
+   "km": 5.95,
+   "denivele": 142,
+   "descente": 142,
+   "minutes": [
+    30,
+    60
+   ],
+   "g": [
+    -4.38798,
+    48.55191
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/211967"
+  },
+  {
+   "id": "211968",
+   "nom": "circuit 8 - la vallee des moulins",
+   "commune": "le folgoet",
+   "secteur": "La Côte des Légendes",
+   "pratique": null,
+   "difficulte": 3,
+   "km": 23.05,
+   "denivele": 267,
+   "descente": 267,
+   "minutes": [
+    120,
+    240
+   ],
+   "g": [
+    -4.33494,
+    48.56008
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/211968"
+  },
+  {
+   "id": "181744",
+   "nom": "circuit 10 - tour de l'aber wrac'h cote mer",
+   "commune": "landeda",
+   "secteur": "Le Pays des Abers",
+   "pratique": "bac",
+   "difficulte": 1,
+   "km": 10.8,
+   "denivele": 240,
+   "descente": 240,
+   "minutes": [
+    60,
+    120
+   ],
+   "g": [
+    -4.55988,
+    48.59772
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/181744"
+  },
+  {
+   "id": "181748",
+   "nom": "circuit 11 - tour de la presqu'ile sainte marguerite",
+   "commune": "landeda",
+   "secteur": "Le Pays des Abers",
+   "pratique": null,
+   "difficulte": 3,
+   "km": 21.91,
+   "denivele": 217,
+   "descente": 217,
+   "minutes": [
+    120,
+    240
+   ],
+   "g": [
+    -4.56356,
+    48.59802
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/181748"
+  },
+  {
+   "id": "181756",
+   "nom": "circuit 12 - coat meal - treglonou - bourg blanc",
+   "commune": "treglonou",
+   "secteur": "Le Pays des Abers",
+   "pratique": null,
+   "difficulte": 1,
+   "km": 10.74,
+   "denivele": 142,
+   "descente": 142,
+   "minutes": [
+    60,
+    120
+   ],
+   "g": [
+    -4.50485,
+    48.54608
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/181756"
+  },
+  {
+   "id": "181760",
+   "nom": "circuit 13 - tariec - plouvien",
+   "commune": "treglonou",
+   "secteur": "Le Pays des Abers",
+   "pratique": null,
+   "difficulte": 2,
+   "km": 17.74,
+   "denivele": 211,
+   "descente": 211,
+   "minutes": [
+    100,
+    200
+   ],
+   "g": [
+    -4.5048,
+    48.54597
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/181760"
+  },
+  {
+   "id": "203919",
+   "nom": "circuit 14 - tour de plouguerneau",
+   "commune": "korejou",
+   "secteur": "Le Pays des Abers",
+   "pratique": null,
+   "difficulte": 3,
+   "km": 24.34,
+   "denivele": 247,
+   "descente": 247,
+   "minutes": [
+    140,
+    280
+   ],
+   "g": [
+    -4.51325,
+    48.62836
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/203919"
+  },
+  {
+   "id": "181769",
+   "nom": "circuit 15 - du korejou a kelerdut",
+   "commune": "plouguerneau",
+   "secteur": "Le Pays des Abers",
+   "pratique": null,
+   "difficulte": 1,
+   "km": 12.22,
+   "denivele": 37,
+   "descente": 37,
+   "minutes": [
+    60,
+    120
+   ],
+   "g": [
+    -4.51335,
+    48.6283
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/181769"
+  },
+  {
+   "id": "203920",
+   "nom": "circuit 16 - autour de bourg blanc",
+   "commune": "bourg-blanc",
+   "secteur": "Le Pays des Abers",
+   "pratique": null,
+   "difficulte": 1,
+   "km": 5.32,
+   "denivele": 33,
+   "descente": 33,
+   "minutes": [
+    30,
+    60
+   ],
+   "g": [
+    -4.50355,
+    48.49212
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/203920"
+  },
+  {
+   "id": "181762",
+   "nom": "circuit 17 - bourg blanc - kervalan - kergonc",
+   "commune": "bourg-blanc",
+   "secteur": "Le Pays des Abers",
+   "pratique": null,
+   "difficulte": 2,
+   "km": 14.9,
+   "denivele": 107,
+   "descente": 107,
+   "minutes": [
+    75,
+    160
+   ],
+   "g": [
+    -4.50242,
+    48.49222
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/181762"
+  },
+  {
+   "id": "212375",
+   "nom": "circuit 20 - a lassaut du fort de toulbroch",
+   "commune": "locmaria-plouzane",
+   "secteur": "Iroise Bretagne",
+   "pratique": null,
+   "difficulte": 2,
+   "km": 13.49,
+   "denivele": 229,
+   "descente": 229,
+   "minutes": [
+    80,
+    150
+   ],
+   "g": [
+    -4.6736,
+    48.3547
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/212375"
+  },
+  {
+   "id": "212162",
+   "nom": "circuit 21 - panoramique de kermorvan",
+   "commune": "trebabu",
+   "secteur": "Iroise Bretagne",
+   "pratique": null,
+   "difficulte": 1,
+   "km": 9.37,
+   "denivele": 159,
+   "descente": 159,
+   "minutes": [
+    60,
+    105
+   ],
+   "g": [
+    -4.74704,
+    48.36692
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/212162"
+  },
+  {
+   "id": "212151",
+   "nom": "circuit 22 - sur le sentier des phares",
+   "commune": "le conquet",
+   "secteur": "Iroise Bretagne",
+   "pratique": null,
+   "difficulte": 3,
+   "km": 21.34,
+   "denivele": 352,
+   "descente": 352,
+   "minutes": [
+    120,
+    240
+   ],
+   "g": [
+    -4.77029,
+    48.33089
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/212151"
+  },
+  {
+   "id": "212163",
+   "nom": "circuit 23 - au coeur de la nature",
+   "commune": "treouergat",
+   "secteur": "Iroise Bretagne",
+   "pratique": null,
+   "difficulte": 1,
+   "km": 6.35,
+   "denivele": 92,
+   "descente": 92,
+   "minutes": [
+    30,
+    60
+   ],
+   "g": [
+    -4.60339,
+    48.49706
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/212163"
+  },
+  {
+   "id": "212167",
+   "nom": "circuit 24 - a travers les bois : circuit treouergat-lanrivoare",
+   "commune": "treouergat",
+   "secteur": "Iroise Bretagne",
+   "pratique": null,
+   "difficulte": 2,
+   "km": 14.87,
+   "denivele": 138,
+   "descente": 138,
+   "minutes": [
+    80,
+    150
+   ],
+   "g": [
+    -4.60339,
+    48.49706
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/212167"
+  },
+  {
+   "id": "212169",
+   "nom": "circuit 25 - tour de l'aber ildut",
+   "commune": "lanildut",
+   "secteur": "Iroise Bretagne",
+   "pratique": "bac",
+   "difficulte": 2,
+   "km": 12.91,
+   "denivele": 145,
+   "descente": 147,
+   "minutes": [
+    75,
+    150
+   ],
+   "g": [
+    -4.75701,
+    48.47121
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/212169"
+  },
+  {
+   "id": "298199",
+   "nom": "circuit 30 - pointe du petit minou - keryann - fort du mengant",
+   "commune": "locmaria-plouzane",
+   "secteur": "Brest Métropole",
+   "pratique": null,
+   "difficulte": 1,
+   "km": 10.03,
+   "denivele": 237,
+   "descente": 237,
+   "minutes": [
+    60,
+    120
+   ],
+   "g": [
+    -4.61529,
+    48.33995
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/298199"
+  },
+  {
+   "id": "298201",
+   "nom": "circuit 31 - pointe du petit minou - les quatre pompes",
+   "commune": "brest",
+   "secteur": "Brest Métropole",
+   "pratique": null,
+   "difficulte": 2,
+   "km": 21.23,
+   "denivele": 570,
+   "descente": 570,
+   "minutes": [
+    120,
+    240
+   ],
+   "g": [
+    -4.52571,
+    48.36567
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/298201"
+  },
+  {
+   "id": "298206",
+   "nom": "circuit 32 - les quatre pompes - la trinite - pointe du petit minou",
+   "commune": "brest",
+   "secteur": "Brest Métropole",
+   "pratique": null,
+   "difficulte": 3,
+   "km": 25.77,
+   "denivele": 650,
+   "descente": 650,
+   "minutes": [
+    150,
+    300
+   ],
+   "g": [
+    -4.52571,
+    48.36567
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/298206"
+  },
+  {
+   "id": "298207",
+   "nom": "circuit 33 - les rives de la penfeld",
+   "commune": "brest",
+   "secteur": "Brest Métropole",
+   "pratique": null,
+   "difficulte": 1,
+   "km": 4.92,
+   "denivele": 100,
+   "descente": 100,
+   "minutes": [
+    30,
+    60
+   ],
+   "g": [
+    -4.51852,
+    48.40166
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/298207"
+  },
+  {
+   "id": "320103",
+   "nom": "circuit 35 - vallon du costour - vallon du stang alar",
+   "commune": "guipavas",
+   "secteur": "Brest Métropole",
+   "pratique": "accestransport",
+   "difficulte": 1,
+   "km": 7.33,
+   "denivele": 190,
+   "descente": 190,
+   "minutes": [
+    40,
+    80
+   ],
+   "g": [
+    -4.44038,
+    48.39916
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/320103"
+  },
+  {
+   "id": "320104",
+   "nom": "circuit 36 - brest urban trail",
+   "commune": "brest",
+   "secteur": "Brest Métropole",
+   "pratique": "accestransport_trailurbain",
+   "difficulte": 2,
+   "km": 17.56,
+   "denivele": 400,
+   "descente": 400,
+   "minutes": [
+    100,
+    200
+   ],
+   "g": [
+    -4.4344,
+    48.39545
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/320104"
+  },
+  {
+   "id": "294133",
+   "nom": "circuit 40 - roc'h an daol",
+   "commune": "saint-eloy",
+   "secteur": "Pays de Landerneau-Daoulas",
+   "pratique": null,
+   "difficulte": 1,
+   "km": 5.87,
+   "denivele": 130,
+   "descente": 130,
+   "minutes": [
+    35,
+    75
+   ],
+   "g": [
+    -4.09381,
+    48.36811
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/294133"
+  },
+  {
+   "id": "294135",
+   "nom": "circuit 41 - moulin pen ar c'hoat - st divy",
+   "commune": "saint-divy",
+   "secteur": "Pays de Landerneau-Daoulas",
+   "pratique": null,
+   "difficulte": 1,
+   "km": 8.21,
+   "denivele": 140,
+   "descente": 140,
+   "minutes": [
+    45,
+    90
+   ],
+   "g": [
+    -4.33352,
+    48.45429
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/294135"
+  },
+  {
+   "id": "294140",
+   "nom": "circuit 42 - treflevenez",
+   "commune": "treflevenez",
+   "secteur": "Pays de Landerneau-Daoulas",
+   "pratique": null,
+   "difficulte": 1,
+   "km": 12.2,
+   "denivele": 270,
+   "descente": 270,
+   "minutes": [
+    75,
+    150
+   ],
+   "g": [
+    -4.17119,
+    48.41523
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/294140"
+  },
+  {
+   "id": "294143",
+   "nom": "circuit 43 - saint urbain",
+   "commune": "saint-urbain",
+   "secteur": "Pays de Landerneau-Daoulas",
+   "pratique": null,
+   "difficulte": 2,
+   "km": 13.36,
+   "denivele": 270,
+   "descente": 270,
+   "minutes": [
+    80,
+    160
+   ],
+   "g": [
+    -4.23022,
+    48.40475
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/294143"
+  },
+  {
+   "id": "294145",
+   "nom": "circuit 44 - saint urbain - treflevenez - parc des paquerettes",
+   "commune": "saint-urbain",
+   "secteur": "Pays de Landerneau-Daoulas",
+   "pratique": null,
+   "difficulte": 3,
+   "km": 28.75,
+   "denivele": 570,
+   "descente": 570,
+   "minutes": [
+    165,
+    330
+   ],
+   "g": [
+    -4.23022,
+    48.40475
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/294145"
+  },
+  {
+   "id": "294146",
+   "nom": "circuit 45 - trail urbain 11km",
+   "commune": "landerneau",
+   "secteur": "Pays de Landerneau-Daoulas",
+   "pratique": "accestransport_trailurbain",
+   "difficulte": 1,
+   "km": 11.59,
+   "denivele": 200,
+   "descente": 200,
+   "minutes": [
+    60,
+    120
+   ],
+   "g": [
+    -4.25054,
+    48.44985
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/294146"
+  },
+  {
+   "id": "294147",
+   "nom": "circuit 46 - trail urbain 15km",
+   "commune": "landerneau",
+   "secteur": "Pays de Landerneau-Daoulas",
+   "pratique": "accestransport_trailurbain",
+   "difficulte": 2,
+   "km": 15.9,
+   "denivele": 300,
+   "descente": 300,
+   "minutes": [
+    90,
+    180
+   ],
+   "g": [
+    -4.25054,
+    48.44985
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/294147"
+  },
+  {
+   "id": "230992",
+   "nom": "circuit 50 - circuit des roz",
+   "commune": "pont-de-buis-les-quimerch",
+   "secteur": "Presqu'Île de Crozon - Aulne Maritime",
+   "pratique": null,
+   "difficulte": 1,
+   "km": 5.96,
+   "denivele": 208,
+   "descente": 208,
+   "minutes": [
+    40,
+    80
+   ],
+   "g": [
+    -4.09211,
+    48.25141
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/230992"
+  },
+  {
+   "id": "230994",
+   "nom": "circuit 54 - circuit d'argol",
+   "commune": "argol",
+   "secteur": "Presqu'Île de Crozon - Aulne Maritime",
+   "pratique": null,
+   "difficulte": 3,
+   "km": 20.17,
+   "denivele": 319,
+   "descente": 319,
+   "minutes": [
+    120,
+    240
+   ],
+   "g": [
+    -4.31483,
+    48.2464
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/230994"
+  },
+  {
+   "id": "230995",
+   "nom": "circuit 55 - tour de landevennec",
+   "commune": "landevennec",
+   "secteur": "Presqu'Île de Crozon - Aulne Maritime",
+   "pratique": null,
+   "difficulte": 3,
+   "km": 18.38,
+   "denivele": 418,
+   "descente": 418,
+   "minutes": [
+    110,
+    220
+   ],
+   "g": [
+    -4.26767,
+    48.29316
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/230995"
+  },
+  {
+   "id": "230993",
+   "nom": "circuit 56 - argol - landevennec",
+   "commune": "argol",
+   "secteur": "Presqu'Île de Crozon - Aulne Maritime",
+   "pratique": null,
+   "difficulte": 4,
+   "km": 35.77,
+   "denivele": 790,
+   "descente": 790,
+   "minutes": [
+    225,
+    450
+   ],
+   "g": [
+    -4.31483,
+    48.2464
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/230993"
+  },
+  {
+   "id": "317638",
+   "nom": "circuit 60 - boucle de sainte anne",
+   "commune": "plonevez-porzay",
+   "secteur": "Menez-Hom Atlantique",
+   "pratique": null,
+   "difficulte": 1,
+   "km": 3.83,
+   "denivele": 50,
+   "descente": 50,
+   "minutes": [
+    20,
+    40
+   ],
+   "g": [
+    -4.26787,
+    48.13044
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/317638"
+  },
+  {
+   "id": "317641",
+   "nom": "circuit 61 - circuit de l'anse",
+   "commune": "plonevez-porzay",
+   "secteur": "Menez-Hom Atlantique",
+   "pratique": null,
+   "difficulte": 1,
+   "km": 8.27,
+   "denivele": 150,
+   "descente": 150,
+   "minutes": [
+    45,
+    90
+   ],
+   "g": [
+    -4.26799,
+    48.13006
+   ],
+   "source": "https://espacestrail.run/fr/finistrail/parcours/317641"
+  }
+ ]
+}

@@ -60,21 +60,39 @@ describe("l'inventaire des sites remarquables", () => {
   });
 
   it("chaque lieu porte sa position, sa catégorie et sa source OSM", () => {
+    /* 🔄 L'EMPRISE EST DÉRIVÉE, PLUS ÉCRITE — 11/11/2026. Ces quatre bornes
+       étaient celles de la seule CCPCAM ; la couche de lieux a été étendue aux
+       cinq emprises des offices (jusqu'à 48,71 N et −4,83 O), et le test a
+       accusé des lieux parfaitement justes. ⭐ La couche de lieux existe pour
+       servir les tracés : sa borne est l'union des emprises, et `ot.json` la
+       porte déjà. Une borne recopiée ici vieillissait à chaque territoire.
+     *
+     * 🔴 ET ON BALAIE AVANT D'AFFIRMER — 12/11/2026. La version d'avant posait
+     *    SIX `expect()` par lieu : 1 358 lieux passaient en 200 ms, 5 676 en
+     *    3 761 ms, soit ~34 000 assertions, et le test a commencé à DÉPASSER
+     *    les cinq secondes de vitest sous charge parallèle. Un échec
+     *    intermittent sur un test qui passe seul.
+     *    ⭐ La parade était déjà écrite dans ce dépôt, dans `ot.test.ts` :
+     *    « cinquante mille assertions ne disent rien de plus que quatre, elles
+     *    coûtent seulement le temps de les compter ». On ramasse les fautifs,
+     *    puis on affirme une fois — et le message les NOMME, ce que la boucle
+     *    ne faisait pas mieux. */
+    const sansLibelle: string[] = [];
+    const osmDouteux: string[] = [];
+    const horsEmprise: string[] = [];
     for (const l of inv.lieux) {
-      expect(inv.libelles[l.c], l.c).toBeTruthy();
-      expect(l.osm, l.osm).toMatch(/^[nw]\d+$/);
-      /* 🔄 L'EMPRISE EST DÉRIVÉE, PLUS ÉCRITE — 11/11/2026. Ces quatre bornes
-         étaient celles de la seule CCPCAM ; la couche de lieux a été étendue
-         aux emprises du Pays des Abers et de la Côte des Légendes (jusqu'à
-         48,71 N), et le test a accusé des lieux parfaitement justes.
-         ⭐ La couche de lieux existe pour servir les tracés : sa borne est
-         donc l'union des emprises des offices, et `ot.json` la porte déjà.
-         Une borne recopiée ici vieillissait à chaque territoire ajouté. */
-      expect(l.g[0], `${l.n ?? l.c} hors de l'union des emprises`).toBeGreaterThan(UNION[0] - MARGE);
-      expect(l.g[0], `${l.n ?? l.c}`).toBeLessThan(UNION[2] + MARGE);
-      expect(l.g[1], `${l.n ?? l.c}`).toBeGreaterThan(UNION[1] - MARGE);
-      expect(l.g[1], `${l.n ?? l.c}`).toBeLessThan(UNION[3] + MARGE);
+      const qui = l.n ?? l.c;
+      if (!inv.libelles[l.c]) sansLibelle.push(`${qui} → catégorie « ${l.c} »`);
+      if (!/^[nw]\d+$/.test(l.osm)) osmDouteux.push(`${qui} → osm « ${l.osm} »`);
+      const [lon, lat] = l.g;
+      if (lon <= UNION[0] - MARGE || lon >= UNION[2] + MARGE
+        || lat <= UNION[1] - MARGE || lat >= UNION[3] + MARGE) {
+        horsEmprise.push(`${qui} → ${lon},${lat}`);
+      }
     }
+    expect(sansLibelle, "catégorie(s) sans libellé").toEqual([]);
+    expect(osmDouteux, "source(s) OSM mal formée(s)").toEqual([]);
+    expect(horsEmprise, "lieu(x) hors de l'union des emprises + marge").toEqual([]);
   });
 
   it("⚠️ un lieu anonyme se nomme par sa CATÉGORIE, jamais par sa clé", () => {
