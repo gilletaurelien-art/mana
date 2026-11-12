@@ -21,6 +21,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { WALKS, distAuTrace } from "./walks";
+import { BoutonSos } from "./Sos";
 import type { Walk, WalkPoint, Etape } from "./walks";
 import { Atlas } from "./Atlas";
 import { Photo, image } from "./images/Photo";
@@ -141,10 +142,6 @@ export function EnChemin(
   const couverture = duCatalogue ? ILLUSTRATIONS[walk.slug]?.couverture : undefined;
   const im = couverture ? image(couverture) : undefined;
 
-  const sosHref = moi
-    ? `sms:112?&body=${encodeURIComponent(
-        `Urgence — ma position GPS : ${moi.lat.toFixed(5)}, ${moi.lon.toFixed(5)} — parcours ${walk.titre} (mana.bzh).`)}`
-    : "sms:112";
 
   return (
     <main className="ech">
@@ -350,10 +347,25 @@ export function EnChemin(
             {/* ⛔ L'APPEL D'URGENCE RESTE, ET IL PORTE LA POSITION. C'est la
                 seule fonction de cet écran dont l'absence pourrait coûter
                 autre chose qu'une déception. */}
-            <a className="ech-sos" href={sosHref}>
-              <span aria-hidden="true">112</span>
-              <span className="sr-only">Appeler les secours avec ma position</span>
-            </a>
+            {/* 🔴 « SOS », PLUS « 112 » — 12/11/2026, demande du fondateur.
+                ⭐ ET CELA RÉPARE UNE DISCORDANCE AU PASSAGE : le bouton
+                   portait un NUMÉRO, donc une promesse d'appel, alors qu'il
+                   prépare un SMS. « SOS » dit le besoin, pas le moyen — et
+                   c'est déjà le mot de l'autre écran de marche
+                   (`Promenade.tsx`, « SOS — partager ma position »), qui
+                   disait juste là où celui-ci disait un chiffre.
+                ⚠️ LE NOM ACCESSIBLE SUIT, POUR LA MÊME RAISON. Il annonçait
+                   « Appeler les secours » devant un lien `sms:` : qui compte
+                   sur un appel vocal trouvait un brouillon de message. Un
+                   libellé ne doit pas promettre un geste que le lien ne fait
+                   pas. ⛔ Ce qui reste à trancher est le NUMÉRO lui-même —
+                   voir la note de `sosHref` plus haut. */}
+            <BoutonSos position={moi} parcours={walk.titre} classe="ech-sos">
+              <span aria-hidden="true">SOS</span>
+              <span className="sr-only">
+                Préparer un SMS de secours avec ma position
+              </span>
+            </BoutonSos>
           </div>
         </section>
       </div>

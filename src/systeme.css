@@ -1236,7 +1236,7 @@
 /* ═══ ÉCRAN 4 — EN CHEMIN, IMMERSIF ═══════════════════════════════════════
    ⚠️ `100svh` et non `100vh` : sur mobile, `vh` compte la barre d'adresse
       comme si elle n'existait pas, et le bas de l'écran — c'est-à-dire la
-      carte flottante et le 112 — passe sous le navigateur.                  */
+      carte flottante et le SOS — passe sous le navigateur.                  */
 .ech {
   position: relative; isolation: isolate;
   min-height: 100svh; display: flex; flex-direction: column;
@@ -1409,7 +1409,7 @@
   background: var(--nuit); color: var(--craie);
 }
 .ech-pause:focus-visible { outline: 2px solid var(--ocre); outline-offset: 3px; }
-/* ⚠️ Le 112 est de la TAILLE D'UN POUCE MOUILLÉ et séparé du reste : c'est
+/* ⚠️ Le SOS est de la TAILLE D'UN POUCE MOUILLÉ et séparé du reste : c'est
    la seule cible qu'on doit pouvoir atteindre sans regarder, et la seule
    qu'on ne doit jamais toucher par erreur — d'où l'écart, pas la couleur. */
 .ech-sos {
@@ -1562,4 +1562,84 @@
        carte : elle reste le corps de l'app, pas un panneau posé dessus */
     box-shadow: 0 0 60px rgb(25 43 67 / 22%);
   }
+}
+
+/* ══ LA CONFIRMATION DU SOS ═══════════════════════════════════════════════
+   🔴 12/11/2026, demande du fondateur : « si le bouton est cliqué, demande
+   une validation avec un pop-up expliquant ce qui se passe si confirmation.
+   Propose l'annulation à côté de confirmation ».
+   ⭐ ELLE EST LA SEULE SURFACE MODALE DE CETTE APPLICATION, et c'est voulu :
+      une modale interrompt, et on n'interrompt que pour un geste qu'on ne
+      peut pas reprendre. Ici le geste ouvre l'application de messages de
+      quelqu'un qui marche — on ne le déclenche pas par une manche. */
+.sos-voile {
+  /* ⚠️ `--z-voile`, PAS UN NOMBRE. L'échelle existe dans `tokens.css`
+     (carte 0 · relevé 10 · panneau 20 · barre 30 · voile 40 · modale 50) et
+     c'est elle qui garantit que ce voile passe au-dessus de la barre du bas.
+     Un 60 écrit à la main aurait marché aujourd'hui et perdu la raison pour
+     laquelle il marchait. */
+  position: fixed; inset: 0; z-index: var(--z-voile);
+  display: grid; place-items: center; padding: var(--sp-2);
+  background: color-mix(in srgb, #192b43 62%, transparent);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+/* ⭐ LA MÊME MATIÈRE QUE LES VOLETS DE LA CARTE — verre, trait de craie,
+   arrondi commun. « Un panneau et une bulle sont deux tailles du même
+   objet » ; une modale qui invente sa propre surface fait croire à un
+   écran venu d'ailleurs, et c'est le pire moment pour en douter. */
+.sos-feuille {
+  position: relative; z-index: var(--z-modale);
+  width: min(400px, 100%); max-height: 86vh; overflow-y: auto;
+  display: grid; gap: var(--sp-1);
+  padding: var(--sp-3) var(--sp-2) var(--sp-2);
+  border-radius: var(--r-l); border: 1px solid var(--bulle-trait);
+  background: color-mix(in srgb, var(--bulle-unie) 96%, transparent);
+  color: var(--craie); box-shadow: var(--ombre-levee);
+}
+.sos-titre {
+  margin: 0; font-family: var(--titre); font-size: var(--t-m);
+  color: var(--craie);
+}
+.sos-dire { margin: 0; font-size: var(--t-s); line-height: 1.5; }
+/* ⚠️ LE TEXTE EXACT DU SMS, PAS UN RÉSUMÉ — il contient la position, et
+   c'est précisément ce qu'on ne doit pas découvrir après coup. Il se
+   distingue du reste pour qu'on le lise comme une CITATION. */
+.sos-message {
+  margin: 0; padding: var(--sp-1) var(--sp-2);
+  border-left: 3px solid var(--ocre);
+  border-radius: 0 var(--r-m) var(--r-m) 0;
+  background: color-mix(in srgb, var(--craie) 8%, transparent);
+  font-size: var(--t-xs); line-height: 1.5; opacity: .92;
+  overflow-wrap: anywhere;
+}
+.sos-sans {
+  margin: 0; font-size: var(--t-xs); line-height: 1.45;
+  color: var(--ocre-clair); font-weight: 600;
+}
+/* ⭐ CÔTE À CÔTE, ET L'ANNULATION EN PREMIER — à la lecture comme au focus.
+   Les deux gestes se comparent par leur libellé, jamais par leur place
+   seule ; mais quand l'un des deux est irréversible, l'ordre compte aussi. */
+.sos-gestes {
+  display: flex; gap: var(--sp-1); margin-top: var(--sp-1);
+}
+.sos-annuler, .sos-confirmer {
+  flex: 1 1 0; min-height: 48px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--r-rond); font: inherit; font-weight: 500;
+  text-decoration: none; cursor: pointer; border: 1px solid transparent;
+}
+.sos-annuler {
+  border-color: var(--bulle-trait); color: var(--craie); background: none;
+}
+/* 🔴 `--terre-sombre`, PAS `--terre`, ET LE DÉPÔT A DÉJÀ PAYÉ CE BOUTON-LÀ.
+   Dix lignes plus haut, `.ech-sos` porte la note : `--terre` sous de la craie
+   donne 3,45 — il n'y passait qu'en 18 px GRAS, et encore, à un pixel du
+   seuil. Ici le texte est de corps normal : l'exigence est 4,5 sans
+   discussion. `--terre-sombre` mesure 4,62 sous la craie. ⭐ Un jeton nommé
+   pour un contexte ne se transporte pas dans un autre sans qu'on remesure —
+   c'est écrit trois fois dans ce fichier, et c'est la troisième fois que ça
+   sert. */
+.sos-confirmer { background: var(--terre-sombre); color: var(--craie); }
+.sos-annuler:focus-visible, .sos-confirmer:focus-visible {
+  outline: 2px solid var(--ocre); outline-offset: 2px;
 }

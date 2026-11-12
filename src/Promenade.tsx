@@ -2,6 +2,7 @@ import { useEffect, useState, lazy, Suspense } from "react";
 import { baseUrl } from "./router";
 import { WALKS, distAuTrace, distM, effortLisible, MENTION } from "./walks";
 import { chargerItineraire } from "./catalogue";
+import { BoutonSos } from "./Sos";
 import type { Walk } from "./walks";
 import type { WalkPoint } from "./walks";
 import { WalkMap } from "./WalkMap";
@@ -271,11 +272,6 @@ export function Promenade({ slug }: { slug: string }) {
   // Le garde, désormais APRÈS tous les hooks (voir plus haut).
   if (!walk) return cherche ? <PromenadeEnChemin /> : <PromenadeInconnue slug={slug} />;
 
-  const sosHref = moi
-    ? `sms:112?&body=${encodeURIComponent(
-        `Urgence — ma position GPS : ${moi.lat.toFixed(5)}, ${moi.lon.toFixed(5)} — parcours ${walk.titre} (mana.bzh).`
-      )}`
-    : "sms:112";
 
   return (
     <main className="page">
@@ -315,9 +311,13 @@ export function Promenade({ slug }: { slug: string }) {
             >
               Exporter en GPX
             </button>
-            <a className="btn btn-primary" href={sosHref}>
+            {/* ⭐ MÊME COMPOSANT QUE L'ÉCRAN DE MARCHE, autre habillage :
+                le numéro, le message et la confirmation ne vivent qu'à un
+                endroit (`Sos.tsx`). Ils étaient écrits deux fois ici et là,
+                à cinq mots près. */}
+            <BoutonSos position={moi} parcours={walk.titre} classe="btn btn-primary">
               SOS — partager ma position
-            </a>
+            </BoutonSos>
           </div>
         </section>
 

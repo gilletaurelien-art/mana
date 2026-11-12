@@ -261,7 +261,7 @@ export default function App() {
       ) : routeRencontres(path) ? (
         <Rencontres base={B} slug={routeRencontres(path)!} />
       ) : routeEnChemin(path) ? (
-        /* debout, dehors : une information, des cibles de 56 px, le 112 */
+        /* debout, dehors : une information, des cibles de 56 px, le SOS */
         <EnChemin base={B} slug={routeEnChemin(path)!} />
       ) : routeComplet(path) ? (
         /* ⚠️ L'ANCIENNE PAGE RESTE ATTEIGNABLE, et ce n'est pas de
