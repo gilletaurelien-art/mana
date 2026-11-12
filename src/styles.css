@@ -3935,3 +3935,48 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
 .cp-volet .cp-picto-grand { color: var(--ocre); opacity: .9; }
 .cp-volet .cp-arretes > summary { color: var(--craie); }
 .cp-volet .cp-arretes li { color: var(--craie); opacity: .85; }
+
+/* ══ LA CARTE DU FINISTÈRE ET SES 116 TRACÉS ═════════════════════════════
+   🔴 12/11/2026, demande du fondateur : « la carte à afficher est celle du
+   Finistère avec tous les tracés de balade. Chaque tracé est cliquable. » */
+.carte-balades { margin: 0 0 var(--sp-2); display: grid; gap: 4px; }
+.carte-balades-plan {
+  width: 100%; border-radius: var(--r-l); overflow: hidden;
+  background: var(--kaki-sombre);
+}
+/* ⛔ L'ATTRIBUTION EST VISIBLE ET NE SE ROGNE PAS. `attributionControl:
+   false` la retire de maplibre : c'est alors à l'écran de la porter, et
+   l'ODbL comme la licence de l'IGN demandent une mention VISIBLE. Elle a
+   déjà été coupée une fois sur cet écran, pour gagner seize pixels de
+   carte — un `title` ne se survole pas au pouce, dehors. */
+.carte-balades-credit {
+  margin: 0; padding: 0 var(--sp-1);
+  font-size: var(--t-xs); line-height: 1.4;
+  color: var(--texte-immersif-doux);
+}
+/* ⭐ LA BULLE DU TRACÉ TOUCHÉ — la même matière que les volets de la carte
+   du compositeur : verre, trait de craie, arrondi commun. « Un panneau et
+   une bulle sont deux tailles du même objet. » */
+.ot-bulle {
+  margin: 0 0 var(--sp-2); padding: var(--sp-2);
+  display: grid; gap: 4px;
+  border-radius: var(--r-l); border: 1px solid var(--bulle-trait);
+  background: color-mix(in srgb, var(--bulle-unie) 94%, transparent);
+  color: var(--craie); box-shadow: var(--ombre-carte);
+}
+.ot-bulle-titre {
+  margin: 0; font-family: var(--titre); font-size: var(--t-m); line-height: 1.2;
+  color: var(--craie);
+}
+/* ⚠️ LA LIGNE DE FAITS DE LA BULLE EST SUR FOND SOMBRE, celle de la liste
+   sur fond clair — même classe, deux fonds, donc deux tons. C'est
+   exactement la leçon que `.ot-filtre` a payée trois fois : le ton se
+   choisit au FOND, pas au composant. */
+.ot-bulle .ot-item-meta { color: var(--texte-immersif-doux); }
+.ot-bulle-lien {
+  justify-self: start; margin-top: 2px;
+  font-size: var(--t-xs); color: var(--ocre-clair);
+}
+/* ⭐ LA LIGNE TENUE S'ALLUME DANS LA LISTE, pour que les deux surfaces
+   disent la même chose. Un liseré, pas un fond : la liste reste une liste. */
+.ot-item.est-tenu { box-shadow: inset 3px 0 0 var(--ocre); padding-left: var(--sp-1); }

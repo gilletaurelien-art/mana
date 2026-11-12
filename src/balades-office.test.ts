@@ -174,6 +174,68 @@ describe("les balades des Offices — la liste se lit", () => {
     expect(ratio(jeton("craie"), jeton("kaki")), "craie sur kaki").toBeGreaterThanOrEqual(4.5);
   });
 
+  it("⭐ la carte montre TOUS les tracés, et elle suit les mêmes filtres que la liste", () => {
+    /* 🔴 12/11/2026 : « la carte à afficher est celle du Finistère avec tous
+       les tracés de balade ». ⚠️ Et elle reçoit `visibles`, PAS `ot` : une
+       carte qui montrerait les 116 pendant que la liste en montre 17 ferait
+       deux écrans qui se contredisent, et c'est la carte qu'on croit. */
+    expect(ecran, "la carte a quitté la page").toContain("<CarteBalades");
+    expect(ecran, "la carte ne suit pas les filtres").toMatch(/circuits=\{visibles\}/);
+    expect(ecran, "le jeu de cartes est resté sur cette page").not.toContain("<SwipeBalades");
+  });
+
+  it("⚠️ le jeu de cartes n'est pas orphelin : il a gardé son écran", () => {
+    /* ⭐ RETIRER N'EST PAS SUPPRIMER, et la différence se vérifie. Le jeu
+       `SwipeBalades` reste la vue « Balades » de `/carte` ; le laisser sans
+       appelant aurait fait un composant mort que ses tests auraient continué
+       de garder au vert — le fantôme que ce dépôt connaît. */
+    const ecranTerritoire = readFileSync(new URL("./EcranTerritoire.tsx", import.meta.url), "utf8");
+    expect(ecranTerritoire, "le jeu de cartes n'a plus aucun appelant")
+      .toContain("<SwipeBalades");
+  });
+
+  it("⛔ chaque tracé est cliquable, et le clavier passe par la liste", () => {
+    /* ⚠️ UNE COUCHE MAPLIBRE NE SE FOCALISE PAS. « Cliquable » ne doit pas
+       vouloir dire « à la souris seulement » — c'est écrit dans
+       `CarteReelle` depuis que le fondateur a demandé « cliquer sur le
+       tracé, tout simplement ». Le chemin clavier ici est la LISTE : son
+       focus allume le tracé, et les deux surfaces commandent le même état. */
+    const carte = readFileSync(new URL("./CarteBalades.tsx", import.meta.url), "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(carte, "le clic sur un tracé n'est pas écouté")
+      .toMatch(/on\("click", "balades-cible"/);
+    /* ⛔ ET LA CIBLE EST LARGE. Un trait de 2 px ne se touche pas au pouce :
+       la règle des 44 px vaut aussi pour une ligne. `CarteReelle` porte la
+       même paire trait/cible pour la même raison. */
+    expect(carte, "la cible de clic a la largeur du trait")
+      .toMatch(/"line-width": 18/);
+    expect(ecran, "le focus d'une ligne n'allume plus son tracé")
+      .toMatch(/onFocus=\{\(\) => setChoisi\(i\.slug\)\}/);
+  });
+
+  it("⛔ un choix que le filtre vient de masquer ne se garde pas", () => {
+    /* Une sélection invisible est pire qu'aucune : on choisit un circuit à
+       Crozon, on bascule sur « Abers », et la bulle continue d'annoncer un
+       circuit qui n'est plus ni sur la carte ni dans la liste. ⭐ Vérifié à
+       l'écran avant d'écrire ce garde — le choix tombe bien. */
+    expect(ecran).toMatch(/const tenu = visibles\.find\(\(i\) => i\.slug === choisi\) \?\? null/);
+  });
+
+  it("⛔ l'attribution de la carte est VISIBLE et suit le fond affiché", () => {
+    /* 🔴 `attributionControl: false` la retire de maplibre : c'est alors à
+       l'écran de la porter. L'ODbL et la licence de l'IGN demandent une
+       mention visible, et elle a DÉJÀ été rognée une fois sur cet écran pour
+       gagner seize pixels de carte. ⛔ Créditer OpenStreetMap sous une
+       photographie de l'IGN serait faux dans les deux sens : on citerait qui
+       n'a rien fourni, et on tairait qui a fourni. */
+    const carte = readFileSync(new URL("./CarteBalades.tsx", import.meta.url), "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(carte).toMatch(/attributionControl: false/);
+    expect(carte, "l'attribution ne dépend pas du fond").toMatch(/ATTRIBUTION\[fond\]/);
+    expect(css, "le crédit de la carte peut être rogné")
+      .not.toMatch(/\.carte-balades-credit \{[^}]*text-overflow/);
+  });
+
   it("⛔ un croisement vide se DIT, il ne se laisse pas lire comme une panne", () => {
     /* « VTT » + « Abers » rend zéro circuit. Sans phrase, la liste disparaît
        et l'écran ressemble à un chargement qui n'a pas abouti — mesuré à

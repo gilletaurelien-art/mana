@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { chargerOT, MOT_CLEF_OFFICE, PRATIQUE, type ItineraireOT, type Recueil } from "./ot";
-import { SwipeBalades } from "./SwipeBalades";
+import { CarteBalades } from "./CarteBalades";
+import { lireFond, type Fond } from "./carte-fond";
 import { baseUrl } from "./router";
 
 /**
@@ -13,21 +14,28 @@ import { baseUrl } from "./router";
  *    « ce que MANA calcule » et « ce que l'Office a tracé » se perdait dans
  *    le défilement. Une adresse à part la rend visible dès la barre du bas.
  *
- * 🔴 LES CARTES EN TÊTE — demande du fondateur, en pointant le jeu de
- *    cartes de `/carte` (le bouton « Balades ») : une carte aérienne, le
- *    tracé dessus, les chiffres déclarés par l'Office, un cœur, une flèche
- *    pour la suivante. `SwipeBalades` les porte déjà — ce sont LES MÊMES
- *    46 circuits (`chargerOT()`), rien à reconstruire. La liste texte qui
- *    vivait seule ici reste EN DESSOUS : le jeu feuillette un circuit à la
- *    fois, la liste les balaie tous d'un coup — deux lectures, pas une
- *    redondance.
- * ⚠️ DEUX `<main>` SUR CETTE PAGE, ET C'EST ASSUMÉ. `SwipeBalades` est un
- *    écran complet ailleurs dans l'app (`/carte`, bouton « Balades ») ; le
- *    rejouer ici tel quel évite de le découper en sachant que la moitié
- *    settings-sensible (glisser, mesurer la feuille, filtrer) reste intacte
- *    et éprouvée. Un second `<main>` imbriqué est imparfait, pas invalide :
- *    aucun navigateur ne le refuse, et le découper proprement est un
- *    chantier à part, pas un geste du soir.
+ * 🔴 LE JEU DE CARTES A CÉDÉ LA PLACE À LA CARTE DU FINISTÈRE — 12/11/2026,
+ *    demande du fondateur : « la carte à afficher est celle du Finistère avec
+ *    tous les tracés de balade. Chaque tracé est cliquable. »
+ *
+ *    Du 3 au 12/11, cette page ouvrait sur `SwipeBalades` : une carte par
+ *    circuit, qu'on feuilletait. ⭐ C'était la bonne réponse à « montre-moi
+ *    CE circuit » et la mauvaise à « y a-t-il une balade près de chez moi ? » —
+ *    il fallait traverser cent seize fiches pour le savoir. Une vue
+ *    d'ensemble répond en un regard ; feuilleter répond en cent seize gestes.
+ *
+ * ⚠️ LE JEU N'EST PAS SUPPRIMÉ, IL EST RENDU À SON ÉCRAN. `SwipeBalades`
+ *    reste la vue « Balades » de `/carte` (`EcranTerritoire`), où elle a sa
+ *    place et où ses tests la tiennent. Vérifié avant de la retirer d'ici :
+ *    elle y a toujours un appelant. ⭐ Et l'ancien commentaire des « deux
+ *    `<main>` imbriqués » part avec elle — le défaut qu'il assumait n'existe
+ *    plus, et une note qui survit à sa cause devient un faux témoin.
+ *
+ * ⭐ DEUX LECTURES RESTENT, ET ELLES COMMANDENT LE MÊME ÉTAT : la carte
+ *    (où ça va) et la liste (ce que c'est). Cliquer un tracé allume sa ligne ;
+ *    parcourir la liste au clavier allume son tracé. Une couche maplibre ne
+ *    se focalise pas — la liste EST le chemin clavier de cette carte, ce
+ *    n'est pas un oubli.
  *
  * ⛔ CE NE SONT PAS DES ITINÉRAIRES MANA — voir `ot.ts`. Le lien mène à LEUR
  *    fiche : c'est elle qui fait foi, et c'est eux qui entretiennent le
@@ -55,6 +63,18 @@ export function BaladesOT() {
    *    aurait vieilli à chaque ajout, sans bruit.
    */
   const [offices, setOffices] = useState<Recueil["offices"]>([]);
+  /**
+   * 🔴 LE TRACÉ QU'ON TIENT — 12/11/2026 : « chaque tracé est cliquable ».
+   *    Il est désigné par son `slug`, pas par un index : les filtres
+   *    réordonnent la liste à chaque clic, et un index y pointerait sur un
+   *    autre circuit d'un filtre à l'autre.
+   */
+  const [choisi, setChoisi] = useState<string | null>(null);
+  /* ⚠️ LE FOND SE LIT APRÈS LE PREMIER RENDU, comme partout ailleurs :
+     `localStorage` n'existe pas au rendu serveur du prérendu, et l'état
+     initial doit être le DÉFAUT, pas l'autre valeur. */
+  const [fond, setFond] = useState<Fond>("plan");
+  useEffect(() => { setFond(lireFond()); }, []);
 
   useEffect(() => {
     chargerOT()
@@ -71,15 +91,14 @@ export function BaladesOT() {
     (i) => (pratique === "tous" || i.pratique === pratique)
         && (pays === "tous" || i.ot === pays),
   );
+  /* ⛔ UN CHOIX QUE LE FILTRE VIENT DE MASQUER NE SE GARDE PAS. Sans ceci, on
+     choisit un circuit à Crozon, on bascule sur « Abers », et la bulle
+     continue d'annoncer un circuit qui n'est plus ni sur la carte ni dans la
+     liste — une sélection invisible est pire qu'aucune. */
+  const tenu = visibles.find((i) => i.slug === choisi) ?? null;
 
   return (
     <>
-      {/* ⚠️ `surCarte` MÈNE À LA CARTE DU TERRITOIRE, SANS Y CENTRER LE POINT.
-          Depuis `/carte`, ce geste centre la carte sur le lieu visé — un état
-          interne à `EcranTerritoire`. Cette page est une adresse à part, sans
-          cet état : elle mène honnêtement à la carte, elle ne prétend pas la
-          recentrer. */}
-      <SwipeBalades surCarte={() => { window.location.href = `${B}/carte`; }} />
 
       <main className="page page-composer">
         <div className="wrap">
@@ -182,6 +201,49 @@ export function BaladesOT() {
             </div>
           </header>
 
+          {/* ══ LA CARTE DU FINISTÈRE, AVEC TOUS LES TRACÉS ════════════
+              🔴 12/11/2026, demande du fondateur : « la carte à afficher est
+              celle du Finistère avec tous les tracés de balade. Chaque tracé
+              est cliquable. » La page ouvrait sur un JEU DE CARTES qui
+              montrait un circuit à la fois : pour savoir s'il y a une balade
+              près de chez soi, il fallait feuilleter cent seize fiches.
+              ⭐ LE JEU N'EST PAS PERDU — il reste l'écran « Balades » de
+                 `/carte`, où il a sa place : on y feuillette, ici on balaie.
+                 Deux lectures d'une même donnée, pas une redondance.
+              ⚠️ ET LA CARTE SUIT LES FILTRES DE LA BANNIÈRE, comme la liste.
+                 Une carte qui montrerait les 116 pendant que la liste en
+                 montre 17 ferait deux écrans qui se contredisent. */}
+          {ot !== null && ot.length > 0 && (
+            <CarteBalades
+              circuits={visibles}
+              fond={fond}
+              choisi={tenu?.slug ?? null}
+              onChoisir={setChoisi}
+              hauteur="52vh"
+            />
+          )}
+
+          {/* ⭐ LA BULLE DIT CE QU'ON VIENT DE TOUCHER, et elle porte le lien
+              vers la fiche de l'Office — qui fait foi, et qui est le crédit.
+              ⚠️ Les mêmes chiffres que la liste, au même endroit du texte :
+                 deux formulations du même fait se mettent à diverger. */}
+          {tenu && (
+            <aside className="ot-bulle">
+              <p className="ot-bulle-titre">{tenu.titre}</p>
+              <p className="ot-item-meta">
+                {PRATIQUE[tenu.pratique]} ·{" "}
+                {tenu.km.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} km ·{" "}
+                {tenu.boucle ? "boucle" : "aller simple"}
+                {tenu.difficulte && ` · ${tenu.difficulte}`}
+                {tenu.commune && ` · ${tenu.commune}`}
+              </p>
+              <a className="ot-bulle-lien" href={tenu.source}
+                 target="_blank" rel="noreferrer noopener">
+                La fiche de l'Office
+              </a>
+            </aside>
+          )}
+
           <div className="cp-corps">
             {ot === null && (
               <p className="page-note">Chargement des circuits…</p>
@@ -196,7 +258,17 @@ export function BaladesOT() {
                 <ul className="ot-liste">
                   {visibles.map((i) => (
                     <li key={i.slug}>
-                      <a className="ot-item" href={i.source} target="_blank" rel="noreferrer noopener">
+                      {/* ⭐ LE FOCUS ALLUME LE TRACÉ — c'est le chemin
+                          CLAVIER de cette carte. Une couche maplibre ne se
+                          focalise pas ; en parcourant la liste au clavier, on
+                          voit donc où va chaque circuit sur la carte, et les
+                          deux surfaces commandent le même état. ⚠️ `onFocus`
+                          et non `onMouseEnter` : survoler cent seize lignes
+                          en descendant ferait clignoter la carte. */}
+                      <a className={i.slug === tenu?.slug ? "ot-item est-tenu" : "ot-item"}
+                         aria-current={i.slug === tenu?.slug ? "true" : undefined}
+                         onFocus={() => setChoisi(i.slug)}
+                         href={i.source} target="_blank" rel="noreferrer noopener">
                         <span className="ot-item-titre">{i.titre}</span>
                         <span className="ot-item-meta">
                           {PRATIQUE[i.pratique]} ·{" "}
