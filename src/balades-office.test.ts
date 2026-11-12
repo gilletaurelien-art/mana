@@ -108,6 +108,72 @@ describe("les balades des Offices — la liste se lit", () => {
     }
   });
 
+  it("⛔ tout ce qui commande vit DANS la bannière, rien ne traîne sous elle", () => {
+    /* 🔴 12/11/2026 : « tous les textes sous la bannière verte doivent migrer
+       dans la bannière verte ». ⭐ On garde la RÈGLE, pas une capture : les
+       deux groupes de filtres sont entre l'ouverture et la fermeture du
+       `<header>`, et le panneau qui suit ne porte plus que la liste. */
+    const entete = ecran.slice(ecran.indexOf("<header"), ecran.indexOf("</header>"));
+    expect(entete, "le filtre des pays a quitté la bannière").toContain('aria-label="Pays"');
+    expect(entete, "le filtre des pratiques a quitté la bannière").toContain('aria-label="Pratique"');
+    const apres = ecran.slice(ecran.indexOf("</header>"));
+    expect(apres, "un groupe de filtres est resté sous la bannière").not.toContain("ot-filtres");
+  });
+
+  it("⛔ plus de redondance : un seul compte, et « Office » n'est plus écrit trois fois", () => {
+    /* ⚠️ LA REDONDANCE SE COMPTAIT, elle ne se jugeait pas : le nombre de
+       circuits paraissait DEUX fois à quatre centimètres d'écart, et
+       « Office de tourisme » TROIS fois au-dessus de la liste — surtitre,
+       titre, mention de provenance.
+       ⭐ Ce garde compte dans le RENDU, commentaires retirés : c'est la seule
+          lecture qui corresponde à ce qu'on voit. */
+    const rendu = ecran.slice(ecran.indexOf("return ("));
+    expect([...rendu.matchAll(/circuit\{/g)].length, "le compte est écrit plus d'une fois")
+      .toBe(1);
+    expect(rendu, "le surtitre « Office de tourisme » est revenu")
+      .not.toMatch(/hero-label/);
+    /* 🔴 LA PHRASE DE PROVENANCE EST PARTIE LE 12/11, sur demande — et ce
+       garde est RETOURNÉ plutôt que supprimé, parce que ce qu'il protégeait
+       reste vrai sous une autre forme. `ot.ts` porte `⛔ CE NE SONT PAS DES
+       ITINÉRAIRES MANA` : ce n'est pas une phrase qu'il faut, c'est que
+       chaque entrée RENVOIE à l'Office qui l'entretient.
+       ⭐ Une phrase se supprime d'un geste ; un lien par entrée se verrait
+          manquer. On garde donc le MÉCANISME, qui est plus solide que le
+          texte qu'on vient d'enlever. */
+    expect(rendu, "le titre ne nomme plus les Offices")
+      .toMatch(/Les balades des Offices de Tourisme/);
+    expect(rendu, "une entrée de la liste ne renvoie plus à sa fiche d'origine")
+      .toMatch(/href=\{i\.source\}/);
+  });
+
+  it("⭐ les deux filtres ouvrent sur « tous » — aucun n'exclut au démarrage", () => {
+    /* 🔴 Demande du fondateur, 12/11 : « par défaut = tous les pays + Tous ».
+       ⚠️ Et ce n'est pas qu'une préférence : ce dépôt a déjà payé un défaut
+          qui exclut. Le filtre de durée du compositeur plafonnait à 24 h et
+          cachait PAR DÉFAUT les dix-sept plus longs itinéraires — la page
+          annonçait 1 032 et en montrait 1 015. Un filtre dont la valeur
+          initiale exclut ne paraît pas trop serré : il fait croire que le
+          reste n'existe pas. */
+    expect(ecran).toMatch(/setPratique\] = useState<[^>]*>\("tous"\)/);
+    expect(ecran).toMatch(/setPays\] = useState<string>\("tous"\)/);
+  });
+
+  it("⛔ les pastilles de la bannière portent une couleur, elles ne l'héritent pas", () => {
+    /* 🔴 TROISIÈME FOIS POUR `.ot-filtre`, et la plus coûteuse si elle était
+       passée. La règle porte `color: inherit` ; montées dans la bannière
+       KAKI, les pastilles auraient hérité de `.page-composer { color:
+       var(--nuit) }` — du bleu nuit sur du vert sombre, c'est-à-dire des
+       boutons peints et invisibles. C'est exactement ce qui est arrivé aux
+       vingt-trois genres de `.terr-calques` le 4/11.
+       ⭐ `inherit` n'est pas une valeur neutre, c'est une DÉLÉGATION : elle
+          change de réponse quand le composant change de parent. */
+    expect(css, "les pastilles de la bannière héritent encore leur couleur")
+      .toMatch(/\.ot-entete \.ot-filtre \{[^}]*color: var\(--craie\)/);
+    const blanc = "#ffffff";
+    void blanc;
+    expect(ratio(jeton("craie"), jeton("kaki")), "craie sur kaki").toBeGreaterThanOrEqual(4.5);
+  });
+
   it("⛔ un croisement vide se DIT, il ne se laisse pas lire comme une panne", () => {
     /* « VTT » + « Abers » rend zéro circuit. Sans phrase, la liste disparaît
        et l'écran ressemble à un chargement qui n'a pas abouti — mesuré à
@@ -116,12 +182,19 @@ describe("les balades des Offices — la liste se lit", () => {
     expect(ecran).toMatch(/Aucun circuit ne réunit ces deux choix/);
   });
 
-  it("⚠️ l'étiquette dit ce qu'on VOIT, l'en-tête dit ce qu'il Y A", () => {
-    /* ⭐ Deux nombres qui disent deux choses différentes, et chacun le dit.
-       L'étiquette annonçait « Tous les circuits » quoi qu'on ait filtré ;
-       avec deux filtres au lieu d'un, le décalage serait devenu la règle. */
-    expect(ecran, "l'étiquette ne suit pas la vue").toMatch(/visibles\.length\} circuit/);
-    expect(ecran, "l'en-tête ne dit plus le total").toMatch(/\{ot\.length\} circuit/);
+  it("⚠️ LE compte dit ce qu'on VOIT, et il n'y en a plus qu'un", () => {
+    /* 🔴 RETOURNÉ LE MÊME JOUR QUE SON ÉCRITURE, et c'est instructif. Écrit
+       le matin, il gardait DEUX nombres qui disaient deux choses : le total
+       du recueil dans la bannière, la vue filtrée sous elle. Le fondateur a
+       tranché l'après-midi — « il y a de la redondance : simplifie » — et
+       les deux surfaces ont fusionné.
+       ⭐ CE QUI SURVIT EST LA MOITIÉ QUI COMPTE : le nombre affiché doit
+          suivre ce qu'on voit. Un compte qui annonce le total au-dessus
+          d'une liste filtrée se contredit dès qu'on touche un filtre, et
+          c'est le nombre AFFICHÉ qu'on lit, jamais celui du recueil. */
+    expect(ecran, "le compte ne suit pas la vue").toMatch(/visibles\.length\} circuit/);
+    expect(ecran, "le total du recueil est réapparu à côté de la vue")
+      .not.toMatch(/\{ot\.length\} circuit/);
     expect(ecran, "l'étiquette fige encore « Tous les circuits »")
       .not.toContain("Tous les circuits");
   });

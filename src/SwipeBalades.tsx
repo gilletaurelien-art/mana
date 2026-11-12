@@ -97,7 +97,7 @@ export function SwipeBalades({ surCarte }: { surCarte: (centre?: [number, number
   const [inv, setInv] = useState<Inventaire | null>(null);
   const [requete, setRequete] = useState("");
   const [calquesOuverts, setCalquesOuverts] = useState(false);
-  const [fond, setFond] = useState<Fond>("ortho");
+  const [fond, setFond] = useState<Fond>("plan");
   useEffect(() => { setFond(lireFond()); }, []);
   const depart = useRef<{ x: number; y: number; id: number } | null>(null);
   const boite = useRef<HTMLDivElement>(null);

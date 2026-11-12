@@ -187,19 +187,41 @@ describe("le jeu de cartes des balades", () => {
   });
 
   /**
-   * ⭐ LES DEUX DÉFAUTS DU 31/10 — « à pied » et « vue aérienne ».
-   * ⚠️ Et le repli de `lireFond` quand `localStorage` LÈVE doit être le même
+   * ⭐ « À PIED » DATE DU 31/10 ; LE FOND A CHANGÉ DE CAMP LE 12/11.
+   *
+   * 🔴 CE TEST EST RETOURNÉ, PAS SUPPRIMÉ. Il exigeait la vue AÉRIENNE au
+   *    démarrage — décision du fondateur du 31/10 — et le fondateur a tranché
+   *    l'inverse le 12/11 : « affichage de la carte par défaut = la vue
+   *    plan ». L'argument d'alors (la photographie dit où l'on met les pieds)
+   *    n'est pas devenu faux ; c'est la demande qui a changé. Ce dépôt
+   *    retourne ses tests plutôt que de les effacer, parce que ce qu'ils
+   *    protégeaient reste presque toujours vrai sous une autre forme — ici :
+   *    QU'IL Y AIT UN SEUL DÉFAUT, et que le repli soit le même.
+   *
+   * ⚠️ Et le repli de `lireFond` quand `localStorage` LÈVE doit être ce même
    *    défaut : sans ce soin, une partie des visiteurs (Safari privé, cookies
    *    bloqués) aurait silencieusement l'autre fond, et personne ne saurait
    *    pourquoi la carte n'a pas la même tête chez eux.
+   *
+   * ⛔ ET LA FORME DE LA LECTURE EST LE GARDE DE LA MIGRATION : en testant
+   *    `=== "ortho"`, un choix explicite de vue aérienne SURVIT au
+   *    renversement du défaut. Un `=== "plan" ? "plan" : "plan"` passerait ce
+   *    test et effacerait le choix de tout le monde — d'où les deux
+   *    assertions, et pas une.
    */
-  it("ouvre sur « à pied » et sur la vue aérienne", () => {
+  it("ouvre sur « à pied » et sur le plan — et n'efface aucun choix", () => {
     expect(code).toMatch(/useState<ItineraireOT\["pratique"\] \| "tout">\("pied"\)/);
-    expect(code).toMatch(/useState<Fond>\("ortho"\)/);
+    expect(code).toMatch(/useState<Fond>\("plan"\)/);
     const fondTs = readFileSync(new URL("./carte-fond.ts", import.meta.url), "utf8");
     const lecture = fondTs.slice(fondTs.indexOf("export function lireFond"));
-    expect(lecture).toMatch(/=== "plan" \? "plan" : "ortho"/);
-    expect(lecture).toMatch(/catch \{ return "ortho"; \}/);
+    expect(lecture, "le défaut n'est plus le plan").toMatch(/=== "ortho" \? "ortho" : "plan"/);
+    expect(lecture, "le repli diverge du défaut").toMatch(/catch \{ return "plan"; \}/);
+    /* ⭐ ET LES DEUX ÉCRANS QUI PORTENT UN ÉTAT INITIAL DOIVENT S'ACCORDER
+       AVEC LUI. Ils sont deux (`SwipeBalades`, `Réglages`) : un seul corrigé
+       aurait fait clignoter la carte au premier rendu chez qui n'a rien
+       choisi — l'écran ouvre sur un fond, l'effet en pose un autre. */
+    const reglages = readFileSync(new URL("./Reglages.tsx", import.meta.url), "utf8");
+    expect(reglages, "les réglages ouvrent sur l'autre fond").toMatch(/useState<Fond>\("plan"\)/);
   });
 
   /**

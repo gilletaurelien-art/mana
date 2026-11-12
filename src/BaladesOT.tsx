@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { chargerOT, MOT_CLEF_OFFICE, PRATIQUE, type ItineraireOT, type Recueil } from "./ot";
-import { MENTION } from "./walks";
 import { SwipeBalades } from "./SwipeBalades";
 import { baseUrl } from "./router";
 
@@ -84,19 +83,102 @@ export function BaladesOT() {
 
       <main className="page page-composer">
         <div className="wrap">
-          <header className="cp-entree">
+          {/* ══ LA BANNIÈRE PORTE TOUT — 12/11/2026, demande du fondateur :
+              « tous les textes sous la bannière verte doivent migrer dans la
+              bannière verte. Il y a de la redondance : simplifie. »
+              ⛔ LA REDONDANCE SE COMPTAIT : « Office de tourisme » était écrit
+                 TROIS fois au-dessus de la liste — en surtitre, dans le titre,
+                 et dans la mention de provenance — et le nombre de circuits
+                 DEUX fois, à quatre centimètres d'écart (« 116 circuits
+                 balisés » dans la bannière, « 116 CIRCUITS » sous elle).
+              ⭐ CE QUI RESTE EST CE QUI DIT QUELQUE CHOSE : le titre nomme,
+                 le compte suit la vue, la provenance dit ce que le titre ne
+                 dit pas — que MANA ne fait que recenser. Trois surfaces au
+                 lieu de cinq, et aucune ne répète sa voisine. */}
+          <header className="cp-entree ot-entete">
             <div className="cp-entree-dire">
-              <p className="hero-label">Office de tourisme</p>
               {/* 🔄 « de l'Office » → « des Offices de Tourisme », demande du
                   fondateur le 12/11/2026. Le singulier datait du temps où
                   Crozon était seul ; ils sont CINQ depuis l'ajout d'Iroise et
                   de Landerneau-Daoulas. */}
               <h1 className="cp-titre">Les balades des Offices de Tourisme</h1>
               {ot && (
+                /* ⭐ UN SEUL COMPTE, ET IL SUIT CE QU'ON VOIT. Il y en avait
+                   deux : le total dans la bannière, la vue filtrée sous elle.
+                   Deux nombres pour une même question se contredisent dès
+                   qu'un filtre bouge — et c'est le nombre AFFICHÉ qu'on lit,
+                   pas celui du recueil. */
                 <p className="cp-compte">
-                  {ot.length} circuit{ot.length > 1 ? "s" : ""} balisé{ot.length > 1 ? "s" : ""}
+                  {visibles.length} circuit{visibles.length > 1 ? "s" : ""} balisé
+                  {visibles.length > 1 ? "s" : ""}
+                  {pays !== "tous" &&
+                    ` · ${MOT_CLEF_OFFICE[pays] ?? paysPresents.find((o) => o.ot === pays)?.nom ?? pays}`}
+                  {pratique !== "tous" && ` · ${PRATIQUE[pratique]}`}
                 </p>
               )}
+              {/* 🔴 LA LIGNE DE PROVENANCE EST PARTIE LE 12/11/2026, sur
+                  demande du fondateur — elle disait « Balisés et entretenus
+                  par les Offices — MANA ne fait que les recenser ».
+                  ⚠️ CE QU'ELLE PORTAIT N'EST PAS PERDU, ET C'EST LA CONDITION
+                     POUR LA RETIRER. Le crédit vit à QUATRE autres endroits,
+                     vérifiés avant de l'effacer : le titre de cette page
+                     nomme les Offices ; le compte dit « balisés » ; chaque
+                     carte du jeu porte « Office de tourisme · chiffres
+                     déclarés · © OpenStreetMap » avec le lien vers la fiche
+                     qui fait foi ; et chaque ligne de la liste EST ce lien.
+                  ⛔ Le garde `⛔ CE NE SONT PAS DES ITINÉRAIRES MANA` d'`ot.ts`
+                     reste donc tenu — par le mécanisme (chaque entrée renvoie
+                     à son Office), pas par une phrase. C'est la forme la plus
+                     solide : une phrase se supprime, un lien par entrée se
+                     verrait manquer. */}
+            </div>
+
+            {/* 🔴 LES DEUX FILTRES MONTENT DANS LA BANNIÈRE. Ils vivaient dans
+                le panneau, sous elle : on lisait le titre, le compte, la
+                provenance, puis on redescendait choisir. ⚠️ Et le panneau
+                n'avait plus qu'eux et la liste — le compte qu'il portait
+                faisait doublon avec celui d'au-dessus. */}
+            {paysPresents.length > 1 && (
+              <div className="ot-filtres" role="group" aria-label="Pays">
+                <button type="button"
+                  className={pays === "tous" ? "ot-filtre ot-filtre-actif" : "ot-filtre"}
+                  aria-pressed={pays === "tous"}
+                  onClick={() => setPays("tous")}>
+                  Tous les pays
+                </button>
+                {paysPresents.map((o) => (
+                  <button key={o.ot} type="button"
+                    className={o.ot === pays ? "ot-filtre ot-filtre-actif" : "ot-filtre"}
+                    aria-pressed={o.ot === pays}
+                    /* ⭐ LE MOT COURT À L'ÉCRAN, LE NOM COMPLET POUR QUI
+                       ÉCOUTE. « Abers » tient dans une pastille ; « Office de
+                       tourisme du Pays des Abers » est ce qu'un lecteur
+                       d'écran doit entendre. */
+                    aria-label={o.nom}
+                    title={o.nom}
+                    onClick={() => setPays(o.ot)}>
+                    {MOT_CLEF_OFFICE[o.ot] ?? o.nom}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* 🔴 LE PAYS AVANT LA PRATIQUE : on choisit d'abord OÙ l'on va,
+                ensuite COMMENT. ⭐ Et les deux ouvrent sur « tous » — demande
+                du fondateur, 12/11 : « par défaut = tous les pays + Tous ».
+                Un filtre dont la valeur initiale exclut quoi que ce soit ne
+                paraît pas trop serré : il fait croire que le reste n'existe
+                pas. Ce dépôt l'a déjà payé sur la durée de marche, où le cran
+                par défaut cachait les dix-sept plus longs itinéraires. */}
+            <div className="ot-filtres" role="group" aria-label="Pratique">
+              {(["tous", "pied", "vtt", "velo", "trail"] as const).map((k) => (
+                <button key={k} type="button"
+                  className={k === pratique ? "ot-filtre ot-filtre-actif" : "ot-filtre"}
+                  aria-pressed={k === pratique}
+                  onClick={() => setPratique(k)}>
+                  {k === "tous" ? "Tous" : PRATIQUE[k]}
+                </button>
+              ))}
             </div>
           </header>
 
@@ -111,63 +193,6 @@ export function BaladesOT() {
             )}
             {ot !== null && ot.length > 0 && (
               <section className="page-panel">
-                {/* ⚠️ L'ÉTIQUETTE DIT CE QU'ON VOIT, PAS CE QU'IL Y A. Elle
-                    annonçait « Tous les circuits » quoi qu'on ait filtré —
-                    et avec deux filtres au lieu d'un, le décalage entre le
-                    titre et la liste devient la règle plutôt que l'exception.
-                    ⭐ Le compte de l'en-tête, lui, reste le TOTAL : il décrit
-                       le recueil, pas la vue. Deux nombres qui disent deux
-                       choses différentes, et chacun le dit. */}
-                <p className="apercu-label">
-                  {visibles.length} circuit{visibles.length > 1 ? "s" : ""}
-                  {pays !== "tous" &&
-                    ` · ${MOT_CLEF_OFFICE[pays] ?? paysPresents.find((o) => o.ot === pays)?.nom ?? pays}`}
-                </p>
-                <p className="fiche-provenance fiche-provenance-ot">{MENTION.ot}</p>
-
-                {/* 🔴 LE PAYS AVANT LA PRATIQUE, et ce n'est pas l'ordre
-                    d'écriture : on choisit d'abord OÙ l'on va, ensuite
-                    COMMENT. L'inverse ferait filtrer une pratique sur cinq
-                    territoires avant de savoir lequel nous concerne.
-                    ⚠️ Rendu seulement s'il y a plus d'un pays : un
-                       commutateur à une seule position est un faux choix. */}
-                {paysPresents.length > 1 && (
-                  <div className="ot-filtres" role="group" aria-label="Pays">
-                    <button type="button"
-                      className={pays === "tous" ? "ot-filtre ot-filtre-actif" : "ot-filtre"}
-                      aria-pressed={pays === "tous"}
-                      onClick={() => setPays("tous")}>
-                      Tous les pays
-                    </button>
-                    {paysPresents.map((o) => (
-                      <button key={o.ot} type="button"
-                        className={o.ot === pays ? "ot-filtre ot-filtre-actif" : "ot-filtre"}
-                        aria-pressed={o.ot === pays}
-                        /* ⭐ LE MOT COURT À L'ÉCRAN, LE NOM COMPLET POUR QUI
-                           ÉCOUTE. « Abers » tient dans une pastille ; « Office
-                           de tourisme du Pays des Abers » est ce qu'un lecteur
-                           d'écran doit entendre. Le mot court vient de
-                           `MOT_CLEF_OFFICE`, déjà tenu par des tests. */
-                        aria-label={o.nom}
-                        title={o.nom}
-                        onClick={() => setPays(o.ot)}>
-                        {MOT_CLEF_OFFICE[o.ot] ?? o.nom}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                <div className="ot-filtres" role="group" aria-label="Pratique">
-                  {(["tous", "pied", "vtt", "velo", "trail"] as const).map((k) => (
-                    <button key={k} type="button"
-                      className={k === pratique ? "ot-filtre ot-filtre-actif" : "ot-filtre"}
-                      aria-pressed={k === pratique}
-                      onClick={() => setPratique(k)}>
-                      {k === "tous" ? "Tous" : PRATIQUE[k]}
-                    </button>
-                  ))}
-                </div>
-
                 <ul className="ot-liste">
                   {visibles.map((i) => (
                     <li key={i.slug}>

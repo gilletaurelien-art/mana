@@ -71,16 +71,30 @@ export const ATTRIBUTION: Record<Fond, string> = {
 const CLEF = "mana.fond.v1";
 
 /**
- * ⭐ LA VUE AÉRIENNE EST LE DÉFAUT (31/10/2026, décision du fondateur). C'est
- *    la photographie qui dit où l'on met les pieds : les haies, le sable, la
- *    lande. Le plan reste à un geste pour qui cherche un nom de route.
+ * 🔴 LE PLAN EST LE DÉFAUT DEPUIS LE 12/11/2026 — décision du fondateur,
+ *    « affichage de la carte par défaut = la vue plan ». Elle RENVERSE celle
+ *    du 31/10, qui ouvrait sur la photographie aérienne.
+ *
+ * ⭐ L'ARGUMENT D'ALORS N'EST PAS DEVENU FAUX, et on le garde écrit : la
+ *    photographie dit où l'on met les pieds — les haies, le sable, la lande.
+ *    C'est la DEMANDE qui a changé, pas le raisonnement. Ce dépôt a déjà
+ *    effacé une doctrine en la renversant ; on ne recommence pas. La vue
+ *    aérienne reste à un geste, dans les réglages comme sur la carte.
+ *
+ * ⚠️ AUCUNE MIGRATION DE CLEF, ET C'EST MESURÉ PAR LA FORME DE LA LECTURE :
+ *    on teste désormais `=== "ortho"`. Qui avait CHOISI la vue aérienne la
+ *    garde ; qui avait choisi le plan la garde ; qui n'a jamais choisi passe
+ *    au plan. Le renversement ne défait donc aucun choix explicite — c'est
+ *    exactement ce qu'un défaut doit faire quand il change.
+ *
  * ⚠️ `localStorage` LÈVE, il ne rend pas simplement vide (Safari privé) — et
  *    le repli doit alors être le DÉFAUT, pas l'autre valeur : sans ce soin,
- *    une partie des visiteurs aurait silencieusement l'autre fond.
+ *    une partie des visiteurs aurait silencieusement l'autre fond, et
+ *    personne ne saurait pourquoi la carte n'a pas la même tête chez eux.
  */
 export function lireFond(): Fond {
-  try { return localStorage.getItem(CLEF) === "plan" ? "plan" : "ortho"; }
-  catch { return "ortho"; }
+  try { return localStorage.getItem(CLEF) === "ortho" ? "ortho" : "plan"; }
+  catch { return "plan"; }
 }
 export function poserFond(f: Fond): void {
   try { localStorage.setItem(CLEF, f); } catch { /* la visite reste cohérente */ }

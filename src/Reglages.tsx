@@ -16,7 +16,7 @@ import { useEffect, useState } from "react";
  *    l'état, et le breton y est nommé parce que c'est lui qui compte ici.
  */
 export function Reglages({ base }: { base: string }) {
-  const [fond, setFond] = useState<Fond>("ortho");
+  const [fond, setFond] = useState<Fond>("plan");
   useEffect(() => { setFond(lireFond()); }, []);
 
   return (
