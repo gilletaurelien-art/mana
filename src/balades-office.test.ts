@@ -128,8 +128,12 @@ describe("les balades des Offices — la liste se lit", () => {
        ⭐ Ce garde compte dans le RENDU, commentaires retirés : c'est la seule
           lecture qui corresponde à ce qu'on voit. */
     const rendu = ecran.slice(ecran.indexOf("return ("));
-    expect([...rendu.matchAll(/circuit\{/g)].length, "le compte est écrit plus d'une fois")
-      .toBe(1);
+    /* 🔴 « UNE FOIS » EST DEVENU « ZÉRO FOIS » LE SOIR MÊME — le fondateur a
+       supprimé le compte après l'avoir fait fusionner. Le garde qui tient le
+       nombre d'occurrences vit juste en dessous ; celui-ci ne garde plus que
+       le nom, qui est l'autre moitié de la redondance mesurée ce matin. */
+    expect([...rendu.matchAll(/circuit\{/g)].length, "un compte est revenu")
+      .toBe(0);
     expect(rendu, "le surtitre « Office de tourisme » est revenu")
       .not.toMatch(/hero-label/);
     /* 🔴 LA PHRASE DE PROVENANCE EST PARTIE LE 12/11, sur demande — et ce
@@ -244,20 +248,27 @@ describe("les balades des Offices — la liste se lit", () => {
     expect(ecran).toMatch(/Aucun circuit ne réunit ces deux choix/);
   });
 
-  it("⚠️ LE compte dit ce qu'on VOIT, et il n'y en a plus qu'un", () => {
-    /* 🔴 RETOURNÉ LE MÊME JOUR QUE SON ÉCRITURE, et c'est instructif. Écrit
-       le matin, il gardait DEUX nombres qui disaient deux choses : le total
-       du recueil dans la bannière, la vue filtrée sous elle. Le fondateur a
-       tranché l'après-midi — « il y a de la redondance : simplifie » — et
-       les deux surfaces ont fusionné.
-       ⭐ CE QUI SURVIT EST LA MOITIÉ QUI COMPTE : le nombre affiché doit
-          suivre ce qu'on voit. Un compte qui annonce le total au-dessus
-          d'une liste filtrée se contredit dès qu'on touche un filtre, et
-          c'est le nombre AFFICHÉ qu'on lit, jamais celui du recueil. */
-    expect(ecran, "le compte ne suit pas la vue").toMatch(/visibles\.length\} circuit/);
-    expect(ecran, "le total du recueil est réapparu à côté de la vue")
-      .not.toMatch(/\{ot\.length\} circuit/);
+  it("⛔ la bannière ne porte plus AUCUN compte — c'est la liste qui compte", () => {
+    /* 🔴 TROISIÈME RETOURNEMENT DE CE GARDE EN UNE JOURNÉE, et les trois
+       sont écrits parce que la trace vaut plus que la règle finale :
+         · le matin il exigeait DEUX nombres (le total, la vue filtrée) ;
+         · à midi UN SEUL, celui qui suit la vue — « il y a de la
+           redondance : simplifie » ;
+         · le soir AUCUN — « supprime : 116 circuits balisés ».
+       ⭐ Aucune de ces trois versions n'était fausse quand elle a été
+          écrite. Ce qui a changé n'est pas le raisonnement, c'est la
+          demande — et c'est pourquoi on retourne plutôt qu'on n'efface.
+       ⚠️ CE QUI SURVIT, ET QUI EST LE VRAI SUJET : la page ne doit pas
+          ANNONCER un nombre que la liste contredit. Zéro nombre annoncé
+          satisfait la règle au moins aussi bien qu'un nombre juste — la
+          liste, elle, se voit s'allonger et se réduire quand on filtre. */
+    expect(ecran, "un compte est revenu dans la bannière").not.toMatch(/\} circuit\{/);
+    expect(ecran, "la classe du compte est restée sans son texte").not.toContain("cp-compte");
     expect(ecran, "l'étiquette fige encore « Tous les circuits »")
       .not.toContain("Tous les circuits");
+    /* ⛔ ET LA LISTE RESTE LE COMPTE : si elle cessait de rendre une ligne
+       par circuit visible, plus rien sur cette page ne dirait combien il y
+       en a. */
+    expect(ecran).toMatch(/\{visibles\.map\(\(i\) => \(/);
   });
 });

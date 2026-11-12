@@ -121,20 +121,17 @@ export function BaladesOT() {
                   Crozon était seul ; ils sont CINQ depuis l'ajout d'Iroise et
                   de Landerneau-Daoulas. */}
               <h1 className="cp-titre">Les balades des Offices de Tourisme</h1>
-              {ot && (
-                /* ⭐ UN SEUL COMPTE, ET IL SUIT CE QU'ON VOIT. Il y en avait
-                   deux : le total dans la bannière, la vue filtrée sous elle.
-                   Deux nombres pour une même question se contredisent dès
-                   qu'un filtre bouge — et c'est le nombre AFFICHÉ qu'on lit,
-                   pas celui du recueil. */
-                <p className="cp-compte">
-                  {visibles.length} circuit{visibles.length > 1 ? "s" : ""} balisé
-                  {visibles.length > 1 ? "s" : ""}
-                  {pays !== "tous" &&
-                    ` · ${MOT_CLEF_OFFICE[pays] ?? paysPresents.find((o) => o.ot === pays)?.nom ?? pays}`}
-                  {pratique !== "tous" && ` · ${PRATIQUE[pratique]}`}
-                </p>
-              )}
+              {/* 🔴 LE COMPTE EST PARTI LE 12/11/2026, demande du fondateur
+                  — « supprime : 116 circuits balisés », dans la même phrase
+                  que « compacte l'écran ».
+                  ⚠️ CE QU'IL DISAIT N'EST PAS PERDU : la liste, sous la
+                     carte, EST le compte — on la parcourt, on la voit
+                     s'allonger ou se réduire quand on touche un filtre. Un
+                     nombre écrit au-dessus répétait ce que la page montre.
+                  ⭐ Et c'est la troisième surface retirée de cette bannière
+                     en une journée : surtitre, mention de provenance,
+                     compte. Chacune disait quelque chose de vrai ; aucune ne
+                     disait quelque chose que la page ne montrait pas déjà. */}
               {/* 🔴 LA LIGNE DE PROVENANCE EST PARTIE LE 12/11/2026, sur
                   demande du fondateur — elle disait « Balisés et entretenus
                   par les Offices — MANA ne fait que les recenser ».
@@ -151,6 +148,28 @@ export function BaladesOT() {
                      solide : une phrase se supprime, un lien par entrée se
                      verrait manquer. */}
             </div>
+
+            {/* ══ LA CARTE DU FINISTÈRE, AVEC TOUS LES TRACÉS ════════════
+                🔴 12/11/2026, demande du fondateur : « la carte à afficher est
+                celle du Finistère avec tous les tracés de balade. Chaque tracé
+                est cliquable. » La page ouvrait sur un JEU DE CARTES qui
+                montrait un circuit à la fois : pour savoir s'il y a une balade
+                près de chez soi, il fallait feuilleter cent seize fiches.
+                ⭐ LE JEU N'EST PAS PERDU — il reste l'écran « Balades » de
+                   `/carte`, où il a sa place : on y feuillette, ici on balaie.
+                   Deux lectures d'une même donnée, pas une redondance.
+                ⚠️ ET LA CARTE SUIT LES FILTRES DE LA BANNIÈRE, comme la liste.
+                   Une carte qui montrerait les 116 pendant que la liste en
+                   montre 17 ferait deux écrans qui se contredisent. */}
+            {ot !== null && ot.length > 0 && (
+              <CarteBalades
+                circuits={visibles}
+                fond={fond}
+                choisi={tenu?.slug ?? null}
+                onChoisir={setChoisi}
+                hauteur="46vh"
+              />
+            )}
 
             {/* 🔴 LES DEUX FILTRES MONTENT DANS LA BANNIÈRE. Ils vivaient dans
                 le panneau, sous elle : on lisait le titre, le compte, la
@@ -200,28 +219,6 @@ export function BaladesOT() {
               ))}
             </div>
           </header>
-
-          {/* ══ LA CARTE DU FINISTÈRE, AVEC TOUS LES TRACÉS ════════════
-              🔴 12/11/2026, demande du fondateur : « la carte à afficher est
-              celle du Finistère avec tous les tracés de balade. Chaque tracé
-              est cliquable. » La page ouvrait sur un JEU DE CARTES qui
-              montrait un circuit à la fois : pour savoir s'il y a une balade
-              près de chez soi, il fallait feuilleter cent seize fiches.
-              ⭐ LE JEU N'EST PAS PERDU — il reste l'écran « Balades » de
-                 `/carte`, où il a sa place : on y feuillette, ici on balaie.
-                 Deux lectures d'une même donnée, pas une redondance.
-              ⚠️ ET LA CARTE SUIT LES FILTRES DE LA BANNIÈRE, comme la liste.
-                 Une carte qui montrerait les 116 pendant que la liste en
-                 montre 17 ferait deux écrans qui se contredisent. */}
-          {ot !== null && ot.length > 0 && (
-            <CarteBalades
-              circuits={visibles}
-              fond={fond}
-              choisi={tenu?.slug ?? null}
-              onChoisir={setChoisi}
-              hauteur="52vh"
-            />
-          )}
 
           {/* ⭐ LA BULLE DIT CE QU'ON VIENT DE TOUCHER, et elle porte le lien
               vers la fiche de l'Office — qui fait foi, et qui est le crédit.

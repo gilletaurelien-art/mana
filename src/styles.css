@@ -3116,6 +3116,59 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
 .ot-entete {
   flex-direction: column; align-items: stretch; justify-content: center;
   gap: var(--sp-2);
+  /* 🔴 LE MÊME VERT DÉGRADÉ QUE LA BARRE DU BAS — 12/11/2026, demande du
+     fondateur. `.cp-entree` posait `--kaki`, un ton PLEIN ; la barre, elle,
+     porte `--bulle` : kaki → olive → ocre sombre, du verre. Deux matières
+     vertes sur un même écran se lisent comme deux objets, et c'est la barre
+     qui donne le ton — elle est la seule surface qui ne disparaît jamais.
+     ⭐ LE DÉGRADÉ EST DÉJÀ MESURÉ, et c'est ce qui permet de le reprendre
+        sans tout remesurer : `tokens.css` note son contraste en trois points
+        — craie 6,14 en haut, 5,60 au milieu, 5,05 en bas, et le ton doux
+        5,91 → 4,86. Les deux textes de cette bannière tiennent donc le seuil
+        sur toute la hauteur.
+     ⚠️ Le flou et le liseré viennent avec : un dégradé translucide sans son
+        `backdrop-filter` laisse voir le fond tournant en clair au lieu de le
+        fondre — ce serait le dessin de la barre sans sa matière. */
+  background: var(--bulle);
+  -webkit-backdrop-filter: var(--bulle-flou);
+  backdrop-filter: var(--bulle-flou);
+  box-shadow: var(--bulle-eclat);
+  /* 🔴 COMPACTÉE LE 12/11/2026, demande du fondateur — et la mesure dit
+     POURQUOI c'était nécessaire : la bannière faisait **821 px** dans une
+     fenêtre de 743, donc la rangée des pays tombait sous le pli. Un écran de
+     choix dont les choix sont hors de l'écran ne se lit pas comme compact :
+     il se lit comme vide.
+     ⚠️ `.cp-entree` réserve jusqu'à 84 px en bas pour laisser la carte de
+        choix du compositeur remonter PAR-DESSUS l'image. Ici la bannière se
+        termine sur ses pastilles : ce creux ne laissait qu'une bande verte.
+     ⭐ Et le titre se resserre ICI SEULEMENT. `--t-xl` à 9vw est juste pour
+        une entrée immersive qui ouvre un écran ; sur une bannière qui porte
+        une carte et deux rangées de commandes, il prend la place de ce
+        qu'on est venu voir. */
+  padding-top: var(--sp-2); padding-bottom: var(--sp-2);
+  gap: var(--sp-1);
+}
+.ot-entete .cp-titre {
+  /* ⚠️ `1.18` ET NON `1.08` — mesuré, pas choisi. À 1,08 la boîte faisait
+     27 px pour un contenu de 30 : les jambages d'Instrument Serif étaient
+     coupés d'un pixel. ⭐ Un interligne serré sur une serif de titrage ne se
+     voit pas dans la règle, il se voit sur le « g » de « balades ». Trois
+     pixels rendus, et la bannière tient toujours dans l'écran. */
+  font: 400 clamp(1.5rem, 6.5vw, 2.2rem)/1.18 var(--titre);
+  margin-bottom: 0;
+}
+/* 🔴 LA PASTILLE ACTIVE CHANGE DE REMPLISSAGE SUR LE DÉGRADÉ, ET C'EST UNE
+   MESURE. `--action` (#94702e) contre le BAS du dégradé (ocre sombre) donne
+   **1,81** : le bord de la pastille choisie se serait dissous dans la
+   bannière, juste là où vit la rangée des pratiques. Le seuil des contours
+   de commande est 3. ⭐ `--ocre` y mesure **3,18**, et son texte `--nuit`
+   **5,53** — c'est aussi la paire que porte le rail d'outils du compositeur,
+   donc une seule grammaire pour « ce bouton est enfoncé ».
+   ⚠️ Un jeton nommé pour un fond ne se transporte pas sur un autre sans
+      qu'on remesure : `--action` a été calculé « pour le blanc », son
+      commentaire le dit. */
+.ot-entete .ot-filtre-actif {
+  background: var(--ocre); color: var(--nuit); border-color: var(--ocre);
 }
 .ot-entete .cp-entree-dire { max-width: 34ch; }
 /* 🔴 LA COULEUR DES PASTILLES NE S'HÉRITE PAS IMPUNÉMENT — et c'est la
@@ -3129,9 +3182,12 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
       change de réponse quand le composant change de parent. Mesuré ici :
       craie sur kaki, 9,2 pour 1. */
 .ot-entete .ot-filtre { color: var(--craie); border-color: var(--bulle-trait); }
-.ot-entete .ot-filtre-actif {
-  background: var(--action); color: var(--action-texte); border-color: var(--action);
-}
+/* 🔴 ET IL N'Y A QU'UNE RÈGLE POUR LA PASTILLE ACTIVE. Il y en a eu DEUX
+   pendant cinq minutes : celle écrite ce matin pour le kaki plein, plus bas
+   dans la feuille, GAGNAIT sur celle d'au-dessus par simple ordre de
+   cascade. La correction mesurée était écrite, posée, et morte. ⭐ Vérifier
+   une couleur, ce n'est pas lire une règle qui porte le bon nom — c'est
+   lire celle qui GAGNE. */
 
 /* 🔴 `hyphens: manual`, ET CE N'EST PAS UN DÉTAIL DE GOÛT. Le `body` de
    l'application porte `hyphens: auto` — justifié pour un paragraphe de
@@ -3951,7 +4007,18 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
    carte — un `title` ne se survole pas au pouce, dehors. */
 .carte-balades-credit {
   margin: 0; padding: 0 var(--sp-1);
-  font-size: var(--t-xs); line-height: 1.4;
+  /* 🔴 RÉDUIT LE 12/11/2026, demande du fondateur — et `--t-2xs` n'est pas
+     un choix libre : c'est le plus petit corps de l'échelle, ET c'est déjà
+     celui de `.carte-credit`, le crédit de l'autre carte de l'application.
+     Deux crédits de tailles différentes sur deux cartes du même produit se
+     lisent comme deux statuts.
+     ⛔ RÉDUIRE N'EST PAS ROGNER, et la distinction est juridique. Cette
+        mention a DÉJÀ été coupée une fois sur cet écran — « … vue aérienne
+        © IGN · étiq… » — pour gagner seize pixels de carte. L'ODbL et la
+        licence de l'IGN demandent une mention VISIBLE : elle peut être
+        petite, elle ne peut pas être tronquée ni cachée derrière un
+        survol. Un test refuse le `text-overflow` ici. */
+  font-size: var(--t-2xs); line-height: 1.35;
   color: var(--texte-immersif-doux);
 }
 /* ⭐ LA BULLE DU TRACÉ TOUCHÉ — la même matière que les volets de la carte

@@ -58,6 +58,22 @@ export function CarteBalades({
      tuiles de la précédente, et aucune n'a le temps d'aboutir. */
   const vus = useRef({ circuits, onChoisir, choisi });
   vus.current = { circuits, onChoisir, choisi };
+  /**
+   * 🔴 « LA PERSONNE A-T-ELLE TOUCHÉ LA CARTE ? » — et c'est ce qui décide
+   *    si un redimensionnement a le droit de recadrer.
+   *
+   * ⚠️ MESURÉ À L'ÉCRAN : au premier rendu, la vue était plus large que les
+   *    tracés. `fitBounds` s'exécute dans `load`, c'est-à-dire AVANT que la
+   *    bannière ait fini de se poser — les deux rangées de pastilles
+   *    peuvent passer sur deux lignes et changer la hauteur du conteneur
+   *    après coup. Le cadrage était donc calculé contre une boîte périmée.
+   * ⭐ Les cartes NON INTERACTIVES de ce dépôt recadrent à chaque
+   *    redimensionnement (`CarteReelle`, `CarteFondOT`) et s'en portent
+   *    bien. Celle-ci s'explore : recadrer après que quelqu'un a zoomé
+   *    ramènerait son écran de force. On recadre donc tant que personne n'a
+   *    touché, et plus jamais ensuite.
+   */
+  const touche = useRef(false);
 
   useEffect(() => {
     if (!plan.current) return;
@@ -105,6 +121,12 @@ export function CarteBalades({
         const sous = m.queryRenderedFeatures(e.point, { layers: ["balades-cible"] });
         if (!sous.length) vus.current.onChoisir(null);
       });
+      /* ⛔ DÈS QU'ON DÉPLACE OU QU'ON ZOOME, LA CARTE EST À LA PERSONNE.
+         `dragstart`/`zoomstart`/`rotatestart` ne se déclenchent que sur un
+         geste — `fitBounds` et `resize`, eux, ne les émettent pas. */
+      for (const ev of ["dragstart", "zoomstart", "rotatestart"] as const) {
+        m.on(ev, () => { touche.current = true; });
+      }
       m.on("mouseenter", "balades-cible", () => { m.getCanvas().style.cursor = "pointer"; });
       m.on("mouseleave", "balades-cible", () => { m.getCanvas().style.cursor = ""; });
 
@@ -112,7 +134,10 @@ export function CarteBalades({
       setPrete(true);
     });
 
-    const ro = new ResizeObserver(() => m.resize());
+    const ro = new ResizeObserver(() => {
+      m.resize();
+      if (!touche.current) cadrer(m, vus.current.circuits);
+    });
     ro.observe(plan.current);
     return () => { ro.disconnect(); m.remove(); carte.current = null; setPrete(false); };
     /* ⚠️ SEUL LE FOND RECRÉE LA CARTE : c'est la seule prop qui change
@@ -127,6 +152,9 @@ export function CarteBalades({
     /* ⚠️ ET LE CADRAGE SUIT LE FILTRE. Choisir « Abers » en gardant la vue du
        Finistère entier laisse dix-sept tracés dans un coin : le filtre aurait
        l'air de n'avoir rien fait. */
+    /* ⚠️ Le filtre RECADRE même si la personne a déplacé la carte : changer
+       de pays est une demande explicite de regarder ailleurs, pas un
+       accident de mise en page. Les deux cas ne se valent pas. */
     cadrer(m, circuits);
   }, [circuits, prete]);
 
