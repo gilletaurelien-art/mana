@@ -4021,28 +4021,40 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
   font-size: var(--t-2xs); line-height: 1.35;
   color: var(--texte-immersif-doux);
 }
-/* ⭐ LA BULLE DU TRACÉ TOUCHÉ — la même matière que les volets de la carte
-   du compositeur : verre, trait de craie, arrondi commun. « Un panneau et
-   une bulle sont deux tailles du même objet. » */
-.ot-bulle {
-  margin: 0 0 var(--sp-2); padding: var(--sp-2);
-  display: grid; gap: 4px;
-  border-radius: var(--r-l); border: 1px solid var(--bulle-trait);
-  background: color-mix(in srgb, var(--bulle-unie) 94%, transparent);
-  color: var(--craie); box-shadow: var(--ombre-carte);
+/* ══ LE PARCOURS CHOISI, SOUS LA CARTE ═══════════════════════════════════
+   🔴 12/11/2026 : « quand on clique sur un parcours, affiche au-dessous de
+   la carte le parcours choisi », exemple à l'appui, en lien.
+   ⭐ IL VIT DANS LA BANNIÈRE, DONC SUR LE DÉGRADÉ VERT : ses deux tons sont
+      ceux de la bannière — craie pour le nom, le ton doux pour les chiffres
+      — et non ceux de la liste, qui vit sur un panneau clair. Même donnée,
+      deux fonds, deux tons : c'est la leçon que `.ot-filtre` a payée trois
+      fois. */
+.ot-choisi {
+  /* ⚠️ UNE SEULE LIGNE QUI COULE, pas deux blocs — c'est la forme de
+     l'exemple donné par le fondateur (« Circuit VTT - Trémet VTT · 20,6 km ·
+     boucle · facile · Crozon »), et elle rend dix-sept pixels à une bannière
+     qui dépassait déjà de l'écran quand un parcours est choisi. */
+  display: block;
+  padding: var(--sp-0) var(--sp-2);
+  border-radius: var(--r-l);
+  border: 1px solid var(--bulle-trait);
+  background: color-mix(in srgb, var(--craie) 10%, transparent);
+  text-decoration: none;
 }
-.ot-bulle-titre {
-  margin: 0; font-family: var(--titre); font-size: var(--t-m); line-height: 1.2;
+.ot-choisi:hover { background: color-mix(in srgb, var(--craie) 16%, transparent); }
+.ot-choisi:focus-visible { outline: 2px solid var(--ocre); outline-offset: 2px; }
+.ot-choisi-titre {
+  font-family: var(--titre); font-size: var(--t-s); line-height: 1.35;
   color: var(--craie);
 }
-/* ⚠️ LA LIGNE DE FAITS DE LA BULLE EST SUR FOND SOMBRE, celle de la liste
-   sur fond clair — même classe, deux fonds, donc deux tons. C'est
-   exactement la leçon que `.ot-filtre` a payée trois fois : le ton se
-   choisit au FOND, pas au composant. */
-.ot-bulle .ot-item-meta { color: var(--texte-immersif-doux); }
-.ot-bulle-lien {
-  justify-self: start; margin-top: 2px;
-  font-size: var(--t-xs); color: var(--ocre-clair);
+/* l'espace entre le nom et les chiffres, puisqu'ils coulent sur la même
+   ligne — une marge plutôt qu'un caractère, qu'un lecteur d'écran lirait */
+.ot-choisi-titre::after { content: ""; display: inline-block; width: .5em; }
+/* ⚠️ PAS D'OPACITÉ EN PLUS DU JETON — `--texte-immersif-doux` est déjà le
+   ton secondaire calculé pour rester lisible sur fond sombre, et le dégradé
+   de la bannière le mesure à 4,86 au plus bas. */
+.ot-choisi-meta {
+  font-size: var(--t-xs); line-height: 1.4; color: var(--texte-immersif-doux);
 }
 /* ⭐ LA LIGNE TENUE S'ALLUME DANS LA LISTE, pour que les deux surfaces
    disent la même chose. Un liseré, pas un fond : la liste reste une liste. */

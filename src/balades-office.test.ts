@@ -225,6 +225,83 @@ describe("les balades des Offices — la liste se lit", () => {
     expect(ecran).toMatch(/const tenu = visibles\.find\(\(i\) => i\.slug === choisi\) \?\? null/);
   });
 
+  it("⭐ les tracés sont dorés et ils courent — mais pas pour qui n'en veut pas", () => {
+    /* 🔴 12/11/2026 : « plutôt que du vert kaki pour les tracés, affiche
+       notre doré, et donne-lui un effet tournant, sur chaque balade ». */
+    const carte = readFileSync(new URL("./CarteBalades.tsx", import.meta.url), "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(carte, "le doré a quitté les tracés").toContain(jeton("ocre"));
+    /* ⭐ maplibre ne sait pas décaler un pointillé : on fait tourner le
+       MOTIF. La séquence doit donc exister ET compter plus d'un état —
+       un seul ferait un pointillé fixe qu'on prendrait pour l'animation. */
+    expect(carte).toMatch(/line-dasharray/);
+    const motifs = carte.slice(carte.indexOf("const MOTIFS"), carte.indexOf("];", carte.indexOf("const MOTIFS")));
+    expect([...motifs.matchAll(/\[/g)].length, "un seul état de pointillé n'anime rien")
+      .toBeGreaterThan(4);
+    /* ⛔ ET ELLE S'ARRÊTE SOUS `prefers-reduced-motion`. Cent seize chemins
+       qui ondulent en permanence, c'est beaucoup d'écran qui bouge. Le doré
+       RESTE — c'est le mouvement qui part, jamais l'information. */
+    expect(carte, "la préférence de mouvement n'est pas demandée")
+      .toMatch(/prefers-reduced-motion: reduce/);
+    expect(carte, "le pointillé s'anime quoi qu'on ait demandé")
+      .toMatch(/if \(anime\)/);
+    /* ⚠️ Et la minuterie s'arrête avec la carte : un intervalle qui survit à
+       son composant repeint un calque qui n'existe plus, à chaque battement,
+       pour toujours. */
+    expect(carte).toMatch(/clearInterval\(battement\.current\)/);
+  });
+
+  it("⛔ le doré ne se lit pas seul sur une carte — il a son halo blanc", () => {
+    /* 🔴 MESURÉ : `--ocre` sur la craie du plan donne 2,17 pour 1. Un trait
+       doré seul se perdrait sur les champs et les grèves — et d'autant plus
+       qu'il est POINTILLÉ, donc absent la moitié du temps.
+       ⚠️ LE HALO ÉTAIT OLIVE JUSQU'AU 12/11, le fondateur l'a voulu BLANC —
+          et le blanc fait mieux le travail : il DÉTOURE au lieu
+          d'assombrir, donc il sépare le doré des verts des champs comme des
+          bleus de la mer. Ce garde change de raison, pas de sujet : un trait
+          doré ne va jamais seul sur une carte. */
+    expect(
+      readFileSync(new URL("./CarteBalades.tsx", import.meta.url), "utf8")
+        .replace(/\/\*[\s\S]*?\*\//g, ""),
+      "le halo n'est plus blanc",
+    ).toMatch(/balades-gaine[\s\S]*?"line-color": "#ffffff"/);
+    const carte = readFileSync(new URL("./CarteBalades.tsx", import.meta.url), "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(carte, "la gaine a disparu sous le doré").toContain("balades-gaine");
+    expect(ratio(jeton("ocre"), "#ffffff"), "l'ocre seul sur un fond clair")
+      .toBeLessThan(3);
+    /* ⚠️ Et la gaine doit être PLUS LARGE que le doré, sinon elle ne borde
+       rien. Les deux largeurs se lisent dans le fichier plutôt que dans ma
+       tête. */
+    const gaine = Number(carte.match(/balades-gaine[\s\S]*?"line-width": ([\d.]+)/)?.[1]);
+    const trace = Number(carte.match(/balades-trace[\s\S]*?"line-width": ([\d.]+)/)?.[1]);
+    expect(gaine, `gaine ${gaine} · doré ${trace}`).toBeGreaterThan(trace);
+  });
+
+  it("⭐ le parcours touché s'affiche SOUS LA CARTE, et c'est un seul lien", () => {
+    /* 🔴 12/11/2026 : « quand on clique sur un parcours, affiche au-dessous
+       de la carte le parcours choisi », exemple à l'appui — titre, pratique,
+       distance, forme, difficulté, commune, le tout en lien.
+       ⭐ SOUS LA CARTE, PAS SOUS LA BANNIÈRE : il vivait trois cents pixels
+          plus bas, après les deux rangées de filtres. Une réponse qui n'est
+          pas là où l'on a posé le doigt n'est pas une réponse. On vérifie
+          donc l'ORDRE, pas seulement la présence. */
+    const i = ecran.indexOf("<CarteBalades");
+    const j = ecran.indexOf("ot-choisi");
+    const k = ecran.indexOf('aria-label="Pays"');
+    expect(i, "la carte a disparu").toBeGreaterThan(0);
+    expect(j, "le parcours choisi ne s'affiche plus").toBeGreaterThan(i);
+    expect(j, "le parcours choisi est passé SOUS les filtres").toBeLessThan(k);
+    /* ⛔ UN SEUL LIEN, titre et chiffres compris. Deux cibles côte à côte
+       pour un seul geste font hésiter — et le lien vers la fiche de l'Office
+       EST le crédit de ce circuit. */
+    expect(ecran).toMatch(/<a className="ot-choisi" href=\{tenu\.source\}/);
+    for (const champ of ["tenu.titre", "tenu.pratique", "tenu.km", "tenu.boucle",
+                         "tenu.difficulte", "tenu.commune"]) {
+      expect(ecran, `« ${champ} » manque à la ligne du parcours choisi`).toContain(champ);
+    }
+  });
+
   it("⛔ l'attribution de la carte est VISIBLE et suit le fond affiché", () => {
     /* 🔴 `attributionControl: false` la retire de maplibre : c'est alors à
        l'écran de la porter. L'ODbL et la licence de l'IGN demandent une

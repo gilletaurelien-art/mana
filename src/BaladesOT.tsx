@@ -167,8 +167,34 @@ export function BaladesOT() {
                 fond={fond}
                 choisi={tenu?.slug ?? null}
                 onChoisir={setChoisi}
-                hauteur="46vh"
+                hauteur="44vh"
               />
+            )}
+
+            {/* 🔴 LE PARCOURS CHOISI S'AFFICHE SOUS LA CARTE — 12/11/2026,
+                demande du fondateur, exemple à l'appui : « Circuit VTT -
+                Trémet · VTT · 20,6 km · boucle · facile · Crozon », en lien.
+                ⭐ SOUS LA CARTE, PAS SOUS LA BANNIÈRE. Elle vivait trois
+                   cents pixels plus bas, après les deux rangées de filtres :
+                   on touchait un tracé et la réponse paraissait hors de
+                   l'écran. Une réponse qui n'est pas là où l'on a posé le
+                   doigt n'est pas une réponse.
+                ⭐ ET C'EST UN SEUL LIEN, titre et chiffres compris — comme
+                   dans l'exemple. Deux cibles côte à côte pour un seul geste
+                   font hésiter ; et le lien vers la fiche de l'Office EST le
+                   crédit de ce circuit. */}
+            {tenu && (
+              <a className="ot-choisi" href={tenu.source}
+                 target="_blank" rel="noreferrer noopener">
+                <span className="ot-choisi-titre">{tenu.titre}</span>
+                <span className="ot-choisi-meta">
+                  {PRATIQUE[tenu.pratique]} ·{" "}
+                  {tenu.km.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} km ·{" "}
+                  {tenu.boucle ? "boucle" : "aller simple"}
+                  {tenu.difficulte && ` · ${tenu.difficulte}`}
+                  {tenu.commune && ` · ${tenu.commune}`}
+                </span>
+              </a>
             )}
 
             {/* 🔴 LES DEUX FILTRES MONTENT DANS LA BANNIÈRE. Ils vivaient dans
@@ -219,27 +245,6 @@ export function BaladesOT() {
               ))}
             </div>
           </header>
-
-          {/* ⭐ LA BULLE DIT CE QU'ON VIENT DE TOUCHER, et elle porte le lien
-              vers la fiche de l'Office — qui fait foi, et qui est le crédit.
-              ⚠️ Les mêmes chiffres que la liste, au même endroit du texte :
-                 deux formulations du même fait se mettent à diverger. */}
-          {tenu && (
-            <aside className="ot-bulle">
-              <p className="ot-bulle-titre">{tenu.titre}</p>
-              <p className="ot-item-meta">
-                {PRATIQUE[tenu.pratique]} ·{" "}
-                {tenu.km.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} km ·{" "}
-                {tenu.boucle ? "boucle" : "aller simple"}
-                {tenu.difficulte && ` · ${tenu.difficulte}`}
-                {tenu.commune && ` · ${tenu.commune}`}
-              </p>
-              <a className="ot-bulle-lien" href={tenu.source}
-                 target="_blank" rel="noreferrer noopener">
-                La fiche de l'Office
-              </a>
-            </aside>
-          )}
 
           <div className="cp-corps">
             {ot === null && (
