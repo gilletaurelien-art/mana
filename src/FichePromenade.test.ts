@@ -72,13 +72,26 @@ describe("les illustrations des promenades", () => {
     }
   });
 
-  it("une promenade sans illustration est un CHOIX, pas un oubli", () => {
-    // ⭐ Le test ne réclame pas que les quatre soient illustrées : il constate
-    //    l'état et refuse qu'il se dégrade sans qu'on le sache. Deux sur
-    //    quatre au 31/10/2026 — si ce nombre tombe, quelque chose a cassé ;
-    //    s'il monte, il se met à jour en connaissance.
+  /**
+   * 🔴 RETOURNÉ LE 12/11/2026. Il exigeait « au moins deux promenades
+   *    illustrées » et constatait l'état du 31/10 ; les quatre promenades
+   *    MANA sont parties du produit, et leurs deux illustrations avec elles.
+   * ⭐ CE QU'IL GARDE MAINTENANT EST LA MÊME RÈGLE, DANS L'AUTRE SENS : on
+   *    n'exige plus un NOMBRE, on exige que les deux tables RESTENT
+   *    D'ACCORD. Autant de promenades que d'illustrations est faux ; une
+   *    illustration sans promenade est orpheline (test au-dessus), et un
+   *    produit sans promenade doit avoir une table d'illustrations vide.
+   *    ⚠️ Un chiffre figé dans un test vieillit comme un chiffre figé dans
+   *       une note — celui-ci avait tenu douze jours.
+   */
+  it("la table des illustrations suit la population des promenades", () => {
     const illustrees = WALKS.filter((w) => ILLUSTRATIONS[w.slug]?.couverture).length;
-    expect(illustrees, "des promenades ont perdu leur couverture").toBeGreaterThanOrEqual(2);
+    expect(illustrees, "une promenade illustrée n'est plus dans WALKS")
+      .toBeLessThanOrEqual(WALKS.length);
+    if (WALKS.length === 0) {
+      expect(Object.keys(ILLUSTRATIONS), "aucune promenade, mais des illustrations restent")
+        .toHaveLength(0);
+    }
   });
 });
 
@@ -97,10 +110,23 @@ describe("le fichier servi aux robots d'IA", () => {
     const txt = readFileSync("public/llms.txt", "utf8");
     const slugs = new Set(WALKS.map((w) => w.slug));
     const annonces = [...txt.matchAll(/\/promenade\/([a-z0-9-]+)/g)].map((m) => m[1]);
-    expect(annonces.length, "llms.txt n'annonce plus aucune promenade").toBeGreaterThan(0);
+    /* 🔴 RETOURNÉ LE 12/11/2026 — il exigeait AU MOINS une fiche annoncée.
+       Les quatre promenades MANA sont parties du produit : le fichier n'en
+       annonce plus aucune, et c'est désormais l'état JUSTE. Exiger un
+       minimum ferait échouer la vérité.
+       ⭐ CE QUI RESTE, ET QUI EST LE VRAI SUJET : ce fichier public ne doit
+          annoncer QUE des pages qui répondent. Le défaut d'origine — deux
+          promenades inventées, « GR34 » et « Pointe du Raz » — serait pris
+          exactement pareil aujourd'hui. */
     for (const a of annonces) {
       expect(slugs.has(a), `llms.txt annonce « ${a} », qui n'existe pas`).toBe(true);
     }
+    /* ⛔ ET IL NE DOIT PAS SE VIDER NON PLUS : les deux surfaces que le
+       produit garde — le compositeur et les balades d'Office — y sont
+       nommément annoncées. Sans ceci, un fichier devenu muet passerait au
+       vert, ce qui est la forme silencieuse du même mensonge. */
+    expect(txt, "llms.txt n'annonce plus le compositeur").toMatch(/\/mana\/promenades\)/);
+    expect(txt, "llms.txt n'annonce plus les balades d'Office").toMatch(/\/mana\/balades-office\)/);
   });
 
   it("⛔ ne décrit plus l'alerte hors-sentier supprimée", () => {

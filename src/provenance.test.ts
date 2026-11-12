@@ -39,8 +39,19 @@ describe("qui répond de ce tracé", () => {
     expect(MENTION.compose).toMatch(/MANA/);
   });
 
-  it("les quatre promenades embarquées déclarent leur rang", () => {
-    expect(WALKS.length).toBeGreaterThan(0);
+  /**
+   * 🔴 RETOURNÉ LE 12/11/2026 — il exigeait `WALKS.length > 0`, et les quatre
+   *    promenades MANA viennent d'être retirées du produit (voir `walks.ts`).
+   * ⭐ LA RÈGLE, ELLE, N'A PAS CHANGÉ : toute promenade EMBARQUÉE doit
+   *    déclarer d'où elle vient, et aucune ne peut se dire balisée par un
+   *    Office dont nous n'avons pas le tracé. On ne supprime donc pas le
+   *    test, on supprime l'exigence de POPULATION — ce qui le rend vacu-
+   *    ement vrai aujourd'hui, et mordant de nouveau le jour où `WALKS` se
+   *    repeuple. ⚠️ La vacuité est DITE par le premier `expect` ci-dessous,
+   *    pour qu'un vert ne passe pas pour une vérification.
+   */
+  it("toute promenade embarquée déclare son rang", () => {
+    expect(WALKS.length, "aucune promenade embarquée — règle en sommeil").toBeGreaterThanOrEqual(0);
     for (const w of WALKS) {
       expect(w.provenance, w.slug).toBeDefined();
       // ⛔ aucune ne peut se déclarer balisée par l'Office : nous n'avons pas

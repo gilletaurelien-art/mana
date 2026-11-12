@@ -28,18 +28,14 @@ export type Illustration = {
   corps?: string[];
 };
 
-export const ILLUSTRATIONS: Record<string, Illustration> = {
-  "forts-du-goulet": {
-    couverture: "espagnols-brume",
-    // ⭐ Un plan manuscrit de 1695 n'illustre pas la promenade : il EN EST le
-    //    sujet. Le parcours longe sept batteries, et ce document de la BnF
-    //    montre leur disposition telle que l'ingénieur du roi l'a dessinée.
-    corps: ["espagnols-1695", "espagnols-sentier"],
-  },
-  "ile-vierge": {
-    couverture: "ile-vierge",
-    corps: ["ile-vierge-lande"],
-  },
-  // "saint-fiacre"       : rien de libre pour la chapelle Saint-Fiacre.
-  // "anse-saint-nicolas" : rien de libre pour l'anse.
-};
+/**
+ * ⛔ VIDE DEPUIS LE 12/11/2026, ET CE N'EST PAS UNE PERTE D'IMAGES. Les deux
+ *    seules entrées qu'elle portait illustraient « Les forts du goulet » et
+ *    « L'Île Vierge » — deux des quatre promenades MANA retirées du produit
+ *    ce jour-là (voir `walks.ts`). Une illustration sans promenade est
+ *    orpheline, et `FichePromenade.test.ts` le refuse nommément.
+ * ⭐ LES PHOTOGRAPHIES, ELLES, RESTENT EN BIBLIOTHÈQUE (`images/bibliotheque.json`)
+ *    avec leurs droits et leurs lieux : c'est la LÉGENDE qui disparaît, pas
+ *    l'image. Le jour où une promenade revient, on la relie ici.
+ */
+export const ILLUSTRATIONS: Record<string, Illustration> = {};

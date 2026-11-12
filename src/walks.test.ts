@@ -14,7 +14,28 @@ import { WALKS, verifierTrace, sautMax, pointsRepetes, distM } from "./walks";
  * Ces tests refusent d'embarquer un tracé qu'on n'a pas vérifié.
  */
 
+/**
+ * ⛔ `WALKS` EST VIDE DEPUIS LE 12/11/2026 — les quatre promenades MANA ont
+ *    été retirées du produit (arbitrage du fondateur ; voir `walks.ts`).
+ *
+ * 🔴 ET QUATRE SUITES DE CE FICHIER BOUCLENT DESSUS. Sans ce témoin, elles
+ *    deviennent des `describe` SANS AUCUN TEST : vitest les compte en échec
+ *    — par chance — mais la forme dangereuse est l'autre, celle où une boucle
+ *    vide passe au vert sans rien affirmer. ⭐ Ce dépôt la connaît : « un
+ *    refactor propre aveugle le détecteur, population vide, vert instantané ».
+ *    Le témoin DÉCLARE la vacuité au lieu de la subir, et il disparaît de
+ *    lui-même le jour où une promenade revient — les vraies règles
+ *    reprennent alors la main sans qu'on ait rien à rebrancher.
+ */
+function temoinSiAucuneEmbarquee(regle: string) {
+  if (WALKS.length > 0) return;
+  it(`⛔ aucune promenade embarquée — « ${regle} » ne garde rien aujourd'hui`, () => {
+    expect(WALKS).toHaveLength(0);
+  });
+}
+
 describe("les tracés livrés sont géométriquement sains", () => {
+  temoinSiAucuneEmbarquee("tracés géométriquement sains");
   for (const w of WALKS) {
     it(`${w.slug} — aucun saut, aucun point répété`, () => {
       expect(verifierTrace(w.points)).toEqual([]);
@@ -23,6 +44,7 @@ describe("les tracés livrés sont géométriquement sains", () => {
 });
 
 describe("chaque promenade dit d'où elle vient", () => {
+  temoinSiAucuneEmbarquee("chaque promenade dit d'où elle vient");
   for (const w of WALKS) {
     it(`${w.slug} — porte sa référence OSM et son lien`, () => {
       // L'ODbL exige l'attribution : sans source, on ne publie pas.
@@ -33,6 +55,7 @@ describe("chaque promenade dit d'où elle vient", () => {
 });
 
 describe("les étapes sont ordonnées LE LONG du chemin", () => {
+  temoinSiAucuneEmbarquee("étapes ordonnées le long du chemin");
   for (const w of WALKS) {
     it(`${w.slug} — positions croissantes de 0 à 1`, () => {
       // Une liste triée par distance sous un titre qui annonce une SÉQUENCE
@@ -46,6 +69,7 @@ describe("les étapes sont ordonnées LE LONG du chemin", () => {
 });
 
 describe("on n'affiche QUE ce qu'on sait", () => {
+  temoinSiAucuneEmbarquee("aucune étape au libellé ambiant");
   for (const w of WALKS) {
     it(`${w.slug} — aucune étape au libellé AMBIANT`, () => {
       // ⭐ CETTE RÈGLE A ÉTÉ AFFINÉE LE 28/10 AU SOIR, PAS SUPPRIMÉE.

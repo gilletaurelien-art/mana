@@ -7,12 +7,9 @@ MANA.bzh est la vitrine des promenades bretonnes de l'écosystème MANA. Quatre 
 ## Pages publiques
 
 - [Accueil](https://gilletaurelien-art.github.io/mana/) : hub MANAradio + les 4 modules de la promenade
-- [Promenades](https://gilletaurelien-art.github.io/mana/promenades) : index des parcours avec filtres concrets (durée, boucle, poussette/PMR, chiens)
+- [Promenades](https://gilletaurelien-art.github.io/mana/promenades) : le compositeur — on choisit un lieu, l'application compose le chemin dans le téléphone (aucune position n'est envoyée)
+- [Les balades des Offices de tourisme](https://gilletaurelien-art.github.io/mana/balades-office) : les circuits balisés par les offices du Finistère nord, avec leur source
 - [Le territoire](https://gilletaurelien-art.github.io/mana/carte) : la presqu'île de Crozon dessinée depuis notre propre graphe — 13 265 tronçons, 339 lieux, aucune tuile cartographique
-- [Les forts du goulet](https://gilletaurelien-art.github.io/mana/promenade/forts-du-goulet) : Roscanvel, 12,0 km aller simple — sept batteries le long du goulet de Brest
-- [La balade de Saint-Fiacre](https://gilletaurelien-art.github.io/mana/promenade/saint-fiacre) : Crozon, 6,4 km en boucle
-- [L'Anse Saint-Nicolas](https://gilletaurelien-art.github.io/mana/promenade/anse-saint-nicolas) : Crozon
-- [L'Île Vierge](https://gilletaurelien-art.github.io/mana/promenade/ile-vierge) : Crozon, cap de la Chèvre
 - [Mentions légales](https://gilletaurelien-art.github.io/mana/mentions-legales) : éditeur, hébergement GitHub Pages, données personnelles
 
 ## Réponses aux questions fréquentes
