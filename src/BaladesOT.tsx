@@ -3,6 +3,7 @@ import { chargerOT, MOT_CLEF_OFFICE, PRATIQUE, type ItineraireOT, type Recueil }
 import { CarteBalades } from "./CarteBalades";
 import { lireFond, type Fond } from "./carte-fond";
 import { baseUrl } from "./router";
+import { PREFIXE_OT } from "./promenade-ot";
 
 /**
  * LES BALADES DE L'OFFICE — ÉCRAN À PART, DEPUIS LE 3/11/2026.
@@ -192,28 +193,56 @@ export function BaladesOT() {
 
             {/* 🔴 LE PARCOURS CHOISI S'AFFICHE SOUS LA CARTE — 12/11/2026,
                 demande du fondateur, exemple à l'appui : « Circuit VTT -
-                Trémet · VTT · 20,6 km · boucle · facile · Crozon », en lien.
-                ⭐ SOUS LA CARTE, PAS SOUS LA BANNIÈRE. Elle vivait trois
-                   cents pixels plus bas, après les deux rangées de filtres :
-                   on touchait un tracé et la réponse paraissait hors de
-                   l'écran. Une réponse qui n'est pas là où l'on a posé le
-                   doigt n'est pas une réponse.
-                ⭐ ET C'EST UN SEUL LIEN, titre et chiffres compris — comme
-                   dans l'exemple. Deux cibles côte à côte pour un seul geste
-                   font hésiter ; et le lien vers la fiche de l'Office EST le
-                   crédit de ce circuit. */}
+                Trémet · VTT · 20,6 km · boucle · facile · Crozon ».
+                ⭐ SOUS LA CARTE, PAS SOUS LA BANNIÈRE. Il vivait trois cents
+                   pixels plus bas, après les deux rangées de filtres : on
+                   touchait un tracé et la réponse paraissait hors de l'écran.
+                   Une réponse qui n'est pas là où l'on a posé le doigt n'est
+                   pas une réponse.
+                🔴 ET DEUX GESTES DEPUIS LE 12/11 AU SOIR, nommés par le
+                   fondateur : « + d'infos = site de l'OT · commencer = mana ».
+                   ⭐ C'est le partage juste, et il se lit en deux mots : ce
+                      qu'ILS savent — le balisage, les conditions, les
+                      horaires — est chez eux ; ce que NOUS savons — où l'on
+                      met les pieds, ce qu'on croise, le GPS, le SOS, le
+                      hors-ligne — est ici. Aucun des deux ne remplace
+                      l'autre, et le lien vers leur fiche reste le crédit. */}
             {tenu && (
-              <a className="ot-choisi" href={tenu.source}
-                 target="_blank" rel="noreferrer noopener">
-                <span className="ot-choisi-titre">{tenu.titre}</span>
-                <span className="ot-choisi-meta">
-                  {PRATIQUE[tenu.pratique]} ·{" "}
-                  {tenu.km.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} km ·{" "}
-                  {tenu.boucle ? "boucle" : "aller simple"}
-                  {tenu.difficulte && ` · ${tenu.difficulte}`}
-                  {tenu.commune && ` · ${tenu.commune}`}
-                </span>
-              </a>
+              <div className="ot-choisi">
+                <p className="ot-choisi-dire">
+                  <span className="ot-choisi-titre">{tenu.titre}</span>
+                  <span className="ot-choisi-meta">
+                    {PRATIQUE[tenu.pratique]} ·{" "}
+                    {tenu.km.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} km ·{" "}
+                    {tenu.boucle ? "boucle" : "aller simple"}
+                    {tenu.difficulte && ` · ${tenu.difficulte}`}
+                    {tenu.commune && ` · ${tenu.commune}`}
+                  </span>
+                </p>
+                <div className="ot-choisi-gestes">
+                  {/* ⚠️ « + D'INFOS » PART CHEZ EUX, ET C'EST DIT : cible
+                      externe, `rel` complet. Leur fiche fait foi sur le
+                      balisage — nous n'en sommes pas l'éditeur. */}
+                  <a className="ot-geste" href={tenu.source}
+                     target="_blank" rel="noreferrer noopener">
+                    + d'infos
+                  </a>
+                  {/* ⭐ « COMMENCER » RESTE CHEZ NOUS, et mène à la fiche MANA
+                      du circuit — carte, ce qu'on croise, GPX, puis « Partir
+                      sur ce chemin » vers l'écran de marche.
+                      ⚠️ Le préfixe `ot-` n'est pas décoratif : les 26 600
+                         tracés du catalogue et les 116 circuits d'Office
+                         partagent l'adresse `/promenade/<slug>`, et leurs
+                         identifiants viennent de deux mondes qui ne se
+                         connaissent pas. Une collision n'afficherait pas une
+                         erreur — elle afficherait UN AUTRE CHEMIN sous le bon
+                         nom, ce qui ne se voit qu'en marchant. */}
+                  <a className="ot-geste ot-geste-fort"
+                     href={`${B}/promenade/${PREFIXE_OT}${tenu.slug}`}>
+                    Commencer
+                  </a>
+                </div>
+              </div>
             )}
 
             {/* 🔴 LES DEUX FILTRES MONTENT DANS LA BANNIÈRE. Ils vivaient dans

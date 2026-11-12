@@ -17,7 +17,8 @@
  */
 import { useEffect, useState } from "react";
 import { WALKS } from "./walks";
-import type { Etape } from "./walks";
+import type { Etape, Walk } from "./walks";
+import { chargerPromenade } from "./promenade-source";
 import { libelleCategorie } from "./categories";
 import { ILLUSTRATIONS } from "./illustrations";
 import { Photo, image } from "./images/Photo";
@@ -46,7 +47,20 @@ const lisible = (m: number) =>
 type AvecDistance = Etape & { m: number | null };
 
 export function Rencontres({ base, slug }: { base: string; slug: string }) {
-  const walk = WALKS.find((w) => w.slug === slug);
+  /* 🔴 MÊME OUBLI QUE L'ÉCRAN DE MARCHE, et il aurait laissé un lien mort
+     SUR LA FICHE : « Ce qu'on croise autour de moi » y renvoie. Un écran de
+     plus qui ne lisait que `WALKS`, vide depuis ce matin. */
+  const [trouvee, setTrouvee] = useState<Walk | null>(null);
+  useEffect(() => {
+    if (WALKS.some((w) => w.slug === slug)) return;
+    let vivant = true;
+    chargerPromenade(slug)
+      .then((w) => { if (vivant) setTrouvee(w); })
+      .catch(() => { if (vivant) setTrouvee(null); });
+    return () => { vivant = false; };
+  }, [slug]);
+
+  const walk = WALKS.find((w) => w.slug === slug) ?? trouvee ?? undefined;
 
   /* ⭐ LE TITRE D'UNE PAGE DYNAMIQUE EST SON NOM — il ne peut pas tenir dans
      la table de App.tsx, et c'est la seule raison pour laquelle il vit ici.

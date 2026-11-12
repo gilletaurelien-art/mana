@@ -66,7 +66,18 @@ describe("les quatre promenades ont quitté le produit", () => {
     for (const f of readdirSync(dossier)) {
       if (!/\.tsx?$/.test(f) || /\.test\./.test(f) || permis.has(f)) continue;
       const src = readFileSync(new URL(f, dossier), "utf8");
-      const liste = src.replace(/WALKS\.find\([^)]*\)/g, "").match(/\bWALKS\b\s*[.[]/g);
+      /* ⚠️ `some` AUTANT QUE `find` — élargi le 12/11/2026. La règle a
+         toujours été « résoudre une URL est légitime, LISTER ne l'est
+         pas » ; le motif, lui, ne connaissait que `find`. Le jour où
+         `Rencontres` a demandé « ce slug est-il embarqué ? » avec `some`,
+         le garde a crié au loup sur une résolution.
+         ⭐ Un motif qui ne connaît qu'une forme de la bonne pratique
+            condamne la suivante. On nomme les deux, et on garde le refus
+            pour ce qui compte : `WALKS.map`, `WALKS[0]`, `WALKS.length`
+            dans un écran — là, on liste. */
+      const liste = src
+        .replace(/WALKS\.(find|some)\([^)]*\)/g, "")
+        .match(/\bWALKS\b\s*[.[]/g);
       expect(liste ?? [], `${f} liste WALKS au lieu de VITRINE`).toHaveLength(0);
     }
   });

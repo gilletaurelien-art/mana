@@ -22,7 +22,7 @@
  */
 import { lazy, useEffect, useState } from "react";
 import { WALKS, effortLisible, MENTION } from "./walks";
-import { chargerItineraire } from "./catalogue";
+import { chargerPromenade } from "./promenade-source";
 import type { Walk } from "./walks";
 import { Atlas } from "./Atlas";
 import { Photo, image } from "./images/Photo";
@@ -65,6 +65,16 @@ export function FichePromenade({ base, slug }: { base: string; slug: string }) {
      depuis la page, la géométrie est bonne (8 tronçons, 112 points) — et
      `performance.getEntriesByType` montrait **zéro requête** vers mana.bzh.
      Ce n'était ni la donnée ni le réseau : la fiche ne demandait rien. */
+  /* 🔴 TROISIÈME SOURCE — 12/11/2026 : LES CIRCUITS DES OFFICES. Demande du
+     fondateur : « on pourrait les avoir aussi chez nous avec le même
+     dispositif d'accompagnement que nos promenades composées ». Ils vivent
+     dans `ot.json`, déjà embarqué, et un préfixe `ot-` dans l'adresse les
+     distingue sans ambiguïté des 26 600 tracés du catalogue distant.
+     ⭐ Et ils arrivent AVEC leurs étapes : « ce que vous croiserez » est
+        calculé sur nos 5 676 lieux, ce que leur propre fiche ne sait pas
+        dire. C'est l'échange — leur tracé, notre inventaire.
+     ⚠️ L'inventaire est chargé à part et peut tarder : la promenade est
+        marchable sans lui, elle n'annonce simplement pas ses rencontres. */
   const embarquee = WALKS.find((w) => w.slug === slug);
   const [distante, setDistante] = useState<Walk | null>(null);
   const [cherche, setCherche] = useState(!embarquee);
@@ -73,7 +83,11 @@ export function FichePromenade({ base, slug }: { base: string; slug: string }) {
     if (embarquee) { setCherche(false); return; }
     let vivant = true;
     setCherche(true);
-    chargerItineraire(slug)
+    /* ⭐ UNE SEULE QUESTION, UN SEUL ENDROIT QUI RÉPOND. `chargerPromenade`
+       sait où chercher — embarquée, circuit d'Office, catalogue distant — et
+       c'est volontairement hors de cet écran : trois fois cette année, une
+       source ajoutée à UN écran a laissé les voisins en arrière. */
+    chargerPromenade(slug)
       .then((w) => { if (vivant) setDistante(w); })
       .catch(() => { if (vivant) setDistante(null); })
       .finally(() => { if (vivant) setCherche(false); });
@@ -362,15 +376,38 @@ export function FichePromenade({ base, slug }: { base: string; slug: string }) {
           <a className="m-action-fine" href={`${base}/promenade/${walk.slug}/rencontres`}>
             Ce qu'on croise autour de moi
           </a>
+          {/* 🔴 LE CRÉDIT SUIT LA PROVENANCE, ET CE N'EST PAS UN DÉTAIL DE
+              FORMULATION. Cette fiche disait « Le tracé sur OpenStreetMap »
+              pour TOUT, parce que tout venait d'OSM quand elle a été écrite.
+              Un circuit d'Office vient de LEUR relevé GPX : l'annoncer comme
+              une relation OSM citerait qui n'a rien fourni et tairait qui a
+              fourni — la faute exacte que `carte-fond.ts` refuse pour
+              l'attribution des fonds de carte. */}
           <a className="m-lien fiche-osm" href={walk.osmUrl} target="_blank" rel="noreferrer noopener">
-            Le tracé sur OpenStreetMap
+            {walk.provenance === "ot"
+              ? "La fiche de l'Office de tourisme"
+              : "Le tracé sur OpenStreetMap"}
           </a>
         </div>
 
         <footer className="fiche-pied">
+          {/* ⚠️ MÊME RÈGLE AU PIED : les LIEUX viennent d'OpenStreetMap dans
+              les deux cas — c'est notre inventaire —, mais le TRACÉ vient de
+              l'Office quand c'est un de leurs circuits. On sépare les deux
+              plutôt que de créditer en bloc. */}
           <p className="m-meta">
-            Tracé et lieux&nbsp;: © les contributeurs d'OpenStreetMap, ODbL.
-            Référence&nbsp;: {walk.osmRef}.
+            {walk.provenance === "ot" ? (
+              <>
+                Tracé&nbsp;: relevé et balisé par l'Office de tourisme.
+                Lieux&nbsp;: © les contributeurs d'OpenStreetMap, ODbL.
+                Référence&nbsp;: {walk.osmRef}.
+              </>
+            ) : (
+              <>
+                Tracé et lieux&nbsp;: © les contributeurs d'OpenStreetMap, ODbL.
+                Référence&nbsp;: {walk.osmRef}.
+              </>
+            )}
           </p>
           <p className="m-meta">
             {touchees.length === 0 && fermetures === null

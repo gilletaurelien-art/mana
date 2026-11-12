@@ -4070,19 +4070,34 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
       deux fonds, deux tons : c'est la leçon que `.ot-filtre` a payée trois
       fois. */
 .ot-choisi {
-  /* ⚠️ UNE SEULE LIGNE QUI COULE, pas deux blocs — c'est la forme de
-     l'exemple donné par le fondateur (« Circuit VTT - Trémet VTT · 20,6 km ·
-     boucle · facile · Crozon »), et elle rend dix-sept pixels à une bannière
-     qui dépassait déjà de l'écran quand un parcours est choisi. */
-  display: block;
-  padding: var(--sp-0) var(--sp-2);
+  display: grid; gap: var(--sp-1);
+  padding: var(--sp-1) var(--sp-2);
   border-radius: var(--r-l);
   border: 1px solid var(--bulle-trait);
   background: color-mix(in srgb, var(--craie) 10%, transparent);
-  text-decoration: none;
 }
-.ot-choisi:hover { background: color-mix(in srgb, var(--craie) 16%, transparent); }
-.ot-choisi:focus-visible { outline: 2px solid var(--ocre); outline-offset: 2px; }
+/* ⚠️ UNE SEULE LIGNE QUI COULE pour le nom et les chiffres — c'est la forme
+   de l'exemple donné par le fondateur (« Circuit VTT - Trémet VTT · 20,6 km ·
+   boucle · facile · Crozon »). */
+.ot-choisi-dire { margin: 0; }
+/* ⭐ DEUX GESTES CÔTE À CÔTE, ET DE POIDS DIFFÉRENT : « + d'infos » est
+   tenu, « Commencer » est plein. Deux boutons de même poids laisseraient
+   croire à deux façons de faire la même chose — le défaut trouvé sur
+   l'accueil en septembre, où « Voir les balades » et « Voir sur la carte »
+   menaient au même écran. Ici ils mènent à deux endroits VRAIMENT
+   différents : l'un chez eux, l'autre chez nous. */
+.ot-choisi-gestes { display: flex; gap: var(--sp-1); }
+.ot-geste {
+  flex: 1 1 0; min-height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--r-rond); border: 1px solid var(--bulle-trait);
+  font-size: var(--t-xs); text-decoration: none; color: var(--craie);
+}
+.ot-geste-fort {
+  background: var(--ocre); color: var(--nuit); border-color: var(--ocre);
+  font-weight: 600;
+}
+.ot-geste:focus-visible { outline: 2px solid var(--ocre); outline-offset: 2px; }
 .ot-choisi-titre {
   font-family: var(--titre); font-size: var(--t-s); line-height: 1.35;
   color: var(--craie);

@@ -22,6 +22,7 @@
 import { useEffect, useRef, useState } from "react";
 import { WALKS, distAuTrace } from "./walks";
 import { BoutonSos } from "./Sos";
+import { chargerPromenade } from "./promenade-source";
 import type { Walk, WalkPoint, Etape } from "./walks";
 import { Atlas } from "./Atlas";
 import { Photo, image } from "./images/Photo";
@@ -85,7 +86,25 @@ export function EnChemin(
     ditRevenir?: string;
   },
 ) {
-  const walk: Walk | undefined = direct ?? WALKS.find((w) => w.slug === slug);
+  /* 🔴 CET ÉCRAN NE LISAIT QUE LES PROMENADES EMBARQUÉES — 12/11/2026, et
+     `WALKS` est vide depuis ce matin. « Partir sur ce chemin » depuis la
+     fiche d'un circuit d'Office rendait donc l'ACCUEIL : la route existait,
+     le composant se montait, et il n'avait rien à montrer.
+     ⭐ Il passe par le résolveur commun, comme la fiche — c'est la troisième
+        fois cette année qu'une source ajoutée à un écran laisse son voisin
+        en arrière, et c'est pour ça que la réponse vit à un seul endroit. */
+  const [trouvee, setTrouvee] = useState<Walk | null>(null);
+  useEffect(() => {
+    if (direct || !slug) return;
+    let vivant = true;
+    chargerPromenade(slug)
+      .then((w) => { if (vivant) setTrouvee(w); })
+      .catch(() => { if (vivant) setTrouvee(null); });
+    return () => { vivant = false; };
+  }, [direct, slug]);
+
+  const walk: Walk | undefined =
+    direct ?? WALKS.find((w) => w.slug === slug) ?? trouvee ?? undefined;
   const [moi, setMoi] = useState<WalkPoint | null>(null);
   const [gpsErreur, setGpsErreur] = useState("");
   const [suivi, setSuivi] = useState(true);

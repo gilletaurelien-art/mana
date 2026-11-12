@@ -313,14 +313,28 @@ describe("les balades des Offices — la liste se lit", () => {
     expect(i, "la carte a disparu").toBeGreaterThan(0);
     expect(j, "le parcours choisi ne s'affiche plus").toBeGreaterThan(i);
     expect(j, "le parcours choisi est passé SOUS les filtres").toBeLessThan(k);
-    /* ⛔ UN SEUL LIEN, titre et chiffres compris. Deux cibles côte à côte
-       pour un seul geste font hésiter — et le lien vers la fiche de l'Office
-       EST le crédit de ce circuit. */
-    expect(ecran).toMatch(/<a className="ot-choisi" href=\{tenu\.source\}/);
     for (const champ of ["tenu.titre", "tenu.pratique", "tenu.km", "tenu.boucle",
                          "tenu.difficulte", "tenu.commune"]) {
       expect(ecran, `« ${champ} » manque à la ligne du parcours choisi`).toContain(champ);
     }
+    /* 🔴 RETOURNÉ LE SOIR MÊME. Le matin, le bloc était UN SEUL lien vers la
+       fiche de l'Office — « deux cibles côte à côte pour un seul geste font
+       hésiter ». Le fondateur a tranché autrement, et il a raison : ce ne
+       sont pas deux façons de faire la même chose. « + d'infos = site de
+       l'OT · commencer = mana » — deux destinations VRAIMENT différentes,
+       donc deux boutons.
+       ⭐ Le partage se lit en deux mots : ce qu'ILS savent (balisage,
+          conditions, horaires) est chez eux ; ce que NOUS savons (où l'on met
+          les pieds, ce qu'on croise, le GPS, le SOS, le hors-ligne) est ici.
+       ⛔ Et le premier part DEHORS : cible externe et `rel` complet, sinon
+          la fiche de l'Office s'ouvre dans notre application comme si elle
+          était à nous. */
+    expect(ecran, "« + d'infos » ne mène plus chez l'Office")
+      .toMatch(/href=\{tenu\.source\}[\s\S]{0,120}\+ d'infos/);
+    expect(ecran, "« + d'infos » ouvre la fiche de l'Office DANS notre app")
+      .toMatch(/href=\{tenu\.source\}\s*\n?\s*target="_blank" rel="noreferrer noopener"/);
+    expect(ecran, "« Commencer » ne mène plus à la promenade MANA")
+      .toMatch(/promenade\/\$\{PREFIXE_OT\}\$\{tenu\.slug\}/);
   });
 
   it("⛔ l'attribution de la carte est VISIBLE et suit le fond affiché", () => {
