@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { chargerOT, MOT_CLEF_OFFICE, PRATIQUE, type ItineraireOT, type Recueil } from "./ot";
 import { CarteBalades } from "./CarteBalades";
 import { lireFond, type Fond } from "./carte-fond";
@@ -87,9 +87,28 @@ export function BaladesOT() {
      nulle part. L'ordre reste celui de l'artefact — c'est le sien, pas un
      tri inventé ici. */
   const paysPresents = offices.filter((o) => (ot ?? []).some((i) => i.ot === o.ot));
-  const visibles = (ot ?? []).filter(
-    (i) => (pratique === "tous" || i.pratique === pratique)
-        && (pays === "tous" || i.ot === pays),
+  /**
+   * 🔴 MÉMORISÉ, ET C'EST UN CORRECTIF MESURÉ À L'ÉCRAN — 12/11/2026.
+   *
+   * Ce tableau était recalculé à CHAQUE rendu, donc neuf à chaque rendu. La
+   * carte le reçoit en propriété et recadre quand il change : elle recadrait
+   * donc à chaque rendu, pour n'importe quelle cause. Vécu : on choisit une
+   * balade, la carte vole jusqu'à elle ; on clique à côté pour désélectionner
+   * — ce simple rendu renvoyait la vue sur les 116 du Finistère.
+   *
+   * ⭐ LE SYMPTÔME N'ACCUSE PAS LA CAUSE. Il ressemble à « la désélection
+   *    dézoome », qui serait un choix de produit ; c'était une identité de
+   *    tableau. `CarteFondOT` porte la même leçon depuis qu'une dépendance
+   *    recréée à chaque rendu y avait transformé un effet en boucle de
+   *    reconstruction — et là-bas le symptôme était « rien ne s'affiche ».
+   *    Même cause, deux symptômes sans rapport apparent.
+   */
+  const visibles = useMemo(
+    () => (ot ?? []).filter(
+      (i) => (pratique === "tous" || i.pratique === pratique)
+          && (pays === "tous" || i.ot === pays),
+    ),
+    [ot, pratique, pays],
   );
   /* ⛔ UN CHOIX QUE LE FILTRE VIENT DE MASQUER NE SE GARDE PAS. Sans ceci, on
      choisit un circuit à Crozon, on bascule sur « Abers », et la bulle

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { MOT_CLEF_OFFICE } from "./ot";
+import { MOTIFS } from "./CarteBalades";
 import recueil from "./ot.json";
 
 /* ⚠️ LES COMMENTAIRES SONT RETIRÉS AVANT TOUTE LECTURE DE RÈGLE. Celui qui
@@ -235,9 +236,29 @@ describe("les balades des Offices — la liste se lit", () => {
        MOTIF. La séquence doit donc exister ET compter plus d'un état —
        un seul ferait un pointillé fixe qu'on prendrait pour l'animation. */
     expect(carte).toMatch(/line-dasharray/);
-    const motifs = carte.slice(carte.indexOf("const MOTIFS"), carte.indexOf("];", carte.indexOf("const MOTIFS")));
-    expect([...motifs.matchAll(/\[/g)].length, "un seul état de pointillé n'anime rien")
-      .toBeGreaterThan(4);
+    /* 🔴 CE GARDE COMPTAIT DES CROCHETS, ET IL EST TOMBÉ LE JOUR OÙ LA
+       SÉQUENCE EST PASSÉE D'UNE LISTE ÉCRITE À UN `Array.from`. Rien de ce
+       qu'il protégeait n'avait bougé : il mesurait une FORME.
+       ⭐ On importe donc la séquence et on affirme ce qui compte vraiment —
+          c'est aussi ce qui permet d'écrire l'invariant que le commentaire
+          annonce et que rien ne vérifiait. */
+    expect(MOTIFS.length, "un seul état de pointillé n'anime rien").toBeGreaterThan(4);
+    /* ⛔ CE SONT DES POINTS, PAS DES TRAITS — demande du fondateur, 12/11 :
+       « plutôt que des petites lignes dans le liseré, de petits points ». Un
+       point est un tiret de longueur ZÉRO à bout rond ; les longueurs de
+       tiret vivent aux index PAIRS du motif. */
+    for (const m of MOTIFS) {
+      const tirets = m.filter((_, i) => i % 2 === 0);
+      expect(tirets, `des traits sont revenus dans le motif ${JSON.stringify(m)}`)
+        .toEqual(tirets.map(() => 0));
+    }
+    /* ⚠️ ET LA PÉRIODE NE CHANGE JAMAIS. Si elle variait d'un état à l'autre,
+       tout le pointillé se dilaterait et se contracterait au lieu d'avancer —
+       un clignotement, pas un écoulement. C'est l'invariant que le
+       commentaire de `MOTIFS` annonce ; il est tenu ici. */
+    const periodes = new Set(MOTIFS.map((m) => m.reduce((a, b) => a + b, 0)));
+    expect([...periodes], "la période du pointillé respire au lieu d'avancer")
+      .toHaveLength(1);
     /* ⛔ ET ELLE S'ARRÊTE SOUS `prefers-reduced-motion`. Cent seize chemins
        qui ondulent en permanence, c'est beaucoup d'écran qui bouge. Le doré
        RESTE — c'est le mouvement qui part, jamais l'information. */

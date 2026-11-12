@@ -60,22 +60,39 @@ import type { ItineraireOT } from "./ot";
  *    le même état.
  */
 /**
- * LES QUATORZE ÉTATS DU POINTILLÉ — le doré qui court.
+ * LES DOUZE ÉTATS DU POINTILLÉ — des POINTS qui filent le long du chemin.
  *
- * ⭐ maplibre ne sait pas décaler un pointillé : il n'a pas d'équivalent au
- *    `stroke-dashoffset` du SVG. On fait donc tourner le MOTIF lui-même —
- *    le trait grandit, le vide recule, puis l'inverse — et l'œil lit un
- *    écoulement. Les valeurs sont en multiples de la largeur du trait.
- * ⚠️ La séquence doit BOUCLER : le dernier état doit enchaîner sur le
- *    premier sans saut, sinon le chemin « repart en arrière » une fois par
- *    tour, et on voit le défaut plutôt que le mouvement.
+ * 🔴 DES POINTS, PLUS DES TRAITS — 12/11/2026, demande du fondateur :
+ *    « plutôt que des petites lignes dans le liseré, de petits points ».
+ *
+ * ⭐ UN POINT EST UN TIRET DE LONGUEUR ZÉRO À BOUT ROND. C'est la façon
+ *    canonique de pointiller une ligne dans maplibre : le bout arrondi
+ *    déborde de chaque côté d'un tiret nul, et ce débord EST le point. Son
+ *    diamètre vaut la largeur du trait, donc il suit `line-width` sans qu'on
+ *    ait à l'accorder à la main.
+ *
+ * ⛔ ET CELA RENVERSE LE COMMENTAIRE DU BOUT CARRÉ ÉCRIT CE MATIN, qui
+ *    disait : « un `line-cap: round` arrondit chaque tiret, à cette largeur
+ *    les bouts se rejoignent, et le pointillé redevient un trait plein ».
+ *    C'était juste POUR DES TIRETS de 3 à 4 unités — leurs bouts arrondis se
+ *    touchaient. Pour des tirets NULS espacés de six, c'est exactement
+ *    l'effet qu'on cherche. ⭐ La même propriété, la même valeur, et deux
+ *    verdicts opposés selon la longueur du tiret : une règle d'allure ne
+ *    vaut que dans le régime où elle a été mesurée.
+ *
+ * ⭐ COMMENT ILS FILENT. maplibre ne sait pas décaler un pointillé ; on fait
+ *    tourner le MOTIF. Chaque état porte deux points par période de six : un
+ *    point d'ancrage à 0, et un second à `k` qui avance de 0 à 5,5. Le
+ *    second quitte l'ancre, parcourt l'intervalle, et se fond dans l'ancre
+ *    suivante — l'œil lit un écoulement, pas un clignotement.
+ * ⚠️ La période ne change JAMAIS (toujours 6) : si elle variait d'un état à
+ *    l'autre, tout le pointillé se dilaterait et se contracterait au lieu
+ *    d'avancer.
  */
-const MOTIFS: number[][] = [
-  [0, 4, 3], [0.5, 4, 2.5], [1, 4, 2], [1.5, 4, 1.5],
-  [2, 4, 1], [2.5, 4, 0.5], [3, 4, 0],
-  [0, 0.5, 3, 3.5], [0, 1, 3, 3], [0, 1.5, 3, 2.5],
-  [0, 2, 3, 2], [0, 2.5, 3, 1.5], [0, 3, 3, 1], [0, 3.5, 3, 0.5],
-];
+export const MOTIFS: number[][] = Array.from({ length: 12 }, (_, i) => {
+  const k = i * 0.5;
+  return [0, k, 0, 6 - k];
+});
 
 /**
  * LE PAS DU POINTILLÉ, EN MILLISECONDES.
@@ -195,13 +212,15 @@ export function CarteBalades({
          source : si `--ocre` change, cette ligne se change avec lui. */
       m.addLayer({
         id: "balades-trace", type: "line", source: "balades",
-        /* ⚠️ BOUT CARRÉ SUR LA COUCHE POINTILLÉE, et ce n'est pas un choix
-           d'allure. Un `line-cap: round` arrondit CHAQUE tiret : à cette
-           largeur les bouts se rejoignent et le pointillé redevient un trait
-           plein — l'animation existerait et ne se verrait pas. La gaine, en
-           dessous, garde ses bouts ronds : c'est elle qui donne au chemin sa
-           continuité. */
-        layout: { "line-join": "round", "line-cap": "butt" },
+        /* 🔴 BOUT ROND, ET C'EST LUI QUI FAIT LE POINT. Un tiret de longueur
+           zéro ne dessine rien avec un bout carré ; arrondi, il déborde de
+           chaque côté et ce débord EST le point.
+           ⚠️ CE CHOIX A ÉTÉ L'INVERSE CE MATIN, pour des tirets de 3 à 4
+              unités : leurs bouts arrondis se rejoignaient et le pointillé
+              redevenait un trait plein. Même propriété, même valeur, deux
+              verdicts opposés selon la longueur du tiret. Une règle d'allure
+              ne vaut que dans le régime où elle a été mesurée. */
+        layout: { "line-join": "round", "line-cap": "round" },
         paint: {
           "line-color": "#c69a48", "line-width": 2.4,
           ...(anime ? { "line-dasharray": MOTIFS[0] } : {}),
