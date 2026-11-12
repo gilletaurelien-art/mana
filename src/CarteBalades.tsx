@@ -241,11 +241,24 @@ export function CarteBalades({
         const sous = m.queryRenderedFeatures(e.point, { layers: ["balades-cible"] });
         if (!sous.length) vus.current.onChoisir(null);
       });
-      /* ⛔ DÈS QU'ON DÉPLACE OU QU'ON ZOOME, LA CARTE EST À LA PERSONNE.
-         `dragstart`/`zoomstart`/`rotatestart` ne se déclenchent que sur un
-         geste — `fitBounds` et `resize`, eux, ne les émettent pas. */
+      /**
+       * ⛔ DÈS QU'ON DÉPLACE OU QU'ON ZOOME, LA CARTE EST À LA PERSONNE.
+       *
+       * 🔴 ET LE PREMIER JET ÉTAIT FAUX — avec un commentaire qui l'affirmait.
+       *    Il disait : « `dragstart`/`zoomstart`/`rotatestart` ne se
+       *    déclenchent que sur un geste, `fitBounds` ne les émet pas ».
+       *    maplibre les émet AUSSI pour un déplacement programmé : le
+       *    `cadrer()` du chargement marquait donc la carte comme « touchée »
+       *    avant que personne ne l'ait touchée, et le recadrage automatique
+       *    que je venais d'écrire ne s'exécutait jamais. Un garde désarmé par
+       *    la ligne censée l'armer.
+       * ⭐ CE QUI DISTINGUE LES DEUX EST `originalEvent` : maplibre le pose
+       *    quand l'événement vient d'une souris, d'un doigt ou d'une
+       *    molette, et le laisse vide quand il vient d'un appel. C'est la
+       *    seule différence qui tienne — le NOM de l'événement n'en dit rien.
+       */
       for (const ev of ["dragstart", "zoomstart", "rotatestart"] as const) {
-        m.on(ev, () => { touche.current = true; });
+        m.on(ev, (e) => { if (e.originalEvent) touche.current = true; });
       }
       m.on("mouseenter", "balades-cible", () => { m.getCanvas().style.cursor = "pointer"; });
       m.on("mouseleave", "balades-cible", () => { m.getCanvas().style.cursor = ""; });
@@ -282,11 +295,40 @@ export function CarteBalades({
     cadrer(m, circuits);
   }, [circuits, prete]);
 
-  /* ── le tracé choisi s'allume, sans toucher à la source ─────────────── */
+  /* ── le tracé choisi s'allume, et la carte vient à lui ──────────────── */
   useEffect(() => {
     const m = carte.current;
     if (!m || !prete || !m.getLayer("balades-choisi")) return;
     m.setFilter("balades-choisi", ["==", ["get", "slug"], choisi ?? ""]);
+
+    /**
+     * 🔴 « QUAND ON CLIQUE SUR UNE BALADE, ZOOMER LA CARTE SUR LA BALADE » —
+     *    12/11/2026, demande du fondateur.
+     *
+     * ⭐ ET LE VOL EST LENT, POUR LA MÊME RAISON QUE LE LISERÉ : « c'est du
+     *    slow tourisme ». Un saut instantané fait perdre le fil — on ne sait
+     *    plus OÙ dans le Finistère on vient d'atterrir. Un vol d'une seconde
+     *    et demie montre le chemin parcouru, ce qui est précisément
+     *    l'information qu'un zoom détruit.
+     * ⚠️ `duration: 0` si le système demande moins de mouvement : un vol
+     *    n'est pas une décoration qu'on peut couper, c'est un déplacement —
+     *    on l'exécute, sans l'animer.
+     * ⚠️ LE REMBOURRAGE EST PLUS GÉNÉREUX QU'À L'ENSEMBLE (48 contre 28) :
+     *    un circuit seul collé aux bords ne dit plus où il est. On garde du
+     *    pays autour.
+     *
+     * ⛔ ET ON MARQUE LA CARTE COMME « TENUE ». Sans ça, le prochain
+     *    redimensionnement — un clavier qui s'ouvre, une rotation, une
+     *    rangée de pastilles qui passe sur deux lignes — recadrerait sur les
+     *    116 et annulerait le zoom qu'on vient de demander. Le garde du
+     *    recadrage automatique ne connaissait que les GESTES ; un zoom
+     *    programmé à la demande de quelqu'un en est un aussi.
+     */
+    if (!choisi) return;
+    const c = vus.current.circuits.find((i) => i.slug === choisi);
+    if (!c) return;
+    touche.current = true;
+    cadrer(m, [c], MOUVEMENT_VOULU() ? 1500 : 0, 48);
   }, [choisi, prete]);
 
   return (
@@ -323,7 +365,7 @@ function geo(circuits: ItineraireOT[]) {
  *  écrite en dur. « Le Finistère » n'est pas une boîte qu'on recopie : c'est
  *  ce que couvrent les circuits qu'on montre, et ça change avec les filtres
  *  comme avec le prochain office qui s'ajoutera. */
-function cadrer(m: maplibregl.Map, circuits: ItineraireOT[]) {
+function cadrer(m: maplibregl.Map, circuits: ItineraireOT[], duree = 0, marge = 28) {
   let loMin = Infinity, loMax = -Infinity, laMin = Infinity, laMax = -Infinity;
   for (const i of circuits) {
     for (const [lo, la] of i.p) {
@@ -332,5 +374,5 @@ function cadrer(m: maplibregl.Map, circuits: ItineraireOT[]) {
     }
   }
   if (!Number.isFinite(loMin)) return;
-  m.fitBounds([[loMin, laMin], [loMax, laMax]], { padding: 28, duration: 0 });
+  m.fitBounds([[loMin, laMin], [loMax, laMax]], { padding: marge, duration: duree });
 }

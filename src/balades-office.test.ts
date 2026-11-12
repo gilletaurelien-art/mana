@@ -357,6 +357,43 @@ describe("les balades des Offices — la liste se lit", () => {
     expect(socle, "le socle est écrit APRÈS l'état : il l'efface").toBeLessThan(etat);
   });
 
+  it("⭐ choisir une balade amène la carte à elle, lentement", () => {
+    /* 🔴 12/11/2026 : « quand on clique sur une balade, zoomer la carte sur
+       la balade ».
+       ⭐ ET LE VOL EST LENT, pour la raison que le fondateur a donnée du
+          liseré : « c'est du slow tourisme ». Un saut instantané fait perdre
+          le fil — on ne sait plus OÙ dans le Finistère on vient d'atterrir.
+          Un vol montre le chemin parcouru, ce qu'un saut détruit. */
+    const carte = readFileSync(new URL("./CarteBalades.tsx", import.meta.url), "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(carte, "la carte ne vient plus au tracé choisi")
+      .toMatch(/cadrer\(m, \[c\]/);
+    expect(carte, "le vol ne respecte pas la préférence de mouvement")
+      .toMatch(/MOUVEMENT_VOULU\(\) \? \d{3,} : 0/);
+    /* ⛔ ET LA CARTE EST MARQUÉE « TENUE » : sans ça le prochain
+       redimensionnement — un clavier qui s'ouvre, une rotation — recadrerait
+       sur les 116 et annulerait le zoom qu'on vient de demander. */
+    expect(carte, "un zoom demandé ne tient pas contre un redimensionnement")
+      .toMatch(/touche\.current = true;\s*\n\s*cadrer\(m, \[c\]/);
+  });
+
+  it("⛔ un déplacement PROGRAMMÉ n'est pas un geste — `originalEvent` tranche", () => {
+    /* 🔴 CE GARDE NAÎT D'UN DÉFAUT QUE MON PROPRE COMMENTAIRE AFFIRMAIT.
+       Il disait « `dragstart`/`zoomstart` ne se déclenchent que sur un
+       geste, `fitBounds` ne les émet pas ». maplibre les émet AUSSI pour un
+       déplacement programmé : le `cadrer()` du chargement marquait donc la
+       carte comme « touchée » avant que personne ne l'ait touchée, et le
+       recadrage automatique que je venais d'écrire ne s'exécutait jamais.
+       ⭐ Un garde désarmé par la ligne censée l'armer — et la seule
+          différence qui tienne est `originalEvent`, que maplibre pose pour
+          une souris, un doigt ou une molette, et laisse vide pour un appel.
+          Le NOM de l'événement n'en dit rien. */
+    const carte = readFileSync(new URL("./CarteBalades.tsx", import.meta.url), "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(carte, "les gestes ne se distinguent plus des déplacements programmés")
+      .toMatch(/if \(e\.originalEvent\) touche\.current = true/);
+  });
+
   it("⛔ un croisement vide se DIT, il ne se laisse pas lire comme une panne", () => {
     /* « VTT » + « Abers » rend zéro circuit. Sans phrase, la liste disparaît
        et l'écran ressemble à un chargement qui n'a pas abouti — mesuré à
