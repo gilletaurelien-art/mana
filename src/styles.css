@@ -232,7 +232,13 @@ a { color: var(--texte-action); text-underline-offset: 3px; }
    `size={48}` dans `App.tsx` et 43,2 px dans cette feuille : deux valeurs
    liées par un calcul, dans deux fichiers, dont l'une ne pouvait pas lire
    l'autre. Une seule décide désormais (`--barre-icone`), l'autre en dérive. */
-.nav a svg { width: var(--barre-icone); height: var(--barre-icone); }
+/* ⚠️ `.nav button` AUSSI, DEPUIS LE 12/11/2026 — la radio n'est plus un
+   lien mais un commutateur, et ces quatre règles la laissaient dehors : son
+   glyphe serait sorti à sa taille native au milieu de quatre icônes de 43 px.
+   ⭐ On ÉTEND les sélecteurs plutôt que d'écrire un second jeu de règles pour
+      `.nav-poste` : deux jeux pour un même mobilier divergent au premier
+      réglage — c'est le dessin exact des cinq exemplaires du caviardage. */
+.nav a svg, .nav button svg { width: var(--barre-icone); height: var(--barre-icone); }
 /* ⭐ « AUSSI HAUT QUE LES ICÔNES » SE MESURE SUR L'ENCRE, PAS SUR LES BOÎTES.
    Un SVG de 48 px ne dessine pas sur 48 px — son `getBBox()` rend 16,2 unités
    sur la grille 24, soit **32,4 px** peints. Et une capitale n'occupe pas sa
@@ -253,7 +259,10 @@ a { color: var(--texte-action); text-underline-offset: 3px; }
 }
 .brand em { color: var(--or); font-style: normal; }
 .nav { display: flex; gap: var(--sp-1); align-items: center; }
-.nav a {
+.nav a, .nav button {
+  /* ⚠️ Un bouton n'hérite ni de la police ni de la couleur : sans ces trois
+     lignes il arrive en 13,33 px système, gris, sur fond blanc. */
+  font: inherit; background: none; cursor: pointer;
   color: var(--ink);
   text-decoration: none;
   display: inline-flex;
@@ -280,7 +289,7 @@ a { color: var(--texte-action); text-underline-offset: 3px; }
   border: 1px solid transparent;
   transition: box-shadow 160ms ease, transform 160ms ease, border-color 160ms ease;
 }
-.nav a:hover {
+.nav a:hover, .nav button:hover {
   color: var(--primary);
   border-color: var(--bulle-trait);
   box-shadow: var(--ombre-carte);
@@ -296,11 +305,73 @@ a { color: var(--texte-action); text-underline-offset: 3px; }
   box-shadow: var(--ombre-carte);
   transform: translateY(-1px);
 }
+/* ══ LE POSTE DANS LA BARRE — ON/OFF, ET UN LISERÉ DORÉ QUI TOURNE ════════
+   🔴 12/11/2026, demande du fondateur : « le bouton MANAradio devient un
+   commutateur ON/OFF. Si ON l'icône change = liseré doré tournant ».
+   ⭐ L'ANNEAU PLUTÔT QU'UN SECOND GLYPHE, et c'est un choix. Changer le
+      dessin ferait croire à un autre bouton ; le même dessin ceint d'or dit
+      « celui-ci, allumé ». C'est aussi la seule façon d'exprimer la
+      CONTINUITÉ d'un direct — un carré « stop » dirait l'arrêt, pas l'écoute
+      en cours. */
+.nav-poste { position: relative; }
+.nav-poste-anneau {
+  position: absolute; inset: 2px;
+  border-radius: var(--r-rond);
+  pointer-events: none;
+  opacity: 0;
+  /* ⭐ UN CONE DE LUMIÈRE, DÉCOUPÉ EN ANNEAU. Le dégradé conique tourne ; le
+     masque radial n'en garde que le bord, sur 2 px. Pas d'image, pas de SVG
+     animé, pas de paquet : deux lignes et la carte graphique. */
+  background: conic-gradient(
+    from 0turn,
+    transparent 0 55%,
+    color-mix(in srgb, var(--ocre) 55%, transparent) 72%,
+    var(--ocre) 88%,
+    transparent 100%);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
+  transition: opacity 220ms ease;
+}
+/* ⚠️ L'anneau d'un bouton RONDI doit suivre la forme du bouton, pas un
+   cercle : `--r-rond` est le même rayon que celui de `.nav a`. Un masque
+   circulaire sur une pastille oblongue laisserait deux coins nus. */
+.nav-poste.est-joue .nav-poste-anneau,
+.nav-poste.est-branche .nav-poste-anneau {
+  opacity: 1;
+  animation: nav-poste-tourne 2.4s linear infinite;
+}
+/* ⚠️ « EN TRAIN DE SE BRANCHER » N'EST PAS « EN ÉCOUTE ». L'anneau tourne
+   plus lentement et à demi-voix : il dit qu'il se passe quelque chose sans
+   affirmer que le son est là. Promettre le direct avant qu'il arrive serait
+   la même faute que l'horloge qui tournait dans le vide sur `/radio`. */
+.nav-poste.est-branche .nav-poste-anneau { opacity: .5; animation-duration: 3.6s; }
+.nav-poste.est-joue { color: var(--or); }
+/* ⛔ INDISPONIBLE : AUCUN ANNEAU, ET LE GLYPHE S'ÉTEINT. Le direct ne répond
+   pas ; un liseré qui tournerait sur du silence serait une émission simulée,
+   ce que ce produit refuse depuis l'origine. */
+.nav-poste.est-sourd { opacity: .45; }
+@keyframes nav-poste-tourne { to { transform: rotate(1turn); } }
+/* ⚠️ ET IL NE TOURNE PAS POUR QUI A DEMANDÉ MOINS DE MOUVEMENT. L'anneau
+   RESTE — c'est le signe d'état, le retirer priverait d'information ; c'est
+   la rotation qui s'arrête. ⭐ Respecter une préférence de mouvement ne veut
+   pas dire supprimer ce qui bougeait, mais l'immobiliser. */
+@media (prefers-reduced-motion: reduce) {
+  .nav-poste .nav-poste-anneau { animation: none; }
+}
+
 /* Mobile : icônes seules — le libellé passe en sr-only */
 @media (max-width: 900px) {
   .nav { gap: var(--sp-1); }
   .site-header .wrap { padding-left: var(--sp-2); padding-right: var(--sp-2); }
-  .nav a > span {
+  /* ⛔ L'ANNEAU N'EST PAS UN LIBELLÉ. Cette règle escamote les `<span>` de
+     la barre pour ne garder que les icônes ; elle aurait réduit le liseré
+     doré du poste à un pixel caché — c'est-à-dire supprimé l'unique signe
+     visible de l'état ON, et seulement sous 900 px, c'est-à-dire PARTOUT
+     dans cette application (la colonne fait 440 px). ⭐ Un escamotage écrit
+     pour du texte attrape tout ce qui lui ressemble : on nomme l'exception,
+     on ne déplace pas l'anneau. */
+  .nav a > span,
+  .nav button > span:not(.nav-poste-anneau) {
     position: absolute;
     width: 1px;
     height: 1px;

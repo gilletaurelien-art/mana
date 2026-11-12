@@ -28,6 +28,22 @@ export type Entree = {
   readonly libelle: string;
   /** Le mot est-il écrit à l'écran, ou réservé aux lecteurs d'écran ? */
   readonly motVisible?: true;
+  /**
+   * 🔴 UNE ENTRÉE QUI COMMUTE AU LIEU D'EMMENER — 12/11/2026, demande du
+   *    fondateur : « le bouton MANAradio devient un commutateur ON/OFF ».
+   *
+   * ⭐ ELLE GARDE SON `chemin`, ET CE N'EST PAS UN RESTE. Trois choses en
+   *    dépendent : les gardes de ce fichier vérifient que tout ce que la
+   *    barre revendique, l'hôte le sert ; `/radio` reste une adresse indexée
+   *    avec son titre ; et le pied de page continue d'y mener. On remplace
+   *    le GESTE du bouton, pas l'existence de la page.
+   * ⛔ ET SEULEMENT CHEZ NOUS. Sur mana.love, la radio est un PONT vers
+   *    l'autre application : le poste de ce dépôt n'y a rien à commander, et
+   *    un commutateur qui ne commute rien serait pire qu'un lien. C'est la
+   *    même règle que pour « Réglages »/« Mon compte » — le même dessin ne
+   *    fait pas le même métier selon l'hôte.
+   */
+  readonly commute?: "radio";
 };
 
 /**
@@ -63,7 +79,8 @@ export function entreesBarre(v: Visage): Entree[] {
        adressable par `?u=radio`, et une chaîne de requête ne traverse pas un
        matcher Caddy. */
     office
-      ? { clef: "radio", chemin: "/radio", glyphe: "radio", libelle: "MANAradio" }
+      ? { clef: "radio", chemin: "/radio", glyphe: "radio", libelle: "MANAradio",
+          commute: "radio" }
       : praticable("radio")
       ? { clef: "radio", chemin: PONTS.radio.chemin, glyphe: "radio", libelle: "MANAradio" }
       : null,

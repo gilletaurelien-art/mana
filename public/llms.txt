@@ -2,7 +2,7 @@
 
 > Promenades & découvertes en Bretagne : parcours hors ligne (PWA), GPS et sécurité sur le littoral, audio-guide du patrimoine, export GPX — avec MANAradio, la voix du territoire, au centre.
 
-MANA.bzh est la vitrine des promenades bretonnes de l'écosystème MANA. Quatre modules : navigation & cartographie (PWA hors ligne, GPS temps réel avec boussole, repère hors-sentier à 120 m (un fait, pas une sommation : on ne rappelle personne à l'ordre), profil d'altitude), sécurité côte (SOS par SMS avec position GPS, marées et météo renvoyées vers les sources officielles — aucune donnée simulée), découverte & patrimoine (audio-guide vocal aux points d'intérêt, filtres durée/poussette/PMR/chiens), carnet & export (GPX lisible par toutes les montres et applications). MANAradio, au centre du site, émettra bientôt. Règles : gratuité des services grand public, aucune revente de données ou de leads, aucun traceur publicitaire, données territoriales réelles et sourcées, sobriété technique (site statique, zéro dépendance UI). Les tracés des parcours sont indicatifs (prototype) : les tracés officiels (IGN) seront sourcés avant publication.
+MANA.bzh est la vitrine des promenades bretonnes de l'écosystème MANA. Quatre modules : navigation & cartographie (PWA hors ligne, GPS temps réel avec boussole, repère hors-sentier à 120 m (un fait, pas une sommation : on ne rappelle personne à l'ordre), profil d'altitude), sécurité côte (SOS par SMS avec position GPS, marées et météo renvoyées vers les sources officielles — aucune donnée simulée), découverte & patrimoine (audio-guide vocal aux points d'intérêt, filtres durée/poussette/PMR/chiens), carnet & export (GPX lisible par toutes les montres et applications). MANAradio, au centre du site, émet en direct. Règles : gratuité des services grand public, aucune revente de données ou de leads, aucun traceur publicitaire, données territoriales réelles et sourcées, sobriété technique (site statique, zéro dépendance UI). Les tracés des parcours sont indicatifs (prototype) : les tracés officiels (IGN) seront sourcés avant publication.
 
 ## Pages publiques
 
@@ -17,4 +17,4 @@ MANA.bzh est la vitrine des promenades bretonnes de l'écosystème MANA. Quatre 
 - Les promenades fonctionnent-elles sans réseau ? Oui — PWA : le parcours est mis en cache avant le départ.
 - MANA revend-il des données ? Non — aucune donnée ni lead n'est revendu, aucun traceur publicitaire.
 - Les marées sont-elles affichées ? Pas encore : renvoi systématique vers les sources officielles (SHOM, Météo-France) — aucune donnée simulée.
-- MANAradio émet-elle ? Pas encore — en sommeil, aucune émission simulée.
+- MANAradio émet-elle ? Oui, en direct — le flux est écoutable depuis la barre du bas de l'application (commutateur) et sur la page MANAradio, qui affiche le titre en cours. Rien n'est simulé : quand l'antenne ne répond pas, l'application le dit et ne joue rien.

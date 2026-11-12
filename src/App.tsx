@@ -15,6 +15,7 @@ import { Invitation } from "./Invitation";
 import { LApplication } from "./LApplication";
 import { avecOffice, visage, titrePourLHote, poserCanonique } from "./visage";
 import { entreesBarre, liensPied } from "./barre";
+import { couper, ecouterPoste, etatPoste, lire } from "./poste";
 import { Reglages } from "./Reglages";
 import { EcranTerritoire } from "./EcranTerritoire";
 import { Composer } from "./Composer";
@@ -32,8 +33,15 @@ import { ContactForm } from "./ContactForm";
 
 const B = baseUrl();
 
-// MANAradio : au centre du hub — la radio de l'écosystème, en
-// sommeil comme le backend (aucun flux simulé), mais positionnée.
+// 🔴 CETTE LIGNE A DIT « EN SOMMEIL » PENDANT DOUZE JOURS. Elle annonçait
+// « la radio de l'écosystème, en sommeil comme le backend (aucun flux
+// simulé), mais positionnée » — juste le jour de son écriture, faux depuis
+// le 31/10/2026, quand `Radio.tsx` a branché le direct. Mesuré le 12/11 :
+// l'API rend `is_online: true`, le flux répond en `audio/mpeg`, et le poste
+// de l'application l'a joué (9,6 s lues à l'écran).
+// ⭐ Elle était au bon endroit, bien écrite, et personne ne la relisait —
+//    c'est le portrait du faux témoin. MANAradio émet ; la barre du bas la
+//    commute, `/radio` en est la façade détaillée.
 
 
 
@@ -94,6 +102,22 @@ export const TITRES: Record<string, string> = {
 
 export default function App() {
   const path = usePath();
+  /**
+   * 🔴 LA BARRE COMMANDE LE POSTE — 12/11/2026, demande du fondateur : « le
+   *    bouton MANAradio devient un commutateur ON/OFF ».
+   *
+   * ⭐ RIEN DE NEUF SOUS LE BOUTON, ET C'EST TOUT L'INTÉRÊT. `poste.ts` vit
+   *    déjà hors de React, au niveau du document, précisément pour que le
+   *    direct survive aux changements d'écran. Il offre `lire`, `couper` et
+   *    un abonnement ; la barre devient une seconde façade du même poste,
+   *    exactement comme `/radio`. Deux surfaces, un seul élément audio — pas
+   *    deux connexions au flux, pas deux instants de la même antenne.
+   * ⚠️ ET L'ABONNEMENT N'EST PAS DÉCORATIF : le casque débranché, un appel
+   *    entrant ou le contrôle du système mettent en pause sans passer par
+   *    nous. Sans lui, l'anneau tournerait sur un poste muet.
+   */
+  const [poste, setPoste] = useState(etatPoste);
+  useEffect(() => ecouterPoste(setPoste), []);
   /* ⭐ LE DRAPEAU `cherche` EST PARTI AVEC LA SECONDE ICÔNE DE CARTE. Il
      n'existait que pour distinguer deux repères qui s'allumaient ensemble sur
      `/carte` ; il n'y a plus qu'une porte vers cette page. Un drapeau qui
@@ -214,20 +238,66 @@ export default function App() {
                    Garder le focus sous une icône de carte aurait déplacé
                    l'incohérence au lieu de la corriger — on arriverait sur
                    une carte avec un clavier qu'on n'a pas demandé. */}
-            {entreesBarre(visage()).map((e) => (
-              <a key={e.clef}
-                 className={e.glyphe === "marque" ? "brand" : undefined}
-                 href={`${B}${e.chemin}`}
-                 aria-current={path === e.chemin.split("?")[0] ? "page" : undefined}>
-                {e.glyphe === "carte" && <GlyphCarte />}
-                {e.glyphe === "etincelles" && <GlyphEtincelles />}
-                {e.glyphe === "radio" && <GlyphRadio />}
-                {e.glyphe === "reglages" && <GlyphReglages />}
-                {e.glyphe === "marque"
-                  ? e.libelle
-                  : <span className={e.motVisible ? "nav-mot" : "sr-only"}>{e.libelle}</span>}
-              </a>
-            ))}
+            {entreesBarre(visage()).map((e) => {
+              const glyphe = (
+                <>
+                  {e.glyphe === "carte" && <GlyphCarte />}
+                  {e.glyphe === "etincelles" && <GlyphEtincelles />}
+                  {e.glyphe === "radio" && <GlyphRadio />}
+                  {e.glyphe === "reglages" && <GlyphReglages />}
+                </>
+              );
+              /* ⭐ L'ENTRÉE QUI COMMUTE EST UN BOUTON, PAS UN LIEN DÉTOURNÉ.
+                 Un `<a href>` dont on annule la navigation laisse une cible
+                 qui s'ouvre dans un nouvel onglet au clic du milieu et qui
+                 s'annonce « lien » à un lecteur d'écran. Ce qui agit sur la
+                 page est un bouton ; ce qui emmène est un lien. */
+              if (e.commute === "radio") {
+                /* ⛔ ON NE PRÉTEND PAS JOUER QUAND LE POSTE A ÉCHOUÉ. Trois
+                   états, trois noms : en lecture, en train de se brancher,
+                   indisponible. ⚠️ Le troisième est le plus important —
+                   `radio.mana.bzh` peut ne pas répondre, et un anneau qui
+                   tourne sur du silence est exactement la promesse que ce
+                   dépôt refuse ailleurs sur les marées et la météo. */
+                const etat = poste.erreur && !poste.joue
+                  ? "sourd"
+                  : poste.joue ? "joue" : poste.charge ? "branche" : "muet";
+                const dit = {
+                  joue: "MANAradio — en écoute, appuyez pour couper",
+                  branche: "MANAradio — connexion au direct…",
+                  sourd: "MANAradio — le direct ne répond pas, appuyez pour réessayer",
+                  muet: "MANAradio — appuyez pour écouter le direct",
+                }[etat];
+                return (
+                  <button
+                    key={e.clef}
+                    type="button"
+                    className={`nav-poste est-${etat}`}
+                    aria-pressed={poste.joue}
+                    onClick={() => (poste.joue ? couper() : lire())}
+                  >
+                    {/* ⚠️ L'ANNEAU EST DÉCORATIF ET IL LE DIT. Ce qui porte
+                        l'état pour un lecteur d'écran est `aria-pressed` et
+                        le nom ci-dessous, jamais le dessin : un liseré doré
+                        ne s'entend pas. */}
+                    <span className="nav-poste-anneau" aria-hidden="true" />
+                    {glyphe}
+                    <span className="sr-only">{dit}</span>
+                  </button>
+                );
+              }
+              return (
+                <a key={e.clef}
+                   className={e.glyphe === "marque" ? "brand" : undefined}
+                   href={`${B}${e.chemin}`}
+                   aria-current={path === e.chemin.split("?")[0] ? "page" : undefined}>
+                  {glyphe}
+                  {e.glyphe === "marque"
+                    ? e.libelle
+                    : <span className={e.motVisible ? "nav-mot" : "sr-only"}>{e.libelle}</span>}
+                </a>
+              );
+            })}
           </nav>
         </div>
       </header>
