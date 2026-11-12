@@ -2121,9 +2121,29 @@ body { padding-bottom: var(--reserve-barre); }
   min-height: 44px; align-content: center;
 }
 .ot-liste li:last-child .ot-item { border-bottom: 0; }
-.ot-item:hover .ot-item-titre { color: var(--bulle-action); }
+/* 🔴 DEUX COULEURS ÉCRITES POUR UNE BULLE SOMBRE, POSÉES SUR UN PANNEAU
+   CLAIR — corrigé le 12/11/2026, après que le fondateur a envoyé la capture :
+   « les libellés de chaque circuit sont illisibles ».
+   ⛔ MESURÉ, PAS ESTIMÉ. La ligne de faits rendait `#e9e7d8` (de la craie) sur
+      un panneau blanc à 55 % : **1,24 pour 1**. Et le survol du titre rendait
+      `--bulle-action` (`#f2e4c8`), soit **1,26** — c'est l'item PÂLE qu'on
+      voit sur la capture, et ce n'était pas un bug d'affichage, c'était la
+      souris posée dessus. Deux jetons nommés pour le verre sombre des bulles,
+      employés là où le fond est clair.
+   ⭐ C'est la troisième fois que cette feuille l'écrit, et toujours dans les
+      mêmes mots : « le ton ne se choisit pas au composant mais au FOND ».
+      `.ot-filtre` l'a vécu deux fois dans la même journée du 4/11.
+   ⚠️ CES DEUX CLASSES NE SERVENT QU'ICI — vérifié avant de fixer une teinte
+      (`grep ot-item-` : `BaladesOT.tsx`, et rien d'autre). Sur une surface qui
+      servirait aussi un fond sombre, il aurait fallu une variable, pas une
+      couleur. */
+.ot-item:hover .ot-item-titre { color: var(--ocre-sombre); }
 .ot-item-titre { font-family: var(--titre); font-size: var(--t-m); line-height: 1.2; }
-.ot-item-meta { font-size: var(--t-xs); color: var(--bulle-texte-doux); }
+/* 🔴 « EN VERT KAKI », demande du fondateur. `--kaki` mesure **11,0 pour 1**
+   sur ce panneau — la hiérarchie avec le titre ne tient donc plus à un
+   contraste affaibli (qui est une illisibilité déguisée en nuance) mais à la
+   TAILLE et à la famille : `--t-xs` sans empattement sous un titre d'or. */
+.ot-item-meta { font-size: var(--t-xs); color: var(--kaki); }
 
 /* 🔴 `.terr-onglets`/`.terr-onglet*` SONT PARTIS LE 4/11/2026 avec la bascule
    presqu'île/Aulne : la carte montre les deux d'un coup, il n'y a plus

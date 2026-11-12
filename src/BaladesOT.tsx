@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { chargerOT, PRATIQUE, type ItineraireOT } from "./ot";
+import { chargerOT, MOT_CLEF_OFFICE, PRATIQUE, type ItineraireOT, type Recueil } from "./ot";
 import { MENTION } from "./walks";
 import { SwipeBalades } from "./SwipeBalades";
 import { baseUrl } from "./router";
@@ -41,10 +41,37 @@ export function BaladesOT() {
   const B = baseUrl();
   const [ot, setOt] = useState<ItineraireOT[] | null>(null);
   const [pratique, setPratique] = useState<ItineraireOT["pratique"] | "tous">("tous");
+  /**
+   * 🔴 CHOISIR SON PAYS — 12/11/2026, demande du fondateur : « sélectionner
+   *    un pays pour l'OT ». Les circuits viennent de CINQ offices depuis le
+   *    11/11 ; sans ce filtre, qui cherche une balade aux Abers déroule aussi
+   *    Crozon, l'Iroise, Landerneau et la Côte des Légendes.
+   */
+  const [pays, setPays] = useState<string>("tous");
+  /**
+   * ⭐ LES OFFICES VIENNENT DE L'ARTEFACT, PAS D'UNE LISTE ÉCRITE ICI. Le
+   *    recueil porte sa propre table (`Recueil.offices`) précisément pour
+   *    qu'un nom d'office n'existe qu'à un endroit — il est passé de un à
+   *    trois puis à cinq en huit jours, et une liste recopiée dans un écran
+   *    aurait vieilli à chaque ajout, sans bruit.
+   */
+  const [offices, setOffices] = useState<Recueil["offices"]>([]);
 
   useEffect(() => {
-    chargerOT().then((r) => setOt(r.itineraires)).catch(() => setOt([]));
+    chargerOT()
+      .then((r) => { setOt(r.itineraires); setOffices(r.offices); })
+      .catch(() => setOt([]));
   }, []);
+
+  /* ⚠️ ON NE PROPOSE QUE LES PAYS QUI ONT DES CIRCUITS. Un bouton qui rend
+     une liste vide est un cul-de-sac : il a l'air de marcher et ne mène
+     nulle part. L'ordre reste celui de l'artefact — c'est le sien, pas un
+     tri inventé ici. */
+  const paysPresents = offices.filter((o) => (ot ?? []).some((i) => i.ot === o.ot));
+  const visibles = (ot ?? []).filter(
+    (i) => (pratique === "tous" || i.pratique === pratique)
+        && (pays === "tous" || i.ot === pays),
+  );
 
   return (
     <>
@@ -84,8 +111,51 @@ export function BaladesOT() {
             )}
             {ot !== null && ot.length > 0 && (
               <section className="page-panel">
-                <p className="apercu-label">Tous les circuits</p>
+                {/* ⚠️ L'ÉTIQUETTE DIT CE QU'ON VOIT, PAS CE QU'IL Y A. Elle
+                    annonçait « Tous les circuits » quoi qu'on ait filtré —
+                    et avec deux filtres au lieu d'un, le décalage entre le
+                    titre et la liste devient la règle plutôt que l'exception.
+                    ⭐ Le compte de l'en-tête, lui, reste le TOTAL : il décrit
+                       le recueil, pas la vue. Deux nombres qui disent deux
+                       choses différentes, et chacun le dit. */}
+                <p className="apercu-label">
+                  {visibles.length} circuit{visibles.length > 1 ? "s" : ""}
+                  {pays !== "tous" &&
+                    ` · ${MOT_CLEF_OFFICE[pays] ?? paysPresents.find((o) => o.ot === pays)?.nom ?? pays}`}
+                </p>
                 <p className="fiche-provenance fiche-provenance-ot">{MENTION.ot}</p>
+
+                {/* 🔴 LE PAYS AVANT LA PRATIQUE, et ce n'est pas l'ordre
+                    d'écriture : on choisit d'abord OÙ l'on va, ensuite
+                    COMMENT. L'inverse ferait filtrer une pratique sur cinq
+                    territoires avant de savoir lequel nous concerne.
+                    ⚠️ Rendu seulement s'il y a plus d'un pays : un
+                       commutateur à une seule position est un faux choix. */}
+                {paysPresents.length > 1 && (
+                  <div className="ot-filtres" role="group" aria-label="Pays">
+                    <button type="button"
+                      className={pays === "tous" ? "ot-filtre ot-filtre-actif" : "ot-filtre"}
+                      aria-pressed={pays === "tous"}
+                      onClick={() => setPays("tous")}>
+                      Tous les pays
+                    </button>
+                    {paysPresents.map((o) => (
+                      <button key={o.ot} type="button"
+                        className={o.ot === pays ? "ot-filtre ot-filtre-actif" : "ot-filtre"}
+                        aria-pressed={o.ot === pays}
+                        /* ⭐ LE MOT COURT À L'ÉCRAN, LE NOM COMPLET POUR QUI
+                           ÉCOUTE. « Abers » tient dans une pastille ; « Office
+                           de tourisme du Pays des Abers » est ce qu'un lecteur
+                           d'écran doit entendre. Le mot court vient de
+                           `MOT_CLEF_OFFICE`, déjà tenu par des tests. */
+                        aria-label={o.nom}
+                        title={o.nom}
+                        onClick={() => setPays(o.ot)}>
+                        {MOT_CLEF_OFFICE[o.ot] ?? o.nom}
+                      </button>
+                    ))}
+                  </div>
+                )}
 
                 <div className="ot-filtres" role="group" aria-label="Pratique">
                   {(["tous", "pied", "vtt", "velo", "trail"] as const).map((k) => (
@@ -99,7 +169,7 @@ export function BaladesOT() {
                 </div>
 
                 <ul className="ot-liste">
-                  {ot.filter((i) => pratique === "tous" || i.pratique === pratique).map((i) => (
+                  {visibles.map((i) => (
                     <li key={i.slug}>
                       <a className="ot-item" href={i.source} target="_blank" rel="noreferrer noopener">
                         <span className="ot-item-titre">{i.titre}</span>
@@ -118,6 +188,17 @@ export function BaladesOT() {
                     </li>
                   ))}
                 </ul>
+                {/* ⛔ UN CROISEMENT PEUT NE RIEN RENDRE — « VTT » aux Abers,
+                    par exemple. Sans cette phrase, la liste disparaît et
+                    l'écran ressemble à un chargement qui n'a pas abouti.
+                    ⭐ Une liste vide se DIT, sinon elle se lit comme une
+                       panne. */}
+                {visibles.length === 0 && (
+                  <p className="page-note">
+                    Aucun circuit ne réunit ces deux choix. Essayez une autre
+                    pratique, ou un autre pays.
+                  </p>
+                )}
               </section>
             )}
           </div>
