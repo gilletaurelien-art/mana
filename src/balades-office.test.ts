@@ -429,6 +429,35 @@ describe("les balades des Offices — la liste se lit", () => {
       .toMatch(/if \(e\.originalEvent\) touche\.current = true/);
   });
 
+  it("⭐ la couverture des promenades porte le dégradé, et son texte y tient", () => {
+    /* 🔴 12/11/2026 : « applique le dégradé kaki aux promenades ». C'est la
+       matière de la barre du bas — la seule surface qui ne disparaît jamais,
+       donc celle qui donne le ton.
+       🔴 ET LE SUR-TITRE EST TOMBÉ À 2,71 EN LE POSANT. `--texte-doux` est
+          une sauge calculée pour l'aplat sombre que ce bandeau portait ; sur
+          l'extrémité CHAUDE du dégradé elle ne tient plus. Troisième fois
+          aujourd'hui qu'un jeton nommé pour un fond est déplacé sur un autre
+          — et cette feuille portait DÉJÀ l'avertissement, dix lignes plus
+          haut, pour ce bandeau-là. Un avertissement écrit n'protège pas. */
+    const systeme = readFileSync(new URL("./systeme.css", import.meta.url), "utf8");
+    expect(systeme, "la couverture a perdu le dégradé")
+      .toMatch(/\.fiche-couverture-carte \.fiche-couverture-texte-bas \{[^}]*background: var\(--bulle\)/);
+    expect(systeme, "le sur-titre est revenu à un ton d'aplat")
+      .toMatch(/\.fiche-couverture-carte \.fiche-sur-titre \{ color: var\(--texte-immersif-doux\); \}/);
+    /* ⚠️ Et les deux tons tiennent le seuil sur TOUTE la hauteur du dégradé —
+       mesuré contre ses deux extrémités, pas contre une moyenne. */
+    for (const extremite of ["#343f32", "#634b1f"]) {
+      expect(ratio(jeton("craie"), extremite), `le titre sur ${extremite}`)
+        .toBeGreaterThanOrEqual(4.5);
+      /* ⚠️ PAS DE REPLI SUR UNE VALEUR ÉCRITE ICI. `jeton()` échoue déjà si
+         le jeton manque ; un `?? "#e9e7d8"` aurait fait mesurer une couleur
+         inventée le jour où il disparaît — un repli qui cache le défaut
+         qu'il signale, exactement ce que ce dépôt traque. */
+      expect(ratio(jeton("texte-immersif-doux"), extremite),
+        `le sur-titre sur ${extremite}`).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
   it("⛔ un croisement vide se DIT, il ne se laisse pas lire comme une panne", () => {
     /* « VTT » + « Abers » rend zéro circuit. Sans phrase, la liste disparaît
        et l'écran ressemble à un chargement qui n'a pas abouti — mesuré à

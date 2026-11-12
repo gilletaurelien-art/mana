@@ -218,8 +218,15 @@ export function FichePromenade({ base, slug }: { base: string; slug: string }) {
           </CarteOuSchema>
         </div>
         <div className="fiche-couverture-texte fiche-couverture-texte-bas">
+          {/* ⚠️ « PRÉVOIR LE RETOUR » REMONTE ICI — 12/11/2026, en compactant.
+              Il vivait sous « Forme : Aller simple », trois cents pixels plus
+              bas, à côté du mot qu'il précise. Les deux sont désormais au
+              même endroit, et le mot ne s'écrit plus deux fois. */}
           <p className="fiche-pastilles">
             <span className="fiche-pastille">{walk.boucle ? "Boucle" : "Aller simple"}</span>
+            {!walk.boucle && (
+              <span className="fiche-pastille-note">prévoir le retour</span>
+            )}
           </p>
           <p className="m-etiquette fiche-sur-titre">{walk.lieu}</p>
           <h1 className="m-accroche fiche-titre">{walk.titre}</h1>
@@ -234,7 +241,14 @@ export function FichePromenade({ base, slug }: { base: string; slug: string }) {
       </header>
 
       <div className="fiche-corps">
-        <p className="m-chapeau fiche-resume">{walk.resume}</p>
+        {/* ⛔ UN RÉSUMÉ VIDE N'EST PAS UN RÉSUMÉ COURT. Les circuits des
+            Offices n'en ont pas — nous n'avons pas leur texte, et en écrire un
+            « plausible » serait le mensonge documentaire que ce dépôt refuse
+            pour les images. Rendu quand même, le paragraphe creusait un trou
+            de `--sp-4` entre la provenance et les chiffres : vu à l'écran,
+            et c'est exactement la « surface qui existe sans contenu » que cet
+            écosystème traque ailleurs. */}
+        {walk.resume && <p className="m-chapeau fiche-resume">{walk.resume}</p>}
 
         {/* ⭐ LA PHOTOGRAPHIE DE COUVERTURE NE SE PERD PAS, ELLE DESCEND. Elle
             est documentaire, créditée et située ; la retirer de l'écran parce
@@ -256,26 +270,41 @@ export function FichePromenade({ base, slug }: { base: string; slug: string }) {
           </figure>
         )}
 
-        {/* ── LES CHIFFRES ────────────────────────────────────────────────
-            ⚠️ Trois valeurs, et la durée porte son hypothèse DANS la ligne.
-            « 2 h » sans « à 3,5 km/h » est un engagement ; avec, c'est une
-            estimation — et c'est ce qu'elle est. */}
-        <dl className="fiche-chiffres">
-          <div>
-            <dt className="m-etiquette">Distance</dt>
-            <dd className="m-chiffre">{distance(walk.distanceKm)}</dd>
-          </div>
-          <div>
-            <dt className="m-etiquette">Marche</dt>
-            <dd className="m-chiffre">{effortLisible(walk.distanceKm).replace("≈ ", "")}</dd>
-            <dd className="m-meta">estimée à 3,5 km/h</dd>
-          </div>
-          <div>
-            <dt className="m-etiquette">Forme</dt>
-            <dd className="m-chiffre">{walk.boucle ? "Boucle" : "Aller simple"}</dd>
-            {!walk.boucle && <dd className="m-meta">prévoir le retour</dd>}
-          </div>
-        </dl>
+        {/* ── LES CHIFFRES, EN UNE LIGNE ──────────────────────────────
+            🔴 COMPACTÉS LE 12/11/2026, demande du fondateur. Ils occupaient
+            trois colonnes étiquetées — Distance · Marche · Forme — soit six
+            lignes de texte pour trois faits courts, et « Boucle » s'y écrivait
+            une SECONDE fois : la pastille de la couverture le disait déjà,
+            trois cents pixels plus haut.
+            ⚠️ LA DURÉE GARDE SON HYPOTHÈSE DANS LA LIGNE, et c'est la seule
+               chose qui ne se compacte pas : « 3,5 h » sans « à 3,5 km/h »
+               est un engagement ; avec, c'est une estimation.
+            🔴 ET ELLE DIT MAINTENANT D'OÙ ELLE VIENT. Un circuit d'Office
+               DÉCLARE sa durée — leur parole, ils connaissent les escaliers
+               et le sable. La fiche recalculait à 3,5 km/h par-dessus, donc
+               elle effaçait leur mesure pour afficher la nôtre sous leur nom.
+               ⭐ Trouvé en compactant, pas en cherchant : rassembler deux
+                  valeurs côte à côte montre qu'elles ne parlent pas de la
+                  même chose. */}
+        <p className="fiche-faits">
+          <strong className="fiche-fait-fort">{distance(walk.distanceKm)}</strong>
+          <span className="fiche-fait-sep" aria-hidden="true"> · </span>
+          {walk.dureeDeclaree ? (
+            <>
+              <strong className="fiche-fait-fort">
+                {walk.dureeEstimeeH.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} h
+              </strong>{" "}
+              <span className="m-meta">annoncées par l'Office</span>
+            </>
+          ) : (
+            <>
+              <strong className="fiche-fait-fort">
+                {effortLisible(walk.distanceKm).replace("≈ ", "")}
+              </strong>{" "}
+              <span className="m-meta">estimée à 3,5 km/h</span>
+            </>
+          )}
+        </p>
 
         {/* ── CE QUE DIT L'AUTORITÉ ───────────────────────────────────────
             🔴 EN HAUT, AVANT LE RÉCIT, et jamais après. Une fermeture lue

@@ -274,6 +274,11 @@
    la lisibilité quelle que soit l'image, et aucune ne sera vérifiée une par
    une dans six mois. */
 .fiche-couverture-texte > * { text-shadow: 0 2px 12px rgb(25 43 67 / 55%); }
+/* ⚠️ LA PASTILLE ET SA NUANCE SUR LA MÊME LIGNE, alignées sur leur milieu :
+   « Aller simple » est un fait, « prévoir le retour » est ce qu'il implique.
+   Les séparer verticalement en ferait deux informations. */
+.fiche-pastilles { display: flex; align-items: center; gap: var(--sp-1); flex-wrap: wrap; }
+.fiche-pastille-note { font-size: var(--t-xs); color: var(--texte-immersif-doux); }
 
 /* la variante sans photographie : le tracé, et le titre SOUS lui */
 .fiche-couverture-tracee { background: var(--fond-immersif); padding-bottom: var(--sp-2); }
@@ -293,22 +298,21 @@
 }
 .fiche-resume { color: var(--texte); }
 
-/* ── les trois chiffres ────────────────────────────────────────────────── */
-.fiche-chiffres {
-  margin: 0; display: grid; gap: var(--sp-2);
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+/* ── LES FAITS, EN UNE LIGNE ───────────────────────────────────────────
+   🔴 12/11/2026 : la grille `.fiche-chiffres` portait trois colonnes
+   étiquetées — Distance · Marche · Forme — soit six lignes de texte pour
+   trois faits courts, et « Boucle » s'y répétait après la pastille de la
+   couverture. Elle est remplacée par une ligne.
+   ⚠️ LES DEUX TRAITS RESTENT : ils séparent les faits du récit, et c'est
+      leur seul métier. Une ligne sans bornes se lit comme une phrase du
+      texte, pas comme un relevé. */
+.fiche-faits {
+  margin: 0; padding: var(--sp-2) 0;
   border-top: 1px solid var(--trait); border-bottom: 1px solid var(--trait);
-  padding: var(--sp-2) 0;
+  font-size: var(--t-s); line-height: 1.5;
 }
-.fiche-chiffres > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.fiche-chiffres dd { margin: 0; }
-/* ⚠️ Sous 360 px, trois colonnes donnent « Aller » / « simple » sur deux
-   lignes de quatre caractères. On passe à deux colonnes AVANT que ça arrive,
-   et la troisième prend toute la largeur. */
-@media (max-width: 400px) {
-  .fiche-chiffres { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .fiche-chiffres > div:last-child { grid-column: 1 / -1; }
-}
+.fiche-fait-fort { font-weight: 600; color: var(--texte); }
+.fiche-fait-sep { opacity: .5; }
 
 /* ── ce que dit l'autorité ─────────────────────────────────────────────── */
 .fiche-fermeture {
@@ -342,11 +346,42 @@
       mesuré à part. L'exclusion a survécu à sa cause et a transformé
       l'instrument en complice. Un garde qui exclut par nom d'élément doit
       être relu chaque fois que l'élément change de nature. */
+/* 🔴 LE DÉGRADÉ KAKI SUR LA COUVERTURE DES PROMENADES — 12/11/2026, demande
+   du fondateur, après l'avoir posé sur la bannière des balades d'Office :
+   « applique le dégradé kaki aux promenades ».
+   ⭐ C'EST LA MATIÈRE DE LA BARRE DU BAS, kaki → olive → ocre sombre, et
+      c'est elle qui donne le ton de l'application : la seule surface qui ne
+      disparaît jamais. Un aplat plein sous un titre et une matière de verre
+      sous la barre faisaient deux objets là où il n'y en a qu'un.
+   ⚠️ POSÉ SUR LE BANDEAU DE TEXTE, PAS SUR TOUTE LA COUVERTURE : la carte
+      occupe 46 svh et masquerait les deux tiers du dégradé, ne laissant voir
+      que son extrémité chaude. Le sweep complet doit tenir dans la bande
+      qu'on voit.
+   ⭐ LES CONTRASTES SONT DÉJÀ MESURÉS sur ce dégradé (`tokens.css`) : craie
+      6,14 en haut, 5,60 au milieu, 5,05 en bas ; le ton doux 5,91 → 4,86.
+      Le titre et le sur-titre de cette couverture tiennent donc le seuil sur
+      toute la hauteur, sans rien remesurer. */
 .fiche-couverture-carte .fiche-couverture-texte-bas {
-  position: static; padding: var(--sp-4) var(--sp-4) var(--sp-2);
+  position: static; padding: var(--sp-3) var(--sp-4) var(--sp-2);
+  background: var(--bulle);
+  -webkit-backdrop-filter: var(--bulle-flou);
+  backdrop-filter: var(--bulle-flou);
+  box-shadow: var(--bulle-eclat);
 }
 .fiche-couverture-carte .fiche-titre { color: var(--texte); }
-.fiche-couverture-carte .fiche-sur-titre { color: var(--texte-doux); }
+/* 🔴 MESURÉ APRÈS AVOIR POSÉ LE DÉGRADÉ, ET C'ÉTAIT TOMBÉ À 2,71.
+   `--texte-doux` est une sauge calculée pour l'aplat sombre que ce bandeau
+   portait jusqu'ici ; sur l'extrémité CHAUDE du dégradé elle rend 2,71 — et
+   3,65 au point le plus favorable. Sous le seuil des deux côtés.
+   ⭐ `--texte-immersif-doux` EST le ton secondaire calculé pour les fonds
+      sombres, et `tokens.css` le mesure sur ce dégradé précisément : 5,91 en
+      haut, 4,86 en bas.
+   ⚠️ C'est la troisième fois aujourd'hui qu'un jeton nommé pour un fond est
+      déplacé sur un autre sans tenir — et cette feuille portait DÉJÀ
+      l'avertissement, dix lignes plus haut, pour ce bandeau-là : « le rôle
+      mesuré, pas la matière ». Un avertissement écrit ne protège pas ; il
+      explique après coup. */
+.fiche-couverture-carte .fiche-sur-titre { color: var(--texte-immersif-doux); }
 
 /* ── QUI RÉPOND DE CE TRACÉ ───────────────────────────────────────────────
    ⛔ Les trois rangs se distinguent par la FORME autant que par la couleur :

@@ -130,6 +130,56 @@ describe("un circuit d'Office devient une promenade", () => {
       .toMatch(/provenance === "ot"[\s\S]{0,200}Office de tourisme/);
   });
 
+  it("⭐ la durée DÉCLARÉE par l'Office s'affiche telle quelle, pas recalculée", () => {
+    /* 🔴 LA FICHE RECALCULAIT PAR-DESSUS, et c'est le défaut le plus coûteux
+       de cette soirée : elle affichait notre estimation à 3,5 km/h SOUS LEUR
+       NOM. Un Office connaît ses escaliers, son sable, ses passages de
+       marée ; sa durée est une parole, pas un quotient.
+       ⭐ Trouvé en COMPACTANT, pas en cherchant : rassembler deux valeurs
+          côte à côte montre qu'elles ne parlent pas de la même chose. */
+    const avec = r.itineraires.find((i) => i.duree)!;
+    const w = promenadeOT(avec, null);
+    expect(w.dureeDeclaree, "la déclaration de l'Office n'est plus signalée").toBe(true);
+    expect(w.dureeEstimeeH).toBeCloseTo(heures(avec.duree)!, 5);
+    /* ⛔ ET L'ABSENCE NE SE DÉGUISE PAS EN DÉCLARATION : 18 circuits sur 116
+       n'annoncent aucune durée, et pour ceux-là la convention s'applique — en
+       le disant. */
+    const sans = r.itineraires.find((i) => !i.duree)!;
+    expect(promenadeOT(sans, null).dureeDeclaree,
+      "une durée calculée se fait passer pour une parole").toBeUndefined();
+
+    const fiche = nu("FichePromenade.tsx");
+    expect(fiche, "la fiche ignore la durée déclarée")
+      .toMatch(/walk\.dureeDeclaree \?/);
+    expect(fiche, "la parole de l'Office n'est pas attribuée")
+      .toMatch(/annoncées par l'Office/);
+    /* ⚠️ ET L'HYPOTHÈSE RESTE DANS LA LIGNE pour NOS durées : « 2 h » sans
+       « à 3,5 km/h » est un engagement ; avec, c'est une estimation. C'est
+       la seule chose de ce bloc qui ne se compacte pas. */
+    expect(fiche, "l'estimation ne dit plus son hypothèse")
+      .toMatch(/estimée à 3,5 km\/h/);
+  });
+
+  it("⛔ la fiche ne redit pas la forme, et ne creuse pas de trou sans résumé", () => {
+    /* 🔴 COMPACTÉE LE 12/11 sur demande. « Boucle » s'écrivait DEUX fois — la
+       pastille de la couverture, puis « Forme : Boucle » trois cents pixels
+       plus bas — et trois colonnes étiquetées tenaient six lignes de texte
+       pour trois faits courts.
+       ⛔ ET UN RÉSUMÉ VIDE N'EST PAS UN RÉSUMÉ COURT : les circuits d'Office
+          n'en ont pas, et le paragraphe rendu quand même creusait un trou
+          entre la provenance et les chiffres. Vu à l'écran. */
+    const fiche = nu("FichePromenade.tsx");
+    expect(fiche, "la grille à trois colonnes est revenue")
+      .not.toMatch(/fiche-chiffres/);
+    expect([...fiche.matchAll(/\? "Boucle" :/g)].length,
+      "« Boucle » est de nouveau écrit deux fois").toBe(1);
+    expect(fiche, "un résumé vide est rendu quand même")
+      .toMatch(/\{walk\.resume && </);
+    /* ⭐ « prévoir le retour » n'est pas perdu avec la colonne « Forme » : il
+       a remonté à côté du mot qu'il précise. */
+    expect(fiche).toMatch(/prévoir le retour/);
+  });
+
   it("⛔ UN SEUL ENDROIT RÉPOND À « OÙ TROUVE-T-ON CETTE PROMENADE ? »", () => {
     /* 🔴 TROIS FOIS LE MÊME OUBLI CETTE ANNÉE, et c'est pour ça que ce garde
        existe : chaque fois qu'une source est apparue, un écran l'a apprise et

@@ -114,6 +114,20 @@ export interface Walk {
   /** Marche à 3,5 km/h — une estimation, jamais un relevé. */
   dureeEstimeeH: number;
   /**
+   * ⭐ LA DURÉE EST-ELLE UNE PAROLE OU UN CALCUL ? — posé le 12/11/2026, quand
+   *    les circuits des Offices sont devenus marchables chez nous.
+   *
+   * Une durée DÉCLARÉE par l'Office est leur parole : ils connaissent le
+   * terrain, les escaliers, le sable. Une durée CALCULÉE est une estimation à
+   * 3,5 km/h, et la fiche le dit — « 2 h » sans « à 3,5 km/h » est un
+   * engagement, avec, c'est une estimation.
+   * ⛔ Les deux ne se mélangent pas sans le dire, et ça ne se devine pas
+   *    après coup : comparer la valeur au quotient distance/3,5 pour savoir
+   *    d'où elle vient serait une astuce qui tomberait le jour où un Office
+   *    annoncerait, par hasard, exactement la durée de la convention.
+   */
+  dureeDeclaree?: true;
+  /**
    * Montée cumulée en mètres, le long de la géométrie. ⚠️ OPTIONNELLE, et
    * l'absence est une information : un itinéraire de l'Office porte le
    * relevé que l'Office a mesuré au sol, pas le nôtre, et une promenade

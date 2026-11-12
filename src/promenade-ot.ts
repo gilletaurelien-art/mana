@@ -111,6 +111,7 @@ export function promenadeOT(i: ItineraireOT, inventaire?: Inventaire | null): Wa
           est une estimation. On préfère la première, et on ne mélange pas les
           deux sans le dire. */
     dureeEstimeeH: heures(i.duree) ?? i.km / 3.5,
+    ...(heures(i.duree) != null ? { dureeDeclaree: true as const } : {}),
     boucle: i.boucle,
     /* 🔴 CES DEUX CHAMPS PORTENT UN NOM D'OPENSTREETMAP ET UNE SOURCE
        D'OFFICE, ET C'EST ASSUMÉ — mais ce n'est pas suffisant. `Walk` a été
