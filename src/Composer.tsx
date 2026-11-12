@@ -193,6 +193,19 @@ function SvgTelecharger() {
    qu'il accompagne — l'horloge le temps, la vague la mer, l'étincelle les
    rencontres. ⚠️ Tous `aria-hidden` : ils doublent un texte, ils ne le
    remplacent jamais. Un picto seul n'est lisible par personne. */
+/* ⭐ LA BOUCLE : un trait qui revient sur lui-même. Il dit l'interrupteur
+   « je reviens par un autre chemin » mieux qu'une flèche, qui dirait un
+   demi-tour — c'est-à-dire exactement le contraire. */
+function SvgBoucle() {
+  return (
+    <svg className="cp-picto" viewBox="0 0 24 24" aria-hidden="true"
+         fill="none" stroke="currentColor" strokeWidth="1.6"
+         strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8 6h6a4 4 0 0 1 0 8H9a4 4 0 0 0 0 8h7" />
+      <circle cx="6" cy="6" r="2" />
+    </svg>
+  );
+}
 function SvgBoussole() {
   return (
     <svg className="cp-picto" viewBox="0 0 24 24" aria-hidden="true"
@@ -478,6 +491,11 @@ export function Composer() {
   const [duree, setDuree] = useState(0);
   const [retour, setRetour] = useState<Retour | null>(null);
   const [enMarche, setEnMarche] = useState(false);
+  /* ⭐ UN SEUL VOLET À LA FOIS, ET IL EST NOMMÉ. Deux booléens indépendants
+     auraient laissé les deux s'ouvrir ensemble sur une carte de 385 px de
+     large — et c'est le genre d'état impossible qu'on ne voit qu'une fois en
+     production. `null` = la carte est nue, ce qui est l'état normal. */
+  const [volet, setVolet] = useState<null | "parcours" | "securite">(null);
   const [requete, setRequete] = useState("");
   /* 🔴 LA CARTE DÉMARRE RÉDUITE — 3/11/2026, demande du fondateur. 210 px
      (moitié des 420 d'origine) suffit à situer le tracé sans pousser les
@@ -948,6 +966,27 @@ export function Composer() {
   const laBoucle: Boucle | null =
     enBoucle && boucleVisee?.etat === "ok" ? boucleVisee.boucles[0] : null;
   const b: Parcours | null = laBoucle ?? prop?.parcours ?? null;
+
+  /**
+   * ⚠️ LE POINT SUR L'ICÔNE — « y a-t-il quelque chose à savoir ? ».
+   *
+   * 🔴 IL COMPTE LE FICHIER ABSENT COMME UNE ALERTE, ET C'EST VOULU. Les
+   *    trois cas ne se valent pas — une fermeture connue, un secteur signalé
+   *    qu'on n'a pas pu situer (le calcul ne l'évite donc PAS), et des
+   *    fermetures qu'on n'a pas pu charger du tout — mais aucun des trois ne
+   *    doit se découvrir en ouvrant par hasard. ⭐ Une application qui route
+   *    sans connaître les fermetures ne doit pas en avoir l'air : c'est la
+   *    règle déjà écrite pour le panneau, elle vaut pour le point.
+   * ⛔ LA MARÉE EN FAIT PARTIE : c'est une condition de praticabilité, pas un
+   *    agrément. Elle vivait dans son propre panneau AVANT la carte, pour
+   *    qu'on la lise avant de décider ; derrière une icône muette, elle
+   *    arriverait après.
+   */
+  const alerteSecurite =
+    fermetures === null ||
+    (touchees !== null &&
+      (touchees.actives.length > 0 || touchees.nonSituees.length > 0)) ||
+    (b?.marees ?? 0) > 0;
   /** Les mètres ANNONCÉS : réseau plus les deux bouts hors réseau. */
   const metresDits = laBoucle
     ? laBoucle.metres + (depart ? Math.round(depart.a.ecartNoeud) : 0)
@@ -1113,7 +1152,26 @@ export function Composer() {
       <Suspense fallback={<main className="page"><div className="wrap">
         <p className="page-note">Préparation de l'écran de marche…</p>
       </div></main>}>
-        <EnChemin base={import.meta.env.BASE_URL.replace(/\/$/, "")} walk={walk} retour={() => setEnMarche(false)} />
+        <EnChemin
+          base={import.meta.env.BASE_URL.replace(/\/$/, "")}
+          walk={walk}
+          retour={() => setEnMarche(false)}
+          /* 🔴 « REVENIR » VIT SUR L'ÉCRAN DE MARCHE — 12/11/2026, demande du
+             fondateur. Il s'appelait « Rentrer » et vivait dans un panneau
+             « Si le temps tourne », sous la carte du compositeur : c'est-à-dire
+             exactement là où personne n'est quand le vent se lève. ⭐ Une
+             fonction de secours se range dans l'écran où l'on est quand on en
+             a besoin, pas dans celui où on l'a lue. */
+          revenir={rentrer}
+          ditRevenir={
+            motRetour ||
+            (retour
+              ? retour.metres < 100
+                ? "Vous y êtes."
+                : `${km(retour.metres)} km pour rentrer. Par le plus court — pas par le plus joli, c'est voulu.`
+              : "")
+          }
+        />
       </Suspense>
     );
   }
@@ -1187,6 +1245,283 @@ export function Composer() {
                   et les deux gestes. Le reste du document continue dessous,
                   pour qui veut lire — on lisse l'écran, on ne supprime pas
                   son contenu. */}
+              {/* ══ D · LES OUTILS DE LA PROMENADE — SUR LA CARTE ═══════════
+                  🔴 12/11/2026, demande du fondateur : « tout doit vivre dans
+                  de petites icônes bien pensées sur la carte, pour que la
+                  carte reste plein écran ». Ce qui vivait en panneaux sous la
+                  scène — le détail du parcours, la boucle, le second départ,
+                  le GPX, les conditions de sécurité — tient désormais dans un
+                  rail d'icônes et deux volets qui s'ouvrent par-dessus.
+                  ⭐ RIEN N'EST PERDU EN CHEMIN, et c'est la condition. Le
+                     doublement de l'aller, la mise en garde sur la marée, le
+                     seuil SRTM, les arrêtés et leurs autorités : tout est
+                     dans les volets, au mot près. Désencombrer un écran veut
+                     dire déplacer ce qu'on y lit, pas le jeter — c'est la
+                     règle que cet écran s'est déjà appliquée le 7/11 en
+                     remontant la distance sur la carte.
+                  ⛔ ET AUCUNE ICÔNE N'EST SEULE. Ce fichier porte depuis
+                     toujours la consigne « un picto seul n'est lisible par
+                     personne » : chaque bouton garde son mot sous le dessin.
+                     « Petites icônes » ne veut pas dire « devinettes ». */}
+              {b && walk && (
+                <>
+                  <div className="cp-outils" role="group" aria-label="Outils de la promenade">
+                    <button
+                      type="button"
+                      className={`cp-outil${volet === "parcours" ? " est-ouvert" : ""}`}
+                      aria-expanded={volet === "parcours"}
+                      onClick={() => setVolet((v) => (v === "parcours" ? null : "parcours"))}
+                    >
+                      <SvgRuban />
+                      <span className="cp-outil-mot">Le parcours</span>
+                    </button>
+
+                    {/* ⭐ LA BOUCLE EST UN INTERRUPTEUR, PAS UNE AUTRE
+                        PROMENADE : j'y vais et je reviens sur mes pas, ou je
+                        reviens par un autre chemin. ⚠️ Le mot ne change plus
+                        avec l'état — c'est `aria-pressed` qui le dit. Un
+                        libellé qui bascule sous un bouton pressé annonce deux
+                        choses contraires au lecteur d'écran. */}
+                    <button
+                      type="button"
+                      className={`cp-outil${enBoucle ? " est-choisie" : ""}`}
+                      aria-pressed={enBoucle}
+                      onClick={basculerBoucle}
+                    >
+                      <SvgBoucle />
+                      <span className="cp-outil-mot">Boucle</span>
+                    </button>
+
+                    {/* ⭐ LE SECOND POINT EST UN NOUVEAU DÉPART — c'est ainsi
+                        que la promenade s'allonge, et c'est la personne qui
+                        décide à l'arrivée. ⛔ Rien ne s'empile : la nouvelle
+                        proposition REMPLACE. */}
+                    {prop && !laBoucle && (
+                      <button
+                        type="button"
+                        className="cp-outil"
+                        onClick={() => {
+                          /* ⚠️ On passe le lieu QU'ON QUITTE pour qu'il ne
+                             revienne pas en première proposition. */
+                          const j = prop.i;
+                          const nomDepart = depart?.nom;
+                          const dOu = spots.findIndex((l) => l.n === nomDepart);
+                          setVolet(null);
+                          choisirSpot(j, dOu >= 0 ? dOu : undefined);
+                        }}
+                      >
+                        <SvgBoussole />
+                        <span className="cp-outil-mot">Repartir</span>
+                      </button>
+                    )}
+
+                    {/* ⭐ CE QU'ON PEUT EMPORTER POUR DE VRAI : le fichier. Il
+                        entre dans n'importe quelle montre, il part hors ligne,
+                        et il porte son attribution avec lui. Ce qui est à vous
+                        est à vous — y compris quand vous partez avec. */}
+                    <button
+                      type="button"
+                      className="cp-outil"
+                      onClick={() => telecharger("promenade-mana.gpx", enGpx(walk), "application/gpx+xml")}
+                    >
+                      <SvgTelecharger />
+                      <span className="cp-outil-mot">GPX</span>
+                    </button>
+
+                    {/* ⚠️ L'ALERTE SE VOIT SANS OUVRIR. Une mise en garde
+                        rangée derrière une icône muette arrive après la
+                        décision : le bouton porte un point quand il y a une
+                        fermeture, un secteur non situé ou un passage de
+                        marée. Le NOMBRE et la CONSÉQUENCE restent à un tap. */}
+                    {graphe && (
+                      <button
+                        type="button"
+                        className={`cp-outil${volet === "securite" ? " est-ouvert" : ""}${alerteSecurite ? " est-alerte" : ""}`}
+                        aria-expanded={volet === "securite"}
+                        onClick={() => setVolet((v) => (v === "securite" ? null : "securite"))}
+                      >
+                        <SvgBouclier />
+                        <span className="cp-outil-mot">Sécurité</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {volet && (
+                    <div
+                      className="cp-volet"
+                      role="dialog"
+                      aria-label={volet === "parcours" ? "Le parcours" : "Conditions et sécurité"}
+                    >
+                      <button
+                        type="button"
+                        className="cp-volet-fermer"
+                        onClick={() => setVolet(null)}
+                      >
+                        <span className="sr-only">Fermer</span>
+                        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none"
+                             stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                          <path d="m6 6 12 12M18 6 6 18" />
+                        </svg>
+                      </button>
+
+                      {volet === "parcours" && (
+                        <>
+                          {/* ⚠️ `km()` ET NON LA VALEUR NUE. `walk.distanceKm`
+                              rend « 1.7 » : un point décimal anglais, à trois
+                              centimètres de la ligne de faits qui écrit
+                              « 1,7 km ». Deux orthographes du même nombre sur
+                              un même écran se lisent comme deux mesures. */}
+                          <p className="cp-volet-titre">
+                            {km(walk.distanceKm * 1000)} km{" "}
+                            {laBoucle ? "en boucle" : `jusqu'à ${prop ? spots[prop.i].n : ""}`}
+                          </p>
+                          {/* ⚠️ ON DIT CE QUE « ALLER » VEUT DIRE. Sans cette
+                              ligne, un aller de 1,4 km se lit comme une
+                              promenade de 1,4 km ; le retour sur ses pas la
+                              double. Taire le facteur deux serait la
+                              sous-estimation que le fondateur a explicitement
+                              refusée le 2/11. */}
+                          {!laBoucle && (
+                            <p className="cp-volet-dire">
+                              C'est l'<strong>aller</strong>. Revenir sur ses pas en fait{" "}
+                              {km(walk.distanceKm * 2000)} km — ou composez une
+                              nouvelle promenade en arrivant.
+                            </p>
+                          )}
+                          {/* ⛔ PAS DE PARAGRAPHE VIDE. Sur une promenade
+                              plate, sans boucle et avec des lieux croisés,
+                              aucun de ces faits n'a de valeur : la ligne
+                              rendait alors un blanc sous le texte, c'est-à-dire
+                              la trace d'une information qui n'existe pas.
+                              ⭐ Une surface qui existe sans contenu dit « il y
+                                 a quelque chose ici » à qui cherche quoi lire —
+                                 c'est la règle que ce même écran s'applique
+                                 déjà à son panneau de chargement. */}
+                          {(laBoucle || rencontres.length === 0 ||
+                            b.montee >= MONTEE_DITE_M || b.bordDeMer > 300 ||
+                            b.partRepetee > 0.1) && (
+                          <p className="cp-volet-faits">
+                            {/* ⛔ L'ÉTALEMENT NE SE LIT QUE SUR UNE BOUCLE :
+                                c'est un quotient isopérimétrique, il
+                                appellerait « aller-retour » une ligne droite. */}
+                            {laBoucle && <>
+                              {FORME[formeDeLaBoucle(laBoucle.etalement)]}
+                              {formeDeLaBoucle(laBoucle.etalement) === "aller-retour" &&
+                                " — on revient par un chemin voisin, pas par une autre boucle"}
+                              {" · "}
+                            </>}
+                            {/* ⚠️ La phrase du cas VIDE reste : « aucun lieu
+                                remarquable » n'est écrit nulle part ailleurs,
+                                et c'est le cas où l'on se demande si le calcul
+                                a échoué. */}
+                            {rencontres.length === 0 &&
+                              "Aucun lieu remarquable sur ce parcours — c'est la marche qui compte"}
+                            {b.montee >= MONTEE_DITE_M && ` · ${Math.round(b.montee)} m de montée`}
+                            {b.bordDeMer > 300 && ` · ${km(b.bordDeMer)} km au bord de mer`}
+                            {b.partRepetee > 0.1 && " · une portion se parcourt deux fois"}
+                          </p>
+                          )}
+                          {/* 🔴 LA NOTE SUIT LE CHIFFRE QU'ELLE EXPLIQUE —
+                              7/11/2026. Elle s'affichait SANS CONDITION, alors
+                              que le dénivelé ne paraît qu'au-delà de 40 m. */}
+                          {b.montee >= MONTEE_DITE_M && (
+                            <p className="cp-volet-note">
+                              Dénivelé d'après le modèle d'altitude SRTM (30&nbsp;m) —
+                              il voit les vallons, pas les marches. Les circuits
+                              balisés de l'Office portent leur propre relevé,
+                              mesuré au sol.
+                            </p>
+                          )}
+                        </>
+                      )}
+
+                      {volet === "securite" && (
+                        <>
+                          {/* 🔴 L'AVERTISSEMENT PASSE AVANT LA CARTE, PAS
+                              APRÈS — ici il passe avant le départ, ce qui est
+                              la même exigence. ⛔ Et on n'annonce pas l'heure
+                              de la mer : prédire une marée demande un modèle
+                              harmonique ; quelqu'un s'y fierait. */}
+                          {b.marees > 0 && (
+                            <div className="cp-securite-bloc">
+                              <SvgVague />
+                              <div>
+                                <p className="cp-securite-titre">Un passage dépend de la marée</p>
+                                <p className="cp-securite-dire">
+                                  Environ {Math.round(b.marees)} m de ce parcours
+                                  franchissent un estran : praticable à marée
+                                  basse, pas à marée haute. Vérifiez l'horaire
+                                  avant de partir — nous ne le calculons pas, et
+                                  nous ne le devinons pas.{" "}
+                                  <a href={SOURCE_MAREES} target="_blank" rel="noopener noreferrer">
+                                    Horaires des marées (SHOM)
+                                  </a>
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                              <div className="cp-securite-bloc">
+                                <SvgBouclier />
+                                <div>
+                                  <p className="cp-securite-titre">Conditions et sécurité</p>
+                                  {touchees && touchees.actives.length > 0 ? (
+                                    <p className="cp-securite-dire">
+                                      {touchees.actives.length} secteur{touchees.actives.length > 1 ? "s" : ""} du
+                                      sentier côtier (GR34) {touchees.actives.length > 1 ? "sont fermés" : "est fermé"} par
+                                      arrêté. Les promenades ne les empruntent pas.
+                                    </p>
+                                  ) : (
+                                    <p className="cp-securite-dire">
+                                      Aucune fermeture connue sur ce territoire aujourd'hui.
+                                    </p>
+                                  )}
+                                  {touchees && touchees.nonSituees.some((f) => f.effet === "interdit") && (
+                                    <p className="cp-securite-dire cp-securite-dur">
+                                      ⚠️ {touchees.nonSituees.filter((f) => f.effet === "interdit").length} secteur
+                                      {touchees.nonSituees.filter((f) => f.effet === "interdit").length > 1 ? "s" : ""} signalé
+                                      {touchees.nonSituees.filter((f) => f.effet === "interdit").length > 1 ? "s" : ""} n'
+                                      {touchees.nonSituees.filter((f) => f.effet === "interdit").length > 1 ? "ont" : "a"} pas
+                                      pu être situé sur la carte : le calcul ne l'évite pas.
+                                    </p>
+                                  )}
+                                  {touchees && (touchees.actives.length > 0 || touchees.nonSituees.length > 0) && (
+                                    <details className="cp-arretes">
+                                      <summary>En savoir plus</summary>
+                                      <ul>
+                                        {touchees.actives.map((f) => (
+                                          <li key={f.id}>
+                                            {f.libelle} — {f.autorite},{" "}
+                                            {new Date(f.publie_le).toLocaleDateString("fr-FR")}.{" "}
+                                            <a href={f.source} rel="noopener">la décision</a>
+                                            {f.portee_approximative && " · portée approximative"}
+                                          </li>
+                                        ))}
+                                        {touchees.nonSituees.map((f) => (
+                                          <li key={f.id}>
+                                            <strong>{f.libelle}.</strong> {f.motif}{" "}
+                                            <a href={f.source} rel="noopener">{f.autorite}</a>
+                                            {f.effet === "interdit" &&
+                                              " — signalé mais non situé sur la carte : le calcul ne l'évite pas."}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </details>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="cp-securite-bloc">
+                                <SvgFeuille />
+                                <p className="cp-securite-dire">
+                                  Tout est calculé dans votre téléphone. Votre position ne part
+                                  nulle part.
+                                </p>
+                              </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
               <div className="cp-scene-bas">
             {/* ══ C · LES TROIS PROPOSITIONS ══════════════════════════════
                   🔴 TROIS LIEUX, PLUS TROIS BOUCLES — 2/11. Hier le compositeur
@@ -1599,267 +1934,20 @@ export function Composer() {
         )}
 
 
-        {b && walk && (
-          <>
-            <section className="page-panel">
-              <h2 className="section-title" style={{ marginBottom: "var(--sp-2)" }}>
-                {walk.distanceKm} km {laBoucle ? "en boucle" : `jusqu'à ${prop ? spots[prop.i].n : ""}`}
-              </h2>
-              {/* ⚠️ ET ON DIT CE QUE « ALLER » VEUT DIRE. Sans cette ligne, un
-                  aller de 1,4 km se lit comme une promenade de 1,4 km ; le
-                  retour sur ses pas la double. Taire le facteur deux serait la
-                  sous-estimation que le fondateur a explicitement refusée le
-                  2/11 : « ne pas sur-estimer ou sous-estimer ». */}
-              {!laBoucle && (
-                <p className="page-note">
-                  C'est l'<strong>aller</strong>. Revenir sur ses pas en fait{" "}
-                  {km(walk.distanceKm * 2000)} km — ou composez une
-                  nouvelle promenade en arrivant.
-                </p>
-              )}
-
-              {/* ══ D · CE QU'ON EMPORTE ════════════════════════════════════
-                  ⛔ PAS DE BOUTON « PARTIR » : il n'irait nulle part. L'écran
-                  de marche (`/promenade/<slug>/en-chemin`) se monte depuis un
-                  SLUG du catalogue, et une boucle composée il y a trois
-                  secondes n'en a pas. La maquette le demande ; le câbler
-                  voudrait dire inventer une fonctionnalité, ce que le brief
-                  interdit par ailleurs — et un bouton qui ne mène nulle part
-                  coûte plus cher qu'un bouton absent.
-                  ⭐ Ce qu'on peut emporter POUR DE VRAI, c'est le fichier :
-                     il entre dans n'importe quelle montre, il part hors
-                     ligne, et il porte son attribution avec lui. */}
-              {/* ⭐ « PARTIR » EST L'ACTION PRINCIPALE — 2/11, après une
-                  question du fondateur : « à quoi sert emporter le tracé
-                  alors qu'on veut qu'ils utilisent MANA ? ». Elle était
-                  juste. Le GPX n'était pas un bouton de trop : c'était le
-                  SEUL, parce que l'écran de marche ne savait se monter que
-                  depuis un slug de catalogue. On a desserré la dépendance
-                  plutôt que de supprimer la sortie.
-                  ⛔ ET LE GPX RESTE. Il descend au second rang, il ne part
-                     pas : une application qui garde ce qu'on y a fait n'est
-                     pas celle qu'on veut écrire. Ce qui est à vous est à
-                     vous — y compris quand vous partez avec. */}
-              {/* 🔴 « PARTIR » A QUITTÉ CE BLOC LE 6/11/2026 — il est MONTÉ
-                  sur la carte, sous le nom « Commencer », avec les trois
-                  propositions. Déplacé, jamais dupliqué : deux boutons pour un
-                  seul geste est précisément le défaut que le fondateur a
-                  trouvé sur l'accueil en septembre (« Voir les balades » et
-                  « Voir sur la carte » menaient au même écran), et qu'un test
-                  tient depuis. Ne pas le remettre ici « pour qu'il soit sous
-                  la main » : il l'est, en haut, en permanence. */}
-              <div className="cp-emporter">
-                {/* ⭐ LA BOUCLE EST UN INTERRUPTEUR, PAS UNE AUTRE PROMENADE.
-                    « Autre promenade » tirait une nouvelle graine au hasard :
-                    utile quand le compositeur choisissait le prétexte, vide de
-                    sens maintenant que la personne a choisi où aller. Ici le
-                    choix est clair — j'y vais et je reviens sur mes pas, ou je
-                    reviens par un autre chemin.
-                    🔴 ET LA CIBLE DE LA BOUCLE SE DÉRIVE DE L'ALLER : c'est ce
-                       qui fait passer `composerVers` de 58 % à plus de 90 % de
-                       réussite. Voir `basculerBoucle`. */}
-                <button
-                  className={`cp-secondaire${enBoucle ? " est-choisie" : ""}`}
-                  aria-pressed={enBoucle}
-                  onClick={basculerBoucle}
-                >
-                  {enBoucle ? "Revenir sur mes pas" : "Revenir par un autre chemin"}
-                </button>
-              </div>
-              {/* ⭐ LE SECOND POINT EST UN NOUVEAU DÉPART — c'est ainsi que la
-                  promenade s'allonge, et c'est la personne qui décide, à
-                  l'arrivée, si elle en a encore envie. Aucune distance n'a
-                  jamais été demandée ni devinée : elle s'additionne par
-                  gestes. ⛔ Et rien ne s'empile en mémoire : la nouvelle
-                  proposition REMPLACE, elle ne se cumule pas — nous ne gardons
-                  pas la trace de ce que quelqu'un a marché. */}
-              {prop && !laBoucle && (
-                <p className="cp-second">
-                  <button className="cp-lien" onClick={() => {
-                    /* ⚠️ On passe le lieu QU'ON QUITTE pour qu'il ne revienne
-                       pas en première proposition — `venuDe`, un seul pas. */
-                    const j = prop.i;
-                    const nomDepart = depart?.nom;
-                    const dOu = spots.findIndex((l) => l.n === nomDepart);
-                    choisirSpot(j, dOu >= 0 ? dOu : undefined);
-                  }}>
-                    <SvgBoussole />Repartir depuis {spots[prop.i].n}
-                  </button>
-                </p>
-              )}
-              <p className="cp-second">
-                <button
-                  className="cp-lien"
-                  onClick={() => telecharger("promenade-mana.gpx", enGpx(walk), "application/gpx+xml")}
-                >
-                  <SvgTelecharger />Emporter le tracé (GPX)
-                </button>
-              </p>
-              {/* ✅ L'ALTITUDE EST POSÉE DEPUIS LE 3/11/2026 — et cette note
-                  disait encore le contraire ce matin-là. Elle annonçait
-                  « nous n'avons pas de relevé d'altitude sur ces chemins » :
-                  vrai le 2/11, faux dès que `scripts/graphe_altitude.py` a
-                  rempli les deux graphes. ⭐ Une note qui survit à sa cause
-                  devient un faux témoin — celle-ci n'aura vécu qu'un jour.
-
-                  ⛔ ON NE REMET PAS LA DURÉE POUR AUTANT. L'arbitrage du
-                     fondateur, 2/11 : « certains sont lents, certains
-                     marchent vite. La pertinence est la distance. » Avoir le
-                     dénivelé ne rend pas une allure moins fausse — ça rend
-                     l'EFFORT mesurable, et l'effort se dit en mètres de
-                     montée, pas en minutes inventées.
-
-                  ⚠️ CE QU'ON SAIT ET CE QU'ON NE SAIT PAS, puisque c'est la
-                     règle de cette page. La source est SRTM à 30 m :
-                     elle voit les vallons, pas les marches d'un escalier
-                     côtier. 83 arêtes de la presqu'île (0,5 %) restent sans
-                     dénivelé — toutes très courtes, où deux échantillons
-                     distants de 30 m donneraient une pente absurde ; on
-                     préfère ne rien dire. Et les circuits de l'Office
-                     gardent leur propre relevé, qui est mesuré au sol. */}
-              {/* 🔴 LA NOTE SUIT LE CHIFFRE QU'ELLE EXPLIQUE — 7/11/2026.
-                  Elle s'affichait SANS CONDITION, alors que le dénivelé ne
-                  paraît qu'au-delà de 40 m de montée. Sur une promenade plate
-                  — le cas le plus courant en presqu'île — on lisait une
-                  précaution sur une mesure absente.
-                  ⚠️ Et j'avais d'abord conclu qu'il fallait la SUPPRIMER :
-                     j'avais regardé UNE promenade, sans dénivelé, et
-                     généralisé « jamais affiché ». Le seuil des 40 m était à
-                     quatre lignes de là. ⭐ Une mesure sur un seul cas ne dit
-                     rien d'un affichage conditionnel — c'est le régime qu'on
-                     ne regarde pas qui porte le défaut, et ici il portait la
-                     raison d'être. */}
-              {b.montee >= MONTEE_DITE_M && (
-                <p className="page-note">
-                  Dénivelé d'après le modèle d'altitude SRTM (30&nbsp;m) —
-                  il voit les vallons, pas les marches. Les circuits balisés de
-                  l'Office portent leur propre relevé, mesuré au sol.
-                </p>
-              )}
-              <p className="page-note">
-                {/* ⛔ L'ÉTALEMENT NE SE LIT QUE SUR UNE BOUCLE. C'est un
-                    quotient isopérimétrique : il compare une aire à un
-                    périmètre, et appellerait « aller-retour » une ligne
-                    droite — un mot juste pour une boucle aplatie, faux pour
-                    un trajet d'un lieu à un autre. Le type le dit : `etalement`
-                    vit sur `Boucle`, pas sur `Parcours`. */}
-                {laBoucle && <>
-                  {FORME[formeDeLaBoucle(laBoucle.etalement)]}
-                  {formeDeLaBoucle(laBoucle.etalement) === "aller-retour" &&
-                    " — on revient par un chemin voisin, pas par une autre boucle"}
-                  {" · "}
-                </>}
-                {/* ⚠️ « CROISÉS », PAS « SUR LE CHEMIN ». Vu en production le
-                    1/11 : « 2 lieux sur le chemin », et juste en dessous
-                    « Menhir de Crozon · à 76 m du chemin ». Le résumé
-                    contredisait sa propre liste. ⭐ Un décompte qui qualifie
-                    ses éléments doit tenir pour TOUS — sinon il faut qu'il
-                    les compte sans les qualifier. */}
-                {/* ⛔ LE DÉCOMPTE NE SE REDIT PAS — 7/11/2026. La ligne de
-                    faits sur la carte annonce déjà « 2 lieux · Fortification ».
-                    ⚠️ Mais la phrase du cas VIDE reste : elle ne redit rien,
-                       elle dit le contraire — « aucun lieu remarquable » n'est
-                       écrit nulle part ailleurs, et c'est précisément le cas
-                       où l'on se demande si le calcul a échoué. */}
-                {rencontres.length === 0 &&
-                  "Aucun lieu remarquable sur ce parcours — c'est la marche qui compte"}
-                {b.montee >= MONTEE_DITE_M && ` · ${Math.round(b.montee)} m de montée`}
-                {b.bordDeMer > 300 &&
-                  ` · ${km(b.bordDeMer)} km au bord de mer`}
-                {b.partRepetee > 0.1 && " · une portion se parcourt deux fois"}
-                {/* ⛔ « CALCULÉ EN N ms » EST PARTI — 7/11/2026, demande du
-                    fondateur. C'était de la fierté d'ingénieur : personne ne
-                    décide rien avec ce chiffre, et il occupait la fin d'une
-                    ligne que l'on lit pour savoir ce qu'on va voir.
-                    ⚠️ La mesure, elle, reste calculée (`duree`) : elle sert
-                       au banc. Ce qui part est son AFFICHAGE. */}
-              </p>
-            </section>
-
-            {/* 🔴 L'AVERTISSEMENT PASSE AVANT LA CARTE, PAS APRÈS. Une mise en
-                garde qu'on découvre sous le tracé arrive après la décision.
-                ⛔ Et on n'annonce pas l'heure de la mer : prédire une marée
-                   demande un modèle harmonique ; quelqu'un s'y fierait. On
-                   renvoie à la source officielle — c'est la doctrine du
-                   produit pour les marées et la météo depuis le début. */}
-            {b.marees > 0 && (
-              <section className="page-panel">
-                <p className="apercu-label">⚠️ Un passage dépend de la marée</p>
-                <p className="page-texte">
-                  Environ {Math.round(b.marees)} m de ce parcours franchissent
-                  un estran : praticable à marée basse, pas à marée haute.
-                  Vérifiez l'horaire avant de partir — nous ne le calculons
-                  pas, et nous ne le devinons pas.
-                </p>
-                <div className="est-actions" style={{ marginBottom: 0 }}>
-                  <a className="btn btn-ghost" href={SOURCE_MAREES}
-                     target="_blank" rel="noopener noreferrer">
-                    Horaires des marées (SHOM)
-                  </a>
-                </div>
-              </section>
-            )}
-
-            <section className="page-panel">
-              <p className="apercu-label">Si le temps tourne</p>
-              <p className="page-texte">
-                Le vent se lève, la pluie commence : d'où que vous soyez, on
-                vous rend le plus court chemin vers le point de départ. Calculé
-                dans votre téléphone — c'est justement dehors que le réseau
-                manque.
-              </p>
-              <div className="est-actions" style={{ marginBottom: 0 }}>
-                <button className="btn btn-ghost" onClick={rentrer}>Rentrer</button>
-              </div>
-              {motRetour && <p className="page-note">{motRetour}</p>}
-              {retour && (
-                <p className="page-note">
-                  <strong>
-                    {retour.metres < 100
-                      ? "Vous y êtes."
-                      : `${km(retour.metres)} km pour rentrer.`}
-                  </strong>{" "}
-                  {retour.metres >= 100 &&
-                    "Par le plus court — pas par le plus joli, c'est voulu."}
-                </p>
-              )}
-            </section>
-
-
-            {rencontres.length > 0 && (
-              <section className="page-panel">
-                <p className="apercu-label">Ce que vous croiserez</p>
-                {/* ⭐ DANS L'ORDRE DE MARCHE. Un classement qui porte un titre
-                    de séquence et trie par autre chose est un mensonge qui ne
-                    se signale jamais : il se vérifie en marchant. */}
-                <ol className="page-texte" style={{ paddingLeft: "1.2em" }}>
-                  {rencontres.map((l, i) => (
-                    <li key={`${l.nom}-${i}`} style={{ marginBottom: ".4em" }}>
-                      {l.nom}
-                      {l.libelle && <span className="page-note"> · {l.libelle}</span>}
-                      {/* ⚠️ « À 76 m DU CHEMIN », PAS « SUR LE CHEMIN ». Le
-                          seuil de 150 m autorise la phrase « vous passez
-                          devant » ; il n'autorise pas « c'est sur votre
-                          route ». L'écart est mesuré, donc il se dit. */}
-                      {l.ecart > 40 &&
-                        <span className="page-note"> · à {l.ecart} m du chemin</span>}
-                    </li>
-                  ))}
-                </ol>
-              </section>
-            )}
-
-
-            <section className="page-panel">
-              <p className="page-note">
-                Chemins et lieux d'après{" "}
-                <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>{" "}
-                (ODbL). Difficulté, accessibilité et accueil des chiens ne sont
-                pas renseignés à la source : nous ne les affichons pas.
-              </p>
-            </section>
-          </>
-        )}
+        {/* ══ D · CE QU'ON LISAIT SOUS LA CARTE — MONTÉ SUR LA CARTE ═════
+            🔴 12/11/2026, demande du fondateur. Sept panneaux vivaient ici :
+            la distance et l'aller, la boucle, le second départ, le GPX, la
+            marée, le retour, les lieux croisés et l'attribution. Ils sont
+            devenus un rail d'icônes et deux volets, posés sur la scène.
+            ⛔ DEUX SONT SUPPRIMÉS, NOMMÉMENT ET SUR DEMANDE : « Ce que vous
+               croiserez » (la liste des lieux dans l'ordre de marche) et le
+               panneau d'attribution ODbL. ⚠️ L'attribution elle-même n'est
+               PAS perdue — le fond de carte la porte en permanence (« Fond de
+               carte © OpenStreetMap, sous licence ODbL »), et le GPX exporté
+               la porte dans son `<desc>`, ce qu'un test tient. C'est la
+               RÉPÉTITION qui part, pas la mention.
+            ⭐ Le reste a déménagé sans perdre un mot : voir « ══ D · LES
+               OUTILS » dans la scène, plus haut. */}
         </div>
       </div>
       {/* ══ LE CORPS, SUITE — sécurité, signature et catalogue ═════════════
@@ -1873,79 +1961,19 @@ export function Composer() {
           bas) a le même besoin — une seule enveloppe continue plutôt que
           trois sols recollés évite toute couture visible entre eux. */}
       <div className="cp-corps">
-        {/* ══ E · CONDITIONS ET SÉCURITÉ ═══════════════════════════════════
-            🔴 CE BLOC FAISAIT 862 px, DONT 462 POUR LES SECTEURS NON SITUÉS,
-            dépliés en permanence — avant même qu'on ait composé quoi que ce
-            soit. ⭐ Une page entièrement faite d'avertissements n'avertit
-            plus : elle se saute, et le jour où l'avertissement compte, il a
-            la même tête que les cent fois où il ne comptait pas.
-            ⛔ RIEN N'EST RETIRÉ. Le NOMBRE et la CONSÉQUENCE restent à
-               l'écran sans un geste — y compris la conséquence la plus dure,
-               celle des secteurs qu'on n'a pas pu situer et que le calcul
-               n'évite donc PAS. Les arrêtés, les autorités, les dates, les
-               liens et les mentions « portée approximative » sont à un tap.
-            ⚠️ Et la carte est AVANT la signature, donc avant de partir : le
-               brief l'exige, et c'est aussi le bon sens. */}
-        {graphe && (
-          <section className="cp-securite">
-            <div className="cp-securite-bloc">
-              <SvgBouclier />
-              <div>
-                <p className="cp-securite-titre">Conditions et sécurité</p>
-                {touchees && touchees.actives.length > 0 ? (
-                  <p className="cp-securite-dire">
-                    {touchees.actives.length} secteur{touchees.actives.length > 1 ? "s" : ""} du
-                    sentier côtier (GR34) {touchees.actives.length > 1 ? "sont fermés" : "est fermé"} par
-                    arrêté. Les promenades ne les empruntent pas.
-                  </p>
-                ) : (
-                  <p className="cp-securite-dire">
-                    Aucune fermeture connue sur ce territoire aujourd'hui.
-                  </p>
-                )}
-                {touchees && touchees.nonSituees.some((f) => f.effet === "interdit") && (
-                  <p className="cp-securite-dire cp-securite-dur">
-                    ⚠️ {touchees.nonSituees.filter((f) => f.effet === "interdit").length} secteur
-                    {touchees.nonSituees.filter((f) => f.effet === "interdit").length > 1 ? "s" : ""} signalé
-                    {touchees.nonSituees.filter((f) => f.effet === "interdit").length > 1 ? "s" : ""} n'
-                    {touchees.nonSituees.filter((f) => f.effet === "interdit").length > 1 ? "ont" : "a"} pas
-                    pu être situé sur la carte : le calcul ne l'évite pas.
-                  </p>
-                )}
-                {touchees && (touchees.actives.length > 0 || touchees.nonSituees.length > 0) && (
-                  <details className="cp-arretes">
-                    <summary>En savoir plus</summary>
-                    <ul>
-                      {touchees.actives.map((f) => (
-                        <li key={f.id}>
-                          {f.libelle} — {f.autorite},{" "}
-                          {new Date(f.publie_le).toLocaleDateString("fr-FR")}.{" "}
-                          <a href={f.source} rel="noopener">la décision</a>
-                          {f.portee_approximative && " · portée approximative"}
-                        </li>
-                      ))}
-                      {touchees.nonSituees.map((f) => (
-                        <li key={f.id}>
-                          <strong>{f.libelle}.</strong> {f.motif}{" "}
-                          <a href={f.source} rel="noopener">{f.autorite}</a>
-                          {f.effet === "interdit" &&
-                            " — signalé mais non situé sur la carte : le calcul ne l'évite pas."}
-                        </li>
-                      ))}
-                    </ul>
-                  </details>
-                )}
-              </div>
-            </div>
-            <div className="cp-securite-bloc">
-              <SvgFeuille />
-              <p className="cp-securite-dire">
-                Tout est calculé dans votre téléphone. Votre position ne part
-                nulle part.
-              </p>
-            </div>
-          </section>
-        )}
+        {/* ══ E · CONDITIONS ET SÉCURITÉ — MONTÉES SUR LA CARTE ══════════
+            🔴 12/11/2026 : ce bloc est devenu l'icône « Sécurité » du rail,
+            au même endroit que la promenade qu'il concerne. Il faisait 862 px
+            en bas de page, dont 462 pour des secteurs dépliés en permanence ;
+            il avait déjà été replié le 6/11, il remonte aujourd'hui.
+            ⛔ RIEN N'EST RETIRÉ — et c'était déjà la règle en le repliant.
+               Le nombre, la conséquence la plus dure (les secteurs qu'on n'a
+               pas pu situer, que le calcul n'évite donc PAS), les arrêtés,
+               les autorités, les dates et les liens sont dans le volet, au
+               mot près. ⭐ Ce qui change, c'est qu'une ALERTE se voit sans
+               ouvrir : le bouton porte un point quand il y a quelque chose à
+               savoir. Une mise en garde qu'on découvre après avoir fait
+               défiler arrive après la décision. */}
 
         {/* ⭐ LA SIGNATURE. Elle n'est pas un ornement : tout ce qui précède
             calcule UN parcours, et sans elle l'objet rendu se lit comme un

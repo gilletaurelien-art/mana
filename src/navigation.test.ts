@@ -310,10 +310,24 @@ describe("de la carte au compositeur", () => {
       .toBe(2);
     expect(compo, "les lieux accrochés par la moisson ne doivent plus être la source")
       .not.toMatch(/lieux\.length\} lieu/);
-    // les trois surfaces lisent le résultat, jamais la source
-    for (const surface of ["rencontres.length > 0", "rencontres.map(", "etapes: rencontres"]) {
+    /* 🔴 ELLES NE SONT PLUS TROIS, ET CE N'EST PAS UNE RÉGRESSION — 12/11/2026.
+       La liste numérotée « Ce que vous croiserez » a été SUPPRIMÉE sur demande
+       du fondateur, avec tout ce qui vivait sous la carte. Il reste le cas
+       vide (« aucun lieu remarquable ») et les étapes posées sur le tracé.
+       ⭐ LA RÈGLE N'A PAS BOUGÉ D'UN MOT POUR LA QUATRIÈME FOIS : un seul
+          calcul, et toute surface qui parle des lieux croisés en dérive. Ce
+          test a déjà survécu à deux changements de forme et à un changement
+          de source ; il survit à une suppression en comptant ce qui reste,
+          pas en exigeant un nombre.
+       ⚠️ C'est pourquoi on n'écrit pas `toBe(2)` ici : la LISTE des surfaces
+          est une forme, et ce fichier s'est fait prendre deux fois à nommer
+          une forme. On exige que CHAQUE lecture de `rencontres` dans le rendu
+          passe par le tableau calculé — jamais par une seconde mesure. */
+    for (const surface of ["rencontres.length === 0", "etapes: rencontres"]) {
       expect(compo, `la surface « ${surface} » ne lit pas le calcul commun`).toContain(surface);
     }
+    expect(compo, "une surface d'affichage remesure au lieu de dériver")
+      .not.toMatch(/rencontresLeLong\([^)]*\)\.(map|length)[^;]*className/);
     /* ⛔ ET LE SEUIL NE SE RECOPIE PAS. Il vit dans `proches.ts`, qui porte
        la règle produit « si c'est listé, on passe devant ». Un 150 écrit en
        dur dans l'écran divergerait le jour où la règle bouge. */
@@ -828,9 +842,26 @@ describe("🔴 7/11/2026 — quatre réparations sous la carte, et la distance r
   it("⛔ la note sur le dénivelé suit le dénivelé, et par la même constante", () => {
     expect(nu, "le seuil n'est pas nommé").toMatch(/const MONTEE_DITE_M =/);
     const gardes = nu.match(/b\.montee >= [A-Za-z0-9_]+/g) ?? [];
-    expect(gardes.length, "le dénivelé ou sa note n'est plus conditionné").toBe(2);
-    expect(new Set(gardes).size, `deux seuils différents : ${gardes.join(" / ")}`).toBe(1);
+    /* 🔴 « toBe(2) » EST TOMBÉ LE 12/11/2026, ET POUR LA RAISON QUE CE GARDE
+       DÉNONCE LUI-MÊME. Il comptait les occurrences — une forme. Quand les
+       panneaux sous la carte sont devenus un volet sur la carte, une
+       troisième lecture est apparue : celle qui décide si la ligne de faits
+       a quelque chose à dire (sans elle, un paragraphe vide se rendait sous
+       le texte). Rien de ce que ce test protège n'avait bougé.
+       ⭐ CE QU'IL PROTÈGE, ÉCRIT COMME UNE RÈGLE : le chiffre, sa note, et
+          tout ce qui décide de les montrer dépendent de LA MÊME constante
+          nommée. Une valeur qui commande plusieurs affichages doit avoir un
+          nom, sinon le second oublie le premier — c'est la leçon du 7/11, et
+          elle ne dit rien d'un NOMBRE d'occurrences. */
+    expect(gardes.length, "le dénivelé ou sa note n'est plus conditionné")
+      .toBeGreaterThanOrEqual(2);
+    expect(new Set(gardes).size, `plusieurs seuils différents : ${gardes.join(" / ")}`).toBe(1);
     expect(gardes[0], "un seuil écrit en dur est revenu").toMatch(/MONTEE_DITE_M/);
+    /* ⛔ ET LES DEUX USAGES HISTORIQUES RESTENT NOMMÉS : le chiffre affiché
+       (« N m de montée ») et la note qui l'explique (SRTM). Les perdre tous
+       les deux ferait passer ce test au vert sur un écran muet. */
+    expect(nu, "le chiffre de la montée a disparu").toMatch(/m de montée/);
+    expect(nu, "la note qui explique le chiffre a disparu").toMatch(/SRTM/);
   });
 
   /* ⛔ « calculé en N ms » était de la fierté d'ingénieur : personne ne décide

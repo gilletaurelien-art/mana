@@ -3676,3 +3676,109 @@ body:has(.jeu), body:has(.terr) { padding-bottom: 0; }
 .cp-scene .cp-choix-lieu:focus-visible {
   outline: 2px solid var(--ocre); outline-offset: 2px;
 }
+
+/* ── LE RAIL D'OUTILS, SUR LA CARTE ──────────────────────────────────────
+   🔴 12/11/2026, demande du fondateur : « tout doit vivre dans de petites
+   icônes bien pensées sur la carte, pour que la carte reste plein écran ».
+   ⚠️ À DROITE ET À MI-HAUTEUR, ET LES TROIS BORNES SONT MESURÉES, PAS
+      CHOISIES AU GOÛT. En haut vit l'en-tête flottant (le champ de départ,
+      seul moyen de sortir d'une erreur) ; en bas vivent les propositions et
+      les deux gestes ; en bas à droite, les commandes de zoom de maplibre.
+      Le milieu du bord droit est la seule bande qui n'appartient à personne.
+   ⭐ ET CHAQUE BOUTON GARDE SON MOT. Ce dépôt écrit depuis toujours qu'« un
+      picto seul n'est lisible par personne » : les pictos y DOUBLENT un
+      texte, ils ne le remplacent pas. Une icône de 20 px avec son mot de
+      9,5 px reste petite ; une icône muette serait une devinette. */
+.cp-outils {
+  position: absolute; z-index: 27;
+  right: var(--sp-2); top: 50%; transform: translateY(-50%);
+  display: flex; flex-direction: column; gap: 6px;
+  pointer-events: auto;
+  /* ⚠️ Le rail ne pousse jamais la carte : s'il dépasse, il défile seul. */
+  max-height: calc(100% - var(--sp-4)); overflow-y: auto;
+}
+.cp-outil {
+  width: 60px; min-height: 54px; padding: 6px 4px;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 3px; position: relative;
+  border-radius: var(--r-l); border: 1px solid var(--bulle-trait);
+  /* ⭐ LA MÊME MATIÈRE QUE « ALLER AU DÉPART » ET QUE LA LIGNE DE FAITS :
+     tout ce qui flotte sur cette carte est du même verre. Deux matières sur
+     une même scène se lisent comme deux couches. */
+  background: color-mix(in srgb, var(--bulle-unie) 88%, transparent);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  color: var(--craie); font: inherit; cursor: pointer;
+  box-shadow: var(--ombre-carte);
+}
+.cp-outil .cp-picto { width: 20px; height: 20px; }
+.cp-outil-mot {
+  font-size: 9.5px; line-height: 1.1; letter-spacing: .06em;
+  text-transform: uppercase; text-align: center; hyphens: manual;
+}
+.cp-outil:focus-visible { outline: 2px solid var(--ocre); outline-offset: 2px; }
+.cp-outil.est-choisie, .cp-outil.est-ouvert {
+  background: var(--ocre); color: var(--nuit); border-color: transparent;
+}
+/* ⚠️ L'ALERTE SE VOIT SANS OUVRIR. Une mise en garde rangée derrière une
+   icône muette arrive après la décision — le point dit qu'il y a quelque
+   chose à savoir, le volet dit quoi. */
+.cp-outil.est-alerte::after {
+  content: ""; position: absolute; top: 6px; right: 7px;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--ocre);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--bulle-unie) 88%, transparent);
+}
+.cp-outil.est-ouvert.est-alerte::after {
+  background: var(--nuit); box-shadow: 0 0 0 2px var(--ocre);
+}
+
+/* ── LE VOLET — une bulle, pas une page ─────────────────────────────────
+   ⭐ « Un panneau et une bulle sont deux tailles du même objet » : même
+   verre, même trait, même ombre que le rail qui l'ouvre, à côté duquel il
+   se pose. ⚠️ Il ne couvre jamais toute la carte — on garde le tracé en vue
+   pendant qu'on lit ce qu'il coûte. */
+.cp-volet {
+  position: absolute; z-index: 28;
+  right: calc(var(--sp-2) + 68px); top: 50%; transform: translateY(-50%);
+  width: min(320px, calc(100vw - 100px));
+  max-height: min(70%, 460px); overflow-y: auto;
+  padding: var(--sp-2); padding-right: calc(var(--sp-2) + 20px);
+  border-radius: var(--r-l); border: 1px solid var(--bulle-trait);
+  background: color-mix(in srgb, var(--bulle-unie) 94%, transparent);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  color: var(--bulle-texte); box-shadow: var(--ombre-levee);
+  display: grid; gap: var(--sp-1); align-content: start;
+  pointer-events: auto;
+}
+.cp-volet-fermer {
+  position: absolute; top: 6px; right: 6px;
+  width: 28px; height: 28px; display: grid; place-items: center;
+  border: 0; background: none; color: var(--craie); opacity: .75;
+  cursor: pointer; border-radius: var(--r-rond);
+}
+.cp-volet-fermer svg { width: 16px; height: 16px; }
+.cp-volet-fermer:hover { opacity: 1; }
+.cp-volet-fermer:focus-visible { outline: 2px solid var(--ocre); outline-offset: 2px; }
+.cp-volet-titre {
+  margin: 0; font-weight: 700; font-size: var(--t-s); color: var(--craie);
+}
+.cp-volet-dire, .cp-volet-faits {
+  margin: 0; font-size: var(--t-xs); line-height: 1.45; color: var(--craie);
+}
+.cp-volet-faits { opacity: .9; }
+.cp-volet-note { margin: 0; font-size: var(--t-xs); line-height: 1.4; opacity: .72; }
+.cp-volet a { color: var(--ocre-clair); }
+
+/* ⛔ LE BLOC SÉCURITÉ PERD SA SURFACE, PAS SON CONTENU. Il était un panneau
+   crème au bas d'un document ; il est maintenant DANS la bulle, et une
+   surface dans une surface fait un cadre dans un cadre. Seules les couleurs
+   se retournent — l'encre sombre d'un panneau clair serait illisible ici. */
+.cp-volet .cp-securite {
+  background: none; border: 0; padding: 0; margin: 0; gap: var(--sp-1);
+}
+.cp-volet .cp-securite-titre { color: var(--craie); }
+.cp-volet .cp-securite-dire { color: var(--craie); opacity: .88; }
+.cp-volet .cp-securite-dur { color: var(--ocre-clair); opacity: 1; }
+.cp-volet .cp-picto-grand { color: var(--ocre); opacity: .9; }
+.cp-volet .cp-arretes > summary { color: var(--craie); }
+.cp-volet .cp-arretes li { color: var(--craie); opacity: .85; }

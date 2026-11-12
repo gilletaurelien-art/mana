@@ -58,8 +58,31 @@ const km = (n: number) => n.toLocaleString("fr-FR", { maximumFractionDigits: 1 }
  *    revenir : une promenade calculée il y a trois minutes n'a pas d'adresse.
  */
 export function EnChemin(
-  { base, slug, walk: direct, retour }:
-  { base: string; slug?: string; walk?: Walk; retour?: () => void },
+  { base, slug, walk: direct, retour, revenir, ditRevenir }:
+  {
+    base: string; slug?: string; walk?: Walk; retour?: () => void;
+    /**
+     * 🔴 « REVENIR » — 12/11/2026, demande du fondateur : « Rentrer devient
+     *    Revenir et c'est une fonction à afficher sur la carte une fois la
+     *    balade commencée ».
+     *
+     * ⭐ IL ARRIVE EN PROPRIÉTÉ, ET C'EST LE SEUL MOYEN JUSTE. Le plus court
+     *    chemin vers le départ se calcule sur le GRAPHE du territoire —
+     *    13 265 arêtes, chargé par le compositeur, que cet écran-ci n'a pas
+     *    et n'a aucune raison de télécharger pour marcher. Recalculer ici
+     *    voudrait dire embarquer le graphe dans l'écran de marche ; passer
+     *    la fonction coûte une ligne.
+     * ⚠️ ELLE EST DONC ABSENTE QUAND ON ARRIVE PAR UNE FICHE DE CATALOGUE
+     *    (`/promenade/<slug>/en-chemin`) : il n'y a pas de graphe derrière.
+     *    Un bouton qui ne peut rien calculer ne s'affiche pas — il ne
+     *    s'affiche pas en grisé non plus, ce qui serait une promesse.
+     */
+    revenir?: () => void;
+    /** ce que le calcul a répondu, ou pourquoi il n'a pas pu : une phrase
+     *  déjà écrite par le compositeur, pour que les deux écrans ne divergent
+     *  pas sur les mots. */
+    ditRevenir?: string;
+  },
 ) {
   const walk: Walk | undefined = direct ?? WALKS.find((w) => w.slug === slug);
   const [moi, setMoi] = useState<WalkPoint | null>(null);
@@ -147,16 +170,25 @@ export function EnChemin(
             Une promenade composée il y a trois minutes n'a pas d'adresse :
             `/promenade/composee` n'existe pas, et un lien mort au milieu
             d'un écran de marche est pire qu'une absence. */}
+        {/* 🔴 « ARRÊTER LA MARCHE », PLUS « REVENIR AUX PROPOSITIONS » —
+            12/11/2026. Le rail porte désormais un bouton « Revenir », qui
+            calcule le plus court chemin vers le DÉPART. Deux contrôles d'un
+            même écran dont les noms commencent par le même verbe se
+            comparent mal : c'est exactement le défaut trouvé sur l'accueil en
+            septembre (« Voir les balades » et « Voir sur la carte »), et
+            qu'un test tient depuis. ⚠️ Ici l'un des deux ne s'affiche QUE
+            pour un lecteur d'écran — ce qui rend la collision plus coûteuse,
+            pas moins : personne ne la voit en regardant l'écran. */}
         {retour ? (
           <button className="ech-rond" onClick={retour}>
-            <span className="sr-only">Revenir aux propositions</span>
+            <span className="sr-only">Arrêter la marche</span>
             <svg className="m-icone" viewBox="0 0 24 24" aria-hidden="true">
               <path d="m6 6 12 12M18 6 6 18" />
             </svg>
           </button>
         ) : (
           <a className="ech-rond" href={`${base}/promenade/${walk.slug}`}>
-            <span className="sr-only">Quitter la navigation et revenir à la fiche</span>
+            <span className="sr-only">Arrêter la marche et retourner à la fiche</span>
             <svg className="m-icone" viewBox="0 0 24 24" aria-hidden="true">
               <path d="m6 6 12 12M18 6 6 18" />
             </svg>
@@ -180,6 +212,31 @@ export function EnChemin(
 
       {/* ── LA CARTE FLOTTANTE ──────────────────────────────────────────── */}
       <div className="ech-bas">
+        {/* ── « REVENIR », SUR LA CARTE ───────────────────────────────────
+            ⭐ MÊME GRAMMAIRE QUE LE RAIL DU COMPOSITEUR : une petite icône
+               posée sur l'image, avec son mot sous elle. Les deux écrans font
+               le même métier à trois secondes d'intervalle — leur mobilier
+               doit se ressembler, sinon on croit avoir changé d'application.
+            ⚠️ Et le mot est « Revenir », pas « Rentrer » : on revient d'une
+               promenade, on rentre chez soi. La nuance est celle du fondateur,
+               et elle dit la bonne chose — le point de départ n'est pas la
+               maison, c'est la voiture, le bourg, le point de vue. */}
+        {revenir && (
+          <div className="ech-outils">
+            <button type="button" className="ech-outil" onClick={revenir}>
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="none"
+                   stroke="currentColor" strokeWidth="1.7"
+                   strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 5 4 10l5 5" /><path d="M4 10h9a7 7 0 0 1 0 14h-2" />
+              </svg>
+              <span className="ech-outil-mot">Revenir</span>
+            </button>
+          </div>
+        )}
+        {/* ⚠️ LA RÉPONSE DU CALCUL SE DIT ICI, avec les autres états de
+            l'écran (GPS perdu, suivi en pause) — et pas dans une bulle
+            au-dessus de la carte : c'est une information, pas une alerte. */}
+        {ditRevenir && <p className="ech-gps" role="status">{ditRevenir}</p>}
         {horsSentier && (
           /* ⛔ Pas de `role="alert"`, pas de vibration : ce n'est pas une
              sommation. Un parcours se prend, il ne se suit pas — on constate

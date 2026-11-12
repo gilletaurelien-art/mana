@@ -1292,6 +1292,42 @@
 .ech-rond-actif { color: var(--ocre); }
 .ech-rond:focus-visible { outline: 2px solid var(--ocre); outline-offset: 2px; }
 
+/* ── « REVENIR », POSÉ SUR L'IMAGE ──────────────────────────────────────
+   🔴 12/11/2026 : la fonction de retour au départ quitte le compositeur
+   pour l'écran de marche, « une fois la balade commencée ».
+   ⭐ MÊME MOBILIER QUE LE RAIL DU COMPOSITEUR (`.cp-outil`) : même bord
+      droit, même taille, un picto et son mot. Les deux écrans se suivent à
+      trois secondes d'intervalle ; deux grammaires les feraient passer pour
+      deux applications. ⚠️ Il reste au-dessus du panneau du bas, qui grandit
+      avec le nombre d'états affichés — d'où le `bottom` en pourcentage
+      plutôt qu'une valeur fixe qui finirait dessous. */
+/* 🔴 DANS LE FLUX DU PANNEAU, PAS FLOTTANT PAR-DESSUS — corrigé à l'écran
+   le 12/11. Posé en absolu à 42 % du bas, il recouvrait la phrase qu'il
+   venait lui-même de produire : « Position indisponible — impossible de
+   calcu[ler le] retour. » ⭐ Un bouton qui cache sa propre réponse est le
+   défaut le plus bête et le plus invisible : il ne se voit qu'en faisant
+   échouer l'action. Premier enfant du panneau du bas, aligné à droite, il
+   reste sur l'image et ne croise plus rien. */
+.ech-outils {
+  position: relative; z-index: 3; align-self: flex-end;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.ech-outil {
+  width: 60px; min-height: 54px; padding: 6px 4px;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 3px;
+  border: 0; border-radius: var(--r-l); cursor: pointer;
+  background: color-mix(in srgb, #192b43 62%, transparent);
+  color: var(--craie); backdrop-filter: blur(8px);
+  font: inherit;
+}
+.ech-outil svg { width: 20px; height: 20px; }
+.ech-outil-mot {
+  font-size: 9.5px; line-height: 1.1; letter-spacing: .06em;
+  text-transform: uppercase; text-align: center;
+}
+.ech-outil:focus-visible { outline: 2px solid var(--ocre); outline-offset: 2px; }
+
 /* ── le bas ────────────────────────────────────────────────────────────── */
 .ech-bas {
   position: relative; z-index: 2; margin-top: auto;
