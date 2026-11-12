@@ -22,6 +22,7 @@
  */
 import { lazy, useEffect, useState } from "react";
 import { WALKS, effortLisible, MENTION } from "./walks";
+import { chargerItineraire } from "./catalogue";
 import type { Walk } from "./walks";
 import { Atlas } from "./Atlas";
 import { Photo, image } from "./images/Photo";
@@ -49,7 +50,37 @@ const CarteReelle = lazy(() =>
 );
 
 export function FichePromenade({ base, slug }: { base: string; slug: string }) {
-  const walk = WALKS.find((w) => w.slug === slug);
+  /* 🔴 CETTE FICHE NE CONNAISSAIT QUE LES QUATRE PROMENADES EMBARQUÉES —
+     trouvé le 12/11/2026, en ouvrant un lien de `/promenades`.
+     `WALKS.find(...)` et rien d'autre. Or `/promenades` liste le CATALOGUE
+     DISTANT (~26 600 tracés) et lie chacun vers `/promenade/<slug>` : les sept
+     liens de la page menaient donc à SEPT « Cette promenade n'existe pas ».
+     ⭐ ET LA CAPACITÉ EXISTAIT À DIX LIGNES DE LÀ. `Promenade.tsx` — l'écran
+     de marche, servi par `/promenade/<slug>/en-chemin` — porte les DEUX
+     sources depuis longtemps, avec son commentaire expliquant pourquoi. Elle
+     a été ajoutée à l'écran de marche et jamais à la FICHE, qui est pourtant
+     la première page qu'on ouvre. Deux composants pour le même slug, un seul
+     qui a appris à lire le catalogue.
+     ⚠️ Mesuré avant de conclure : le point d'accès répond 200, le CORS passe
+     depuis la page, la géométrie est bonne (8 tronçons, 112 points) — et
+     `performance.getEntriesByType` montrait **zéro requête** vers mana.bzh.
+     Ce n'était ni la donnée ni le réseau : la fiche ne demandait rien. */
+  const embarquee = WALKS.find((w) => w.slug === slug);
+  const [distante, setDistante] = useState<Walk | null>(null);
+  const [cherche, setCherche] = useState(!embarquee);
+
+  useEffect(() => {
+    if (embarquee) { setCherche(false); return; }
+    let vivant = true;
+    setCherche(true);
+    chargerItineraire(slug)
+      .then((w) => { if (vivant) setDistante(w); })
+      .catch(() => { if (vivant) setDistante(null); })
+      .finally(() => { if (vivant) setCherche(false); });
+    return () => { vivant = false; };
+  }, [slug, embarquee]);
+
+  const walk = embarquee ?? distante;
 
   /* ⭐ LE TITRE D'UNE PAGE DYNAMIQUE EST SON NOM — il ne peut pas tenir dans
      la table de App.tsx, et c'est la seule raison pour laquelle il vit ici.
@@ -94,12 +125,30 @@ export function FichePromenade({ base, slug }: { base: string; slug: string }) {
   //    toucher ferait échouer la génération de la page entière.
   useEffect(() => { setGarde(lireCarnet().includes(slug)); }, [slug]);
 
+  /* ⛔ LE RETOUR ANTICIPÉ RESTE APRÈS TOUS LES HOOKS — vérifié avant d'écrire
+     les trois ci-dessus. `Promenade.tsx` porte la cicatrice : une première
+     version sortait avant eux, et React rendait « Minified React error #310 »
+     sur une page ENTIÈREMENT BLANCHE, alors que la donnée arrivait en 200.
+     Une page blanche accuse la donnée ; c'était l'ordre des hooks. */
   if (!walk) {
+    /* ⚠️ ET « ON CHERCHE » N'EST PAS « ÇA N'EXISTE PAS ». Sans cet état, la
+       fiche d'un tracé distant annoncerait son absence pendant le temps du
+       téléchargement, puis se corrigerait — un démenti qui arrive après que
+       la personne est repartie. */
+    if (cherche) {
+      return (
+        <section className="fiche-vide">
+          <h1 className="m-titre">Chargement…</h1>
+          <p className="m-texte">Le tracé arrive.</p>
+        </section>
+      );
+    }
     return (
       <section className="fiche-vide">
         <h1 className="m-titre">Cette promenade n'existe pas</h1>
         <p className="m-texte">
-          Elle a peut-être été renommée. <a className="m-lien" href={`${base}/carte`}>Voir le territoire</a>.
+          Aucun parcours ne porte le nom « {slug} ». Il a peut-être été
+          renommé. <a className="m-lien" href={`${base}/carte`}>Voir le territoire</a>.
         </p>
       </section>
     );
