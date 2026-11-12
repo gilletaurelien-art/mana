@@ -3157,6 +3157,28 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
   font: 400 clamp(1.5rem, 6.5vw, 2.2rem)/1.18 var(--titre);
   margin-bottom: 0;
 }
+/* 🔴 LA COULEUR DES PASTILLES NE S'HÉRITE PAS IMPUNÉMENT — et c'est la
+   TROISIÈME fois que ce dépôt l'écrit pour `.ot-filtre`. La règle porte
+   `color: inherit` ; dans le panneau clair, l'ancêtre rendait de l'encre
+   sombre. Montées dans la bannière KAKI, elles auraient hérité de
+   `.page-composer { color: var(--nuit) }` : du bleu nuit sur du vert
+   sombre, c'est-à-dire des boutons peints et invisibles — exactement ce
+   qui est arrivé aux vingt-trois genres de `.terr-calques` le 4/11.
+   ⭐ `inherit` n'est pas une valeur neutre, c'est une DÉLÉGATION : elle
+      change de réponse quand le composant change de parent. Mesuré ici :
+      craie sur kaki, 9,2 pour 1. */
+.ot-entete .ot-filtre { color: var(--craie); border-color: var(--bulle-trait); }
+/* 🔴 ET CE BLOC EST REMONTÉ ICI LE 12/11, APRÈS AVOIR CASSÉ L'ÉTAT ACTIF.
+   Il vivait APRÈS `.ot-filtre-actif`, à specificité ÉGALE (deux classes
+   chacun) : l'ordre de source tranchait, et `color: var(--craie)` effaçait
+   le `color: var(--nuit)` de la pastille enfoncée. Mesuré à l'écran : craie
+   sur or, **2,16 pour 1** — le mot « Tous » était presque invisible sur sa
+   propre pastille.
+   ⛔ ET C'EST LA MÊME CASCADE QUE J'AVAIS COMMENTÉE DEUX HEURES PLUS TÔT,
+      prise dans l'autre sens : j'avais déplacé la règle ACTIVE pour corriger
+      un doublon, et le déplacement l'a mise en amont de sa base. ⭐ Une
+      feuille se lit dans l'ordre : le socle d'abord, les états ensuite.
+      Écrire un commentaire sur la cascade ne protège pas de la cascade. */
 /* 🔴 LA PASTILLE ACTIVE CHANGE DE REMPLISSAGE SUR LE DÉGRADÉ, ET C'EST UNE
    MESURE. `--action` (#94702e) contre le BAS du dégradé (ocre sombre) donne
    **1,81** : le bord de la pastille choisie se serait dissous dans la
@@ -3170,18 +3192,36 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
 .ot-entete .ot-filtre-actif {
   background: var(--ocre); color: var(--nuit); border-color: var(--ocre);
 }
+
+/* ── CHAQUE PRATIQUE A SON TON PÂLE ──────────────────────────────────────
+   🔴 12/11/2026, demande du fondateur. Les quatre teintes sont déclarées
+   dans `tokens.css` avec leurs deux contrastes mesurés — en texte sur le
+   dégradé, et en surface sous `--nuit`.
+   ⭐ DEUX RÉGIMES POUR UNE SEULE COULEUR : au repos elle est l'ENCRE et le
+      liseré, enfoncée elle devient la SURFACE. C'est ce qui permet de garder
+      la teinte reconnaissable dans les deux états sans jamais la mettre en
+      texte sur elle-même.
+   ⛔ `[data-pratique="tous"]` n'est pas listé, et c'est délibéré : il ne
+      désigne aucune pratique, donc il garde l'or commun des pastilles
+      actives — la même règle que le bouton « Tous » des vingt-trois genres
+      de la carte du territoire. */
+.ot-entete .ot-filtre[data-pratique="pied"]  { color: var(--pratique-pied); }
+.ot-entete .ot-filtre[data-pratique="vtt"]   { color: var(--pratique-vtt); }
+.ot-entete .ot-filtre[data-pratique="velo"]  { color: var(--pratique-velo); }
+.ot-entete .ot-filtre[data-pratique="trail"] { color: var(--pratique-trail); }
+/* ⚠️ Le liseré reprend la teinte À 45 %, pas à plein : quatre contours
+   francs sur une rangée feraient quatre boutons qui crient, là où la
+   couleur doit seulement aider à retrouver sa famille. */
+.ot-entete .ot-filtre[data-pratique="pied"]  { border-color: color-mix(in srgb, var(--pratique-pied) 45%, transparent); }
+.ot-entete .ot-filtre[data-pratique="vtt"]   { border-color: color-mix(in srgb, var(--pratique-vtt) 45%, transparent); }
+.ot-entete .ot-filtre[data-pratique="velo"]  { border-color: color-mix(in srgb, var(--pratique-velo) 45%, transparent); }
+.ot-entete .ot-filtre[data-pratique="trail"] { border-color: color-mix(in srgb, var(--pratique-trail) 45%, transparent); }
+/* enfoncée : la teinte passe en surface, et l'encre devient la nuit */
+.ot-entete .ot-filtre-actif[data-pratique="pied"]  { background: var(--pratique-pied);  border-color: var(--pratique-pied);  color: var(--nuit); }
+.ot-entete .ot-filtre-actif[data-pratique="vtt"]   { background: var(--pratique-vtt);   border-color: var(--pratique-vtt);   color: var(--nuit); }
+.ot-entete .ot-filtre-actif[data-pratique="velo"]  { background: var(--pratique-velo);  border-color: var(--pratique-velo);  color: var(--nuit); }
+.ot-entete .ot-filtre-actif[data-pratique="trail"] { background: var(--pratique-trail); border-color: var(--pratique-trail); color: var(--nuit); }
 .ot-entete .cp-entree-dire { max-width: 34ch; }
-/* 🔴 LA COULEUR DES PASTILLES NE S'HÉRITE PAS IMPUNÉMENT — et c'est la
-   TROISIÈME fois que ce dépôt l'écrit pour `.ot-filtre`. La règle porte
-   `color: inherit` ; dans le panneau clair, l'ancêtre rendait de l'encre
-   sombre. Montées dans la bannière KAKI, elles auraient hérité de
-   `.page-composer { color: var(--nuit) }` : du bleu nuit sur du vert
-   sombre, c'est-à-dire des boutons peints et invisibles — exactement ce
-   qui est arrivé aux vingt-trois genres de `.terr-calques` le 4/11.
-   ⭐ `inherit` n'est pas une valeur neutre, c'est une DÉLÉGATION : elle
-      change de réponse quand le composant change de parent. Mesuré ici :
-      craie sur kaki, 9,2 pour 1. */
-.ot-entete .ot-filtre { color: var(--craie); border-color: var(--bulle-trait); }
 /* 🔴 ET IL N'Y A QU'UNE RÈGLE POUR LA PASTILLE ACTIVE. Il y en a eu DEUX
    pendant cinq minutes : celle écrite ce matin pour le kaki plein, plus bas
    dans la feuille, GAGNAIT sur celle d'au-dessus par simple ordre de

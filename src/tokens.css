@@ -121,6 +121,29 @@
         changement de la craie en déplacerait une seule. */
   --terre-sombre: #8e5d46;
 
+  /* ── LES QUATRE PRATIQUES, EN TONS PÂLES ────────────────────────────────
+     🔴 12/11/2026, demande du fondateur : « donne une couleur pâle à chaque
+     option : À pied, VTT, Vélo, Trail ». Quatre familles qui se distinguent
+     d'un coup d'œil sur la rangée des filtres.
+     ⭐ PÂLES, DONC PORTÉES PAR LA SURFACE QUAND LA PASTILLE EST ENFONCÉE, et
+        par le TEXTE quand elle ne l'est pas. C'est l'inverse d'une teinte
+        vive, qu'il faut réserver au trait : ce dépôt a mesuré le 4/11 que la
+        couleur d'un genre passe sous 3:1 en texte pour dix genres sur
+        vingt-trois. Une teinte choisie pour se détacher sur une carte ne se
+        détache pas forcément sur une page.
+     ⚠️ MESURÉES DANS LES DEUX RÉGIMES, parce qu'elles servent aux deux :
+        · en SURFACE, sous `--nuit` : 9,4 (vtt) à 10,2 (vélo, trail) ;
+        · en TEXTE, sur le dégradé de la bannière, au point le plus clair du
+          dégradé (son bas, ocre sombre) : 5,87 au pire.
+        Les deux régimes passent le seuil de 4,5 avec de la marge.
+     ⛔ ET « TOUS » N'EN A PAS. Il ne désigne aucune pratique, donc aucune
+        couleur ne lui revient — c'est déjà la règle écrite pour le bouton
+        « Tous » des vingt-trois genres. */
+  --pratique-pied:  #e8dcc0;   /* sable — le sentier sous le pied            */
+  --pratique-vtt:   #e6cdbe;   /* terre battue                               */
+  --pratique-velo:  #cfdce4;   /* la route au petit matin                    */
+  --pratique-trail: #d4ddc6;   /* lichen — la lande qu'on traverse en courant */
+
   /* ── 3 · LES RÔLES ───────────────────────────────────────────────────────
      ⭐ C'EST ICI QUE LES COMPOSANTS PUISENT, JAMAIS DANS LE §1. Un composant
         qui nomme une matière décide d'une esthétique ; un composant qui nomme

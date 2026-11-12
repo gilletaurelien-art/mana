@@ -77,6 +77,29 @@ const MOTIFS: number[][] = [
   [0, 2, 3, 2], [0, 2.5, 3, 1.5], [0, 3, 3, 1], [0, 3.5, 3, 0.5],
 ];
 
+/**
+ * LE PAS DU POINTILLÉ, EN MILLISECONDES.
+ *
+ * 🔴 RALENTI TROIS FOIS LE 12/11/2026 — demande du fondateur : « réduis la
+ *    vitesse des liserés, 3 fois ». Il battait à 70 ms, soit un tour complet
+ *    en 0,98 s : cent seize chemins qui défilaient à cette cadence tiraient
+ *    l'œil au lieu d'accompagner la carte.
+ * ⭐ LE CHIFFRE EST NOMMÉ PLUTÔT QU'ÉCRIT DANS L'APPEL, et c'est ce qui rend
+ *    « trois fois » vérifiable : 70 × 3. Un 210 posé dans un `setInterval`
+ *    ne dirait plus d'où il vient dès la semaine prochaine.
+ * ⚠️ Un tour complet dure donc 14 × 210 = 2,94 s.
+ *
+ * ⭐ ET LA VRAIE RAISON EST UNE RAISON DE PRODUIT, PAS DE CONFORT : « c'est
+ *    du slow tourisme » (le fondateur, 12/11/2026). La vitesse d'une
+ *    animation dit quelque chose de ce qu'on propose — un pointillé qui file
+ *    presse, et cette application ne presse personne. C'est la même doctrine
+ *    que « une proposition, pas un programme » et que le refus de vibrer
+ *    quand on quitte le sentier : rien ici ne compte vos pas.
+ * ⛔ Donc on ne la réaccélère pas « pour que l'effet se voie mieux ». Si
+ *    elle devait changer, ce serait encore vers le bas.
+ */
+const PAS_MS = 70 * 3;
+
 /** ⛔ « REDUCE » SE DEMANDE AU SYSTÈME, PAS À NOUS. Cent seize chemins qui
  *  ondulent en permanence, c'est beaucoup d'écran qui bouge — et pour qui a
  *  demandé moins de mouvement, c'est une gêne, parfois un malaise. Le doré
@@ -194,8 +217,8 @@ export function CarteBalades({
 
       /* ⚠️ UNE SEULE MINUTERIE POUR LES CENT SEIZE CHEMINS — c'est une
          propriété de PEINTURE du calque, pas un état par entité. Et elle bat
-         à 14 images par seconde, pas à 60 : le pas du motif se voit, pas la
-         fréquence, et chaque pas coûte un rendu de carte. */
+         lentement (voir `PAS_MS`) : le pas du motif se voit, pas la
+         fréquence, et chaque pas coûte un rendu de carte entière. */
       if (anime) {
         let i = 0;
         battement.current = window.setInterval(() => {
@@ -203,7 +226,7 @@ export function CarteBalades({
           if (m.getLayer("balades-trace")) {
             m.setPaintProperty("balades-trace", "line-dasharray", MOTIFS[i]);
           }
-        }, 70);
+        }, PAS_MS);
       }
 
       m.on("click", "balades-cible", (e) => {

@@ -317,6 +317,46 @@ describe("les balades des Offices — la liste se lit", () => {
       .not.toMatch(/\.carte-balades-credit \{[^}]*text-overflow/);
   });
 
+  it("⭐ chaque pratique a son ton pâle, et il tient dans les DEUX régimes", () => {
+    /* 🔴 12/11/2026 : « donne une couleur pâle à chaque option : À pied,
+       VTT, Vélo, Trail ».
+       ⭐ DEUX RÉGIMES POUR UNE SEULE COULEUR : au repos elle est l'ENCRE sur
+          le dégradé de la bannière, enfoncée elle devient la SURFACE sous
+          `--nuit`. Une teinte qui ne tiendrait que dans un des deux rendrait
+          la moitié des états illisible, et c'est l'état ENFONCÉ qu'on
+          regarde le moins — donc celui où le défaut dure. */
+    const basDuDegrade = "#634b1f";   // le point le plus clair du dégradé
+    for (const p of ["pied", "vtt", "velo", "trail"]) {
+      const t = jeton(`pratique-${p}`);
+      expect(ratio(t, basDuDegrade), `${p} en ENCRE sur la bannière`).toBeGreaterThanOrEqual(4.5);
+      expect(ratio(t, jeton("nuit")), `${p} en SURFACE sous l'encre`).toBeGreaterThanOrEqual(4.5);
+      expect(css, `la pastille « ${p} » ne porte pas sa teinte`)
+        .toMatch(new RegExp(`\\[data-pratique="${p}"\\]`));
+    }
+    /* ⛔ ET « TOUS » N'EN A PAS : il ne désigne aucune pratique, donc aucune
+       couleur ne lui revient — la règle déjà écrite pour le bouton « Tous »
+       des vingt-trois genres de la carte du territoire. */
+    expect(css, "« Tous » s'est vu attribuer une couleur de pratique")
+      .not.toMatch(/\[data-pratique="tous"\]/);
+  });
+
+  it("⛔ le socle des pastilles est écrit AVANT ses états — la cascade l'exige", () => {
+    /* 🔴 CE GARDE EXISTE PARCE QUE LE DÉFAUT EST ARRIVÉ DEUX FOIS LE MÊME
+       JOUR, dans les deux sens. `.ot-entete .ot-filtre` et
+       `.ot-entete .ot-filtre-actif` ont la MÊME spécificité — deux classes
+       chacun : seul l'ordre de source tranche. Écrit après, le socle efface
+       le `color: var(--nuit)` de la pastille enfoncée, et le mot « Tous »
+       tombe à **2,16 pour 1** sur sa propre pastille d'or.
+       ⭐ Une feuille se lit dans l'ordre : le socle d'abord, les états
+          ensuite. Et écrire un commentaire sur la cascade ne protège pas de
+          la cascade — ce test, si. */
+    const socle = css.indexOf(".ot-entete .ot-filtre {");
+    const etat = css.indexOf(".ot-entete .ot-filtre-actif {");
+    expect(socle, "le socle des pastilles a disparu").toBeGreaterThan(0);
+    expect(etat, "l'état actif des pastilles a disparu").toBeGreaterThan(0);
+    expect(socle, "le socle est écrit APRÈS l'état : il l'efface").toBeLessThan(etat);
+  });
+
   it("⛔ un croisement vide se DIT, il ne se laisse pas lire comme une panne", () => {
     /* « VTT » + « Abers » rend zéro circuit. Sans phrase, la liste disparaît
        et l'écran ressemble à un chargement qui n'a pas abouti — mesuré à

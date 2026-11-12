@@ -236,7 +236,15 @@ export function BaladesOT() {
                 par défaut cachait les dix-sept plus longs itinéraires. */}
             <div className="ot-filtres" role="group" aria-label="Pratique">
               {(["tous", "pied", "vtt", "velo", "trail"] as const).map((k) => (
+                /* ⭐ LA PRATIQUE VOYAGE EN ATTRIBUT, pas en classe : la
+                   feuille peut alors nommer chaque teinte une seule fois
+                   (`[data-pratique="vtt"]`) au lieu de quatre classes qu'il
+                   faudrait garder d'accord avec quatre clefs. ⚠️ Et « tous »
+                   en porte un aussi — c'est la feuille qui décide qu'il n'a
+                   pas de couleur, pas le JSX : une absence décidée ici se
+                   lirait comme un oubli là-bas. */
                 <button key={k} type="button"
+                  data-pratique={k}
                   className={k === pratique ? "ot-filtre ot-filtre-actif" : "ot-filtre"}
                   aria-pressed={k === pratique}
                   onClick={() => setPratique(k)}>
