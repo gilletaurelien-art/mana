@@ -7,19 +7,11 @@ import type { Graphe, Boucle, Retour, Visee, Parcours, Accroche, Proposition } f
 import { chargerLieux, type Lieu, type Inventaire } from "./lieux";
 import { rencontresLeLong } from "./proches";
 import { DEFAUT, territoireDe, urlGraphe, positionDeDepart } from "./territoires";
-import { VITRINE, effortLisible, type Walk } from "./walks";
+import { VITRINE, type Walk } from "./walks";
 import { WalkMap } from "./WalkMap";
 import { CarteOuSchema } from "./CarteOuSchema";
 import { chargerFermetures, aretesTouchees, type Fermetures } from "./fermetures";
 import { baseUrl } from "./router";
-/* ⭐ CE QUI SUIT RASSEMBLE LE CATALOGUE — importé le 3/11/2026, quand
-   `/promenades` et `/composer` ont fusionné. Ces quatre imports, et eux
-   seuls, n'existaient nulle part dans ce fichier avant la fusion. */
-import {
-  chargerIndex, chargerCommunes, chercher, trajet, estContinu,
-  type Fiche, type Commune,
-} from "./catalogue";
-import { surLaPresquile } from "./Promenades";
 
 const CarteReelle = lazy(() =>
   import("./CarteReelle").then((m) => ({ default: m.CarteReelle }))
@@ -297,32 +289,11 @@ function SvgBotte() {
   );
 }
 
-/* ═══ LE CATALOGUE — fusionné ici le 3/11/2026 ════════════════════════════
-   Ce qui suit, jusqu'à `export function Composer()`, vivait dans
-   `Promenades.tsx` : les constantes du filtre des 1 032 itinéraires de
-   Bretagne que cet écran montre maintenant SOUS le compositeur, au lieu de
-   les montrer sur une seconde adresse. */
-
-type FiltreForme = "tous" | "boucle" | "aller";
-const MAX_AFFICHES = 40;
-
 /** 420 px était la hauteur d'origine de `CarteReelle` ; `HAUTEUR_CARTE.agrandie`
  *  la garde pour qui demande le détail, `HAUTEUR_CARTE.reduite` en est la moitié
  *  exacte — pas un chiffre choisi à part, un rapport. */
 const HAUTEUR_CARTE = { reduite: 210, agrandie: 420 };
 
-/**
- * 🔴 LE CRAN LE PLUS À DROITE VEUT DIRE « SANS LIMITE », ET C'EST UN CORRECTIF.
- *
- * Mesuré à l'écran le 28/10/2026 : le filtre plafonnait à 24 h de marche, soit
- * 84 km. La page annonçait « 1 032 itinéraires » et en affichait **1 015** —
- * les 17 plus longs, dont « De Douarnenez à Redon » (355 km) et le Chemin de
- * Halage (315 km), étaient invisibles **par défaut**.
- * ⭐ Un filtre dont la valeur initiale exclut les pièces maîtresses du
- *    catalogue ne paraît pas trop serré : il fait croire qu'elles n'existent
- *    pas. Et le compte affiché à côté le contredisait sans que rien ne le dise.
- */
-const DUREE_SANS_LIMITE = 25;
 /* 🔴 LE SEUIL DU DÉNIVELÉ, NOMMÉ UNE FOIS — 7/11/2026. Il valait `40` en dur
    à l'endroit qui AFFICHE la montée, et la note qui l'EXPLIQUE ne le
    connaissait pas : elle se montrait toujours. Deux décisions sur la même
@@ -334,50 +305,13 @@ const DUREE_SANS_LIMITE = 25;
 const MONTEE_DITE_M = 40;
 
 export function Composer() {
-  /* ═══ LE CATALOGUE — état, effets et calcul fusionnés ici le 3/11/2026 ═══
-     Recopiés tels quels depuis `Promenades.tsx`. Un seul renommage :
-     `erreur`/`setErreur` existait DÉJÀ ci-dessous pour le chargement du
-     GRAPHE — ce bloc-ci a sa propre erreur, celle du CATALOGUE, et les deux
-     ne doivent jamais se confondre : un refus de charger le catalogue
-     n'empêche pas de composer, un refus de charger le graphe empêche tout. */
+  /* 🔴 L'ÉTAT DU CATALOGUE EST PARTI LE 12/11/2026, avec l'affichage qu'il
+     servait (voir « F » plus bas) : `fiches`, `lieuxCatalogue`, `q`,
+     `dureeMax`, `forme`, `erreurCatalogue`, leurs deux effets de chargement
+     et le calcul `resultats` ne nourrissaient que les sept cartes retirées.
+     ⚠️ `erreur`/`setErreur`, juste en dessous, est celle du GRAPHE et n'a
+     jamais été celle du catalogue : les deux ne se confondent pas. */
   const B = baseUrl();
-  const [dureeMax, setDureeMax] = useState(DUREE_SANS_LIMITE);
-  const [forme, setForme] = useState<FiltreForme>("tous");
-  const [q, setQ] = useState("");
-  const [fiches, setFiches] = useState<Fiche[] | null>(null);
-  const [lieuxCatalogue, setLieuxCatalogue] = useState<Commune[] | null>(null);
-  const [erreurCatalogue, setErreurCatalogue] = useState("");
-  useEffect(() => {
-    setQ(new URLSearchParams(window.location.search).get("q") ?? "");
-  }, []);
-
-  useEffect(() => {
-    // ⚠️ L'échec des communes n'est PAS bloquant : sans elles, la recherche
-    //    retombe sur le texte. Un index chargé vaut mieux qu'une page morte.
-    chargerCommunes().then(setLieuxCatalogue).catch(() => setLieuxCatalogue(null));
-    chargerIndex()
-      .then(setFiches)
-      // ⚠️ UNE ERREUR SE DIT. Sans ce message, un refus CORS ou une coupure
-      //    rendrait une page vide et silencieuse — le visiteur conclurait
-      //    qu'il n'existe aucun sentier.
-      .catch(() =>
-        setErreurCatalogue(
-          "Sentiers indisponibles. Vérifiez votre connexion."
-        )
-      );
-  }, []);
-
-  const resultats = useMemo(() => {
-    if (!fiches) return [];
-    // Sans recherche, on montre TOUT, du plus long au plus court : l'index est
-    // déjà trié ainsi, et les grands itinéraires sont ceux qu'on reconnaît.
-    const ici = fiches.filter(surLaPresquile);
-    const base = q.trim() ? chercher(ici, q, lieuxCatalogue) : ici;
-    return base
-      .filter((f) => dureeMax >= DUREE_SANS_LIMITE || f.k / 3.5 <= dureeMax)
-      .filter((f) => forme === "tous" || (forme === "boucle" ? f.o : !f.o));
-  }, [fiches, lieuxCatalogue, q, dureeMax, forme]);
-
   const [graphe, setGraphe] = useState<Graphe | null>(null);
   const [erreur, setErreur] = useState("");
   /**
@@ -2028,140 +1962,29 @@ export function Composer() {
           </>
         )}
 
-      {/* ══ F · LE CATALOGUE ══════════════════════════════════════════════
-          🔴 FUSIONNÉ DEPUIS `Promenades.tsx` LE 3/11/2026 — demande du
-          fondateur : composer une promenade EN DIRECT, sans quitter cette
-          adresse pour en voir d'autres. Jusque-là, un bouton renvoyait vers
-          `/composer` depuis cette liste ; maintenant la liste est SOUS le
-          compositeur, et il n'y a plus de bouton — il n'y a plus de clic.
+      {/* ══ F · LE RENVOI AUX CIRCUITS DE L'OFFICE ════════════════════════
+          🔴 LE CATALOGUE DES SENTIERS EST PARTI D'ICI LE 12/11/2026 — demande
+          du fondateur, nommée ligne à ligne : l'intro « 7 itinéraires tracés
+          d'après OpenStreetMap, 181 km. », le champ de recherche, le compte,
+          les filtres et les sept cartes de résultat. Il vivait sous le
+          compositeur depuis la fusion du 3/11 ; mesuré à l'écran avant de le
+          retirer : 5 847 px de défilement, dont 2 436 px pour sept panneaux
+          identiques de 348 px — trois lignes de texte et un bouton d'or
+          chacun, répétés sept fois sous la carte.
+          ⚠️ RIEN N'EST ORPHELIN DERRIÈRE. Les fiches restent servies à leur
+          adresse (`/promenade/<slug>`, `FichePromenade.tsx`) et le catalogue
+          lui-même (`catalogue.ts`, `chargerIndex`) n'a pas bougé : c'est son
+          AFFICHAGE ici qui s'arrête. ⭐ L'état, les effets et le calcul qui ne
+          servaient qu'à lui sont partis AVEC — un état laissé en place « au
+          cas où » continue de télécharger un index que plus rien ne montre,
+          et le lecteur suivant le prend pour une dépendance.
           ⚠️ SON PROPRE `<div className="wrap">` : l'entrée, les propositions,
           la carte et l'export vivent dans le `.wrap` ouvert plus haut, qui se
-          ferme avant la section « conditions et sécurité » — ⛔ celle-ci et
-          la signature rendent DÉLIBÉRÉMENT hors de `.wrap` (styles `cp-…`
-          propres, sans besoin du gabarit commun). Le catalogue, lui, réutilise
-          `.page-panel`, qui a besoin du même gabarit que sur son ancienne
-          adresse : un second `.wrap` le lui redonne sans toucher à la
-          structure qui précède. */}
+          ferme avant la section « conditions et sécurité » — ⛔ celle-ci et la
+          signature rendent DÉLIBÉRÉMENT hors de `.wrap` (styles `cp-…`
+          propres). Ce second `.wrap` reste : le renvoi ci-dessous et la
+          vitrine dormante ont besoin du même gabarit. */}
       <div className="wrap">
-        {/* ⚠️ « Presqu'île de Crozon » malgré un catalogue qui dépasse Crozon,
-            dont Pont-de-Buis et le Faou (Aulne maritime). ⭐ Le nom désigne le
-            territoire couvert, pas le contenu de la section.
-            ⚠️ TITRE DE NIVEAU 2, PAS 1 — cet écran a DÉJÀ son h1, « Promenade »,
-            porté par l'entrée du compositeur plus haut. Un seul h1 par page ;
-            celui-ci nomme le catalogue, pas la page entière.
-            🔴 « ET LES 46 CIRCUITS… PLUS BAS » EST PARTI LE 3/11/2026 : les
-            circuits de l'Office ont leur propre adresse (`BaladesOT.tsx`),
-            un lien plus bas y mène. */}
-        <p className="hero-label">Presqu'île de Crozon &amp; Aulne maritime</p>
-        <h2 className="page-titre"><span>Les sentiers</span></h2>
-
-        <section className="page-panel">
-          <p className="page-intro">
-            7 itinéraires tracés d'après OpenStreetMap, 181 km.
-          </p>
-          <div className="moteur-barre" role="search">
-            <svg className="moteur-loupe" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="10.5" cy="10.5" r="6.5" />
-              <path d="m15.5 15.5 4.5 4.5" />
-            </svg>
-            <input
-              type="search"
-              autoComplete="off"
-              placeholder="Une commune, un nom de sentier…"
-              aria-label="Chercher une commune ou un sentier"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-            />
-          </div>
-          <p className="page-note">
-            {erreurCatalogue ? (
-              <strong>{erreurCatalogue}</strong>
-            ) : !fiches ? (
-              "Chargement des sentiers…"
-            ) : (
-              `${resultats.length.toLocaleString("fr-FR")} itinéraire${
-                resultats.length > 1 ? "s" : ""
-              }${q.trim() ? ` pour « ${q} »` : ""}`
-            )}
-          </p>
-        </section>
-
-        {fiches && (
-          <section className="page-panel">
-            <p className="apercu-label">Filtres</p>
-            <div className="est-actions" style={{ marginBottom: 0 }}>
-              <label className="filtre">
-                {dureeMax >= DUREE_SANS_LIMITE
-                  ? "Toutes les durées"
-                  : `Marche ≤ ${dureeMax} h`}
-                <input
-                  type="range"
-                  min={1}
-                  max={DUREE_SANS_LIMITE}
-                  step={1}
-                  value={dureeMax}
-                  onChange={(e) => setDureeMax(Number(e.target.value))}
-                />
-              </label>
-              <select
-                value={forme}
-                onChange={(e) => setForme(e.target.value as FiltreForme)}
-                className="filtre-select"
-                aria-label="Forme du parcours"
-              >
-                <option value="tous">Boucle ou traversée</option>
-                <option value="boucle">Boucle</option>
-                <option value="aller">Traversée</option>
-              </select>
-            </div>
-          </section>
-        )}
-
-        {resultats.slice(0, MAX_AFFICHES).map((f) => (
-          <section key={f.s} className="page-panel">
-            <p className="apercu-label">{trajet(f)}</p>
-            <h2 className="section-title" style={{ marginBottom: "var(--sp-2)" }}>
-              {f.n}
-            </h2>
-            <p className="page-note">
-              {f.k} km · {effortLisible(f.k)} · {f.c} commune
-              {f.c > 1 ? "s" : ""}
-              {/* ⚠️ ON LE DIT. Un itinéraire morcelé s'affiche en plusieurs
-                   traits sur la carte, et le visiteur doit savoir pourquoi
-                   AVANT de l'ouvrir, pas en découvrant un trou. */}
-              {!estContinu(f) && ` · tracé incomplet dans OpenStreetMap`}
-            </p>
-            <div
-              className="est-actions"
-              style={{ marginTop: "var(--sp-2)", marginBottom: 0 }}
-            >
-              <a className="btn btn-primary" href={`${B}/promenade/${f.s}`}>
-                Ouvrir l'itinéraire
-              </a>
-            </div>
-          </section>
-        ))}
-
-        {resultats.length > MAX_AFFICHES && (
-          <section className="page-panel">
-            <p className="page-note">
-              {resultats.length - MAX_AFFICHES} autres itinéraires
-              correspondent. Cherchez une commune, ou resserrez la durée.
-            </p>
-          </section>
-        )}
-
-        {fiches && resultats.length === 0 && (
-          <section className="page-panel">
-            <p className="page-texte">
-              Aucun itinéraire ne correspond. ⚠️ La recherche compare au{" "}
-              <strong>point de départ</strong> : un grand sentier qui traverse
-              la commune sans en partir ne sortira pas. Essayez une commune
-              voisine, ou le nom du sentier.
-            </p>
-          </section>
-        )}
-
         {/* ⚠️ VIDE DEPUIS LE 31/10 — `VITRINE` est une liste vide, et cette
             section ne s'affiche donc pas. Elle reste écrite : le jour où les
             promenades MANA reviennent, il n'y a rien à reconstruire.

@@ -1,6 +1,17 @@
 import type { Fiche } from "./catalogue";
 
 /**
+ * 🔴 ET DEPUIS LE 12/11/2026 IL N'A PLUS AUCUN CONSOMMATEUR. Le catalogue a
+ *    été retiré de `Composer.tsx` (demande du fondateur, nommée ligne à
+ *    ligne) : `surLaPresquile` et `PRESQUILE` ne sont plus appelés que par
+ *    `Promenades.test.ts`. ⚠️ Les cinq tests restent VERTS et ne gardent
+ *    plus rien d'affiché — c'est le fantôme que ce dépôt connaît déjà. Ils
+ *    sont conservés tels quels : la règle qu'ils tiennent (quelles communes
+ *    font « la presqu'île ») redeviendra vraie le jour où un écran
+ *    reparcourra l'index. Qui lit ceci en cherchant pourquoi rien ne
+ *    bouge : la réponse est qu'il n'y a plus d'appelant, pas que le filtre
+ *    est faux.
+ *
  * 🔴 CE FICHIER NE PORTE PLUS D'ÉCRAN — depuis le 3/11/2026, fusion de
  *    `/promenades` et `/composer` : « on s'épargne un clic » (demande du
  *    fondateur). Le catalogue qui vivait ici (recherche, filtres, les
