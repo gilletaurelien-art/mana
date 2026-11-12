@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
+import { MOT_CLEF_OFFICE } from "./ot";
 
 const nu = (f: string) =>
   readFileSync(new URL(f, import.meta.url), "utf8")
@@ -144,6 +145,50 @@ describe("les cinq sections de la page de l'application", () => {
     cite(`${parCat("Fortification")} fortifications`);
     cite(`${parCat("Plage")} plages`);
     cite(`${parCat("Mégalithe")} mégalithes`);
+
+    /* 🔴 CES TROIS-LÀ MANQUAIENT, ET LA PAGE LES AFFICHAIT FAUX — trouvé le
+       12/11/2026 en REGARDANT l'écran, pas en relisant le code. Le garde
+       vérifiait huit chiffres et laissait passer ceux qu'on ne lui avait pas
+       nommés : la répartition par pratique (« 25 à pied, 12 en VTT… », soit
+       l'ancien total de 46), le nombre de sites anonymes (734 au lieu de
+       3 109), et surtout le CRÉDIT, qui nommait UN office sous un bloc qui en
+       liste cinq.
+       ⭐ « Compter les points de pose est le geste, pas poser le garde » —
+       la leçon est déjà dans CLAUDE.md pour `guardedAnswer`, et elle vaut
+       pour un garde de CHIFFRES comme pour un garde de sécurité. */
+    const anonymes = lx.lieux.filter((l: { n?: string }) => !l.n).length;
+    cite(`${anonymes} sites sans nom`);
+
+    const parPratique = ot.itineraires.reduce<Record<string, number>>((acc, x: { pratique: string }) => {
+      acc[x.pratique] = (acc[x.pratique] ?? 0) + 1;
+      return acc;
+    }, {});
+    for (const [libelle, cle] of [["à pied", "pied"], ["en VTT", "vtt"], ["en trail", "trail"], ["à vélo", "velo"]] as const) {
+      if (parPratique[cle]) cite(`${parPratique[cle]} ${libelle}`);
+    }
+
+    /* ⛔ LE CRÉDIT NOMME TOUS LES OFFICES, ET AUCUN AUTRE. Créditer un
+       partenaire pour la donnée d'un autre est précisément ce que la doctrine
+       de `LApplication.tsx` interdit — et c'est arrivé, pendant une journée. */
+    for (const o of ot.offices as { ot: string; nom: string }[]) {
+      const mot = MOT_CLEF_OFFICE[o.ot];
+      expect(mot, `office « ${o.ot} » sans mot-clef déclaré dans ot.ts`).toBeTruthy();
+      cite(mot);
+    }
+    /* 🔴 MAIS LE LIEN NE SE VÉRIFIE PLUS PAR SON LITTÉRAL, et la première
+       version de ce garde l'a appris en criant au loup. Les cinq liens sont
+       DÉRIVÉS de `ot.json` à l'exécution : l'URL n'est plus dans le fichier,
+       donc la chercher dans son texte échoue — sur un code devenu MEILLEUR.
+       ⭐ C'est le détecteur aveuglé par un refactor propre, dans l'autre sens.
+       On vérifie donc le MÉCANISME : le fichier lit l'artefact, et ne porte
+       aucune URL d'office en dur. Une liste recopiée peut être juste
+       aujourd'hui et fausse demain ; une dérivation ne peut pas dériver. */
+    expect(app, "le crédit doit être DÉRIVÉ de ot.json, pas recopié")
+      .toMatch(/otJson\.offices\.map/);
+    const enDur = (ot.offices as { site: string }[])
+      .map((o) => o.site)
+      .filter((u) => app.includes(u));
+    expect(enDur, "URL d'office écrite en dur : elle vieillira sans bruit").toEqual([]);
   });
 
   /**

@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { readFileSync } from "node:fs";
 import { ajouterAuCarnet, lireCarnet, viderCarnet } from "./carnet";
 import { entreesBarre } from "./barre";
+import otJson from "./ot.json";
+import { MOT_CLEF_OFFICE } from "./ot";
 
 const ecran = readFileSync(new URL("./SwipeBalades.tsx", import.meta.url), "utf8");
 /** ⚠️ Les commentaires d'abord : une consigne EXPLIQUÉE dans un commentaire
@@ -268,8 +270,26 @@ describe("le jeu de cartes des balades", () => {
        jamais eu à rester sur l'accueil — il doit rester COLLÉ aux 46
        circuits et aux 708 km, c'est-à-dire à leur donnée. */
     const app = sansCommentaires(readFileSync(new URL("./LApplication.tsx", import.meta.url), "utf8"));
-    expect(app).toMatch(/Office de tourisme Presqu’île de Crozon – Aulne Maritime/);
-    expect(app).toMatch(/crozon-tourisme\.bzh/);
+    /* 🔄 RETOURNÉ LE 12/11/2026, même cause que dans `accueil.test.ts` : le
+       libellé complet d'UN office a disparu quand le crédit est passé à cinq.
+       ⭐ Quatre gardes du dépôt tenaient cette même règle, et je n'en
+       connaissais qu'un avant de les faire tomber tous les quatre — « compter
+       les points de pose est le geste, pas poser le garde ». */
+    for (const o of (otJson as { offices: { ot: string; nom: string }[] }).offices) {
+      const mot = MOT_CLEF_OFFICE[o.ot];
+      expect(mot, `office « ${o.ot} » sans mot-clef déclaré dans ot.ts`).toBeTruthy();
+      expect(app, `${o.nom} n’est pas nommé`).toContain(mot);
+    }
+    /* 🔄 LE LIEN NE SE VÉRIFIE PLUS PAR SON LITTÉRAL — 12/11/2026. Les cinq
+       liens sortants sont DÉRIVÉS de `ot.json` : l'URL n'est plus écrite dans
+       le fichier, donc la chercher dans son texte échoue sur un code devenu
+       meilleur. ⭐ On vérifie le MÉCANISME : le fichier lit l'artefact, et ne
+       porte aucune URL d'office en dur. Une liste recopiée peut être juste
+       aujourd'hui et fausse demain ; une dérivation ne peut pas dériver. */
+    expect(app, "les liens doivent être dérivés de ot.json").toMatch(/otJson\.offices\.map/);
+    const enDur = (otJson as { offices: { site: string }[] }).offices
+      .map((o) => o.site).filter((u) => app.includes(u));
+    expect(enDur, "URL d'office écrite en dur").toEqual([]);
     expect(app).toMatch(/MANA ne s’attribue rien et ne recommande rien/);
   });
 

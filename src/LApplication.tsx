@@ -2,6 +2,7 @@ import {
   GlyphNavigation, GlyphSecurite, GlyphDecouverte, GlyphSentier, GlyphRadio,
 } from "./Glyphs";
 import { avecOffice } from "./visage";
+import otJson from "./ot.json";
 
 /**
  * CE QUE FAIT L'APPLICATION — la page dédiée, et indexable.
@@ -83,7 +84,7 @@ const MODULES = [
       "Chaque promenade s’exporte en GPX, lisible par toutes les montres et applications de randonnée. Le carnet garde vos balades dans ce navigateur, sans compte ni adresse : ce qui n’est pas stocké ne fuit pas. L’application présente aussi les 116 circuits balisés par cinq Offices de tourisme du Pays de Brest — Presqu’île de Crozon – Aulne Maritime, Pays des Abers, Iroise Bretagne, Pays de Landerneau-Daoulas, Côte des Légendes — crédités chacun comme tel, avec le lien vers sa fiche. MANA ne s’attribue rien et ne recommande rien.",
     faits: [
       "116 circuits balisés, 1 537 km, sur 56 communes — de la pointe de Pen-Hir aux dunes de Keremma, du Conquet à la vallée de l’Élorn.",
-      "25 à pied, 12 en VTT, 5 à vélo, 4 en trail. Durées et dénivelés déclarés par l’Office.",
+      "53 à pied, 39 en VTT, 14 en trail, 10 à vélo. Durées et dénivelés déclarés par les Offices.",
       "Export GPX, fonctionne hors ligne. Aucun compte, aucune donnée personnelle enregistrée.",
     ],
     /* 🔴 LE LIEN SORTANT VERS L'OFFICE EST DESCENDU ICI LE 6/11/2026.
@@ -97,8 +98,20 @@ const MODULES = [
        ⛔ Ce n'est pas une courtoisie : ces chiffres sont LEUR donnée, et une
           carte qui les montre sans les nommer devient une fiche MANA au
           premier coup d'œil. */
-    source: { label: "Office de tourisme Presqu’île de Crozon – Aulne Maritime",
-              href: "https://www.crozon-tourisme.bzh/" },
+    /* 🔴 LE CRÉDIT ÉTAIT AU SINGULIER SOUS UN BLOC QUI NOMME CINQ OFFICES —
+       trouvé le 12/11/2026 EN REGARDANT LA PAGE, pas en relisant le code.
+       « Source : Office de tourisme Presqu'île de Crozon – Aulne Maritime »
+       s'affichait sous les 116 circuits des cinq : créditer un partenaire pour
+       la donnée d'un autre, ce que la doctrine de ce fichier interdit en
+       toutes lettres deux paragraphes plus haut.
+       ⭐ ET IL EST DÉSORMAIS DÉRIVÉ DE L'ARTEFACT, jamais recopié : `ot.json`
+       porte la liste des offices avec leur site. Un sixième office apparaîtra
+       ici tout seul le jour où le pipeline l'ajoutera — une liste recopiée,
+       elle, serait restée à cinq sans que rien ne le dise.
+       ⚠️ `navigation.test.ts` vérifiait huit chiffres dérivés et n'a PAS vu
+       celui-là : un garde couvre ce qu'on lui donne, pas ce que la page
+       affirme. Il garde maintenant le crédit aussi. */
+    sources: otJson.offices.map((o) => ({ label: o.nom, href: o.site })),
     cta: { label: "Ouvrir un parcours", href: "/promenades" },
   },
   {
@@ -116,7 +129,7 @@ const MODULES = [
       "L’application recense 5 676 sites remarquables de la presqu’île de Crozon au pays d’Iroise, des abers à la Côte des Légendes et à la vallée de l’Élorn, dont 2 567 portent un nom : fortifications du goulet, alignements mégalithiques, fontaines, calvaires, plages, pointes et épaves. Chaque fiche de balade indique les sites situés à moins de 150 mètres du tracé — à proximité, jamais « sur le chemin », parce qu’un détour annoncé comme une étape envoie chercher ce qui n’est pas là.",
     faits: [
       "519 fortifications, 491 fontaines et lavoirs, 1 207 calvaires, 427 plages, 159 mégalithes.",
-      "Les 734 sites sans nom sont dessinés sur la carte, mais ne sont jamais cités seuls.",
+      "Les 3 109 sites sans nom sont dessinés sur la carte, mais ne sont jamais cités seuls.",
       "Sources : OpenStreetMap sous licence ODbL. Chaque lieu renvoie à son objet d’origine.",
     ],
     cta: { label: "Explorer les lieux", href: "/carte?vue=carte" },
@@ -149,7 +162,7 @@ export function LApplication({ base }: { base: string }) {
           elle ne parle que des Offices, de leurs 116 circuits et de leurs 1 537 km.
           En garder la coquille sans sa matière promettrait un partenariat qui
           n'existe pas sur cet hôte. */}
-      {MODULES.filter((m) => office || !m.source).map((m) => {
+      {MODULES.filter((m) => office || !m.sources).map((m) => {
         const G = m.glyphe;
         return (
         <section key={m.titre} className="landing-section bulle">
@@ -165,12 +178,15 @@ export function LApplication({ base }: { base: string }) {
           <ul className="section-faits">
             {m.faits.map((f) => <li key={f}>{f}</li>)}
           </ul>
-          {m.source && (
+          {m.sources && (
             <p className="section-source">
-              Source :{" "}
-              <a href={m.source.href} target="_blank" rel="noreferrer">
-                {m.source.label}
-              </a>
+              {m.sources.length > 1 ? "Sources : " : "Source : "}
+              {m.sources.map((s, i) => (
+                <span key={s.href}>
+                  {i > 0 && " · "}
+                  <a href={s.href} target="_blank" rel="noreferrer">{s.label}</a>
+                </span>
+              ))}
             </p>
           )}
           <div className="est-actions">

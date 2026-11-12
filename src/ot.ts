@@ -69,6 +69,37 @@ export interface Recueil {
   itineraires: ItineraireOT[];
 }
 
+/**
+ * LE MOT PAR LEQUEL CHAQUE OFFICE EST RECONNAISSABLE DANS UNE PHRASE.
+ *
+ * 🔴 POSÉ LE 12/11/2026 APRÈS AVOIR FAIT TOMBER QUATRE GARDES. Trois tests du
+ *    dépôt exigeaient le libellé COMPLET d'un office dans le texte de
+ *    `LApplication.tsx`. Le crédit est passé de un à cinq offices, le libellé
+ *    figé a disparu, et les trois sont tombés — avec le quatrième que je
+ *    venais d'écrire.
+ * ⛔ EXIGER LE LIBELLÉ EXACT DE CHACUN NE MARCHAIT PAS DAVANTAGE, pour deux
+ *    raisons mesurées : la prose nomme les offices dans SES mots (« Côte des
+ *    Légendes » quand l'artefact dit « Tourisme Côte des Légendes »), et elle
+ *    emploie l'apostrophe typographique `’` là où l'artefact porte `'`. Une
+ *    phrase ne se génère pas depuis des étiquettes.
+ *
+ * ⚠️ ET LA DÉRIVATION AUTOMATIQUE A ÉCHOUÉ AUSSI, ce qui vaut d'être écrit.
+ *    « Le mot le plus long » rend **Maritime** pour Crozon et **Bretagne**
+ *    pour Iroise — uniques dans l'ensemble, et génériques au point de
+ *    n'identifier personne. L'unicité ne sauve pas : c'est un jugement, pas
+ *    un calcul.
+ * ⭐ QUAND UNE DÉRIVATION DEMANDE DU JUGEMENT, ON DÉCLARE — et on fait tomber
+ *    la déclaration quand elle devient incomplète. Un sixième office sans son
+ *    mot fait échouer les gardes, au lieu de passer en silence.
+ */
+export const MOT_CLEF_OFFICE: Record<string, string> = {
+  crozon: "Crozon",
+  abers: "Abers",
+  iroise: "Iroise",
+  landerneau: "Landerneau",
+  legendes: "Légendes",
+};
+
 export const PRATIQUE: Record<ItineraireOT["pratique"], string> = {
   pied: "À pied", vtt: "VTT", velo: "Vélo", trail: "Trail",
 };

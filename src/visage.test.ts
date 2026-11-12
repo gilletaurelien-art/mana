@@ -138,9 +138,16 @@ describe("les deux visages — ce qui change, et ce qui ne doit pas", () => {
   /* ⛔ LE CRÉDIT SUIT LA DONNÉE. Créditer un partenaire dont on ne montre rien
      n'est pas de la rigueur, c'est du bruit — et ça affaiblit la mention là où
      elle compte vraiment. */
-  it("le crédit de l'Office ne survit pas à sa matière", () => {
+  it("le crédit des Offices ne survit pas à sa matière", () => {
+    /* 🔄 `m.source` → `m.sources` le 12/11/2026 : le bloc en crédite CINQ
+       depuis l'ajout d'Iroise et de Landerneau-Daoulas, et le champ est passé
+       au pluriel. ⭐ Ce garde cherchait l'expression EXACTE — il est donc
+       tombé sur un renommage juste, ce qui est le comportement voulu : c'est
+       ainsi qu'il tient la règle plutôt que de la décrire. Son intention est
+       inchangée — la section part entièrement sur mana.love, parce qu'on n'y
+       montre pas la matière des Offices. */
     const l = nu("./LApplication.tsx");
-    expect(l).toMatch(/MODULES\.filter\(\(m\) => office \|\| !m\.source\)/);
+    expect(l).toMatch(/MODULES\.filter\(\(m\) => office \|\| !m\.sources\)/);
   });
 });
 

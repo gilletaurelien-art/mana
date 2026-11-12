@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { liensPied } from "./barre";
 import { readFileSync } from "node:fs";
+import otJson from "./ot.json";
+import { MOT_CLEF_OFFICE } from "./ot";
 
 /* 🔄 6/11/2026 — CES GARDES ONT SUIVI LEUR CONTENU. Les cinq sections ont
    quitté l'accueil pour `/l-application`, une page à elles, indexable. Les
@@ -80,7 +82,20 @@ describe("la page de l'application — l'ordre des sections sert le lecteur", ()
      son attribution serait pire que la laisser en bas : on gagnerait la
      visibilité en perdant ce qui la justifie. */
   it("l'Office est nommé et MANA ne s'attribue rien", () => {
-    expect(APP).toContain("Office de tourisme Presqu’île de Crozon – Aulne Maritime");
+    /* 🔄 RETOURNÉ LE 12/11/2026. Ce libellé complet ne vivait que dans le
+       `source.label` de la section — un crédit AU SINGULIER, qui s'affichait
+       sous les 116 circuits de CINQ offices. Le corriger l'a fait disparaître
+       du fichier, et ce garde est tombé : il figeait le nom d'UN partenaire.
+       ⭐ Ce qu'il protégeait — « l'Office est nommé » — reste vrai sous une
+       forme plus juste : TOUS les offices de l'artefact sont nommés. Dérivé,
+       donc un sixième sera exigé tout seul. */
+    const offices = (otJson as { offices: { ot: string; nom: string }[] }).offices;
+    expect(offices.length).toBeGreaterThan(0);
+    for (const o of offices) {
+      const mot = MOT_CLEF_OFFICE[o.ot];
+      expect(mot, `office « ${o.ot} » sans mot-clef déclaré dans ot.ts`).toBeTruthy();
+      expect(APP, `${o.nom} n’est pas nommé dans la page`).toContain(mot);
+    }
     expect(APP).toMatch(/MANA ne s’attribue rien et ne recommande rien/);
   });
 });
