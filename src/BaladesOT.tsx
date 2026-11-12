@@ -60,7 +60,11 @@ export function BaladesOT() {
           <header className="cp-entree">
             <div className="cp-entree-dire">
               <p className="hero-label">Office de tourisme</p>
-              <h1 className="cp-titre">Les balades de l'Office</h1>
+              {/* 🔄 « de l'Office » → « des Offices de Tourisme », demande du
+                  fondateur le 12/11/2026. Le singulier datait du temps où
+                  Crozon était seul ; ils sont CINQ depuis l'ajout d'Iroise et
+                  de Landerneau-Daoulas. */}
+              <h1 className="cp-titre">Les balades des Offices de Tourisme</h1>
               {ot && (
                 <p className="cp-compte">
                   {ot.length} circuit{ot.length > 1 ? "s" : ""} balisé{ot.length > 1 ? "s" : ""}

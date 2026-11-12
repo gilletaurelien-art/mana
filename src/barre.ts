@@ -50,7 +50,7 @@ export function entreesBarre(v: Visage): Entree[] {
        prend, c'est une case qui reste. */
     office
       ? { clef: "office", chemin: "/balades-office", glyphe: "etincelles",
-          libelle: "Les balades de l'Office" }
+          libelle: "Les balades des Offices de Tourisme" }
       : praticable("chat")
       ? { clef: "chat", chemin: PONTS.chat.chemin, glyphe: "etincelles",
           libelle: "Déesses", motVisible: true }

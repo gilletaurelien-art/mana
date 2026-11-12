@@ -159,10 +159,10 @@ describe("les cinq sections de la page de l'application", () => {
     const anonymes = lx.lieux.filter((l: { n?: string }) => !l.n).length;
     cite(`${anonymes} sites sans nom`);
 
-    const parPratique = ot.itineraires.reduce<Record<string, number>>((acc, x: { pratique: string }) => {
-      acc[x.pratique] = (acc[x.pratique] ?? 0) + 1;
-      return acc;
-    }, {});
+    const parPratique: Record<string, number> = {};
+    for (const x of ot.itineraires as { pratique: string }[]) {
+      parPratique[x.pratique] = (parPratique[x.pratique] ?? 0) + 1;
+    }
     for (const [libelle, cle] of [["à pied", "pied"], ["en VTT", "vtt"], ["en trail", "trail"], ["à vélo", "velo"]] as const) {
       if (parPratique[cle]) cite(`${parPratique[cle]} ${libelle}`);
     }
@@ -222,13 +222,31 @@ describe("le titre de l'accueil", () => {
      `text-wrap: balance` le laisse flotter d'un rendu à l'autre. */
   const src = nu("./Invitation.tsx");
 
-  it("dit « Au cœur de la Bretagne », en deux lignes voulues", () => {
-    const h1 = src.match(/<h1[^>]*className="inv-titre"[^>]*>([\s\S]*?)<\/h1>/);
-    expect(h1, "le h1.inv-titre de l'accueil").not.toBeNull();
-    const brut = h1![1];
-    expect(brut).toMatch(/<br\s*\/?>/);
-    expect(brut.replace(/<br\s*\/?>/g, " ").replace(/\s+/g, " ").trim())
+  /* 🔄 RETOURNÉ LE 12/11/2026 — LE FONDATEUR A SUPPRIMÉ LE GRAND TITRE. Il
+     disait mot pour mot ce que la devise dit depuis le même jour : deux fois
+     la même phrase, l'une sous l'autre. ⭐ Ce que ce garde protégeait — « le
+     texte de l'accueil est une règle de produit, pas un commentaire » — reste
+     vrai et change de porteur : c'est la DEVISE qui est désormais le `h1`.
+     ⚠️ CE QUI EST PERDU EST ÉCRIT : les deux `<br />` étaient VOULUS, ils
+     tenaient la coupe sur un téléphone là où `text-wrap: balance` la laisse
+     flotter. La devise tient sur une ligne, donc la question ne se pose plus —
+     mais si la phrase revient en grand un jour, elle se reposera. */
+
+  it("dit « Au cœur de la Bretagne », et c'est le SEUL h1 de l'accueil", () => {
+    const h1s = [...src.matchAll(/<h1[^>]*>([\s\S]*?)<\/h1>/g)];
+    expect(h1s.length, "l'accueil doit porter exactement un h1").toBe(1);
+    expect(h1s[0][1].replace(/<br\s*\/?>/g, " ").replace(/\s+/g, " ").trim())
       .toBe("Au cœur de la Bretagne");
+  });
+
+  it("🔴 et la section reste DÉSIGNÉE par son titre — l'ancre a suivi le rôle", () => {
+    /* ⛔ Le bloc supprimé portait `id="inv-titre"`, et la section le désigne
+       par `aria-labelledby="inv-titre"`. Le retirer sans déplacer l'ancre
+       aurait laissé un `aria-labelledby` pointant dans le vide : le repère
+       perd son nom accessible, et AUCUN écran ne le montre. */
+    expect(src).toMatch(/aria-labelledby="inv-titre"/);
+    expect(src, "le h1 doit porter l'ancre que la section désigne")
+      .toMatch(/<h1[^>]*id="inv-titre"/);
   });
 });
 

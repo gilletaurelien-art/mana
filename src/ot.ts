@@ -63,7 +63,15 @@ export interface Recueil {
   /** ⭐ LA LISTE VIVANTE DES OFFICES, pas une phrase recopiée. `source`
    *  ci-dessous en est DÉRIVÉE à la production — un nom d'office écrit à deux
    *  endroits vieillit à un seul. */
-  offices: { ot: string; nom: string; site: string }[];
+  offices: {
+    ot: string;
+    nom: string;
+    site: string;
+    /** les champs que CET office publie — le garde du champ vide s'y réfère */
+    publie: string[];
+    /** [ouest, sud, est, nord] — aucun tracé de cet office n'en sort */
+    emprise: [number, number, number, number];
+  }[];
   source: string;
   avertissement: string;
   itineraires: ItineraireOT[];

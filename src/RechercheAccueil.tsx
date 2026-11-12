@@ -158,7 +158,7 @@ export function RechercheAccueil({ base }: { base: string }) {
               TEXTE voisins vers le même écran) ; c'est le seul endroit de
               l'accueil où l'Office est nommé comme une destination. */}
           <a className="rech-porte rech-porte-fine" href={`${base}/balades-office`}>
-            Les balades de l’Office
+            Les balades des Offices de Tourisme
           </a>
         </nav>
       )}

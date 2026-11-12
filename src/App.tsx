@@ -68,7 +68,7 @@ export const TITRES: Record<string, string> = {
   "/promenades": "Composer une promenade — presqu'île de Crozon & Aulne maritime — MANA.bzh",
   "/composer": "Composer une promenade — presqu'île de Crozon & Aulne maritime — MANA.bzh",
   "/radio": "MANARADIO — l'antenne de MANA, en direct — MANA.bzh",
-  "/balades-office": "Les balades de l'Office de tourisme — presqu'île de Crozon & Aulne maritime — MANA.bzh",
+  "/balades-office": "Les balades des Offices de Tourisme — Pays de Brest — MANA.bzh",
   "/territoire": "Le territoire — MANA.bzh",
   /* ⚠️ CE TITRE EST CELUI D'UNE PAGE D'ENTRÉE, pas d'un sous-écran : c'est
      lui qui paraît dans un résultat de recherche pour « application
@@ -332,8 +332,15 @@ export default function App() {
             <p className="brand">
               MANA<em>.bzh</em>
             </p>
+            {/* 🔄 « Presqu'île de Crozon » → « Finistère », demande du
+                fondateur le 12/11/2026. Le pied annonçait un territoire que
+                l'offre a dépassé : 116 circuits de CINQ offices, de la pointe
+                de Pen-Hir aux dunes de Keremma. ⭐ Un périmètre écrit plus
+                étroit que la matière fait passer pour local ce qui ne l'est
+                plus — et personne ne va chercher aux abers une app qui dit
+                « presqu'île de Crozon ». */}
             <p className="footer-note">
-              Presqu'île de Crozon. Hors ligne, GPS, GPX. Gratuit, aucune
+              Finistère. Hors ligne, GPS, GPX. Gratuit, aucune
               donnée revendue.
             </p>
             <ContactForm />

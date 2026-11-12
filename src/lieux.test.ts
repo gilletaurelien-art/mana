@@ -5,11 +5,12 @@ import type { Inventaire } from "./lieux";
 import { nommer, lienWiki } from "./lieux";
 
 import otJson from "./ot.json";
+import type { Recueil } from "./ot";
 
 /** L'union des emprises déclarées par les offices dans `ot.json` —
  *  [ouest, sud, est, nord]. ⭐ Dérivée, jamais recopiée. */
 const UNION: [number, number, number, number] = (() => {
-  const e = (otJson as { offices: { emprise: [number, number, number, number] }[] }).offices.map((o) => o.emprise);
+  const e = (otJson as unknown as Recueil).offices.map((o) => o.emprise);
   return [
     Math.min(...e.map((x) => x[0])), Math.min(...e.map((x) => x[1])),
     Math.max(...e.map((x) => x[2])), Math.max(...e.map((x) => x[3])),

@@ -3,7 +3,7 @@
  *
  * L'ordre de lecture, de haut en bas, et il n'est pas interchangeable :
  *    MANA                                  ← qui parle
- *    TERRE, MER & LUMIÈRE — BRETAGNE       ← de quoi il s'agit
+ *    AU CŒUR DE LA BRETAGNE                 ← de quoi il s'agit (12/11/2026)
  *    Le monde commence ici.                ← la promesse
  *    Découvrez ce que vous croiserez…      ← ce qu'on y fait vraiment
  *    [ photographie ]                      ← la preuve
@@ -67,22 +67,40 @@ export function Invitation({ base }: { base: string }) {
       <div className="inv-contenu">
         <header className="inv-marque">
           <p className="inv-mot">MANA</p>
-          <p className="inv-devise">Terre, mer &amp; lumière</p>
+          {/* 🔄 « Terre, mer & lumière » → « Au cœur de la Bretagne », puis le
+              grand titre SUPPRIMÉ — demandes du fondateur, 12/11/2026. La
+              devise disait une ATMOSPHÈRE, celle-ci dit un LIEU ; et la phrase
+              ne se dit plus qu'UNE fois.
+              🔴 ELLE PORTE DONC LE RÔLE DE TITRE, et ce n'était pas un détail :
+              la section est désignée par `aria-labelledby="inv-titre"` et
+              c'était le SEUL `h1` de l'accueil. Retirer le bloc sans déplacer
+              l'ancre aurait laissé un `aria-labelledby` pointant dans le vide
+              et une page d'accueil sans titre — deux défauts qu'aucun écran
+              ne montre. ⚠️ La classe reste `inv-devise` : l'élément change de
+              RÔLE, pas d'apparence. */}
+          <h1 id="inv-titre" className="inv-devise">Au cœur de la Bretagne</h1>
         </header>
 
         <div className="inv-dire">
-          {/* ⚠️ TEXTE ARRÊTÉ LE 1/11/2026 PAR LE FONDATEUR, sur maquette.
-              « Le monde commence ici » était une promesse de marque ; celle-ci
-              dit où l'on est et ce qu'on y fait. ⭐ Les deux retours à la ligne
-              sont VOULUS : ils tiennent la coupe du titre sur un téléphone,
-              là où `text-wrap: balance` la laisse flotter d'un rendu à
-              l'autre. */}
-          <h1 id="inv-titre" className="inv-titre">
-            Au cœur<br />de la Bretagne
-          </h1>
-          <p className="inv-sous">
-            Explorez, découvrez, respirez…<br />avec MANA.
-          </p>
+          {/* 🔄 LE GRAND TITRE EST PARTI LE 12/11/2026, demande du fondateur.
+              Il disait « Au cœur / de la Bretagne » — mot pour mot ce que la
+              devise dit maintenant, trois lignes plus haut. Deux fois la même
+              phrase, l'une sous l'autre.
+              ⚠️ Le texte d'origine avait été arrêté le 1/11 sur maquette, et
+              ses deux retours à la ligne étaient VOULUS : ils tenaient la
+              coupe sur un téléphone là où `text-wrap: balance` la laisse
+              flotter. Si la phrase revient en grand un jour, c'est à savoir.
+              ⛔ `.inv-titre` reste dans `systeme.css` : une règle sans
+              porteur ne casse rien, et la retirer en même temps que le texte
+              ferait deux gestes dans un seul. */}
+          {/* 🔄 ET LE SOUS-TITRE AUSSI — « Explorez, découvrez, respirez…
+              avec MANA. », supprimé le 12/11/2026 à la demande du fondateur,
+              après le grand titre.
+              ⚠️ `.inv-dire` ne porte donc plus AUCUN texte : le bloc reste
+              pour sa place dans la grille, et c'est écrit ici parce qu'un
+              conteneur vide se fait supprimer par quelqu'un qui le croit
+              oublié. Si l'accueil reste sans texte au-delà de la devise, le
+              retirer est un geste à FAIRE, pas à subir. */}
         </div>
 
         {/* 🔴 LA FICHE DE BALADE A CÉDÉ LA PLACE AU MOTEUR DE RECHERCHE —
