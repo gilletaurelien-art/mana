@@ -490,3 +490,58 @@ describe("les balades des Offices — la liste se lit", () => {
     expect(ecran).toMatch(/\{visibles\.map\(\(i\) => \(/);
   });
 });
+
+describe("le commentaire de ot.ts dit la vérité du recueil", () => {
+  /* 🔴 POURQUOI CE GARDE EXISTE — 13/11/2026. L'en-tête de `ot.ts` annonçait
+     « TROIS OFFICES » et « 46 tracés » alors que le recueil en portait CINQ
+     et 116 depuis le 11/11. Les deux chiffres étaient justes le 31/10. Rien
+     ne l'a signalé pendant deux jours, et la note a servi à décrire l'accord
+     de reprise qui MANQUE : on a donc parlé d'un accord deux fois et demie
+     plus petit que le vrai.
+     ⭐ C'est exactement « un interdit en docstring se franchit sans le
+        savoir » : le commentaire n'avait aucun lecteur qui vérifie. Il en a
+        un maintenant, et ce garde échoue QUAND LE RECUEIL GRANDIT — c'est
+        voulu : son échec est le rappel d'aller réécrire la note. */
+  const source = readFileSync(new URL("./ot.ts", import.meta.url), "utf8");
+  const entete = source.slice(0, source.indexOf("export interface"));
+
+  it("annonce le nombre d'offices du recueil", () => {
+    const mots = ["UN", "DEUX", "TROIS", "QUATRE", "CINQ", "SIX", "SEPT"];
+    const attendu = mots[recueil.offices.length - 1];
+    expect(attendu, "plus de sept offices : élargir la table des mots")
+      .toBeTruthy();
+    expect(entete, `le recueil porte ${recueil.offices.length} offices`)
+      .toContain(`${attendu} OFFICES`);
+  });
+
+  it("annonce le nombre de tracés du recueil, à CHAQUE mention", () => {
+    /* ⛔ `toContain` seul laissait passer la mutation : l'en-tête cite le
+       compte DEUX FOIS (l'accord, puis le poids du chargement différé), et
+       une seule mention juste suffisait à verdir. C'est la septième forme du
+       vert qui ne dit rien — le garde trouvait la bonne chaîne au mauvais
+       endroit. On exige donc que TOUTES les mentions concordent. */
+    const mentions = entete.match(/(\d[\d\s ]*) tracés/g) ?? [];
+    expect(mentions.length, "l'en-tête ne cite plus aucun compte de tracés")
+      .toBeGreaterThanOrEqual(2);
+    for (const m of mentions) {
+      const lu = Number(m.replace(/\D/g, ""));
+      expect(lu, `« ${m} » contredit le recueil`)
+        .toBe(recueil.itineraires.length);
+    }
+  });
+
+  it("ne cite aucun hôte de GPX absent du recueil", () => {
+    /* ⚠️ La note citait `cdt29` quand les 116 fichiers sortent tous de
+       `cdt56`. Un hôte inventé désigne le mauvais interlocuteur pour
+       l'accord — le vrai sujet de ce paragraphe. */
+    const vrais = new Set(
+      recueil.itineraires.map((i) => new URL(i.gpx).host.split(".")[0]),
+    );
+    for (const cite of entete.match(/cdt\d+/g) ?? []) {
+      expect(vrais, `l'en-tête cite ${cite}, absent du recueil`)
+        .toContain(cite);
+    }
+    expect(vrais.size, "aucun hôte lu : la mesure a raté sa cible")
+      .toBeGreaterThan(0);
+  });
+});
