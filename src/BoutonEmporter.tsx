@@ -20,8 +20,21 @@ import {
  * ⚠️ ET « JE NE SAIS PAS » N'EST PAS « RIEN À BORD ». Sans API `caches` (fenêtre
  *    privée, navigateur qui refuse le stockage), le bouton le DIT au lieu de
  *    proposer un téléchargement qui ne serait gardé nulle part.
+ *
+ * ⭐ DEUX FORMES, UN SEUL ÉTAT. Sur la fiche, un bouton de texte qui annonce le
+ *    poids ; sur l'écran de marche, une petite icône dans le rail — parce que
+ *    là-bas « tout doit vivre dans de petites icônes pour que la carte reste
+ *    plein écran » (arbitrage d'Aurélien du 12/11). ⛔ Un second composant
+ *    aurait dupliqué la mesure, et deux mesures d'une même chose divergent :
+ *    c'est la même logique, rendue deux fois.
+ * ⚠️ Et en forme d'icône, l'état vit dans le NOM ACCESSIBLE : une icône ne peut
+ *    pas écrire « 43 sur 60 », mais son `aria-label` le dit — sinon l'écran de
+ *    marche devient le seul endroit où l'information se perd.
  */
-export function BoutonEmporter({ points }: { points: readonly { lat: number; lon: number }[] }) {
+export function BoutonEmporter(
+  { points, forme = "texte" }:
+  { points: readonly { lat: number; lon: number }[]; forme?: "texte" | "icone" },
+) {
   const [adresses, setAdresses] = useState<string[] | null>(null);
   const [aBord, setABord] = useState<number | null | undefined>(undefined);
   const [faites, setFaites] = useState<number | null>(null);
@@ -61,6 +74,40 @@ export function BoutonEmporter({ points }: { points: readonly { lat: number; lon
   if (adresses.length === 0) return null;
 
   const total = adresses.length;
+  /* ⚠️ Le seuil est à 95 % et non à 100 % : quelques tuiles de bord de mer
+     échouent toujours, et exiger la perfection afficherait « incomplet » pour
+     une balade parfaitement utilisable. */
+  const complet = aBord !== undefined && aBord !== null && aBord >= total * 0.95;
+
+  if (forme === "icone") {
+    /* ⛔ RIEN PLUTÔT QU'UNE ICÔNE MORTE. Sans API `caches`, l'écran de marche
+       n'a pas de place pour expliquer pourquoi un bouton ne sert à rien — la
+       fiche le dit en mots, c'est là que ça se lit. */
+    if (aBord === null) return null;
+    const nom = faites !== null
+      ? `La carte embarque, ${faites} sur ${total}`
+      : complet
+        ? `Carte à bord — ${total} tuiles, cette balade s’affiche sans réseau`
+        : aBord
+          ? `Compléter la carte hors ligne — ${aBord} sur ${total}`
+          : `Emporter la carte hors ligne — ${total} tuiles, environ ${poidsMo(total)} Mo`;
+    return (
+      <button
+        type="button"
+        className={`ech-rond${complet ? " ech-rond-actif" : ""}`}
+        aria-pressed={complet}
+        aria-live="polite"
+        disabled={faites !== null}
+        onClick={lancer}
+      >
+        <span className="sr-only">{nom}</span>
+        {/* une flèche qui descend vers un socle : emporter, pas téléverser */}
+        <svg className="m-icone" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 3v11M8 10l4 4 4-4M5 19h14" />
+        </svg>
+      </button>
+    );
+  }
 
   if (aBord === null) {
     return (
@@ -77,11 +124,6 @@ export function BoutonEmporter({ points }: { points: readonly { lat: number; lon
       </p>
     );
   }
-
-  /* ⚠️ Le seuil est à 95 % et non à 100 % : quelques tuiles de bord de mer
-     échouent toujours, et exiger la perfection afficherait « incomplet » pour
-     une balade parfaitement utilisable. */
-  const complet = aBord !== undefined && aBord >= total * 0.95;
 
   if (complet) {
     return (

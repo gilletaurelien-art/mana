@@ -22,6 +22,7 @@
 import { useEffect, useRef, useState } from "react";
 import { WALKS, distAuTrace } from "./walks";
 import { BoutonSos } from "./Sos";
+import { BoutonEmporter } from "./BoutonEmporter";
 import { chargerPromenade } from "./promenade-source";
 import type { Walk, WalkPoint, Etape } from "./walks";
 import { Atlas } from "./Atlas";
@@ -224,6 +225,16 @@ export function EnChemin(
             <path d="M12 2v3M12 19v3M2 12h3M19 12h3" /><circle cx="12" cy="12" r="6" />
           </svg>
         </button>
+        {/* ⭐ EMPORTER, ICI AUSSI, ET EN ICÔNE. Le bouton existait sur la fiche
+            — mais on cherche sa carte quand on est DÉJÀ parti, pas avant.
+            ⚠️ En icône et pas en texte, parce que cet écran a sa règle : « tout
+               doit vivre dans de petites icônes pour que la carte reste plein
+               écran ». Son état tient dans son nom accessible, qui dit le
+               compte — « 43 sur 60 » — là où une icône ne peut rien écrire.
+            ⛔ Et il se TAIT quand le navigateur ne garde rien : sur un écran de
+               marche, une icône qui ne sert à rien est pire qu'une absence.
+               C'est la fiche qui l'explique en mots. */}
+        <BoutonEmporter points={walk.points} forme="icone" />
       </div>
 
       {/* ── LA CARTE FLOTTANTE ──────────────────────────────────────────── */}

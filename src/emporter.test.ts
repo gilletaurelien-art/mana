@@ -148,3 +148,64 @@ describe("le nom du cache colle au service worker", () => {
       .toContain(`const CACHE_TUILES = "${CACHE_TUILES}"`);
   });
 });
+
+describe("le bouton existe aux deux endroits, et sous la bonne forme", () => {
+  /* ⭐ On cherche sa carte quand on est DÉJÀ parti, pas seulement avant. Le
+     bouton vit donc sur la fiche ET sur l'écran de marche — mais pas sous la
+     même forme : cet écran a sa règle, « tout doit vivre dans de petites
+     icônes pour que la carte reste plein écran ». */
+  const bouton = readFileSync("src/BoutonEmporter.tsx", "utf8");
+  const fiche = readFileSync("src/FichePromenade.tsx", "utf8");
+  const chemin = readFileSync("src/EnChemin.tsx", "utf8");
+
+  it("la fiche le porte en TEXTE, avec le poids annoncé", () => {
+    expect(fiche, "le bouton a quitté la fiche").toContain("<BoutonEmporter");
+    expect(fiche, "la fiche l'a passé en icône : le poids ne s'y lirait plus")
+      .not.toMatch(/<BoutonEmporter[^>]*forme="icone"/);
+    expect(bouton, "le poids n'est plus annoncé avant de télécharger")
+      .toMatch(/poidsMo\(total\)/);
+  });
+
+  it("l'écran de marche le porte en ICÔNE, dans le rail", () => {
+    expect(chemin, "le bouton n'est pas sur l'écran de marche")
+      .toMatch(/<BoutonEmporter[^>]*forme="icone"/);
+    /* ⛔ `ech-rond` est la classe du rail : sans elle, l'icône ne serait pas de
+       la même famille que « Arrêter la marche » et le suivi GPS, et la carte
+       cesserait d'être plein écran.
+       ⚠️ ET LE GARDE VISE L'EXPRESSION, PAS LA SOUS-CHAÎNE. Un premier jet
+          cherchait `/ech-rond/` et restait VERT quand la classe du bouton
+          devenait `rond-a-moi` : le mot survivait dans `ech-rond-actif`, deux
+          lignes plus bas. La bonne chaîne au mauvais endroit — cinquième
+          variante du même défaut dans la journée. */
+    expect(bouton, "la forme icône n'emprunte pas la classe du rail")
+      .toMatch(/className=\{`ech-rond\$\{complet \? " ech-rond-actif" : ""\}`\}/);
+  });
+
+  it("⛔ UNE ICÔNE NE PEUT RIEN ÉCRIRE : le compte vit dans son nom accessible", () => {
+    /* Sans ça, l'écran de marche serait le seul endroit où l'information se
+       perd — on verrait un bouton, sans savoir s'il reste 2 ou 50 tuiles. */
+    expect(bouton).toMatch(/sur \$\{total\}/);
+    expect(bouton, "le nom accessible ne dit pas l'état « à bord »")
+      .toMatch(/Carte à bord — \$\{total\}/);
+    expect(bouton, "l'icône n'a pas de nom pour lecteur d'écran")
+      .toMatch(/<span className="sr-only">\{nom\}<\/span>/);
+  });
+
+  it("⛔ l'icône se TAIT quand le navigateur ne garde rien", () => {
+    /* Sur un écran de marche, une icône qui ne sert à rien est pire qu'une
+       absence — et c'est la fiche qui l'explique en mots. */
+    expect(bouton).toMatch(/if \(aBord === null\) return null;/);
+    /* ⚠️ Et la fiche, elle, le DIT : les deux comportements sont voulus et
+       différents. Un garde qui n'en tient qu'un laisserait l'autre dériver. */
+    expect(bouton).toMatch(/ne garde rien hors ligne/);
+  });
+
+  it("une seule mesure pour les deux formes", () => {
+    /* ⛔ Deux composants auraient dupliqué `dejaABord`, et deux mesures d'une
+       même chose divergent. Il n'y a qu'un fichier, et qu'un appel. */
+    expect((bouton.match(/dejaABord\(/g) ?? []).length,
+      "dejaABord est appelé plus d'une fois : la mesure est dupliquée").toBe(1);
+    expect(chemin, "l'écran de marche a son propre composant d'emport")
+      .not.toMatch(/function BoutonEmporter/);
+  });
+});
