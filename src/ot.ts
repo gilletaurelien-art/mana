@@ -14,9 +14,21 @@
 //    accord deux fois et demie plus petit que celui qui manque vraiment.
 //    ⭐ Le compte ne se recopie pas, il se lance :
 //      node -e 'const r=require("./src/ot.json");console.log(r.itineraires.length,r.offices.length)'
-//    Les GPX sont publiquement téléchargeables, ce qui ne veut pas dire
-//    redistribuables : aucun fichier ne porte de licence, ni la page qui les
-//    sert. La reprise est une décision du fondateur du 31/10/2026 (Crozon),
+// 🔴 ET LA LICENCE EST MESURÉE DEPUIS LE 13/11/2026 — ELLE DIT NON.
+//    Les cinq offices portent la MÊME phrase, mot pour mot, dans leurs
+//    mentions légales : « Tous les droits de reproduction sont réservés. La
+//    reproduction de tout ou partie de ce site sur un support quel qu'il soit
+//    est formellement interdite sauf autorisation expresse du responsable du
+//    site Internet. » Une seule exception, et elle nous exclut : la
+//    reproduction des TEXTES sur support PAPIER, à trois conditions —
+//    gratuité, aucune modification, citation de la source.
+//    ⛔ Donc une app est hors exception, un service payant aussi, et calculer
+//    les rencontres le long du tracé est une modification. Les GPX sont
+//    téléchargeables, ce n'est pas une licence.
+//    ⭐ MAIS LA MÊME MESURE EST UNE BONNE NOUVELLE : cinq sites bâtis sur un
+//    seul gabarit (agence Faire-Savoir, base Tourinsoft partagée). Une seule
+//    autorisation au niveau du réseau vaut pour les cinq ; cinq négociations
+//    séparées seraient du travail perdu. La reprise est une décision du fondateur du 31/10/2026 (Crozon),
 //    étendue le 11/11. ⚠️ La note ne nommait que deux des quatre offices
 //    ajoutés (Abers, Côte des Légendes) ; le recueil généré le même jour en
 //    porte quatre — Abers, Iroise, Landerneau-Daoulas, Côte des Légendes.
@@ -24,11 +36,13 @@
 //    retire en une commande, à condition de savoir qu'elle est là.
 // ⭐ ET LES GPX NE SONT PAS HÉBERGÉS PAR LES OFFICES : les 116 sortent du
 //    MÊME hôte, `cdt56.media.tourinsoft.eu` — Tourinsoft/Cirkwi, le système
-//    d'information touristique départemental. ⚠️ Cette note a cité un
-//    SECOND hôte départemental jusqu'au 13/11 ; il n'apparaît nulle part
-//    dans le recueil. Il n'est pas renommé ici à dessein : une note qui
-//    cite le mauvais nom pour dire qu'il est mauvais se fait trouver par
-//    `grep` et valide la consigne fausse — le piège de `fenetre.sh:57`.
+//    d'information touristique départemental. ⚠️ Un SECOND hôte départemental
+//    sert bien la page de l'office (mesuré le 13/11 : 25 mentions contre 40),
+//    mais AUCUN de nos 116 GPX n'en vient — la note du matin disait « il
+//    n'existe pas », c'était vrai du recueil et faux du site. Il n'est pas
+//    renommé ici à dessein : une note qui cite le mauvais nom pour dire
+//    qu'il est mauvais se fait trouver par `grep` et valide la consigne
+//    fausse — le piège de `fenetre.sh:57`.
 //    Cinq marques, un seul tuyau : l'interlocuteur de l'accord n'est donc
 //    pas celui qu'on croit — un accord au niveau du SIT pourrait couvrir les
 //    sept offices, ou aucun.
