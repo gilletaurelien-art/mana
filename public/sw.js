@@ -34,11 +34,28 @@
 //       connue — et l'application AFFICHE sa date, parce qu'une absence de
 //       fermeture dans un fichier périmé n'est pas une garantie.
 //
-// ⚠️ CE QUE CE FICHIER NE FAIT PAS, ET NE PRÉTEND PAS FAIRE : il ne met pas en
-//    cache les TUILES de la carte. Elles sont des milliers, elles pèsent des
-//    dizaines de mégaoctets, et les promettre serait mentir. Sans réseau, le
-//    parcours s'affiche en schéma — comportement spécifié, pas accident.
-//    Seule la feuille de style de la carte est gardée, parce qu'elle est unique.
+// ✅ LES TUILES SONT DÉSORMAIS GARDÉES — 13/11/2026, demande d'Aurélien.
+//    Ce fichier promettait l'inverse : « elles sont des milliers, elles pèsent
+//    des dizaines de mégaoctets, et les promettre serait mentir ». La promesse
+//    était juste et le refus l'était aussi — mais il laissait l'application
+//    sans carte exactement là où elle sert : dans les criques, sans réseau.
+//
+// ⭐ CE QUI A CHANGÉ N'EST PAS L'AVIS, C'EST LA MESURE. Relevé le 13/11 sur
+//    les tuiles en ligne : le jeu vectoriel s'arrête à **z14** (z15 et z16
+//    rendent 0 octet, maplibre sur-zoome), et une tuile pèse 30 à 80 Ko. Une
+//    balade de 12 km tient donc dans ~45 tuiles, soit ~3 Mo — pas « des
+//    milliers ». Le refus reposait sur une estimation, pas sur un comptage.
+//
+// ⛔ MAIS LA PROMESSE RESTE BORNÉE, et c'est le cœur du dispositif :
+//    · les tuiles vivent dans LEUR cache (`CACHE_TUILES`), jamais dans celui
+//      de l'application ;
+//    · ce cache est PLAFONNÉ (`PLAFOND_TUILES`) et s'élague tout seul, pour
+//      qu'aucune promesse ne dépasse ce qu'on peut tenir ;
+//    · il n'est PAS versionné avec l'app : une mise à jour du code ne doit pas
+//      jeter ce qu'un promeneur a téléchargé avant de partir.
+//    ⚠️ Ce qu'on promet est donc « ce que vous avez REGARDÉ reste », et non
+//       « toute la Bretagne est à bord ». Regarder sa balade avant de partir
+//       suffit ; ne jamais l'avoir ouverte ne suffit pas.
 
 /* ⚠️ v4 — 1/11/2026. Le nom du dossier des bundles est passé de « assets » à
    « app » (il heurtait celui de mana.bzh). Les entrées « /assets/… » des
@@ -50,7 +67,30 @@
    rien — il ne retire que les caches dont la CLÉ diffère — et l'ancienne
    entrée `./manifest.webmanifest` survivrait sous une adresse que plus
    personne ne demande. */
-const CACHE = "mana-bzh-v7";
+/* ⚠️ v8 — 13/11/2026, avec l'arrivée du cache des tuiles. Le nom de l'app est
+   bumpé pour purger les caches posés AVANT la séparation : jusqu'au 2/11, les
+   tuiles ortho (`.jpg`) étaient gardées dans CE cache, sans borne, par le
+   motif d'extensions d'`IMMUABLES`. Un ancien visiteur peut encore en porter.
+   ⭐ Et c'est exactement ce que la nouvelle architecture rend impossible : les
+      tuiles ont leur cache, lui n'est pas versionné, et l'app peut donc être
+      purgée sans jeter ce qu'un promeneur a emporté. */
+const CACHE = "mana-bzh-v8";
+
+/* ⛔ LE CACHE DES TUILES N'EST PAS VERSIONNÉ, ET C'EST VOULU. `activate`
+   supprime tout cache dont le nom n'est pas celui de la version courante :
+   versionner celui-ci jetterait, à chaque mise à jour de l'app, les tuiles
+   qu'un promeneur a téléchargées pour sa sortie. Son contenu est immuable par
+   coordonnée — une tuile z14/x/y est la même hier et demain — donc rien
+   n'exige de le purger. ⚠️ Il faut en revanche le NOMMER dans la liste de
+   survie d'`activate`, sinon la prochaine activation l'efface en silence. */
+const CACHE_TUILES = "mana-tuiles";
+
+/* Le plafond, déduit d'une mesure et non d'une intuition (13/11/2026) : une
+   tuile pèse 30 à 80 Ko, le jeu s'arrête à z14, une balade de 12 km tient dans
+   ~45 tuiles. 600 tuiles ≈ 30 Mo, soit une dizaine de balades gardées.
+   ⭐ Un plafond en NOMBRE et non en octets, parce que `cache.keys()` les rend
+      dans l'ordre d'insertion : l'élagage est un FIFO, exact et sans calcul. */
+const PLAFOND_TUILES = 600;
 
 /* ═══════════════════════════════════════════════════════════════════════
    🔴 CE QUI EST À NOUS — COPIE DE `src/routes.ts`, TENUE PAR UN TEST.
@@ -225,6 +265,16 @@ const IMMUABLES = [
  */
 const TUILES = [/^\/carte\//];
 
+/* ⭐ LES TROIS BIENS SANS LESQUELS LA CARTE HORS LIGNE N'A PAS DE MOTS. Les
+   polices d'étiquettes (`/carte/fonts/`) et le jeu d'icônes
+   (`/carte/sprites/`) vivent sous `/carte/`, donc le refus des tuiles les
+   écartait avec elles — et une carte sans glyphes s'affiche muette : les
+   routes et le trait de côte, aucun nom de lieu.
+   ⚠️ Mesuré le 13/11 : 76 Ko pour une plage de glyphes, 49 + 28 Ko pour le
+      sprite. Ils sont PEU et UNIQUES, à l'inverse des tuiles : ils rejoignent
+      donc le cache de l'application, où rien ne les élague. */
+const CARTE_ESSENTIELS = [/^\/carte\/fonts\//, /^\/carte\/sprites\//];
+
 const correspond = (motifs, url) => motifs.some((m) => m.test(url.pathname));
 
 /* 🔴 `./index.html` A QUITTÉ CE PRÉ-CACHE LE 7/11, ET IL N'Y ÉTAIT JAMAIS
@@ -301,12 +351,36 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      /* ⛔ `k !== CACHE` AURAIT EFFACÉ LES TUILES À CHAQUE ACTIVATION. La
+         liste de survie est explicite et nommée : y ajouter un cache sans
+         l'inscrire ici, c'est le perdre à la prochaine mise à jour — en
+         silence, et seulement pour les gens qui avaient déjà téléchargé. */
+      .then((keys) => Promise.all(
+        keys.filter((k) => k !== CACHE && k !== CACHE_TUILES).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
 
 
+
+/**
+ * Élague le cache des tuiles au plafond, en FIFO.
+ *
+ * ⭐ `cache.keys()` rend les entrées DANS L'ORDRE D'INSERTION : les plus
+ *    anciennes d'abord. L'élagage est donc exact et ne demande aucune
+ *    comptabilité — pas d'horodatage à stocker, pas de taille à mesurer.
+ * ⚠️ Il tolère l'échec : un élagage qui rejette ne doit pas faire échouer la
+ *    réponse qu'il suit. Un cache un peu trop gros est un défaut ; une carte
+ *    qui ne s'affiche pas en est un autre, bien plus visible.
+ */
+async function elaguer(cache) {
+  try {
+    const cles = await cache.keys();
+    const trop = cles.length - PLAFOND_TUILES;
+    if (trop <= 0) return;
+    await Promise.all(cles.slice(0, trop).map((k) => cache.delete(k)));
+  } catch { /* rien : voir le commentaire ci-dessus */ }
+}
 
 self.addEventListener("fetch", (event) => {
   const req = event.request;
@@ -342,9 +416,43 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  /* ⛔ LES TUILES NE PASSENT PAS PAR LE CACHE — avant tout autre aiguillage,
-     parce que c'est le motif d'extensions d'`IMMUABLES` qui les attrapait. */
-  if (correspond(TUILES, url)) return;
+  /* ── les glyphes et le sprite : cache d'abord, dans le cache de l'app ──── */
+  if (correspond(CARTE_ESSENTIELS, url)) {
+    event.respondWith(
+      caches.match(req).then((hit) => hit || fetch(req).then((res) => {
+        if (res.ok && !estDeLaCoquille(res)) {
+          const copie = res.clone(); caches.open(CACHE).then((c) => c.put(req, copie));
+        }
+        return res;
+      }))
+    );
+    return;
+  }
+
+  /* ── les tuiles : cache d'abord, dans LEUR cache, et plafonné ───────────── */
+  /* ⭐ Cache d'abord sans revalidation : une tuile est immuable par coordonnée,
+     et le chemin porte la version du jeu (`…/20260906_080001_pt/…`). Un
+     nouveau jeu change le chemin, donc rien de périmé ne peut être resservi —
+     c'est le chemin qui fait la fraîcheur, pas une stratégie.
+     ⛔ Et l'élagage se fait APRÈS avoir répondu : il ne doit jamais retarder
+        l'affichage d'une tuile, ni faire échouer la réponse s'il échoue. */
+  if (correspond(TUILES, url)) {
+    event.respondWith(
+      caches.open(CACHE_TUILES).then((c) =>
+        c.match(req).then((hit) => hit || fetch(req).then((res) => {
+          /* ⚠️ Le même garde que partout : sous un repli SPA, un fichier
+             absent revient en 200 avec la coquille. Du HTML gravé sous
+             l'adresse d'une tuile casserait la carte durablement. */
+          if (res.ok && !estDeLaCoquille(res)) {
+            const copie = res.clone();
+            c.put(req, copie).then(() => elaguer(c)).catch(() => null);
+          }
+          return res;
+        }))
+      )
+    );
+    return;
+  }
 
   // ── 2. ce qui décide : réseau d'abord, TOUJOURS ───────────────────────────
   if (correspond(DONNEES, url)) {

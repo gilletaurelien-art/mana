@@ -135,18 +135,50 @@ describe("les trois listes de chemins", () => {
     }
   });
 
-  /* ⛔ ET CE QUE LE FICHIER PROMET DE NE PAS GARDER, IL NE LE GARDE PAS. */
-  it("⛔ les tuiles de la carte ne sont PAS mises en cache, comme annoncé", () => {
+  /* 🔴 CE TEST A ÉTÉ RETOURNÉ LE 13/11/2026, PAS SUPPRIMÉ.
+     Il exigeait que les tuiles NE soient PAS gardées, et il citait la promesse
+     de l'en-tête : « les promettre serait mentir ». Cet interdit vivait en
+     TEST, donc il a été franchi en le sachant — c'est tout l'intérêt.
+     ⭐ Ce qu'il protégeait est encore vrai sous une autre forme : ne pas
+        promettre ce qu'on ne peut pas tenir. Les tuiles sont désormais gardées
+        parce qu'une MESURE a remplacé une estimation (jeu arrêté à z14, 30 à
+        80 Ko la tuile, ~45 tuiles pour 12 km) — mais la promesse reste BORNÉE,
+        et c'est cette borne que le test tient maintenant. */
+  it("✅ les tuiles sont gardées, dans LEUR cache, et le cache est PLAFONNÉ", () => {
     const sw = readFileSync("public/sw.js", "utf8");
-    /* L'en-tête promet : « il ne met pas en cache les TUILES… les promettre
-       serait mentir ». Le motif d'extensions d'`IMMUABLES` finit par `jpe?g)$`
-       et une tuile ortho s'appelle `/carte/ortho/14/8000/5700.jpg` : elles
-       étaient toutes gardées, sans borne.
-       ⭐ Une liste blanche d'extensions ne sait pas de quel DOSSIER elle parle. */
-    expect(sw, "la promesse de l'en-tête a disparu").toMatch(/ne met pas en\s+\/\/\s+cache les TUILES/);
-    expect(sw, "rien n'écarte les tuiles avant les immuables").toMatch(/const TUILES = \[/);
-    expect(sw, "les tuiles ne sont pas écartées AVANT l'aiguillage du cache")
-      .toMatch(/correspond\(TUILES, url\)\) return;[\s\S]*?correspond\(DONNEES/);
+    /* ⛔ Sans cache séparé, l'élagage des tuiles rognerait les bundles. */
+    expect(sw, "les tuiles n'ont plus de cache à elles")
+      .toMatch(/const CACHE_TUILES = /);
+    expect(sw, "le plafond a disparu : la promesse redevient sans borne")
+      .toMatch(/const PLAFOND_TUILES = \d+/);
+    expect(sw, "rien n'élague le cache des tuiles").toMatch(/function elaguer\(/);
+    expect(sw, "l'élagueur n'est jamais appelé")
+      .toMatch(/c\.put\(req, copie\)\.then\(\(\) => elaguer\(c\)\)/);
+    /* 🔴 LE PIÈGE QUI SE SERAIT TU : `activate` supprime tout cache dont le
+       nom n'est pas celui de la version. Sans cette ligne, chaque mise à jour
+       de l'app effacerait les tuiles téléchargées — en silence, et seulement
+       chez les gens qui s'étaient préparés. */
+    expect(sw, "le cache des tuiles n'est pas dans la liste de survie d'activate")
+      .toMatch(/k !== CACHE && k !== CACHE_TUILES/);
+    /* ⭐ Et il n'est PAS versionné : une mise à jour de code ne jette pas ce
+       qu'un promeneur a emporté. */
+    expect(sw, "le cache des tuiles est devenu versionné")
+      .toMatch(/const CACHE_TUILES = "mana-tuiles"/);
+  });
+
+  it("✅ les glyphes et le sprite sont gardés — une carte muette n'est pas une carte", () => {
+    const sw = readFileSync("public/sw.js", "utf8");
+    /* ⚠️ Ils vivent sous `/carte/`, donc le refus des tuiles les écartait avec
+       elles. Sans glyphes, la carte hors ligne montre les routes et le trait
+       de côte, et AUCUN nom de lieu. Ils sont peu et uniques : ils vont dans
+       le cache de l'app, où rien ne les élague. */
+    expect(sw).toMatch(/const CARTE_ESSENTIELS = \[/);
+    expect(sw, "les glyphes ne sont pas visés").toMatch(/carte\\\/fonts/);
+    expect(sw, "le sprite n'est pas visé").toMatch(/carte\\\/sprites/);
+    /* ⛔ ET L'ORDRE DÉCIDE : visés APRÈS le motif des tuiles, ils seraient
+       pris par lui et rejoindraient le cache plafonné, donc élaguables. */
+    expect(sw, "les essentiels sont aiguillés après les tuiles : ils seraient élagués")
+      .toMatch(/correspond\(CARTE_ESSENTIELS, url\)[\s\S]*?correspond\(TUILES, url\)/);
   });
 
   it("🔴 le GÉNÉRATEUR du bloc Caddy rend bien ce que le bloc contient", () => {
