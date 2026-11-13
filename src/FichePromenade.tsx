@@ -21,6 +21,7 @@
  *    survit à la page.
  */
 import { lazy, useEffect, useState } from "react";
+import { BoutonEmporter } from "./BoutonEmporter";
 import { WALKS, effortLisible, MENTION } from "./walks";
 import { chargerPromenade } from "./promenade-source";
 import type { Walk } from "./walks";
@@ -417,6 +418,10 @@ export function FichePromenade({ base, slug }: { base: string; slug: string }) {
               ? "La fiche de l'Office de tourisme"
               : "Le tracé sur OpenStreetMap"}
           </a>
+          {/* ⭐ EMPORTER EST ICI, SOUS « PARTIR », ET C'EST L'ORDRE DU GESTE :
+              on décide d'y aller, puis on met la carte à bord. Le placer en
+              haut de fiche demanderait de télécharger avant d'avoir choisi. */}
+          <BoutonEmporter points={walk.points} />
         </div>
 
         <footer className="fiche-pied">

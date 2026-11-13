@@ -4114,3 +4114,14 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
 /* ⭐ LA LIGNE TENUE S'ALLUME DANS LA LISTE, pour que les deux surfaces
    disent la même chose. Un liseré, pas un fond : la liste reste une liste. */
 .ot-item.est-tenu { box-shadow: inset 3px 0 0 var(--ocre); padding-left: var(--sp-1); }
+
+/* ── EMPORTER LA CARTE ─────────────────────────────────────────────────────
+   ⭐ Le bouton emprunte `.m-action-fine` : il est de la même famille que
+      « Ce qu'on croise autour de moi », pas de celle de « Partir sur ce
+      chemin ». C'est un geste de préparation, pas le geste principal. */
+.emporter { width: 100%; }
+.emporter-abord,
+.emporter-encours,
+.emporter-partiel,
+.emporter-impossible { margin: .45rem 0 0; text-align: center; }
+.emporter-abord { color: var(--texte-immersif-doux, inherit); }
