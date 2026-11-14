@@ -6,7 +6,19 @@ site/
 .DS_Store
 tsconfig.tsbuildinfo
 
-# graphe local pour vérification — 2,36 Mo, servi en production par mana.bzh
+# graphe local pour vérification — servi en production par mana.bzh
+# ⛔ ET IL DOIT RESTER EXCLU EN ENTIER, pour une raison qui n'est pas son poids :
+#    `bretagne` est un nom DÉJÀ PRIS à la racine du domaine, et le premier
+#    niveau d'un fichier servi est une ADRESSE. Deux dossiers ne peuvent pas
+#    répondre à `/bretagne/*` ; la collision est muette des deux côtés, et le
+#    perdant rend une page blanche sans une ligne d'erreur. `collisions.test.ts`
+#    l'empêche — il a refusé le 14/11/2026 quand on a voulu y versionner le
+#    catalogue, et il avait raison.
+# ⭐ LE CATALOGUE DES ITINÉRAIRES VIT DONC DANS `data/bretagne/`, suivi par git :
+#    1 032 fichiers du 28/10/2026 produits par un pipeline qui n'existe plus,
+#    donc sans recette, donc le résultat EST la source. Il n'a pas à être SERVI
+#    par ce build — la production le sert depuis la racine du domaine — il a à
+#    être CONSERVÉ. Deux besoins différents, deux endroits.
 public/bretagne/
 .env.local
 
