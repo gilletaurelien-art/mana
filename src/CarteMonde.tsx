@@ -151,6 +151,22 @@ export function CarteMonde() {
     m.on("load", tenter);
     m.on("styledata", tenter);
     tenter();
+    /* 🔴 ET ON VÉRIFIE ACTIVEMENT, PARCE QUE LES ÉVÉNEMENTS NE SUFFISENT PAS.
+       Mesuré trois fois le 14/11/2026, EN PRODUCTION : la carte s'initialise
+       ou non selon la chance. `load` est parfois manqué, `styledata` ne
+       repasse pas toujours, et `isStyleLoaded()` devient vrai sans que rien
+       ne le signale. Symptôme : canevas plein écran, style jamais peint,
+       aucune source `sites`, aucun message — une page d'accueil BLANCHE.
+       ⭐ Un rendez-vous qu'on peut manquer demande qu'on aille voir. Dix
+          secondes de vérification toutes les 200 ms coûtent cinquante
+          réveils sans travail ; une porte d'entrée blanche coûte le site.
+       ⚠️ Bornée, et elle s'arrête dès que la pose a eu lieu : une boucle qui
+          ne finit pas serait pire que le défaut qu'elle corrige. */
+    const guetteur = window.setInterval(() => {
+      if (installe) { window.clearInterval(guetteur); return; }
+      tenter();
+    }, 200);
+    const finDuGuet = window.setTimeout(() => window.clearInterval(guetteur), 10_000);
     m.on("moveend", () => charger());
 
     /* 🔴 LA CARTE NAÎT PLUS PETITE QUE SON CONTENEUR — mesuré le 14/11/2026 :
@@ -243,6 +259,8 @@ export function CarteMonde() {
 
     return () => {
       ro.disconnect();
+      window.clearInterval(guetteur);
+      window.clearTimeout(finDuGuet);
       for (const id of minuteries) window.clearTimeout(id);
       m.remove(); carte.current = null;
     };

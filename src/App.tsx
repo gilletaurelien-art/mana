@@ -67,6 +67,26 @@ const B = baseUrl();
  * ⚠️ Rien n'y devient inatteignable : mentions légales et contact vivent
  *    aussi dans la barre du bas, sur toutes les pages.
  */
+/**
+ * 🔴 L'ACCUEIL-CARTE EST DÉCROCHÉ — 14/11/2026, en production.
+ *
+ *    `CarteMonde` s'initialise une fois sur deux : le style est téléchargé
+ *    (200, comme ses sprites et ses polices), mais maplibre le REFUSE —
+ *    « Expected value to be of type number, but found null », neuf fois — et
+ *    ne demande alors AUCUNE tuile de fond. `isStyleLoaded()` reste faux
+ *    pour toujours, donc ni source, ni points, ni message : une page
+ *    d'accueil BLANCHE.
+ *
+ * ⛔ ET C'EST LA PORTE D'ENTRÉE DU SITE. Tant que ce n'est pas compris, elle
+ *    rend l'accueil précédent — la devise, la recherche, les trois portes —
+ *    qui, lui, marche. La carte reste atteignable et se répare sans que
+ *    personne ne tombe sur du blanc.
+ * ⭐ Un drapeau qui se lève en UNE ligne vaut mieux qu'un correctif écrit
+ *    dans l'urgence : on remet quand on a compris, pas quand on espère.
+ * ⏳ À relever (`true`) dès que `CarteMonde` s'initialise de façon fiable.
+ */
+const CARTE_EN_ACCUEIL = false;
+
 const SANS_PIED = new Set(["/carte", "/promenades", "/composer"]);
 
 export const TITRE_DEFAUT = "MANA.bzh — Promenades & découvertes en Bretagne";
@@ -443,7 +463,7 @@ export default function App() {
         <Territoire />
       ) : path === "/l-application" ? (
         <LApplication base={B} />
-      ) : path === "/" && visage() === "home" ? (
+      ) : path === "/" && visage() === "home" && CARTE_EN_ACCUEIL ? (
         /* 🔴 CHEZ MANAHOME, L'ACCUEIL EST LA CARTE — Aurélien, 14/11/2026 :
            « la page d'accueil est la carte des sites remarquables », puis
            « tout va se faire via la carte => pas de listing ».
