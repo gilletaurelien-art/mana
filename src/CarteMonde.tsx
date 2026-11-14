@@ -22,7 +22,7 @@
 import { useEffect, useRef, useState } from "react";
 import maplibregl, { type Map as CarteML } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { STYLE_CARTE as STYLE } from "./carte-fond";
+import { STYLE_CARTE as STYLE, STYLE_ORTHO } from "./carte-fond";
 /* ⭐ L'arithmétique vit dans `tuiles.ts`, qui s'éprouve sans navigateur —
    voir l'en-tête de ce fichier-là : un volet masqué fabrique un écran noir
    et interdit de conclure, il n'interdit pas de vérifier autrement. */
@@ -100,7 +100,7 @@ export function CarteMonde({ enFond = false }: { enFond?: boolean } = {}) {
     const lues = new Set<string>();
     const points: GeoJSON.Feature[] = [];
     const m = new maplibregl.Map({
-      container: boite.current, style: STYLE,
+      container: boite.current, style: enFond ? STYLE_ORTHO : STYLE,
       /* 🔴 LE CENTRE ÉTAIT LE MULLERTHAL, EN DUR — c'est le point où je
          testais, et il est parti en production : tout visiteur du monde
          atterrissait au Luxembourg. ⛔ Un réglage de mise au point qui
@@ -108,7 +108,18 @@ export function CarteMonde({ enFond = false }: { enFond?: boolean } = {}) {
          ⭐ On part de l'URL si elle le dit, sinon du monde entier — et la
             géolocalisation, quand elle répond, vient recadrer. Jamais un
             lieu choisi par moi. */
-      center: depuisURL() ?? [10, 25], zoom: depuisURL() ? 10 : 2,
+      /* 🔴 EN FOND : SATELLITE, ET PAS AU ZOOM MONDE — Aurélien, 14/11/2026 :
+         « affiche sans frontière, mode satellite ».
+         ⚠️ MESURÉ AVANT DE CHOISIR : le relais ortho répond à partir de z6,
+            mondialement (Crozon, Mullerthal, Rome, Rio : 200 à z8), et rend
+            404 en dessous — z2, z3, z4, z5 tous vides. Une vue du monde
+            entier en satellite n'existe donc PAS ici : on ouvre à z6, le plus
+            petit zoom qui porte de l'image.
+         ⛔ Et on ne « corrige » pas ce 404 par un fond de plan derrière :
+            deux mosaïques superposées pour cacher un trou, c'est un trou
+            qu'on cesse de voir sans l'avoir comblé. */
+      center: depuisURL() ?? [10, 46],
+      zoom: depuisURL() ? 10 : (enFond ? 6 : 2),
       attributionControl: false,
       interactive: !enFond,
     });
@@ -131,6 +142,22 @@ export function CarteMonde({ enFond = false }: { enFond?: boolean } = {}) {
        sur « carte #2 créée ».
        ⭐ Un événement qu'on attend sans demander s'il est DÉJÀ survenu est
           une attente qui peut ne jamais finir. On fait les deux. */
+    /* 🔴 « SANS FRONTIÈRE » — et le style n'en porte aucune, vérifié couche
+       par couche. Ce qu'on prend pour des frontières, ce sont les ÉTIQUETTES :
+       noms de pays, de villes, de routes, points d'intérêt — vingt-cinq
+       couches de texte posées sur l'image.
+       ⭐ En fond, elles n'ont rien à dire : personne ne lit « Deutschland »
+          derrière un champ de recherche. On les éteint toutes, et on garde la
+          seule couche d'image.
+       ⚠️ On les MASQUE (`visibility: none`) au lieu de les retirer : le style
+          est partagé avec l'écran ortho du compositeur, où elles servent. */
+    const taireLesEtiquettes = () => {
+      if (!enFond) return;
+      for (const c of m.getStyle()?.layers ?? []) {
+        if (c.id !== "ortho") m.setLayoutProperty(c.id, "visibility", "none");
+      }
+    };
+
     const installer = () => {
       m.addSource("sites", { type: "geojson",
         data: { type: "FeatureCollection", features: [] } });
@@ -152,6 +179,7 @@ export function CarteMonde({ enFond = false }: { enFond?: boolean } = {}) {
       });
       m.on("mouseenter", "sites", () => { m.getCanvas().style.cursor = "pointer"; });
       m.on("mouseleave", "sites", () => { m.getCanvas().style.cursor = ""; });
+      taireLesEtiquettes();
       charger();
     };
     /* 🔴 TROIS CHEMINS VERS LE MÊME MONTAGE, ET AUCUN N'EST DE TROP —
