@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { TERRITOIRES, DEFAUT, territoireDe, urlGraphe, positionDeDepart } from "./territoires";
+import { TERRITOIRES, TOUT, DEFAUT, deContree, territoireDe, urlGraphe, positionDeDepart } from "./territoires";
 
 /** Coordonnées des chefs-lieux, relevées le 31/10/2026. */
 const COMMUNES: [string, number, number, string][] = [
@@ -105,5 +105,60 @@ describe("d'où l'on part", () => {
   it("le repli ne sert que quand on ne sait rien", () => {
     expect(positionDeDepart(null, null, CROZON)).toEqual(CROZON);
     expect(positionDeDepart(undefined, undefined, CROZON)).toEqual(CROZON);
+  });
+});
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LA CONTRÉE — posée le 14/11/2026 avec le premier territoire hors de Bretagne.
+
+   ⭐ CES TROIS TESTS GARDENT UN DÉFAUT QUI NE LÈVE AUCUNE ERREUR. Sans la
+      contrée, ajouter le Mullerthal aurait : étendu `TOUT.emprise` à un
+      rectangle couvrant la Bretagne et le Luxembourg — donc une carte centrée
+      vers Orléans au zoom 10 ; fait télécharger 2,9 Mo de plus à `/carte` pour
+      coudre un réseau qui ne touche pas les autres ; et servi le graphe depuis
+      une URL disant « bretagne ». Trois dégâts, zéro exception.
+   ═══════════════════════════════════════════════════════════════════════════ */
+describe("la contrée tient les territoires qui vont ensemble", () => {
+  it("TOUT n'enjambe pas les contrées", () => {
+    const ailleurs = TERRITOIRES.filter((t) => t.contree !== TOUT.contree);
+    expect(ailleurs.length, "aucun territoire hors contrée : ce test ne prouve rien")
+      .toBeGreaterThan(0);
+    for (const t of ailleurs) {
+      const dedans =
+        t.emprise[0] >= TOUT.emprise[0] && t.emprise[2] <= TOUT.emprise[2] &&
+        t.emprise[1] >= TOUT.emprise[1] && t.emprise[3] <= TOUT.emprise[3];
+      expect(dedans, `« ${t.nom} » (${t.contree}) est entré dans l'emprise de TOUT`)
+        .toBe(false);
+    }
+  });
+
+  it("un territoire sait où son graphe est servi", () => {
+    const loin = TERRITOIRES.find((t) => t.base);
+    expect(loin, "aucun territoire ne porte de base propre").toBeDefined();
+    /* ⭐ La base du territoire GAGNE sur l'argument : c'est tout l'objet. */
+    expect(urlGraphe("https://exemple.test/bretagne/g", loin!))
+      .toBe(`${loin!.base}/${loin!.slug}.json`);
+    /* ⚠️ Et un territoire sans base propre suit l'argument, comme avant. */
+    const chezNous = TERRITOIRES.find((t) => !t.base)!;
+    expect(urlGraphe("https://exemple.test/bretagne/g", chezNous))
+      .toBe(`https://exemple.test/bretagne/g/${chezNous.slug}.json`);
+  });
+
+  it("chaque territoire se retrouve par sa propre position", () => {
+    for (const t of TERRITOIRES) {
+      const lon = (t.emprise[0] + t.emprise[2]) / 2;
+      const lat = (t.emprise[1] + t.emprise[3]) / 2;
+      const trouve = territoireDe(lon, lat);
+      expect(trouve, `le centre de « ${t.nom} » ne trouve aucun territoire`).not.toBeNull();
+      expect(trouve!.contree, `le centre de « ${t.nom} » tombe dans une autre contrée`)
+        .toBe(t.contree);
+    }
+  });
+
+  it("deContree ne rend que la contrée demandée", () => {
+    const bzh = deContree(DEFAUT.contree);
+    expect(bzh.length).toBeGreaterThan(1);
+    expect(bzh.every((t) => t.contree === DEFAUT.contree)).toBe(true);
+    expect(deContree("contrée-qui-n-existe-pas")).toHaveLength(0);
   });
 });

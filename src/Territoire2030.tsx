@@ -28,7 +28,7 @@
  *    est ce que le graphe contient.
  */
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { TERRITOIRES, TOUT, territoireDe, urlGraphe } from "./territoires";
+import { TOUT, deContree, territoireDe, urlGraphe } from "./territoires";
 import { chargerOT, type ItineraireOT } from "./ot";
 import { chargerLieux, lienWiki, type Inventaire, type Lieu } from "./lieux";
 import { chercher, type Resultat } from "./recherche";
@@ -656,7 +656,13 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
           territoire qui ne communiquaient nulle part. Les deux sont
           expliqués et gardés là-bas. */
     Promise.all(
-      TERRITOIRES.map((t) =>
+      /* ⚠️ LES TERRITOIRES DE CETTE CONTRÉE, PAS TOUS — 14/11/2026. Cette
+         ligne disait `TERRITOIRES.map` quand ils étaient tous bretons. Depuis
+         le Mullerthal, elle aurait téléchargé 2,9 Mo de plus pour coudre
+         (`fusionnerGraphes`) un réseau luxembourgeois à un réseau breton
+         qu'il ne touche pas. ⭐ Rien n'aurait levé d'erreur : la couture
+         n'aurait simplement trouvé aucun point commun. */
+      deContree(TOUT.contree).map((t) =>
         fetch(urlGraphe(BASE, t)).then((r) => {
           if (!r.ok) throw new Error(String(r.status));
           return r.json() as Promise<Graphe>;

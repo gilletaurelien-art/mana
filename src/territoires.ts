@@ -56,16 +56,56 @@ export interface Territoire {
   avecArticle: string;
   /** [ouest, sud, est, nord] — l'emprise moissonnée */
   emprise: [number, number, number, number];
+  /**
+   * 🔴 LA CONTRÉE — ajoutée le 14/11/2026, avec le premier territoire hors de
+   *    Bretagne. Sans elle, trois choses cassaient d'un coup, et aucune
+   *    bruyamment :
+   *      · `TOUT.emprise` devenait le rectangle englobant la Bretagne ET le
+   *        Luxembourg — `Territoire2030` y centre sa carte au zoom 10, donc
+   *        une carte vide au milieu de la France ;
+   *      · `/carte` fait `TERRITOIRES.map(fetch)` puis `fusionnerGraphes` : il
+   *        aurait téléchargé 2,9 Mo de plus pour coudre un réseau qui ne
+   *        touche pas les autres ;
+   *      · la couture (`COUTURE`) départage deux territoires qui se
+   *        recouvrent — elle n'a aucun sens entre deux pays.
+   * ⭐ Une liste qui grandit en largeur a besoin qu'on dise ce qui va
+   *    ENSEMBLE. « Tous les territoires » n'était une réponse juste que tant
+   *    qu'ils étaient voisins.
+   */
+  contree: string;
+  /**
+   * Où le graphe est servi, quand ce n'est pas la base par défaut.
+   * ⚠️ Les graphes bretons vivent sous `/bretagne/g`, ceux d'ailleurs sous
+   *    `/monde/g` — un graphe du Luxembourg servi depuis une URL qui dit
+   *    « bretagne » serait un faux témoin dans l'adresse elle-même.
+   */
+  base?: string;
 }
 
 export const TERRITOIRES: Territoire[] = [
   { slug: "presquile", nom: "Presqu'île de Crozon",
-    avecArticle: "la presqu'île de Crozon",
+    avecArticle: "la presqu'île de Crozon", contree: "bretagne",
     emprise: [-4.6240, 48.1673, -4.2554, 48.3374] },
   { slug: "aulne", nom: "Aulne maritime",
-    avecArticle: "l'Aulne maritime",
+    avecArticle: "l'Aulne maritime", contree: "bretagne",
     emprise: [-4.3200, 48.1673, -4.0210, 48.3520] },
+  /* ⭐ LE PREMIER TERRITOIRE HORS DE BRETAGNE — 14/11/2026. La « petite Suisse
+     luxembourgeoise » : 15 970 arêtes, 335 lieux, 0,82 Mo gzip — la taille
+     EXACTE de la presqu'île (16 210 arêtes, 0,88 Mo). ⭐ Ce n'est pas le pays
+     qui est l'unité, c'est le territoire : le Luxembourg entier pesait
+     10,05 Mo, onze fois trop.
+     ⚠️ Et deux mesures disent la qualité de la donnée étrangère : 2 lieux sur
+     337 à plus de 150 m d'un chemin (0,6 %), contre 18 % relevés en Bretagne
+     le 2/11 ; et 0 trait de côte, ce qui est exact pour un pays enclavé. */
+  { slug: "mullerthal", nom: "Mullerthal",
+    avecArticle: "le Mullerthal", contree: "luxembourg",
+    base: "https://mana.bzh/monde/g",
+    emprise: [6.1500, 49.7500, 6.4000, 49.9200] },
 ];
+
+/** Les territoires d'une contrée — ceux qui vont ensemble. */
+export const deContree = (contree: string): Territoire[] =>
+  TERRITOIRES.filter((t) => t.contree === contree);
 
 /**
  * ⚠️ LA COUTURE EST AU MILIEU DU RECOUVREMENT, pas à son bord. Posée à
@@ -90,15 +130,24 @@ export const DEFAUT = TERRITOIRES[0];
  * ⭐ `slug: "tout"` ne sert PAS à `urlGraphe` — un seul appel ne suffit plus
  *    à charger ce territoire, le chargeur le sait et prend un autre chemin.
  */
+/* ⚠️ L'UNION D'UNE CONTRÉE, PAS DE TOUS LES TERRITOIRES — 14/11/2026. Elle
+   portait `...TERRITOIRES.map(...)` quand ils étaient tous bretons, et la
+   phrase était juste. Depuis le Mullerthal, elle rendrait un rectangle
+   couvrant la Bretagne, la moitié de la France et le Luxembourg — et
+   `Territoire2030` y centre sa carte. ⭐ Le défaut n'aurait pas levé
+   d'erreur : il aurait affiché un champ vide quelque part vers Orléans. */
+const DE_CHEZ_NOUS = deContree(DEFAUT.contree);
+
 export const TOUT: Territoire = {
   slug: "tout",
   nom: "Le territoire",
   avecArticle: "le territoire",
+  contree: DEFAUT.contree,
   emprise: [
-    Math.min(...TERRITOIRES.map((t) => t.emprise[0])),
-    Math.min(...TERRITOIRES.map((t) => t.emprise[1])),
-    Math.max(...TERRITOIRES.map((t) => t.emprise[2])),
-    Math.max(...TERRITOIRES.map((t) => t.emprise[3])),
+    Math.min(...DE_CHEZ_NOUS.map((t) => t.emprise[0])),
+    Math.min(...DE_CHEZ_NOUS.map((t) => t.emprise[1])),
+    Math.max(...DE_CHEZ_NOUS.map((t) => t.emprise[2])),
+    Math.max(...DE_CHEZ_NOUS.map((t) => t.emprise[3])),
   ],
 };
 
@@ -109,12 +158,24 @@ export function territoireDe(lon: number, lat: number): Territoire | null {
   );
   if (dedans.length === 0) return null;
   if (dedans.length === 1) return dedans[0];
-  // dans le recouvrement : la couture tranche
-  return lon < COUTURE ? TERRITOIRES[0] : TERRITOIRES[1];
+  /* ⚠️ LA COUTURE NE DÉPARTAGE QUE LES VOISINS. Elle a été mesurée entre la
+     presqu'île et l'Aulne, deux emprises qui se recouvrent de 4,5 km. Entre
+     deux contrées il n'y a pas de recouvrement — et s'il y en avait un, une
+     longitude bretonne n'aurait rien à y dire. On ne l'applique donc qu'à
+     l'intérieur d'une contrée, et on prend la première ailleurs. */
+  const memeContree = dedans.every((t) => t.contree === dedans[0].contree);
+  if (!memeContree) return dedans[0];
+  const couture = deContree(dedans[0].contree);
+  if (couture.length < 2) return dedans[0];
+  return lon < COUTURE ? couture[0] : couture[1];
 }
 
 /** L'URL du graphe d'un territoire, sous la base donnée. */
-export const urlGraphe = (base: string, t: Territoire) => `${base}/${t.slug}.json`;
+/* ⭐ La base du TERRITOIRE gagne sur celle passée en argument : un graphe sait
+   où il est servi, l'appelant ne le sait pas forcément. Rétrocompatible — un
+   territoire sans `base` suit l'argument, comme avant. */
+export const urlGraphe = (base: string, t: Territoire) =>
+  `${t.base ?? base}/${t.slug}.json`;
 
 /**
  * D'OÙ L'ON PART, QUAND PLUSIEURS SOURCES LE DISENT — et c'est ce point qui
