@@ -4354,3 +4354,19 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
 [data-visage="home"] .monde-fond > .monde-plan {
   position: absolute; inset: 0; width: 100%; height: 100%;
 }
+
+
+/* ══ LA RECHERCHE ET LES PORTES DESCENDENT — 14/11/2026 ══════════════════
+   🔴 « Place la barre de saisie + les 2 boutons au-dessus de la bottom bar »
+      (Aurélien). Elles étaient à 185 px du haut, sous la devise, et laissaient
+      550 px de carte vides en dessous ; le pouce, lui, vit en bas.
+   ⭐ `margin-top: auto` dans la colonne flex de `.inv-contenu` — exactement le
+      geste déjà employé par `.inv-balade` le 1/11, et pour la même raison :
+      le bloc mange l'espace libre AU-DESSUS et vient se poser juste au-dessus
+      de la barre, dont la réserve est déjà prise par le rembourrage.
+   ⚠️ `auto` plutôt qu'une position absolue : la recherche reste DANS le flux,
+      donc la liste des résultats la pousse vers le haut au lieu de passer
+      sous la barre. Une liste qui déborde sous une barre flottante est le
+      genre de défaut qu'on ne voit qu'en tapant trois lettres.
+   ⛔ Borné à manahome : mana.bzh garde sa mise en page. */
+[data-visage="home"] .inv-contenu > .rech { margin-top: auto; }

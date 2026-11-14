@@ -91,7 +91,13 @@ export function Invitation({ base }: { base: string }) {
               ⚠️ Le `h1` et l'ancre `inv-titre` ne bougent pas : c'est le SEUL
                  titre de l'accueil, et la section est désignée par lui. */}
           <h1 id="inv-titre" className="inv-devise">
-            {avecOffice() ? "Au cœur de la Bretagne" : "Partout où l’on marche"}
+            {/* 🔄 « Partout où l'on marche » → « home.org », Aurélien le
+                14/11/2026 au soir. ⭐ La première était MA proposition, écrite
+                faute de mieux et marquée comme telle ; celle-ci est son mot.
+                ⚠️ Et c'est le NOM du site, pas une phrase : la devise bretonne
+                   dit un lieu, celle-ci dit une adresse. Les deux tiennent le
+                   même rôle — le seul `h1` de l'accueil. */}
+            {avecOffice() ? "Au cœur de la Bretagne" : "home.org"}
           </h1>
         </header>
 
