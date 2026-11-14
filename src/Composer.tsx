@@ -741,6 +741,23 @@ export function Composer() {
   );
   /** Le lieu choisi qu'aucun chemin n'approche — refusé AVANT tout calcul. */
   const [refusDepart, setRefusDepart] = useState<{ nom: string; a: Accroche } | null>(null);
+  /**
+   * 🔴 D'OÙ L'ON VIENT — gardé, parce que c'est la seule issue du cul-de-sac.
+   *
+   *    « Repartir » chaîne A → B et EXCLUT A des propositions depuis B : juste,
+   *    parce que « revenir sur ses pas » n'est pas une découverte. Mais quand
+   *    B n'a rien d'autre autour, l'écran a écarté le SEUL endroit qu'il
+   *    savait atteindre, et il ne disait rien.
+   * ⭐ Mesuré le 14/11 sur 296 chaînages par territoire : l'arrivée est sans
+   *    proposition 1 fois (0,3 %) — et dans 1 cas sur 1, des DEUX côtés, le
+   *    seul candidat était précisément le lieu qu'on venait de quitter.
+   *    Rare, mais jamais ambigu : quand ça arrive, la réponse est toujours la
+   *    même. ⛔ Arbitrage d'Aurélien : « côté utilisateur, si pas de lieu
+   *    remarquable autour = revenir ».
+   */
+  const [venantDe, setVenantDe] = useState<number | null>(null);
+
+
 
   /** Remettre à zéro ce qui dépend du départ — jamais à moitié. */
   const oublier = () => {
@@ -780,6 +797,7 @@ export function Composer() {
       return;
     }
     setRefusDepart(null);
+    setVenantDe(sauf ?? null);
     const t0 = performance.now();
     setDepart({ a, nom, g });
     const p = propositionsAutour(graphe, ix, a, spots, positions, accroches, { sauf });
@@ -965,6 +983,8 @@ export function Composer() {
    */
   const lesProps: Proposition<Lieu>[] | null =
     props && props.de === territoire.slug ? props.liste : null;
+
+
 
   const prop = lesProps?.[choisie] ?? null;
   const laBoucle: Boucle | null =
@@ -1752,6 +1772,58 @@ export function Composer() {
                       </ul>
                     )}
                     {motGps && <p className="cp-depart-mot">{motGps}</p>}
+                    {/* 🔴 LE CUL-DE-SAC ÉTAIT UN ÉCRAN VIDE — mesuré le 14/11
+                        sur un gabarit mobile réel (375 × 812), au départ
+                        « Fort de Crozon » :
+
+                            hauteur de l'écran             812 px
+                            le panneau d'explication à     724 px
+                            le bouton de sortie à          995 px — hors cadre
+
+                        L'explication ET l'issue existaient ; personne ne les
+                        voyait. ⭐ C'est « un repli qui s'affiche en taille nulle
+                        est un repli qui n'existe pas », sous une autre forme :
+                        ici il s'affiche en pleine taille, hors du cadre.
+
+                        ⛔ DEUX TENTATIVES AVANT CELLE-CI, ET LEURS ÉCHECS SONT
+                           LA RAISON DE CE PLACEMENT :
+                        1. faire défiler la page — la carte se met en page APRÈS
+                           l'effet et repousse le panneau ; le bouton est
+                           retombé à 995 px. Une rustine qui dépend d'une course
+                           de rendu n'en est pas une.
+                        2. la poser dans l'encart du BAS, avec les propositions —
+                           mais quand il n'y a rien à proposer, la CARTE elle-même
+                           n'est pas rendue : `.cp-scene` n'a plus que ses deux
+                           flottants, l'ancrage `bottom` n'a rien sur quoi
+                           s'appuyer, et la carte-réponse remontait sous la barre
+                           de recherche (mesuré : top 35, par-dessus le champ).
+                        ⭐ L'encart du HAUT, lui, est ancré à `top: 0` : il ne
+                           dépend pas de ce que la scène contient. C'est le seul
+                           placement qui tient dans les DEUX cas. */}
+                    {depart && lesProps && lesProps.length === 0 && (
+                      <section className="cp-rien">
+                        <p className="cp-rien-mot">
+                          Rien à proposer depuis {depart.nom}.
+                        </p>
+                        {venantDe !== null && spots[venantDe] ? (
+                          <button
+                            type="button"
+                            className="cp-revenir"
+                            onClick={() => choisirSpot(venantDe)}
+                          >
+                            Revenir vers {spots[venantDe].n}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className="cp-revenir"
+                            onClick={() => { setDepart(null); setProps(null); setMot(""); }}
+                          >
+                            Choisir un autre départ
+                          </button>
+                        )}
+                      </section>
+                    )}
                     {/* ⭐ ON DIT D'OÙ VIENNENT LES LIEUX QUAND CE N'EST PAS LA
                         SOURCE HABITUELLE. Hors de Bretagne, l'inventaire des
                         sites remarquables n'existe pas encore : la liste vient
@@ -1909,8 +1981,13 @@ export function Composer() {
                       la presqu'île sont à moins de 500 m à pied. Les proposer
                       serait proposer de traverser un parking. */}
                   MANA ne propose pas de promenade de moins de {AUTOUR_MIN_M} m :
-                  en deçà, ce n'est pas une promenade. Essayez un lieu voisin.
+                  en deçà, ce n'est pas une promenade.
                 </p>
+                {/* ⚠️ L'ISSUE N'EST PAS ICI, ELLE EST DANS L'ENCART AU-DESSUS
+                    de la carte — le seul endroit toujours visible. Ce panneau
+                    garde l'EXPLICATION ; dupliquer le bouton donnerait deux
+                    fois la même action à deux endroits, et celui qu'on voit
+                    en premier n'est pas celui-ci. */}
               </>
             )}
           </section>

@@ -3298,6 +3298,17 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
 /* ── C · les trois propositions ─────────────────────────────────────────── */
 .cp-propositions { margin-bottom: var(--sp-2); }
 
+/* LE CUL-DE-SAC, DIT LÀ OÙ ON REGARDE — 14/11/2026.
+   ⭐ Même matière que les propositions qu'il remplace : c'est la réponse de
+      l'écran au même geste, elle doit occuper la même place. */
+.cp-rien {
+  margin-bottom: var(--sp-2); padding: 14px 16px;
+  background: rgb(255 255 255 / 92%);
+  border: 1.5px solid rgb(25 43 67 / 12%); border-radius: var(--r-m);
+}
+.cp-rien-mot { margin: 0 0 10px; font-weight: 600; color: var(--nuit); }
+.cp-rien .cp-revenir { margin-top: 0; }
+
 /* 🔴 TROIS PETITS BOUTONS ALIGNÉS, PICTO AU-DESSUS DU NOM — 3/11/2026,
    demande du fondateur. Les grandes cartes couchées (tracé + fiche) tenaient
    ~150 px CHACUNE ; trois boutons de 76 px tiennent ENSEMBLE sur une largeur
@@ -3521,6 +3532,21 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
   cursor: pointer;
 }
 .cp-pin:hover { border-color: var(--action); }
+
+/* L'ISSUE DU CUL-DE-SAC — 14/11/2026.
+   ⭐ Il est DANS le panneau de refus, pas dans la barre d'outils : c'est la
+      suite de la phrase qu'on vient de lire, pas une fonction de l'écran.
+   ⚠️ Pleine largeur et hauteur de doigt (44 px) : c'est souvent la seule
+      chose à faire sur cet écran, et on y est dehors, en marchant. */
+.cp-revenir {
+  display: block; width: 100%; min-height: 44px;
+  margin-top: 14px; padding: 10px 16px;
+  font: inherit; font-weight: 600; color: var(--nuit);
+  background: rgb(255 255 255 / 92%);
+  border: 1.5px solid rgb(25 43 67 / 18%); border-radius: var(--r-m);
+  cursor: pointer; text-align: center;
+}
+.cp-revenir:hover { border-color: var(--action); }
 .cp-pin .cp-picto { width: 22px; height: 22px; }
 .cp-ligne-depart .cp-depart-champ {
   flex: 1 1 auto; min-width: 0; min-height: 52px;

@@ -48,6 +48,22 @@ const LIBELLE: Record<string, string> = {
   lieu_de_culte: "Édifice religieux", moulin: "Moulin", phare: "Phare",
   grotte: "Grotte", source: "Source", cascade: "Cascade", ruine: "Ruines",
 };
+/**
+ * ⚠️ LE CODE SANS SES COMMENTAIRES — et ce n'est pas du confort.
+ *
+ * 🔴 Vécu dans ce fichier même, le 14/11 : le garde « l'ancienne consigne
+ *    sans moyen est partie » a échoué sur la CITATION de cette consigne dans
+ *    le commentaire qui explique son retrait. Le texte retiré de l'écran
+ *    reste dans le dépôt, à dessein — c'est ainsi qu'on sait pourquoi il est
+ *    parti.
+ * ⭐ Un grep sur un fichier entier confond ce que le code FAIT et ce que les
+ *    commentaires RACONTENT. Ce dépôt l'a déjà payé ailleurs (une adresse de
+ *    serveur citée dans le commentaire de sa propre correction, trouvée par
+ *    grep et prise pour la vérité).
+ */
+const sansCommentaires = (src: string) =>
+  src.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
+
 const R = (p: string) => resolve(__dirname, "..", p);
 const PRESQUILE = R("public/bretagne/g/presquile.json");
 
@@ -110,12 +126,69 @@ describe("les refus qui atteignent l'écran", () => {
     expect([...vus.keys()].sort()).toEqual(["aucune-boucle", "ok"]);
   }, 60_000);
 
+  it.skipIf(!existsSync(PRESQUILE))(
+    "🔴 REVENIR ABOUTIT TOUJOURS — c'est ce que le bouton promet", () => {
+    /* ⛔ LA PROMESSE : au bout d'un chaînage A → B sans rien autour de B, le
+       bouton « Revenir vers A » relance les propositions SANS l'exclusion.
+       Si A n'était pas un candidat valide depuis B, le bouton mènerait à un
+       second cul-de-sac — pire que le premier, parce qu'on y aurait cru.
+       ⭐ Ça tient pour une raison de géométrie, pas de chance : B a été
+          proposé depuis A, donc le chemin A→B est dans la bande
+          600–4 000 m ; le chemin B→A a exactement la même longueur, donc A
+          est dans la bande depuis B. La bande est SYMÉTRIQUE.
+       ⚠️ Ce test le vérifie sur la vraie donnée plutôt que de se fier au
+          raisonnement — un raisonnement juste sur une bande symétrique
+          deviendrait faux le jour où le filtre tiendrait compte du sens de
+          marche (montée, marée, sens interdit). */
+    const g = JSON.parse(readFileSync(PRESQUILE, "utf8")) as Graphe;
+    const ix = indexer(g);
+    const src = lieuxDuTerritoire(INV, g, LIBELLE)!;
+    const spots = src.lieux;
+    const positions = spots.map((l) => l.g as readonly [number, number]);
+    const accroches = accrocherTous(g, ix, positions, { ecartSiLoin: false });
+    const partables = spots.map((_, i) => i).filter((i) => accroche(accroches[i]));
+    const pas = Math.max(1, Math.floor(partables.length / 30));
+    const ech = partables.filter((_, k) => k % pas === 0).slice(0, 30);
+
+    let paires = 0, sansRetour = 0;
+    const fautifs: string[] = [];
+    for (const A of ech) {
+      const depuisA = propositionsAutour(g, ix, accroches[A], spots, positions, accroches, {});
+      for (const p of depuisA ?? []) {
+        const B = p.i;
+        // ⭐ Exactement ce que fait le bouton : proposer depuis B, SANS `sauf`.
+        const retour = propositionsAutour(g, ix, accroches[B], spots, positions, accroches, {});
+        paires++;
+        if (!retour?.length) { sansRetour++; if (fautifs.length < 3) fautifs.push(`${spots[A].n} → ${spots[B].n}`); }
+      }
+    }
+    expect(paires, "il faut de vraies paires pour que ce test dise quelque chose")
+      .toBeGreaterThan(40);
+    expect(sansRetour,
+      `« Revenir » mènerait à un second cul-de-sac : ${fautifs.join(" · ")}`)
+      .toBe(0);
+  }, 60_000);
+
+  it("⛔ le panneau du cul-de-sac n'est plus un cul-de-sac", () => {
+    /* 🔴 Il énonçait un fait puis « Essayez un lieu voisin » — une consigne
+       sans moyen. Arbitrage d'Aurélien, 14/11 : « côté utilisateur, si pas de
+       lieu remarquable autour = revenir ». Mesuré : 18,5 % des départs
+       possibles de la presqu'île n'ont aucune proposition. */
+    const compo = sansCommentaires(readFileSync(resolve(__dirname, "Composer.tsx"), "utf8"));
+    expect(compo, "le retour vers le lieu qu'on quitte n'est pas offert")
+      .toMatch(/Revenir vers \{spots\[venantDe\]\.n\}/);
+    expect(compo, "sans origine, l'écran ne rend pas la main")
+      .toMatch(/Choisir un autre départ/);
+    expect(compo, "l'ancienne consigne sans moyen est restée")
+      .not.toMatch(/Essayez un lieu voisin/);
+  });
+
   it("⚠️ la phrase de « ferme » parle de l'ARRIVÉE, pas du retour", () => {
     // 🔴 Elle disait « le chemin du RETOUR est fermé ». `composerVers` rend
     //    « ferme » quand les arêtes près du LIEU VISÉ sont toutes sous arrêté.
     //    Le moteur le documente ; l'écran disait le contraire. Elle ne
     //    s'affiche jamais aujourd'hui — c'est pour ça qu'elle a pu mentir.
-    const compo = readFileSync(resolve(__dirname, "Composer.tsx"), "utf8");
+    const compo = sansCommentaires(readFileSync(resolve(__dirname, "Composer.tsx"), "utf8"));
     expect(compo).not.toMatch(/chemin du retour est fermé/);
     expect(compo).toMatch(/qui y mènent sont fermés par arrêté/);
   });
