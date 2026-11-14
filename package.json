@@ -13,7 +13,8 @@
     "carte:style": "node scripts/carte-style.mjs",
     "carte:verifier": "node scripts/carte-style.mjs --verifier && node scripts/carte-ortho.mjs --verifier",
     "carte:ortho": "node scripts/carte-ortho.mjs",
-    "deploy:bzh": "./deploiement/deployer-mana-bzh.sh"
+    "deploy:bzh": "./deploiement/deployer-mana-bzh.sh",
+    "build:manahome": "MANA_BASE=/balades/ VITE_GRAPHE_BASE=https://mana.bzh/bretagne/g vite build && rm -rf site/bretagne site/monde"
   },
   "dependencies": {
     "maplibre-gl": "^4.7.1",

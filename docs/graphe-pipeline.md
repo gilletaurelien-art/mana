@@ -49,6 +49,40 @@ c'est ce qui le rend inoffensif.
 ⚠️ `pyosmium` n'est pas dans `package.json` — c'est du Python. Un
 environnement jetable suffit : `python3 -m venv .venv && .venv/bin/pip install osmium`.
 
+## L'app chez MANAhome — 14/11/2026
+
+Décision d'Aurélien : « l'app de promenades déménage chez manahome ». Elle tourne
+désormais à **https://manahome.org/balades/**, en plus de mana.bzh.
+
+```bash
+npm run build:manahome     # MANA_BASE=/balades/ + graphes en absolu chez mana.bzh
+rsync -az --rsync-path="sudo rsync" site/ debian@<ks5>:/srv/www-manahome/balades/
+```
+
+⭐ **UNE BASE, PAS LA RACINE.** Les deux applications se disputent trois fichiers
+à la racine — `index.html`, `llms.txt`, `robots.txt`. Sous `/balades/`, zéro
+collision, et rien de ce que manahome sert déjà ne bouge. La promotion à la
+racine est une décision de produit, pas un prérequis technique.
+
+⛔ **LE BLOC CADDY DOIT PRÉCÉDER LE REPLI SPA de manahome.** Mesuré avant la
+pose : `/balades/` rendait 200 et `/balades/composer` rendait **404 avec le
+titre « MANAhome — le territoire, relevé pays par pays »** — un 404 qui affiche
+le mauvais site.
+
+⚠️ **LES GRAPHES NE DÉMÉNAGENT PAS.** Ils restent servis par mana.bzh
+(`/bretagne/g`, `/monde/g`) et sont lus en **cross-origin** : la liste blanche
+CORS de ces deux blocs contient déjà `manahome.org`. Vérifié depuis la page —
+`fetch` rend 200, `type: "cors"`, 15 970 arêtes et 335 lieux. ⭐ Un graphe pèse
+1 à 3 Mo : le servir deux fois serait le payer deux fois, et les deux copies
+divergeraient au premier remoissonnage.
+
+🔴 **ET LE TITRE MENT MAINTENANT À MOITIÉ.** Les pages servies chez manahome
+annoncent « MANA.bzh — Promenades & découvertes en Bretagne ». C'est juste sur
+mana.bzh et faux chez manahome — et ça le restera tant que les deux servent la
+même app. ⭐ Un déménagement à moitié fait est une vérité à moitié dite : le
+titre ne pourra être juste des deux côtés qu'une fois le départ de mana.bzh
+tranché.
+
 ## Les emprises relevées
 
 | territoire | emprise | arêtes | km | lieux | gzip |
