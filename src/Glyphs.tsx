@@ -216,6 +216,30 @@ export function GlyphSablier({ size = 24 }: GlyphProps) {
 }
 
 /**
+ * CONTRIBUTION — « ce lieu manque, ou il est faux ».
+ *
+ * 🔴 15/11/2026, Aurélien : la deuxième colonne de la barre cesse d'être les
+ *    hébergements (ils sont devenus un calque de la carte) et devient une
+ *    porte pour CONTRIBUER — ajouter ou corriger un lieu, et joindre une
+ *    photo.
+ *
+ * ⭐ UNE ÉPINGLE AVEC UN PLUS, ET PAS UN CRAYON. Un crayon dit « écrire » —
+ *    il irait aussi bien à un formulaire de contact ou à un carnet. Ce qu'on
+ *    ouvre ici agit sur la CARTE : la forme doit donc être celle des
+ *    épingles qu'on voit dessus, plus le geste qu'on vient y faire.
+ * ⚠️ Le plus est posé DANS la tête de l'épingle, pas à côté : collé au
+ *    flanc, il se lit comme deux icônes à 24 px, et la barre en porte cinq.
+ */
+export function GlyphContribution({ size = 24 }: GlyphProps) {
+  return (
+    <svg {...base} width={size} height={size} className="m-icone" aria-hidden="true">
+      <path d="M12 21.2c3.6-4.1 5.5-7.2 5.5-9.6a5.5 5.5 0 1 0-11 0c0 2.4 1.9 5.5 5.5 9.6z" />
+      <path d="M12 8.6v5.4M9.3 11.3h5.4" />
+    </svg>
+  );
+}
+
+/**
  * ÉTINCELLES — « ce qu'il y a à découvrir ».
  *
  * ⭐ TROIS ÉCLATS, DE TAILLES DIFFÉRENTES. Trois identiques forment un motif

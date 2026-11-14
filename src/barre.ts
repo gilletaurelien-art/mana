@@ -28,7 +28,7 @@ export type Entree = {
    *  Les passerelles existantes sont des CHEMINS de mana.love ; manatimebank
    *  est un site à part, et `${B}${chemin}` en ferait une adresse morte. */
   readonly externe?: boolean;
-  readonly glyphe: "carte" | "etincelles" | "marque" | "radio" | "reglages" | "sablier";
+  readonly glyphe: "carte" | "contribution" | "etincelles" | "marque" | "radio" | "reglages" | "sablier";
   readonly libelle: string;
   /** Le mot est-il écrit à l'écran, ou réservé aux lecteurs d'écran ? */
   readonly motVisible?: true;
@@ -90,9 +90,22 @@ export function entreesBarre(v: Visage): Entree[] {
          173 pages pays de manahome comptent déjà les hébergements par pays,
          et c'est une autre question. ⛔ D'où « autour de moi » et pas un
          index : le bouton remplacé montrait ce qui est PRÈS. */
+      /* 🔴 CHEZ MANAHOME, CETTE COLONNE N'EST PLUS LES HÉBERGEMENTS —
+         Aurélien, 15/11/2026 : « on va ajouter les hébergements dans la carte
+         principale, et on va supprimer la fonction dans la bottom. À la place
+         on va ajouter une fonction de contribution ».
+         ⭐ ET C'EST LA MÊME LOGIQUE QUE LE 14/11, POUSSÉE D'UN CRAN : cette
+            colonne avait remplacé les balades de l'Office parce que « ce
+            qu'il y a autour de vous » appartient à la carte. Les hébergements
+            y sont maintenant pour de bon — un calque, sous les sites
+            remarquables — donc le bouton qui y menait doublait un calque au
+            lieu d'ouvrir un ailleurs.
+         ⚠️ `/hebergements` RESTE SERVI : l'écran n'est pas supprimé ici, il
+            perd sa porte. ⏳ À trancher — une page que plus rien ne désigne
+            est un fantôme, et ce dépôt les traque. */
       : home
-      ? { clef: "hebergements", chemin: "/hebergements", glyphe: "etincelles",
-          libelle: "Où dormir autour de moi" }
+      ? { clef: "contribuer", chemin: "/contribuer", glyphe: "contribution",
+          libelle: "Contribuer à la carte" }
       : praticable("chat")
       ? { clef: "chat", chemin: PONTS.chat.chemin, glyphe: "etincelles",
           libelle: "Déesses", motVisible: true }

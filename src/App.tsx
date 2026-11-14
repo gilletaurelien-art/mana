@@ -1,7 +1,7 @@
 import { useState, lazy, Suspense } from "react";
 import { useEffect, useRef, useLayoutEffect } from "react";
 import { usePath, baseUrl, routePromenade, routeEnChemin, routeRencontres, routeComplet } from "./router";
-import { GlyphRadio, GlyphEtincelles, GlyphReglages, GlyphNavigation, GlyphSecurite, GlyphDecouverte, GlyphCarte, GlyphSentier, GlyphSablier } from "./Glyphs";
+import { GlyphRadio, GlyphEtincelles, GlyphReglages, GlyphNavigation, GlyphSecurite, GlyphDecouverte, GlyphCarte, GlyphSentier, GlyphSablier, GlyphContribution } from "./Glyphs";
 import { Invitation } from "./Invitation";
 import { LApplication } from "./LApplication";
 import { avecOffice, visage, signature, titrePourLHote, poserCanonique } from "./visage";
@@ -10,6 +10,7 @@ import { carteEnFond, CARTE_EN_ACCUEIL } from "./fond-du-monde";
 import { couper, ecouterPoste, etatPoste, lire } from "./poste";
 import { Reglages } from "./Reglages";
 import { Hebergements } from "./Hebergements";
+import { Contribuer } from "./Contribuer";
 const CarteMonde = lazy(() => import("./CarteMonde").then((m) => ({ default: m.CarteMonde })));
 import { EcranTerritoire } from "./EcranTerritoire";
 import { Composer } from "./Composer";
@@ -93,6 +94,7 @@ export const TITRES: Record<string, string> = {
      randonnée Crozon ». Il nomme le territoire, parce qu'une page qui ne dit
      pas OÙ elle s'applique ne répond à personne. */
   "/l-application": "Ce que fait l'application — promenades, hors ligne et sécurité en presqu'île de Crozon — MANA.bzh",
+  "/contribuer": "Contribuer à la carte — ajouter ou corriger un lieu — MANA.bzh",
   "/hebergements": "Où dormir autour de moi — MANA.bzh",
   "/reglages": "Réglages, sources et mentions — MANA.bzh",
   "/espace": "Mon espace — MANA.bzh",
@@ -352,6 +354,7 @@ export default function App() {
                   {e.glyphe === "radio" && <GlyphRadio />}
                   {e.glyphe === "reglages" && <GlyphReglages />}
                   {e.glyphe === "sablier" && <GlyphSablier />}
+                  {e.glyphe === "contribution" && <GlyphContribution />}
                 </>
               );
               /* ⭐ L'ENTRÉE QUI COMMUTE EST UN BOUTON, PAS UN LIEN DÉTOURNÉ.
@@ -483,6 +486,12 @@ export default function App() {
         </Suspense>
       ) : path === "/hebergements" ? (
         <Hebergements />
+      ) : path === "/contribuer" ? (
+        /* 🔴 15/11/2026 : la deuxième colonne de la barre de MANAhome devient
+           une porte de contribution — « ajouter / corriger un lieu sur la
+           carte + ajouter une photo ». Voir `Contribuer.tsx` pour ce que cet
+           écran promet, et surtout pour ce qu'il refuse de promettre. */
+        <Contribuer />
       ) : path === "/reglages" ? (
         <Reglages base={B} />
       ) : path === "/mentions-legales" ? (

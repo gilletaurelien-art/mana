@@ -4413,3 +4413,29 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
       genre de défaut qu'on ne voit qu'en tapant trois lettres.
    ⛔ Borné à manahome : mana.bzh garde sa mise en page. */
 [data-visage="home"] .inv-contenu > .rech { margin-top: auto; }
+
+
+/* ══ CONTRIBUER À LA CARTE — 15/11/2026 ═══════════════════════════════════
+   ⭐ AUCUNE MATIÈRE NOUVELLE. Les gestes empruntent `.ot-filtre` (les mêmes
+      pastilles que le filtre par genre de la carte), le bouton d'envoi
+      `.btn-primary`, la position `.m-action-fine`. Un écran qui invente sa
+      propre famille de contrôles apprend un second vocabulaire à qui vient
+      d'en apprendre un — et il diverge à la première retouche de charte. */
+.contrib-gestes { display: flex; flex-wrap: wrap; gap: var(--sp-1); margin: var(--sp-2) 0 0; }
+.contrib-aide { font-size: var(--t-xs); opacity: .8; margin: var(--sp-1) 0 var(--sp-3); }
+.contrib-champ { display: block; margin: 0 0 var(--sp-3); }
+.contrib-label { display: block; font-size: var(--t-xs); font-weight: 600; margin: 0 0 4px; }
+.contrib-label em { font-weight: 400; font-style: normal; opacity: .7; }
+/* ⚠️ `font: inherit` : sans lui, un `textarea` prend la police du système et
+   l'écran se met à parler d'une seconde voix au milieu d'une phrase. */
+.contrib-champ textarea,
+.contrib-champ input {
+  width: 100%; box-sizing: border-box; font: inherit; font-size: var(--t-s);
+  padding: 10px 12px; border-radius: var(--r-m);
+  border: 1px solid var(--bulle-trait);
+  background: color-mix(in srgb, var(--bulle-unie) 92%, transparent);
+  color: inherit; resize: vertical;
+}
+.contrib-position { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-1); margin: 0 0 var(--sp-2); }
+.contrib-note { font-size: var(--t-xs); opacity: .78; line-height: 1.5; margin: var(--sp-1) 0; }
+.page-contribuer .btn-primary { margin: var(--sp-2) 0 var(--sp-1); display: inline-block; }

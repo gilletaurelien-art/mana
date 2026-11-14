@@ -29,6 +29,7 @@
  */
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { TOUT, deContree, territoireDe, urlGraphe } from "./territoires";
+import { chargerHebergements, direLeType, type Hebergement } from "./hebergements-du-territoire";
 import { chargerOT, type ItineraireOT } from "./ot";
 import { chargerLieux, lienWiki, type Inventaire, type Lieu } from "./lieux";
 import { chercher, type Resultat } from "./recherche";
@@ -232,8 +233,17 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
    */
   const [propChoisie, setPropChoisie] = useState<number | null>(null);
   const [calquesOuverts, setCalquesOuverts] = useState(false);
+  /* 🔴 `hebergements` NAÎT ÉTEINT — 15/11/2026, demande d'Aurélien : « ajoute
+     l'option hébergements sous les sites remarquables ».
+     ⭐ Et c'est le seul calque dans ce cas, pour une raison qui se mesure :
+        les hébergements vivent dans des fichiers SÉPARÉS (un par territoire)
+        qu'il faut aller chercher. Les allumer d'office ferait payer ce
+        téléchargement à tous ceux qui ouvrent la carte pour marcher — la
+        même règle que `ot.json`, qu'on ne charge pas sur un hôte qui n'en a
+        rien à faire. Ils arrivent au premier coche. */
   const [calques, setCalques] = useState({
     lieux: true, promenades: true, balises: true, sites: true,
+    hebergements: false,
   });
 
   const [moi, setMoi] = useState<[number, number] | null>(null);
@@ -325,6 +335,81 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
     if (!avecOffice()) { setOt([]); return; }
     chargerOT().then((r) => setOt(r.itineraires)).catch(() => setOt([]));
   }, []);
+
+  /* ── LES HÉBERGEMENTS ─────────────────────────────────────────────────
+     🔴 15/11/2026 : « on va ajouter les hébergements dans la carte
+        principale ». Ils y rejoignent les sites remarquables comme un
+        calque de plus — la même carte, une couche en plus, pas un écran.
+     ⭐ CHARGÉS AU PREMIER COCHE, pas au montage : voir la note sur l'état
+        des calques. Et UNE SEULE FOIS — `charge` garde la porte, sinon
+        chaque décoche/recoche relancerait deux requêtes.
+     ⚠️ Deux fichiers pour un territoire affiché (la presqu'île ET l'Aulne,
+        dont les emprises se recouvrent de 4,5 km) : la fusion est dans
+        `hebergements-du-territoire.ts`, partagée avec le script d'export. */
+  const [heb, setHeb] = useState<Hebergement[]>([]);
+  const [hebManquants, setHebManquants] = useState<string[]>([]);
+  /* ⚠️ UN `ref` NE REDESSINE PAS, un état si — et il en faut un ÉTAT ici :
+     « j'attends » et « j'ai fini et il n'y a rien » s'affichent
+     différemment, donc la différence doit traverser le rendu. Le `ref`
+     garde la porte du chargement, l'état porte ce qu'on en dit. */
+  const [hebRendu, setHebRendu] = useState(false);
+  const hebCharge = useRef(false);
+  useEffect(() => {
+    if (!calques.hebergements || hebCharge.current) return;
+    hebCharge.current = true;
+    chargerHebergements(BASE, deContree(TOUT.contree)).then((r) => {
+      setHeb(r.hebergements);
+      setHebManquants(r.manquants);
+      setHebRendu(true);
+    });
+  }, [calques.hebergements]);
+
+  /** Ce que le panneau dit du calque — et rien quand il n'y a rien à dire. */
+  const motHebergements = !calques.hebergements ? ""
+    : hebManquants.length
+      ? `${hebManquants.length === 1 ? "Un territoire n’a" : `${hebManquants.length} territoires n’ont`} `
+        + "pas répondu — la carte en montre moins qu’il n’y en a."
+    : !hebRendu ? "Lecture des hébergements…"
+    : !heb.length ? "Nous n’en connaissons aucun ici."
+    : "";
+
+  const hebGeoJSON = useMemo(() => ({
+    type: "FeatureCollection" as const,
+    features: (calques.hebergements ? heb : []).map((h) => ({
+      type: "Feature" as const,
+      geometry: { type: "Point" as const, coordinates: h.g },
+      properties: { nom: h.n, type: direLeType(h.t) ?? "" },
+    })),
+  }), [heb, calques.hebergements]);
+
+  useEffect(() => {
+    const m = maplibreCarte.current;
+    if (!m || !maplibrePrete) return;
+    if (!m.getSource("hebergements")) {
+      m.addSource("hebergements", { type: "geojson", data: hebGeoJSON });
+      /* ⭐ UNE FORME, PAS UNE COULEUR DE PLUS. Les vingt-trois genres de
+         sites occupent déjà la palette (`COULEUR_CATEGORIE`) ; une
+         vingt-quatrième teinte se confondrait avec l'une d'elles. Un
+         CARRÉ blanc cerné d'encre ne ressemble à aucune pastille ronde de
+         la carte, et se lit sans légende.
+         ⚠️ `circle` ne sait pas faire un carré ; `symbol` demanderait une
+            image dans le sprite. Le cercle reste, mais en négatif — fond
+            clair, bord sombre — là où les sites sont pleins et cerclés de
+            clair. La distinction tient au contraste, pas à la teinte, donc
+            elle survit au daltonisme. */
+      m.addLayer({
+        id: "hebergements-point", type: "circle", source: "hebergements",
+        paint: {
+          "circle-radius": 5,
+          "circle-color": "#f6f3e6",
+          "circle-stroke-width": 2,
+          "circle-stroke-color": "#1f2a1c",
+        },
+      });
+    } else {
+      (m.getSource("hebergements") as maplibregl.GeoJSONSource).setData(hebGeoJSON);
+    }
+  }, [maplibrePrete, hebGeoJSON]);
 
   /* ── LES SITES, POSÉS DANS MAPLIBRE — 4/11/2026 ────────────────────────
      🔴 PLUS DE PROJECTION MAISON : chaque site est une coordonnée réelle,
@@ -1600,6 +1685,10 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
             {([
               ...(avecOffice() ? [["balises", "Les circuits balisés"] as const] : []),
               ["sites", "Les sites remarquables"] as const,
+              /* 🔴 SOUS LES SITES, À LA DEMANDE — Aurélien, 15/11/2026, capture
+                 à l'appui. L'ordre n'est pas décoratif : les sites sont ce que
+                 MANA apporte, les hébergements ce qu'on trouve en chemin. */
+              ["hebergements", "Les hébergements"] as const,
             ]).map(([clef, nom]) => (
               <label key={clef} className="terr-calque">
                 <input
@@ -1609,6 +1698,14 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
                 <span className="terr-calque-nom">{nom}</span>
               </label>
             ))}
+            {/* ⛔ CHAQUE ÉTAT DU CALQUE SE DIT, ET « VIDE » N'EST PAS
+                « INJOIGNABLE ». Sans ça, un fichier qui ne répond pas donne
+                une carte sans épingle, qu'on lit « il n'y a pas d'hébergement
+                ici » — la faute que `Hebergements.tsx` nomme déjà.
+                ⚠️ Rien n'est dit quand tout va bien : les épingles parlent
+                   d'elles-mêmes, et une ligne sous chaque calque ferait un
+                   panneau qui commente au lieu de commander. */}
+            {motHebergements && <p className="terr-calque-mot">{motHebergements}</p>}
             {/* ⭐ LE FILTRE PAR GENRE NE S'AFFICHE QUE SI LE CALQUE DES SITES
                 EST ALLUMÉ — un filtre sur une couche éteinte ne change rien
                 à l'écran, et un contrôle qui ne fait rien se lit comme une

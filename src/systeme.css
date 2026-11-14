@@ -1051,6 +1051,15 @@
                align-items: center; cursor: pointer; color: var(--bulle-texte); }
 .terr-calque input { accent-color: var(--ocre); }
 .terr-calque-nom { font-size: var(--t-s); }
+/* ⭐ CE QUE LE CALQUE DIT DE LUI-MÊME — 15/11/2026. Décalé sous le libellé,
+   à l'aplomb du texte et non de la case : c'est une note sur l'option, pas
+   une seconde option. ⚠️ Même registre que `.rech-mot` ailleurs : un ton
+   plus bas, jamais une alerte — « nous n'en connaissons aucun ici » n'est
+   pas une panne. */
+.terr-calque-mot {
+  margin: -2px 0 6px; padding-left: calc(1em + var(--sp-1));
+  font-size: var(--t-xs); line-height: 1.45; opacity: .78;
+}
 /* ── le filtre par genre de site — 4/11/2026 ───────────────────────────── */
 /* ── la recherche, en tête de la carte — 4/11/2026 ──────────────────────
    ⚠️ `.terr-commandes` (calques, zoom, recadrage, position) occupe la même

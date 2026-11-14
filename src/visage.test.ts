@@ -439,10 +439,21 @@ describe("🔴 manahome n'est pas la Bretagne par défaut", () => {
     expect(surLHote("manahome.org", () => signature())).toBe("MANAhome");
   });
 
-  it("🔴 la barre de manahome : hébergements, et AUCUNE passerelle mana.love", () => {
+  it("🔴 la barre de manahome : contribuer, et AUCUNE passerelle mana.love", () => {
     const e = entreesBarre("home");
     const clefs = e.map((x) => x.clef);
-    expect(clefs).toContain("hebergements");
+    /* 🔄 15/11/2026 — CE TEST EXIGEAIT « hebergements », ET IL A ÉTÉ RETOURNÉ,
+       PAS SUPPRIMÉ. Aurélien : « on va ajouter les hébergements dans la carte
+       principale, et on va supprimer la fonction dans la bottom. À la place
+       on va ajouter une fonction de contribution ».
+       ⭐ Ce que ce test protège n'a pas bougé d'un pouce — c'est le paragraphe
+          ci-dessous, et il est intact. Seule la deuxième colonne a changé de
+          métier : les hébergements sont devenus un CALQUE de `/carte`, donc
+          le bouton qui y menait doublait un calque. On change ce qu'on
+          attend, on garde ce qu'on craint. */
+    expect(clefs).toContain("contribuer");
+    expect(clefs, "les hébergements sont un calque de la carte, plus un onglet")
+      .not.toContain("hebergements");
     expect(clefs).not.toContain("office");
     /* ⛔ LE PIÈGE QUE CE TEST GARDE VRAIMENT. Avant, la barre testait
        `office = v === "bzh"` et rangeait tout le reste dans la branche de

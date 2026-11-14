@@ -41,6 +41,7 @@ export const ROUTES_APP = [
   "/composer",
   "/balades-office",
   "/hebergements",
+  "/contribuer",
   "/territoire",
   "/l-application",
   "/reglages",
@@ -85,6 +86,7 @@ export const ROUTES_HORS_LOVE: Readonly<Record<string, string>> = {
   "/": "la racine reste à l'application citoyenne : elle y porte sa landing, et mana.love est le sur-ensemble — sa porte doit montrer le sur-ensemble, pas la promenade seule",
   [ROUTE_OFFICE]: "pas d'Office de tourisme sur mana.love",
   "/hebergements": "les hébergements sont le produit de MANAhome, pas de mana.love",
+  "/contribuer": "contribuer, c'est corriger NOTRE carte ; mana.love n'en sert que deux écrans et n'a pas de porte vers celle-ci",
   "/reglages": "devient « Mon compte », tenu par l'application citoyenne",
   "/espace": "le compte citoyen de mana.love est le sien, pas le nôtre",
   /* 🔴 CES DEUX-LÀ SONT ARRIVÉS APRÈS LA POSE, et par une question que j'ai
