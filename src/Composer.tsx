@@ -1925,7 +1925,19 @@ export function Composer() {
               {boucleVisee.etat === "aucune-boucle"
                 ? "Y aller et revenir autrement demanderait de repasser par le même chemin — ce que MANA ne propose pas sous le nom de boucle."
                 : boucleVisee.etat === "ferme"
-                  ? "Le chemin du retour est fermé par arrêté."
+                  /* 🔴 CETTE PHRASE DISAIT « le chemin du RETOUR » — corrigé le
+                     14/11/2026. `composerVers` rend « ferme » quand toutes les
+                     arêtes qui passent près du LIEU VISÉ sont sous arrêté :
+                     c'est l'ARRIVÉE qui est fermée, pas le retour. Le moteur le
+                     documente en toutes lettres — « le chemin qui y mène est
+                     sous arrêté municipal » — et l'écran disait le contraire.
+                     ⭐ Elle ne s'affiche aujourd'hui JAMAIS (mesuré : avec les
+                        66 arêtes réellement interdites, seuls `ok` et
+                        `aucune-boucle` atteignent ce bloc). C'est pour ça
+                        qu'elle a pu mentir si longtemps — et pour ça qu'il
+                        fallait la corriger maintenant plutôt que le jour où un
+                        arrêté la fera paraître. */
+                  ? "Les chemins qui y mènent sont fermés par arrêté."
                   : "Aucun second chemin connu de MANA n'en revient."}{" "}
               L'aller reste&nbsp;: on revient sur ses pas, et c'est très bien.
             </p>
