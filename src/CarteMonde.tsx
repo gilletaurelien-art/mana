@@ -58,7 +58,23 @@ function depuisURL(): [number, number] | null {
     ? [lon, lat] : null;
 }
 
-export function CarteMonde() {
+/**
+ * 🔴 DEUX EMPLOIS, UNE SEULE CARTE — Aurélien, 14/11/2026 : « place la carte
+ *    du monde en arrière-plan de la landing ».
+ *
+ * ⭐ ET C'EST LE PLUS SÛR DES DEUX. En plein écran, une carte qui refuse de
+ *    s'initialiser rend la page BLANCHE — c'est ce qui est arrivé, et il a
+ *    fallu décrocher l'accueil. En arrière-plan, le même échec ne coûte
+ *    qu'un décor : la devise, la recherche et les portes restent lisibles
+ *    par-dessus. ⛔ Une surface qui peut échouer n'a rien à faire sur le
+ *    chemin critique tant qu'on n'a pas compris pourquoi elle échoue.
+ *
+ * ⚠️ EN FOND, ELLE NE PREND PAS LES GESTES. `interactive: false` : une carte
+ *    vivante sous un champ de recherche et trois boutons avalerait le
+ *    `pointerdown` qui leur est destiné — c'est la leçon déjà écrite dans
+ *    `CarteFondOT`. On la regarde, on ne la manipule pas.
+ */
+export function CarteMonde({ enFond = false }: { enFond?: boolean } = {}) {
   const boite = useRef<HTMLDivElement | null>(null);
   const carte = useRef<CarteML | null>(null);
   const [choisi, setChoisi] = useState<Site | null>(null);
@@ -94,10 +110,17 @@ export function CarteMonde() {
             lieu choisi par moi. */
       center: depuisURL() ?? [10, 25], zoom: depuisURL() ? 10 : 2,
       attributionControl: false,
+      interactive: !enFond,
     });
     carte.current = m;
+    /* ⚠️ L'ATTRIBUTION RESTE, MÊME EN FOND : OpenStreetMap et OpenFreeMap se
+       citent, décor ou pas — c'est une obligation de licence, pas une
+       option d'affichage. Les commandes de zoom, elles, n'ont pas de sens
+       sur une carte qu'on ne manipule pas. */
     m.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
-    m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
+    if (!enFond) {
+      m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
+    }
 
     /* 🔴 `load` PEUT ÊTRE DÉJÀ PASSÉ — mesuré le 14/11/2026, et c'est ce qui
        a tenu la carte vide une demi-heure. En développement, `StrictMode`
@@ -265,6 +288,14 @@ export function CarteMonde() {
       m.remove(); carte.current = null;
     };
   }, []);
+
+  if (enFond) {
+    return (
+      <div className="monde-fond" aria-hidden="true">
+        <div className="monde-plan" ref={boite} />
+      </div>
+    );
+  }
 
   return (
     <main className="page page-monde">

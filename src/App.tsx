@@ -302,6 +302,22 @@ export default function App() {
              premier rendu. ⭐ Contourner une invariante documentée coûte
              toujours plus cher que de la respecter. */}
       {visage() !== "home" && <Fond />}
+      {/* 🔴 LA CARTE DU MONDE EN ARRIÈRE-PLAN — Aurélien, 14/11/2026 : « place
+          la carte du monde en arrière-plan de la landing ».
+          ⭐ Elle remplace le fond que manahome n'avait plus, et elle le fait
+             MIEUX qu'une image : ce qu'on voit derrière la devise, ce sont
+             les lieux que MANA connaît — pas une illustration d'ambiance.
+          ⛔ Et c'est l'emploi SÛR de ce composant. En plein écran, son refus
+             d'initialisation rendait la page blanche ; ici, le même échec ne
+             coûte qu'un décor : la devise, la recherche et les portes
+             restent lisibles. C'est pourquoi elle revient par là pendant que
+             `CARTE_EN_ACCUEIL` reste baissé.
+          ⚠️ Seulement sur l'ACCUEIL : sur les autres écrans, une carte
+             derrière une carte n'aurait aucun sens, et deux contextes WebGL
+             sur un téléphone se disputent une ressource comptée. */}
+      {visage() === "home" && path === "/" && (
+        <Suspense fallback={null}><CarteMonde enFond /></Suspense>
+      )}
       {/* ⭐ LA COLONNE. « Les bulles s'affichent au format mobile partout —
           mobile, desktop, tablette ; seul le fond s'élargit » (31/10). Une
           application, pas un site qui s'étale : le chrome garde la largeur
