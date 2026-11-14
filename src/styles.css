@@ -4288,8 +4288,13 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
 .monde-mot {
   /* ⚠️ Sous l'étiquette du lieu choisi : les deux peuvent coexister, et
      deux encarts superposés en haut d'écran se lisent comme un défaut. */
-  position: absolute; left: 50%; top: calc(var(--sp-2) + 72px); transform: translateX(-50%);
-  margin: 0; padding: 10px 16px; max-width: min(92%, 520px);
+  /* ⚠️ `left/right` PLUTÔT QUE `left: 50%` + `translateX` : avec le second,
+     la boîte se rétrécit au contenu et le texte se coupe en plein mot
+     (« re-marquables », vu à l'écran). Ancrée aux deux bords, elle prend la
+     largeur disponible et `margin: auto` la recentre. */
+  position: absolute; left: var(--sp-1); right: var(--sp-1);
+  top: calc(var(--sp-2) + 72px);
+  margin: 0 auto; padding: 10px 16px; max-width: min(92%, 520px);
   border-radius: var(--r-m); text-align: center; font-size: var(--t-s);
   background: rgb(255 255 255 / 94%); color: var(--nuit);
   border: 1.5px solid rgb(25 43 67 / 12%);

@@ -24,6 +24,23 @@ export const yDe = (lat: number, z = Z) => {
   return Math.floor(((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2) * 2 ** z);
 };
 
+/**
+ * COMBIEN DE SITES LE MONDE PORTE, pour pouvoir le DIRE au lieu de laisser
+ * une carte vide sans explication.
+ *
+ * ⚠️ C'EST UNE VALEUR RELEVÉE, PAS CALCULÉE — et elle vieillira. Relevée le
+ *    14/11/2026 sur les tuiles produites : 11 717 fichiers, 4 213 106 sites
+ *    au gisement, 2 384 329 posés (le reste est écrêté dans 567 tuiles
+ *    denses). ⛔ Une application statique ne peut pas la recompter : elle ne
+ *    voit que les tuiles qu'elle a chargées. On l'écrit donc une fois, avec
+ *    sa date, et on la RECOMPTE à chaque moisson plutôt que de la croire :
+ *
+ *      node -e 'const g=require("glob");…'  — ou plus simplement, le
+ *      récapitulatif qu'affiche `node scripts/sites-monde.mjs` en fin de
+ *      passage, qui dit exactement ces deux nombres.
+ */
+export const SITES_POSES = 2_384_329;
+
 export type Cadre = { ouest: number; est: number; nord: number; sud: number };
 
 /**

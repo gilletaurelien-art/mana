@@ -26,7 +26,7 @@ import { STYLE_CARTE as STYLE } from "./carte-fond";
 /* ⭐ L'arithmétique vit dans `tuiles.ts`, qui s'éprouve sans navigateur —
    voir l'en-tête de ce fichier-là : un volet masqué fabrique un écran noir
    et interdit de conclure, il n'interdit pas de vérifier autrement. */
-import { Z, tuilesDuCadre } from "./tuiles";
+import { Z, SITES_POSES, tuilesDuCadre } from "./tuiles";
 
 const BASE = (import.meta.env.VITE_GRAPHE_BASE ?? "https://mana.bzh/bretagne/g")
   .replace(/\/bretagne\/g$/, "")
@@ -47,6 +47,16 @@ const LIBELLES: Record<string, string> = {
   fortification: "Fortification", archeologie: "Site archéologique",
   nature: "Espace naturel", memoire: "Mémoire",
 };
+
+/** La position passée dans l'adresse, s'il y en a une — même contrat que le
+ *  compositeur (`?lon=&lat=`), pour qu'un lien partagé ouvre le bon endroit. */
+function depuisURL(): [number, number] | null {
+  if (typeof location === "undefined") return null;
+  const p = new URLSearchParams(location.search);
+  const lon = Number(p.get("lon")), lat = Number(p.get("lat"));
+  return Number.isFinite(lon) && Number.isFinite(lat) && (lon !== 0 || lat !== 0)
+    ? [lon, lat] : null;
+}
 
 export function CarteMonde() {
   const boite = useRef<HTMLDivElement | null>(null);
@@ -75,20 +85,17 @@ export function CarteMonde() {
     const points: GeoJSON.Feature[] = [];
     const m = new maplibregl.Map({
       container: boite.current, style: STYLE,
-      center: [6.27, 49.83], zoom: 8, attributionControl: false,
+      /* 🔴 LE CENTRE ÉTAIT LE MULLERTHAL, EN DUR — c'est le point où je
+         testais, et il est parti en production : tout visiteur du monde
+         atterrissait au Luxembourg. ⛔ Un réglage de mise au point qui
+         survit au déploiement est une décision que personne n'a prise.
+         ⭐ On part de l'URL si elle le dit, sinon du monde entier — et la
+            géolocalisation, quand elle répond, vient recadrer. Jamais un
+            lieu choisi par moi. */
+      center: depuisURL() ?? [10, 25], zoom: depuisURL() ? 10 : 2,
+      attributionControl: false,
     });
     carte.current = m;
-    /* ⚠️ UNE PRISE DE MESURE, EN DÉVELOPPEMENT SEULEMENT. Sans elle, « les
-       points ne s'affichent pas » ne se distingue pas de « les points ne sont
-       pas chargés » : on ne peut ni compter la source, ni interroger la
-       couche depuis la console. Elle disparaît du build de production. */
-    if (import.meta.env.DEV) {
-      const w = window as unknown as { __carteMonde?: CarteML; __n?: number; __trace?: string[] };
-      w.__n = (w.__n ?? 0) + 1;
-      (m as unknown as { __id: number }).__id = w.__n;
-      (w.__trace ??= []).push(`carte #${w.__n} créée`);
-      w.__carteMonde = m;
-    }
     m.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
     m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
 
@@ -156,6 +163,17 @@ export function CarteMonde() {
        ⚠️ Un observateur ET des rappels différés : l'observateur attrape les
           changements de boîte, les délais attrapent le premier cadre, où la
           boîte est déjà bonne mais où aucun changement ne se produira plus. */
+    /* ⭐ ON DEMANDE OÙ L'ON EST, ET ON RECADRE SI ÇA RÉPOND. Une carte du
+       monde ouverte sur le monde est juste mais inutile : ce qu'on cherche
+       est autour de soi. ⚠️ Et c'est une DEMANDE : si elle est refusée ou
+       trop lente, la carte reste sur le monde — pas d'écran bloqué en
+       attente, pas de lieu inventé. */
+    if (!depuisURL() && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (g) => { m.jumpTo({ center: [g.coords.longitude, g.coords.latitude], zoom: 10 }); },
+        () => {}, { timeout: 8000 });
+    }
+
     const redimensionner = () => { m.resize(); };
     const ro = new ResizeObserver(redimensionner);
     if (boite.current) ro.observe(boite.current);
@@ -167,17 +185,17 @@ export function CarteMonde() {
          redimensionne tôt ; charger sans source remplirait le cache pour
          rien. La condition est l'existence de la source, pas un drapeau. */
       if (!m.getSource("sites")) return;
-      if (import.meta.env.DEV) {
-        const w = window as unknown as { __trace?: string[] };
-        (w.__trace ??= []).push(`#${(m as unknown as { __id?: number }).__id} charger z=${m.getZoom().toFixed(1)}`);
-      }
       const b = m.getBounds();
       const choix = tuilesDuCadre(
         { ouest: b.getWest(), est: b.getEast(), nord: b.getNorth(), sud: b.getSouth() },
         m.getZoom());
       if (choix.etat !== "ok") {
+        /* ⭐ DIRE CE QU'IL Y A, PAS SEULEMENT CE QU'ON NE PEUT PAS. « Approchez »
+           seul laisse croire à une carte vide ; le nombre dit qu'il y a de
+           quoi chercher, et pourquoi on ne pose pas tout d'un coup. */
         setMot(choix.etat === "loin"
-          ? "Approchez pour voir les sites — la carte les charge par quartiers."
+          ? `${SITES_POSES.toLocaleString("fr-FR")} sites remarquables dans le monde. `
+            + `Approchez : la carte les pose quartier par quartier.`
           : "Approchez encore un peu — la zone est trop large pour être chargée d'un coup.");
         return;
       }
@@ -203,10 +221,6 @@ export function CarteMonde() {
           } catch { /* une tuile manquante n'est pas une panne */ }
         }
       }
-      if (import.meta.env.DEV) {
-        const w = window as unknown as { __trace?: string[] };
-        (w.__trace ??= []).push(`#${(m as unknown as { __id?: number }).__id} neuf=${neuf} points=${points.length}`);
-      }
       if (neuf) {
         /* 🔴 CE `?.` AVALAIT L'ÉCHEC — et il m'a coûté une demi-heure. Écrit
            `getSource("sites")?.setData(...)`, il ne fait RIEN quand la source
@@ -228,10 +242,6 @@ export function CarteMonde() {
     }
 
     return () => {
-      if (import.meta.env.DEV) {
-        const w = window as unknown as { __trace?: string[] };
-        (w.__trace ??= []).push(`carte #${(m as unknown as { __id?: number }).__id} détruite`);
-      }
       ro.disconnect();
       for (const id of minuteries) window.clearTimeout(id);
       m.remove(); carte.current = null;
