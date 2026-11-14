@@ -4209,3 +4209,48 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
 .emporter-partiel,
 .emporter-impossible { margin: .45rem 0 0; text-align: center; }
 .emporter-abord { color: var(--texte-immersif-doux, inherit); }
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   LA NUIT CÉLESTE DE MANAHOME — 14/11/2026
+   ═══════════════════════════════════════════════════════════════════════
+   🔴 Aurélien : « fond noir et des étoiles qui s'allument. Nuit céleste. »
+   ⭐ Repris À L'IDENTIQUE du carnet (`manafrance-app/src/family/styles.css`),
+      parce que l'arbitrage du 29/09 demande des ciels IDENTIQUES — « une
+      expérience lisse, sans sensation de changement de site ». Un second ciel
+      de ma main, même joli, trahirait la consigne mieux qu'une copie.
+   ⚠️ CE BLOC EST EN BAS DE LA FEUILLE, ET C'EST VOULU : il surcharge le sol
+      sable (`--sable`) défini plus haut à spécificité égale — plus bas gagne.
+      Et il ne s'applique QUE sous `[data-visage="home"]` : mana.bzh ne bouge
+      pas d'un pixel, c'est la consigne. */
+[data-visage="home"] .mh-ciel {
+  position: fixed; inset: 0; z-index: -1;
+  pointer-events: none; overflow: hidden;
+  /* Noir en HAUT, bleu nuit en BAS. Le noir de tête porte les étoiles ; le
+     bleu nuit du pied est un horizon, pas un ciel de jour qui monte. */
+  background: linear-gradient(180deg, #000000 0%, #06091A 42%, #0E2452 100%);
+}
+.mh-etoile {
+  position: absolute; display: block;
+  border-radius: 50%; background: #ffffff;
+  box-shadow: 0 0 2px rgba(255, 255, 255, .55);
+  /* L'éclat propre à chaque étoile vient du composant (`--eclat`) ; le
+     scintillement descend à un cinquième de cet éclat, jamais à zéro — une
+     étoile qui s'éteint tout à fait clignote, elle ne scintille pas. */
+  opacity: var(--eclat, .8);
+  animation: mh-scintille 3s ease-in-out infinite;
+}
+@keyframes mh-scintille {
+  0%, 100% { opacity: calc(var(--eclat, .8) * .2); }
+  50%      { opacity: var(--eclat, .8); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mh-etoile { animation: none; opacity: calc(var(--eclat, .8) * .7); }
+}
+
+/* ⛔ CE QUI LAISSE VOIR LE CIEL. Sans ça, le sol sable de l'application se
+   peindrait par-dessus et la nuit serait là, invisible — « un repli qui
+   s'affiche en taille nulle est un repli qui n'existe pas », sous une
+   troisième forme. */
+[data-visage="home"] body,
+[data-visage="home"] .fond { background: transparent; }

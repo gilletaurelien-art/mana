@@ -172,6 +172,14 @@ export default function App() {
        ⚠️ HORS du `if (titre)`, et un test l'éprouve en appelant la fonction
           plutôt qu'en relisant ces lignes. */
     poserCanonique(document, path);
+    /* ⭐ LE VISAGE SUR LA RACINE, POUR QUE LE CSS PUISSE EN DÉPENDRE. Une
+       feuille de style ne peut pas appeler `visage()` ; sans cet attribut, la
+       nuit céleste aurait dû être posée en `style=` depuis React — c'est-à-
+       dire une couleur de fond écrite dans deux langages, qui divergent.
+       ⚠️ Posé ICI, à côté de la canonique, parce que les deux répondent à la
+          même question — « sur quel hôte sommes-nous ? » — et qu'une réponse
+          écrite à deux endroits finit par différer. */
+    document.documentElement.dataset.visage = visage();
   }, [path]);
 
   const barreRef = useRef<HTMLElement | null>(null);
@@ -205,7 +213,17 @@ export default function App() {
           ⚠️ C'est aussi pour ça qu'il n'est PAS dans le composant de page :
           un fond qui se réinitialise à chaque clic ferait clignoter
           l'application au lieu de la tenir. */}
-      <Fond />
+      {/* 🔴 MANAHOME N'A PAS DE FOND DU TOUT — Aurélien, 14/11/2026, après
+          avoir écarté successivement une fresque murale, un fond blanc à
+          pixels et une nuit étoilée : « pas de fond du tout ».
+          ⛔ ON NE REND PAS LE COMPOSANT, on ne lui donne pas une liste vide.
+             `couchesAu()` LÈVE sur une liste vide — « une rotation sans image
+             n'est pas une rotation », une invariante posée exprès et tenue par
+             un test. Lui passer `[]` a rendu l'écran NOIR, racine React à zéro
+             enfant, sans une ligne en console : le composant jetait avant le
+             premier rendu. ⭐ Contourner une invariante documentée coûte
+             toujours plus cher que de la respecter. */}
+      {visage() !== "home" && <Fond />}
       {/* ⭐ LA COLONNE. « Les bulles s'affichent au format mobile partout —
           mobile, desktop, tablette ; seul le fond s'élargit » (31/10). Une
           application, pas un site qui s'étale : le chrome garde la largeur
