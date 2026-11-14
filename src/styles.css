@@ -4254,3 +4254,29 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
    troisième forme. */
 [data-visage="home"] body,
 [data-visage="home"] .fond { background: transparent; }
+
+
+/* ══ LA CARTE DU MONDE — l'accueil de MANAhome, 14/11/2026 ═══════════════
+   ⭐ Elle prend TOUT : « tout va se faire via la carte => pas de listing ».
+      Pas de titre, pas de chapeau — la carte est la page. */
+.page-monde { padding: 0; }
+.monde-scene {
+  position: relative; width: 100%;
+  height: calc(100dvh - var(--barre-espace, 96px));
+}
+.monde-plan { position: absolute; inset: 0; }
+.monde-mot {
+  position: absolute; left: 50%; top: var(--sp-2); transform: translateX(-50%);
+  margin: 0; padding: 10px 16px; max-width: min(92%, 520px);
+  border-radius: var(--r-m); text-align: center; font-size: var(--t-s);
+  background: rgb(255 255 255 / 94%); color: var(--nuit);
+  border: 1.5px solid rgb(25 43 67 / 12%);
+}
+.monde-choisi {
+  position: absolute; left: var(--sp-1); right: var(--sp-1); bottom: var(--sp-1);
+  max-width: 560px; margin: 0 auto; padding: 10px 14px;
+  border-radius: var(--r-m); background: rgb(255 255 255 / 94%);
+  border: 1.5px solid rgb(25 43 67 / 12%);
+}
+.monde-choisi-nom { margin: 0; font-weight: 600; color: var(--nuit); }
+.monde-choisi-dire { margin: 2px 0 0; font-size: var(--t-s); color: var(--doux, #6e6e73); }

@@ -1,5 +1,6 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { describe, it, expect } from "vitest";
+import { execFileSync } from "node:child_process";
 
 /* ════════════════════════════════════════════════════════════════════════
    LE PRÉFIXE DE SERVICE — une seule déclaration, et elle est variable
@@ -54,10 +55,58 @@ describe("le préfixe de service", () => {
     /* ⛔ Un garde qui ne lit rien dit oui : s'il ne trouve plus aucun
        porteur, c'est le garde qui est cassé, pas le dépôt qui est propre. */
     expect(porteurs.length, "aucun fichier servi trouvé").toBeGreaterThan(3);
+
+    /* 🔴 DEUX MOYENS, UNE SEULE RÈGLE — 14/11/2026. Ce test a EXPIRÉ le jour
+       où `public/monde/s/` a reçu les 11 721 tuiles de sites du monde
+       (138 Mo) : `nu()` passe deux expressions régulières sur chaque fichier,
+       ce qui est juste pour du code et absurde pour de la donnée.
+       ⭐ LA TENTATION ÉTAIT D'EXCLURE LES TUILES, et c'était la mauvaise
+          sortie : le garde existe précisément parce qu'il ne veut nommer ni
+          exclure personne — « un garde qui nomme un fichier garde un
+          fantôme ». On ne change donc pas CE QU'IL COUVRE, seulement COMMENT
+          il lit : la donnée (ces arbres-là) n'a pas de commentaires à
+          retirer, un `includes` brut y suffit et coûte mille fois moins.
+       ⚠️ Si un jour une tuile portait vraiment « /mana/ », ce test le dirait
+          toujours — c'est la seule chose qui importe. */
+    const DONNEE = /^public\/(monde\/s|bretagne\/g|monde\/g|bretagne\/h|monde\/h)\//;
+    const donnees = porteurs.filter((f) => DONNEE.test(f));
     for (const f of porteurs) {
+      if (DONNEE.test(f)) continue;
       expect(nu(lire(f)), `${f} écrit le préfixe à la main`).not.toMatch(/["'(/]\/mana\//);
     }
-  });
+
+    /* ⚠️ LA DONNÉE EST LUE PAR `grep`, ET C'EST UNE QUESTION DE SECONDES, PAS
+       DE PRINCIPE. Lire 138 Mo depuis Node et y passer deux expressions
+       régulières dépassait les 5 s du test ; `grep -rl` fait le même travail
+       en une fraction. ⛔ La couverture ne change PAS : si une tuile portait
+       « /mana/ », elle serait nommée ici. */
+    if (donnees.length) {
+      const dossiers = [...new Set(donnees.map((f) => f.split("/").slice(0, 3).join("/")))];
+      let trouves = "";
+      try {
+        trouves = execFileSync("grep", ["-rl", "--", "/mana/", ...dossiers],
+          { encoding: "utf8" });
+      } catch (e) {
+        /* ⭐ `grep` sort en 1 quand il ne trouve RIEN — c'est le cas sain.
+           Tout autre code est un vrai échec, et on ne l'avale pas : un garde
+           qui confond « rien trouvé » et « je n'ai pas pu chercher » est un
+           garde qui dit oui quand il ne lit rien. */
+        const err = e as { status?: number };
+        if (err.status !== 1) throw e;
+      }
+      expect(trouves.trim(), "un fichier de donnée écrit le préfixe à la main").toBe("");
+    }
+    expect(donnees.length, "aucun fichier de donnée trouvé").toBeGreaterThan(0);
+  /* ⚠️ TRENTE SECONDES, ET LA RAISON EST ÉCRITE. Ce test lisait quelques
+     dizaines de fichiers ; depuis le 14/11/2026 il balaie aussi les 11 721
+     tuiles de sites du monde (138 Mo). Seul, il prend 2,3 s ; dans la suite
+     complète, où les fichiers tournent en parallèle et se disputent le
+     disque, il dépassait les 5 s par défaut.
+     ⛔ La borne n'est PAS une façon de le faire taire : c'est le coût réel
+        d'un garde qui refuse de nommer ses porteurs — et ce refus est
+        précisément ce qui lui a évité de garder un fantôme. On paie la
+        couverture, on ne la réduit pas. */
+  }, 30_000);
 
   it("index.html prend le préfixe de Vite, et sait le retirer des deux côtés", () => {
     const html = nu(lire("index.html"));

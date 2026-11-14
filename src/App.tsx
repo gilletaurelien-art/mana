@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { useEffect, useRef, useLayoutEffect } from "react";
 import { usePath, baseUrl, routePromenade, routeEnChemin, routeRencontres, routeComplet } from "./router";
 import {
@@ -18,6 +18,7 @@ import { entreesBarre, liensPied } from "./barre";
 import { couper, ecouterPoste, etatPoste, lire } from "./poste";
 import { Reglages } from "./Reglages";
 import { Hebergements } from "./Hebergements";
+const CarteMonde = lazy(() => import("./CarteMonde").then((m) => ({ default: m.CarteMonde })));
 import { EcranTerritoire } from "./EcranTerritoire";
 import { Composer } from "./Composer";
 import { BaladesOT } from "./BaladesOT";
@@ -379,6 +380,16 @@ export default function App() {
         <Territoire />
       ) : path === "/l-application" ? (
         <LApplication base={B} />
+      ) : path === "/" && visage() === "home" ? (
+        /* 🔴 CHEZ MANAHOME, L'ACCUEIL EST LA CARTE — Aurélien, 14/11/2026 :
+           « la page d'accueil est la carte des sites remarquables », puis
+           « tout va se faire via la carte => pas de listing ».
+           ⚠️ mana.bzh garde son accueil : la devise, la recherche, les trois
+              portes. On ne touche qu'à manahome. */
+        <Suspense fallback={<main className="page"><div className="wrap">
+          <p className="page-texte">Carte…</p></div></main>}>
+          <CarteMonde />
+        </Suspense>
       ) : path === "/hebergements" ? (
         <Hebergements />
       ) : path === "/reglages" ? (
