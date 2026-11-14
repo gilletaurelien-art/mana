@@ -56,6 +56,32 @@ environnement jetable suffit : `python3 -m venv .venv && .venv/bin/pip install o
 | `presquile` | −4,6240 48,1673 → −4,2554 48,3374 | 16 210 | 1 755 | 495 | 881 Ko |
 | `aulne` | −4,3200 48,1673 → −4,0210 48,3520 | 20 779 | 2 474 | 280 | 1 172 Ko |
 | `ccpcam` | −4,6240 48,1673 → −4,0210 48,3520 | 34 439 | 3 897 | 751 | 1 918 Ko |
+| `mullerthal` 🇱🇺 | 6,1500 49,7500 → 6,4000 49,9200 | 15 970 | 1 872 | 335 | 840 Ko |
+| `luxembourg` 🇱🇺 | 5,7300 49,4400 → 6,5400 50,1900 | 221 030 | 20 926 | 3 022 | **10 290 Ko** |
+
+### 🔴 LE PREMIER TERRITOIRE HORS DE BRETAGNE A TROUVÉ DEUX CHOSES
+
+**1. Une borne d'altitude réglée sur la Bretagne rejetait 13,5 % du Luxembourg.**
+`ALT_MIN, ALT_MAX = -10.0, 420.0` portait en commentaire sa propre origine :
+« Bretagne : Roc'h Ruz 385 m, marge à 420 ». Le Kneiff culmine à 560 m et tout
+l'Oesling vit entre 400 et 560 — mesuré : **altitude maximale réelle 561 m**, et
+13,5 % des nœuds au-dessus de 420, écartés comme invraisemblables. 23 512 arêtes
+sans altitude, et l'étape 4 refusait d'écrire.
+⭐ Le garde a bien refusé, mais il accusait « dalles manquantes ? ». Les quatre
+dalles étaient là, exactement les quatre nécessaires, **sans un seul vide**
+(0,00 % sur 12 967 201 échantillons chacune). Un garde qui nomme une cause qu'il
+n'a pas vérifiée envoie chercher au mauvais endroit. Corrigé : les bornes
+couvrent la Terre (−500 / 9 000 m), le message énumère les trois causes dans
+l'ordre où elles se vérifient.
+✅ Après correction : **100,00 % des nœuds**, zéro arête sans altitude.
+
+**2. Le pipeline va partout ; l'ASSET, non.** Le Luxembourg entier pèse
+**10,05 Mo gzip** — onze fois la presqu'île. Découpé au bon calibre, le
+Mullerthal (la « petite Suisse luxembourgeoise ») rend **0,82 Mo** pour 15 970
+arêtes : la taille exacte de la presqu'île (0,88 Mo, 16 210 arêtes).
+⭐ Ce n'est pas le pays qui est l'unité, c'est le TERRITOIRE — celui qu'on
+parcourt à pied et qui a un interlocuteur. « Le monde à explorer » se construit
+une emprise à la fois, pas un pays à la fois.
 
 ⚠️ **`ccpcam` est l'UNION exacte des deux précédentes**, produite le 11/11/2026
 pour vérifier la recette : il rend 34 439 arêtes contre 36 989 pour la somme

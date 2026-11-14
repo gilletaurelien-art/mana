@@ -12,3 +12,15 @@ public/bretagne/
 
 # la cible de déploiement : propre à chaque machine, jamais publiée
 deploiement/cible.local.sh
+
+# ⛔ La MATIÈRE et les ARTEFACTS du pipeline de graphes — jamais dans l'histoire.
+#    Les extraits OSM (46 Mo chacun), les dalles SRTM (25 Mo chacune) et les
+#    graphes produits sont REJOUABLES : docs/graphe-pipeline.md tient la recette,
+#    quatre-vingts secondes par territoire. Les versionner pèserait 192 Mo pour
+#    le seul Luxembourg, et c'est le défaut déjà vécu ailleurs (3,5 Go de .vrm,
+#    94 % du poids d'un dépôt). ⭐ Une recette se versionne, son résultat non.
+#    ⚠️ Conséquence assumée, la même que pour public/bretagne : pousser le code
+#    ne déploie AUCUN graphe. Ils se rejouent et s'envoient à part.
+data/*.pbf
+data/srtm/
+public/monde/

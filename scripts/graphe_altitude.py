@@ -39,7 +39,28 @@ from array import array
 
 COTE = 3601          # SRTM 1 seconde d'arc : 3601 × 3601 échantillons
 VIDE = -32768
-ALT_MIN, ALT_MAX = -10.0, 420.0   # Bretagne : Roc'h Ruz 385 m, marge à 420
+# 🔴 CES DEUX BORNES ONT ÉTÉ RÉGLÉES SUR LA BRETAGNE, ET ELLES ONT SILENCIEUSEMENT
+#    REJETÉ UN AUTRE TERRITOIRE. Elles valaient « -10,0 / 420,0 — Bretagne :
+#    Roc'h Ruz 385 m, marge à 420 ». Le 14/11/2026, le premier graphe construit
+#    hors de Bretagne — le Luxembourg — a buté dessus : le Kneiff culmine à
+#    560 m et tout l'Oesling vit entre 400 et 560. Mesuré : altitude maximale
+#    réelle 561 m, et **13,5 % des nœuds au-dessus de 420 m**, donc écartés
+#    comme invraisemblables. 23 512 arêtes se sont retrouvées sans altitude.
+#
+# ⭐ LE GARDE A BIEN REFUSÉ D'ÉCRIRE — mais il a accusé « dalles manquantes ? ».
+#    Les quatre dalles étaient là, exactement les quatre nécessaires, et sans un
+#    seul vide (0,00 % sur 12 967 201 échantillons chacune). Un garde qui NOMME
+#    une cause qu'il n'a pas vérifiée envoie chercher au mauvais endroit : j'ai
+#    téléchargé des dalles, comparé des emprises et lu le format avant de
+#    soupçonner une constante. Le message dit désormais ce qu'il SAIT.
+#
+# ⭐ CE QUE CES BORNES SERVENT VRAIMENT : attraper une lecture corrompue, pas
+#    juger d'un relief. Elles couvrent donc la Terre — de la rive de la mer
+#    Morte (−430 m) au sommet de l'Everest (8 849 m) — avec une marge. Un vide
+#    SRTM reste attrapé par `VIDE`, qui est le contrôle fait pour ça.
+# ⚠️ Une valeur qui dépend du territoire en dépend PARTOUT : si une borne doit
+#    un jour redevenir locale, elle devient un paramètre, jamais une constante.
+ALT_MIN, ALT_MAX = -500.0, 9000.0
 PENTE_MAX = 0.5
 
 
@@ -141,7 +162,15 @@ def remplir(g, dossier):
     # ⭐ Un remplissage quasi vide doit CRIER, pas réussir : une dalle manquante
     #    produirait un graphe « avec altitude » où rien ne monte jamais.
     if stats["posees"] < 0.95 * len(aretes):
-        raise SystemExit(f"🔴 seulement {stats['posees']}/{len(aretes)} arêtes posées — dalles manquantes ?")
+        raise SystemExit(
+            f"🔴 seulement {stats['posees']}/{len(aretes)} arêtes posées.\n"
+            "   Trois causes possibles, dans l'ordre où elles se vérifient :\n"
+            "   1. une dalle SRTM absente — les lignes « ABSENTE » ci-dessus le disent ;\n"
+            "   2. des altitudes hors des bornes ALT_MIN/ALT_MAX — elles ont été réglées\n"
+            "      sur la Bretagne jusqu'au 14/11/2026 et rejetaient 13,5 % du Luxembourg ;\n"
+            "   3. des vides SRTM — rares, et le taux se mesure sur la dalle elle-même.\n"
+            "   ⛔ Ne pas supposer la première : c'est ce que ce message faisait, et il\n"
+            "      a envoyé chercher des dalles qui étaient déjà là.")
     return alts, pose, stats
 
 
