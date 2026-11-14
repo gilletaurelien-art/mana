@@ -30,6 +30,7 @@
  *    trois promenades proposées autour.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
+import { avecOffice } from "./visage";
 import { chargerLieux, type Inventaire } from "./lieux";
 import { chercher, LONGUEUR_MIN, type Resultat } from "./recherche";
 /* ⚠️ UN JSON S'IMPORTE EN `(string | number)[][]`, pas en tuple : TypeScript
@@ -157,9 +158,22 @@ export function RechercheAccueil({ base }: { base: string }) {
               le partenaire n'est pas le doublon de septembre (deux boutons
               TEXTE voisins vers le même écran) ; c'est le seul endroit de
               l'accueil où l'Office est nommé comme une destination. */}
-          <a className="rech-porte rech-porte-fine" href={`${base}/balades-office`}>
-            Les balades des Offices de Tourisme
-          </a>
+          {/* 🔴 ET CETTE PORTE CHANGE DE MÉTIER SELON L'HÔTE — 14/11/2026.
+              La barre du bas avait été corrigée le matin même ; CELLE-CI
+              était restée, et manahome.org proposait donc encore « Les
+              balades des Offices de Tourisme » sur sa page d'accueil, au
+              monde entier. ⭐ Corriger une surface ne corrige pas les autres :
+              c'est le même métier offert à deux endroits, et il fallait
+              chercher les DEUX. */}
+          {avecOffice() ? (
+            <a className="rech-porte rech-porte-fine" href={`${base}/balades-office`}>
+              Les balades des Offices de Tourisme
+            </a>
+          ) : (
+            <a className="rech-porte rech-porte-fine" href={`${base}/hebergements`}>
+              Où dormir autour de moi
+            </a>
+          )}
         </nav>
       )}
 

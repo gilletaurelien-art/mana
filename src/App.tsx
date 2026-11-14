@@ -13,7 +13,7 @@ import {
 } from "./Glyphs";
 import { Invitation } from "./Invitation";
 import { LApplication } from "./LApplication";
-import { avecOffice, visage, titrePourLHote, poserCanonique } from "./visage";
+import { avecOffice, visage, signature, titrePourLHote, poserCanonique } from "./visage";
 import { entreesBarre, liensPied } from "./barre";
 import { couper, ecouterPoste, etatPoste, lire } from "./poste";
 import { Reglages } from "./Reglages";
@@ -420,8 +420,20 @@ export default function App() {
       <footer className="site-footer">
         <div className="wrap footer-colonnes">
           <div>
+            {/* 🔴 LA MARQUE DU PIED ÉTAIT ÉCRITE EN DUR — « MANA.bzh » sur
+                manahome.org, relevé sur la page servie le 14/11/2026, dans le
+                pied de TOUTES les pages. ⭐ `signature()` existait et disait
+                déjà le bon nom trois lignes plus haut, dans le `<title>` : ce
+                n'est pas une règle qui manquait, c'est un endroit qui ne la
+                lisait pas. ⚠️ L'`<em>` porte le style, pas le sens : on coupe
+                donc après « MANA » quel que soit le nom. */}
             <p className="brand">
-              MANA<em>.bzh</em>
+              {(() => {
+                const s = signature();
+                return s.toUpperCase().startsWith("MANA")
+                  ? <>MANA<em>{s.slice(4)}</em></>
+                  : <em>{s}</em>;
+              })()}
             </p>
             {/* 🔄 « Presqu'île de Crozon » → « Finistère », demande du
                 fondateur le 12/11/2026. Le pied annonçait un territoire que
@@ -430,8 +442,14 @@ export default function App() {
                 étroit que la matière fait passer pour local ce qui ne l'est
                 plus — et personne ne va chercher aux abers une app qui dit
                 « presqu'île de Crozon ». */}
+            {/* ⚠️ « Finistère » NE SE DIT QUE CHEZ NOUS. Le reste de la
+                phrase est vrai partout — hors ligne, GPS, GPX, gratuit, aucune
+                donnée revendue —, c'est le TERRITOIRE qui ne l'est pas. ⛔ Et
+                on n'écrit pas « le monde » à la place : annoncer un périmètre
+                plus large que la matière est la faute symétrique de celle que
+                la note du 12/11 corrigeait en élargissant à « Finistère ». */}
             <p className="footer-note">
-              Finistère. Hors ligne, GPS, GPX. Gratuit, aucune
+              {avecOffice() && "Finistère. "}Hors ligne, GPS, GPX. Gratuit, aucune
               donnée revendue.
             </p>
             <ContactForm />

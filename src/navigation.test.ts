@@ -232,11 +232,25 @@ describe("le titre de l'accueil", () => {
      flotter. La devise tient sur une ligne, donc la question ne se pose plus —
      mais si la phrase revient en grand un jour, elle se reposera. */
 
-  it("dit « Au cœur de la Bretagne », et c'est le SEUL h1 de l'accueil", () => {
+  /* 🔄 RETOURNÉ UNE SECONDE FOIS, LE 14/11/2026 — ET POUR LA RAISON INVERSE.
+     Ce garde exigeait le texte EXACT « Au cœur de la Bretagne ». Juste tant
+     qu'il n'y avait qu'un seul site ; faux depuis que manahome.org sert la
+     même application au monde — la devise bretonne s'y affichait, relevé sur
+     la page servie, avec le bouton de l'Office de Crozon juste en dessous.
+     ⭐ CE QU'IL PROTÈGE N'A PAS BOUGÉ : l'accueil porte UN titre, et ce titre
+        est une règle de produit, pas un décor. Ce qui change, c'est qu'il y a
+        maintenant un titre PAR HÔTE. Il tient donc les deux textes et refuse
+        qu'un hôte reçoive celui de l'autre.
+     ⚠️ Et il tient toujours le compte : UN seul h1. C'est lui que la section
+        désigne par `aria-labelledby`. */
+  it("UN seul h1, et il nomme le territoire de SON hôte", () => {
     const h1s = [...src.matchAll(/<h1[^>]*>([\s\S]*?)<\/h1>/g)];
     expect(h1s.length, "l'accueil doit porter exactement un h1").toBe(1);
-    expect(h1s[0][1].replace(/<br\s*\/?>/g, " ").replace(/\s+/g, " ").trim())
-      .toBe("Au cœur de la Bretagne");
+    const dedans = h1s[0][1].replace(/<br\s*\/?>/g, " ").replace(/\s+/g, " ").trim();
+    expect(dedans, "la devise bretonne est le texte arrêté par le fondateur le 12/11")
+      .toContain("Au cœur de la Bretagne");
+    expect(dedans, "elle doit dépendre de l'hôte, sinon manahome la sert au monde")
+      .toMatch(/avecOffice\(\)/);
   });
 
   it("🔴 et la section reste DÉSIGNÉE par son titre — l'ancre a suivi le rôle", () => {

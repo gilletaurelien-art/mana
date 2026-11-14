@@ -463,3 +463,42 @@ describe("🔴 manahome n'est pas la Bretagne par défaut", () => {
     expect(clefs).toEqual(["carte", "office", "marque", "radio", "reglages"]);
   });
 });
+
+describe("🔴 aucune marque bretonne ne doit partir sur manahome", () => {
+  /* ⛔ LE DÉFAUT, MESURÉ SUR LA PAGE SERVIE LE 14/11/2026 — après avoir cru
+     l'avoir corrigé. J'avais réparé la BARRE du bas ; l'accueil et le pied,
+     eux, étaient restés. manahome.org affichait donc encore, au monde :
+       · « AU CŒUR DE LA BRETAGNE »              (la devise, seul h1)
+       · « Les balades des Offices de Tourisme » (une porte de l'accueil)
+       · « MANA.bzh »                            (la marque, dans TOUT pied)
+       · « Finistère. »                          (le périmètre annoncé)
+     ⭐ CORRIGER UNE SURFACE NE CORRIGE PAS LES AUTRES. Le même métier était
+        offert à deux endroits, et le même nom écrit à trois. Ce test compte
+        les PORTEURS, parce que c'est le comptage qui manquait — pas la règle.
+     ⚠️ CETTE LISTE EST UN PLANCHER, PAS UN PLAFOND. Elle ne voit que les
+        marques qu'on lui nomme. La vérification qui tranche reste celle qu'on
+        fait sur la PAGE SERVIE, et c'est elle qui a trouvé ces quatre-là. */
+  const MARQUES = ["Au cœur de la Bretagne", "Offices de Tourisme",
+                   "Finistère", "MANA<em>.bzh</em>"];
+  const RENDUS = ["./Invitation.tsx", "./RechercheAccueil.tsx", "./App.tsx"];
+
+  for (const f of RENDUS) {
+    it(`${f} ne sert aucune marque bretonne sans condition d'hôte`, () => {
+      const src = nu(f);
+      for (const m of MARQUES) {
+        if (!src.includes(m)) continue;
+        expect(src,
+          `« ${m} » est rendu par ${f} sans passer par avecOffice() : ` +
+          `manahome.org le servirait au monde entier`)
+          .toMatch(/avecOffice\(\)/);
+      }
+    });
+  }
+
+  it("⭐ et la liste porte bien sur quelque chose", () => {
+    // Un test qui ne trouve aucune marque passerait en ne gardant rien.
+    const trouvees = MARQUES.filter((m) => RENDUS.some((f) => nu(f).includes(m)));
+    expect(trouvees.length, "aucune marque trouvée : la liste a vieilli")
+      .toBeGreaterThanOrEqual(3);
+  });
+});

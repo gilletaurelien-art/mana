@@ -25,6 +25,7 @@
  *    carte, cela faisait quatre décisions sur un écran qui en demande une.
  */
 import { RechercheAccueil } from "./RechercheAccueil";
+import { avecOffice } from "./visage";
 
 export function Invitation({ base }: { base: string }) {
   /* 🔴 « AUTOUR DE MOI » EST PARTI LE 1/11/2026, sur demande du fondateur, et
@@ -78,7 +79,20 @@ export function Invitation({ base }: { base: string }) {
               et une page d'accueil sans titre — deux défauts qu'aucun écran
               ne montre. ⚠️ La classe reste `inv-devise` : l'élément change de
               RÔLE, pas d'apparence. */}
-          <h1 id="inv-titre" className="inv-devise">Au cœur de la Bretagne</h1>
+          {/* 🔴 LA DEVISE SUIT L'HÔTE DEPUIS LE 14/11/2026. « Au cœur de la
+              Bretagne » s'affichait sur manahome.org, relevé sur la page
+              servie — avec le bouton de l'Office de Crozon juste en dessous.
+              ⏳ « PARTOUT OÙ L'ON MARCHE » EST UNE PROPOSITION, PAS UN
+                 ARBITRAGE. La devise bretonne a été arrêtée par le fondateur
+                 le 12/11 (« Terre, mer & lumière » → « Au cœur de la
+                 Bretagne ») ; celle-ci ne l'a pas été. Elle est écrite ici
+                 parce que la laisser bretonne serait faux, pas parce qu'elle
+                 est juste — et elle attend son mot.
+              ⚠️ Le `h1` et l'ancre `inv-titre` ne bougent pas : c'est le SEUL
+                 titre de l'accueil, et la section est désignée par lui. */}
+          <h1 id="inv-titre" className="inv-devise">
+            {avecOffice() ? "Au cœur de la Bretagne" : "Partout où l’on marche"}
+          </h1>
         </header>
 
         <div className="inv-dire">
