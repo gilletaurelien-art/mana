@@ -28,6 +28,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import donnees from "./fonds/fonds.json";
+import { visage } from "./visage";
 /* ⚠️ RENOMMÉ À L'IMPORT : la boucle de minuterie, juste en dessous, s'appelle
    DÉJÀ `battre`. Sous le même nom, c'est la locale qui gagne — et l'appel
    partait dans la boucle au lieu de l'horloge. TypeScript ne l'a vu que par
@@ -76,6 +77,34 @@ const MARGE_MS = 150;
 const DUREE_MS = VISIBLE_MS + FONDU_MS;
 
 const FONDS: Fond[] = (donnees as { fonds: Fond[] }).fonds;
+
+/**
+ * 🔴 MANAHOME N'A QU'UN SEUL FOND — « manahome.webp devient l'unique fond
+ *    d'écran de MANAhome », Aurélien, 14/11/2026.
+ *
+ * ⭐ IL VIT ICI ET PAS DANS `fonds.json`, ET C'EST DÉLIBÉRÉ. Ce fichier est
+ *    ENGENDRÉ par `scripts/fonds.mjs`, qui le réécrit ENTIÈREMENT à chaque
+ *    passage sur son dossier source. Une 23ᵉ entrée ajoutée à la main y
+ *    disparaîtrait au prochain encodage des fonds bretons — sans bruit, et
+ *    manahome retrouverait la Bretagne en rotation.
+ * ⚠️ Les variantes suivent exactement la convention du script (deux largeurs,
+ *    deux formats, mêmes qualités) : l'image source fait 1024×572, le format
+ *    même des originaux.
+ * ⛔ ET LA ROTATION NE S'APPLIQUE PAS : « unique » veut dire un seul, pas un
+ *    seul qui se fond en lui-même toutes les trois secondes.
+ */
+const FOND_HOME: Fond = {
+  id: "manahome",
+  variantes: [
+    { fichier: "manahome-768.avif", largeur: 768, format: "avif", octets: 50764 },
+    { fichier: "manahome-768.webp", largeur: 768, format: "webp", octets: 99318 },
+    { fichier: "manahome-1280.avif", largeur: 1280, format: "avif", octets: 106747 },
+    { fichier: "manahome-1280.webp", largeur: 1280, format: "webp", octets: 216126 },
+  ],
+};
+
+/** Ce que cet hôte a le droit de montrer. */
+const fondsDeLHote = (): Fond[] => (visage() === "home" ? [FOND_HOME] : FONDS);
 /* 🔴 « fonds » ÉTAIT DÉJÀ PRIS SUR mana.bzh — 101 images de l'application
    historique, dans un dossier du même nom. Les fichiers ne portent pas les
    mêmes noms, mais un seul dossier peut répondre à « /fonds/* » : servir
@@ -119,7 +148,7 @@ function Couche({ fond, visible, premier }: { fond: Fond; visible: boolean; prem
 }
 
 export function Fond() {
-  const [liste, setListe] = useState<Fond[]>(() => melanger(FONDS));
+  const [liste, setListe] = useState<Fond[]>(() => melanger(fondsDeLHote()));
   const [i, setI] = useState(0);
   const [phase, setPhase] = useState<Phase>("repos");
   const tour = useRef(0);
@@ -190,7 +219,7 @@ export function Fond() {
     if (tour.current === i) return;
     tour.current = i;
     const derniere = liste[n - 1];
-    let suivant = melanger(FONDS);
+    let suivant = melanger(fondsDeLHote());
     let garde = 0;
     while (suivant[0].id === derniere.id && garde++ < 8) suivant = melanger(FONDS);
     setListe(suivant);
