@@ -435,7 +435,15 @@ describe("le jeu de cartes des balades", () => {
    */
   it("la porte au repos et les résultats ne paraissent jamais ensemble", () => {
     const rech = readFileSync(new URL("./RechercheAccueil.tsx", import.meta.url), "utf8");
-    expect(rech, "la porte doit être conditionnée au champ VIDE").toMatch(/\{!requete && \(/);
+    /* 🔄 LE MOTIF ÉTAIT L'EXPRESSION EXACTE, IL EST MAINTENANT LA RÈGLE —
+       14/11/2026. Il exigeait `{!requete && (` au caractère près, et il est
+       tombé le jour où une SECONDE condition s'est ajoutée (`&& avecOffice()`,
+       pour retirer les portes chez manahome). ⭐ Ce qu'il protège n'a pas
+       bougé d'un mot : les portes ne paraissent que le champ VIDE, donc
+       jamais avec les résultats. C'est `!requete` qui les garde, qu'il soit
+       seul ou accompagné. */
+    expect(rech, "la porte doit être conditionnée au champ VIDE")
+      .toMatch(/\{!requete &&[\s\S]{0,60}?\(/);
     expect(rech, "les résultats au champ REMPLI").toMatch(/\{resultats\.length > 0 && \(/);
   });
 

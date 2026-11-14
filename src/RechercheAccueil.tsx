@@ -142,7 +142,20 @@ export function RechercheAccueil({ base }: { base: string }) {
           septembre, et qu'un test tient depuis.
           ⚠️ Elle ne dépend d'AUCUNE donnée : elle existe même si
              l'inventaire n'arrive jamais. */}
-      {!requete && (
+      {/* 🔴 LES DEUX PORTES DISPARAISSENT CHEZ MANAHOME — Aurélien,
+          14/11/2026 : « supprime les 2 boutons de la landing qui ne servent à
+          rien ». ⭐ Et il a raison, c'est mesurable : « Où dormir autour de
+          moi » est DÉJÀ la deuxième icône de la barre du bas, et la barre est
+          sur tous les écrans. Deux chemins vers la même page, à trois
+          centimètres l'un de l'autre, ce n'est pas un raccourci — c'est une
+          hésitation offerte.
+          ⚠️ Le champ de recherche RESTE : lui n'a pas de jumeau dans la
+             barre, et c'est par lui qu'on entre dans un lieu.
+          ⛔ Sur mana.bzh elles restent : là-bas « Les balades des Offices de
+             Tourisme » n'est qu'une icône sans mot dans la barre, et c'est le
+             SEUL endroit de l'accueil où l'Office est nommé comme une
+             destination — la note qui l'explique est juste en dessous. */}
+      {!requete && avecOffice() && (
         <nav className="rech-portes" aria-label="Entrer">
           {/* 🔄 6/11/2026, demande du fondateur : « composer une promenade =
               fais en bouton », et « créer un bouton les balades, lien vers
