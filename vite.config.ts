@@ -12,6 +12,29 @@ export default defineConfig({
         suit pas celui-ci, et le défaut est MUET — les bundles partent en 404,
         l'écran est blanc, et rien ne dit pourquoi. Un test tient la règle. */
   base: process.env.MANA_BASE ?? "/mana/",
+  plugins: [
+    {
+      /* 🔴 LE TITRE STATIQUE EST CE QU'UN ROBOT LIT SANS JAVASCRIPT, et il
+         était figé à « MANA.bzh — Promenades & découvertes en Bretagne ».
+         Promue à la racine de manahome.org le 14/11/2026, l'app y annonçait
+         donc le nom d'un autre site, en première ligne de l'accueil.
+         ⭐ `titrePourLHote()` corrige le titre À L'EXÉCUTION — mais un robot
+         qui n'exécute rien ne voit que celui-ci. Le même défaut que les
+         coquilles React de manahome, à un seul fichier près.
+         ⚠️ Il ne peut pas être host-aware : il est écrit une fois, au build.
+         Mais on construit DÉJÀ une fois par hôte — c'est donc une variable
+         de build, et `npm run build:manahome` la pose. */
+      name: "titre-de-l-hote",
+      transformIndexHtml(html: string) {
+        const titre = process.env.MANA_TITRE;
+        if (!titre) return html;
+        if (!/<title>[^<]*<\/title>/.test(html)) {
+          throw new Error("aucun <title> à remplacer dans index.html");
+        }
+        return html.replace(/<title>[^<]*<\/title>/, `<title>${titre}</title>`);
+      },
+    },
+  ],
   /* 🔴 « assets » EST DÉJÀ PRIS SUR mana.bzh — 73 Mo de bundles qui servent
      63 885 pages d'agrégat. Deux applications sur une même origine ne peuvent
      pas se partager ce nom : les fichiers sont hachés, donc ils ne

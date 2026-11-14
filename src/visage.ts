@@ -56,7 +56,28 @@ export const avecOffice = () => visage() === "bzh";
  * ⚠️ Elle est nommée par ce qu'elle EST (la signature), pas par l'endroit où
  *    on la pose : elle sert au titre, au pied, et au courriel de contact.
  */
-export const signature = () => (visage() === "love" ? "mana.love" : "MANA.bzh");
+/* 🔴 LA SIGNATURE NE SE DÉDUIT PLUS DU VISAGE — 14/11/2026, quand l'app a été
+   promue à la racine de manahome.org. Elle valait
+   `visage() === "love" ? "mana.love" : "MANA.bzh"` : sur manahome, `visage()`
+   rend « bzh » (c'est le bon VISAGE — les balades d'office y ont leur place),
+   et l'accueil s'est mis à annoncer « MANA.bzh » sur un site qui ne l'est pas.
+   ⭐ DEUX QUESTIONS DIFFÉRENTES PARTAGEAIENT UN TEST D'HÔTE. `visage()` décide
+   des FONCTIONS, `signature()` du NOM AFFICHÉ. Tant qu'il n'y avait que deux
+   hôtes, la même réponse servait aux deux — et la confusion ne coûtait rien.
+   Au troisième, elle a mis le nom d'un site sur un autre, en première ligne
+   de l'accueil, là où une personne et une machine lisent d'abord. */
+export const signature = () => {
+  const h = typeof location === "undefined" ? "" : location.hostname;
+  if (h === "mana.love") return "mana.love";
+  if (h === "manahome.org" || h.endsWith(".manahome.org")) return "MANAhome";
+  return "MANA.bzh";
+};
+
+/* ⚠️ ET LE LIEU AUSSI — un titre qui dit « en Bretagne » sur un site qui
+   publie le Mullerthal décrit l'ancien produit. Sur mana.bzh il reste juste
+   et il porte le référencement ; ailleurs il doit se taire. */
+export const lieuDuSite = () =>
+  signature() === "MANA.bzh" ? " en Bretagne" : "";
 
 /**
  * 🔴 L'ADRESSE À LAQUELLE ON NOUS ÉCRIT, SUR CET HÔTE.
@@ -95,7 +116,11 @@ export const courriel = () => (visage() === "love" ? "welcome@mana.love" : "cont
  *    lui donne le titre de la table et elle rend celui de l'hôte.
  */
 export const titrePourLHote = (titre: string) =>
-  titre.replace(/MANA\.bzh/g, signature());
+  titre
+    .replace(/ en Bretagne/g, lieuDuSite())
+    .replace(/ — presqu'île de Crozon & Aulne maritime/g,
+             signature() === "MANA.bzh" ? " — presqu'île de Crozon & Aulne maritime" : "")
+    .replace(/MANA\.bzh/g, signature());
 
 /**
  * 🔴 L'ADRESSE QUI FAIT FOI POUR UNE DE NOS PAGES — 7/11/2026 au soir,

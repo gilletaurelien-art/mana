@@ -241,6 +241,34 @@ describe("🔴 rien de ce qui est RENDU sur les deux hôtes ne nomme un domaine 
     /* ⚠️ Et le SUJET du titre ne doit pas être abîmé au passage : une
        substitution trop large signerait juste et dirait n'importe quoi. */
     expect(love).toContain("Composer une promenade");
+
+    /* 🔴 ET LE TROISIÈME HÔTE — 14/11/2026, l'app promue à la racine de
+       manahome.org. `visage()` y rend « bzh » À RAISON (les balades d'office
+       y ont leur place) : c'est `signature()` qui devait cesser de s'en
+       déduire. ⭐ Deux questions différentes partageaient un test d'hôte, et
+       tant qu'il n'y avait que deux hôtes la même réponse servait aux deux.
+       Au troisième, le nom d'un site est passé sur un autre. */
+    const home = surLHote("manahome.org", () => titrePourLHote(t));
+    expect(home, "manahome signe encore du nom de mana.bzh").not.toMatch(/MANA\.bzh/i);
+    expect(home).toContain("MANAhome");
+    expect(home).toContain("Composer une promenade");
+  });
+
+  it("⛔ le LIEU du titre suit l'hôte, pas seulement sa signature", () => {
+    /* ⚠️ Un titre qui dit « en Bretagne » sur un site qui publie le Mullerthal
+       décrit l'ancien produit. Sur mana.bzh il reste juste — et il porte le
+       référencement, donc on ne le retire pas là-bas. */
+    const t = "MANA.bzh — Promenades & découvertes en Bretagne";
+    expect(surLHote("mana.bzh", () => titrePourLHote(t))).toContain("en Bretagne");
+    expect(surLHote("manahome.org", () => titrePourLHote(t)),
+      "manahome annonce encore la Bretagne").not.toMatch(/en Bretagne/);
+
+    const u = "La carte du territoire — presqu'île de Crozon & Aulne maritime — MANA.bzh";
+    expect(surLHote("mana.bzh", () => titrePourLHote(u))).toContain("presqu'île de Crozon");
+    expect(surLHote("manahome.org", () => titrePourLHote(u)),
+      "manahome nomme deux territoires bretons sur trois").not.toMatch(/presqu'île de Crozon/);
+    expect(surLHote("manahome.org", () => titrePourLHote(u)),
+      "le sujet du titre a été abîmé").toContain("La carte du territoire");
   });
 
   /* 🔴 ET LE PRÉDICAT DE L'OFFICE : ses deux gardes vérifiaient qu'il EXISTE
