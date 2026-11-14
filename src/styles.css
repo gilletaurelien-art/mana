@@ -4212,48 +4212,58 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
 
 
 /* ═══════════════════════════════════════════════════════════════════════
-   LA NUIT CÉLESTE DE MANAHOME — 14/11/2026
+   LA CARTE SATELLITE EST LE FOND D'ÉCRAN DE MANAHOME — 14/11/2026
    ═══════════════════════════════════════════════════════════════════════
-   🔴 Aurélien : « fond noir et des étoiles qui s'allument. Nuit céleste. »
-   ⭐ Repris À L'IDENTIQUE du carnet (`manafrance-app/src/family/styles.css`),
-      parce que l'arbitrage du 29/09 demande des ciels IDENTIQUES — « une
-      expérience lisse, sans sensation de changement de site ». Un second ciel
-      de ma main, même joli, trahirait la consigne mieux qu'une copie.
+   🔴 Aurélien : « on va modifier la politique de fonds d'écran = carte plein
+      écran vue satellite sur chaque page ».
+   ⛔ CE BLOC A PORTÉ UNE NUIT ÉTOILÉE PENDANT HUIT HEURES, ET PLUS PERSONNE NE
+      LA RENDAIT. `.mh-ciel` et `.mh-etoile` sont partis avec ce commentaire :
+      le composant qui les posait avait été retiré le matin même (« pas de fond
+      du tout »), et le CSS, lui, était resté — quarante lignes qui décrivaient
+      fidèlement un écran que rien ne produisait. ⭐ C'est la même famille que
+      le garde qui nomme un fichier mort : ça ne casse rien, ça ne se signale
+      pas, et ça se lit comme une description de l'état des choses.
    ⚠️ CE BLOC EST EN BAS DE LA FEUILLE, ET C'EST VOULU : il surcharge le sol
       sable (`--sable`) défini plus haut à spécificité égale — plus bas gagne.
-      Et il ne s'applique QUE sous `[data-visage="home"]` : mana.bzh ne bouge
-      pas d'un pixel, c'est la consigne. */
-[data-visage="home"] .mh-ciel {
-  position: fixed; inset: 0; z-index: -1;
-  pointer-events: none; overflow: hidden;
-  /* Noir en HAUT, bleu nuit en BAS. Le noir de tête porte les étoiles ; le
-     bleu nuit du pied est un horizon, pas un ciel de jour qui monte. */
-  background: linear-gradient(180deg, #000000 0%, #06091A 42%, #0E2452 100%);
-}
-.mh-etoile {
-  position: absolute; display: block;
-  border-radius: 50%; background: #ffffff;
-  box-shadow: 0 0 2px rgba(255, 255, 255, .55);
-  /* L'éclat propre à chaque étoile vient du composant (`--eclat`) ; le
-     scintillement descend à un cinquième de cet éclat, jamais à zéro — une
-     étoile qui s'éteint tout à fait clignote, elle ne scintille pas. */
-  opacity: var(--eclat, .8);
-  animation: mh-scintille 3s ease-in-out infinite;
-}
-@keyframes mh-scintille {
-  0%, 100% { opacity: calc(var(--eclat, .8) * .2); }
-  50%      { opacity: var(--eclat, .8); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .mh-etoile { animation: none; opacity: calc(var(--eclat, .8) * .7); }
+      Et il ne s'applique QUE sous `[data-visage="home"]` : mana.bzh garde ses
+      vingt-deux paysages tournants, c'est la consigne.
+
+   ⭐ L'OMBRE EST DÉCLARÉE UNE FOIS. Elle protège les textes clairs qui n'ont
+      plus de bandeau sous eux — la devise de l'accueil comme les titres des
+      écrans. Recopiée aux deux endroits, elle aurait divergé à la première
+      retouche, et une divergence de charte ne casse rien : personne ne la
+      signale. */
+[data-visage="home"] {
+  --ombre-sur-carte: 0 1px 2px rgb(10 18 30 / 55%), 0 2px 12px rgb(10 18 30 / 45%);
 }
 
-/* ⛔ CE QUI LAISSE VOIR LE CIEL. Sans ça, le sol sable de l'application se
-   peindrait par-dessus et la nuit serait là, invisible — « un repli qui
+/* ⛔ CE QUI LAISSE VOIR LA CARTE. Sans ça, le sol sable de l'application se
+   peindrait par-dessus et le fond serait là, invisible — « un repli qui
    s'affiche en taille nulle est un repli qui n'existe pas », sous une
    troisième forme. */
 [data-visage="home"] body,
 [data-visage="home"] .fond { background: transparent; }
+
+/* 🔴 L'EN-TÊTE KAKI S'EFFACE, ET SON MOTIF EST DEVENU SON CONTRAIRE — mesuré
+   à l'écran le 14/11/2026 : un bandeau PLEIN de 165 px en tête de `/radio` et
+   `/reglages`, qui cachait la carte exactement là où la consigne du jour
+   demande de la montrer.
+   ⭐ IL AVAIT RAISON LE 3/11 : « un kaki plein en tête d'écran, PAS le fond
+      tournant » — il existait pour masquer un fond d'images d'ambiance. Le
+      fond n'est plus une ambiance, c'est le produit. La règle n'a pas vieilli
+      par négligence : sa cause a changé de camp.
+   ⚠️ Le rembourrage RESTE : c'est lui qui tient l'espacement du titre. Seule
+      la couleur part — sinon la mise en page sauterait sur deux écrans. */
+[data-visage="home"] .entete-kaki { background: transparent; }
+
+/* ⭐ ON PROTÈGE LE TEXTE, PAS LA CARTE — la leçon du filigrane retiré ce matin,
+   étendue aux écrans de contenu. Ces deux rôles sont calibrés CLAIR (voir
+   l'en-tête kaki) : sur une orthophoto de ville ou de sable, ils perdaient
+   leur fond sombre en même temps que le bandeau. Un voile aurait coûté à TOUT
+   ce qu'il recouvre ; l'ombre suit chaque lettre, donc elle ne dépend de rien
+   — ni de la longueur du texte, ni de ce qu'il y a dessous. */
+[data-visage="home"] .page .hero-label,
+[data-visage="home"] .page .page-titre { text-shadow: var(--ombre-sur-carte); }
 
 
 /* ══ LA CARTE DU MONDE — l'accueil de MANAhome, 14/11/2026 ═══════════════
@@ -4359,9 +4369,7 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
       LONGUEUR du texte est un hasard ». Ici l'ombre suit chaque lettre, donc
       elle ne dépend de rien. */
 [data-visage="home"] .inv-mot,
-[data-visage="home"] .inv-devise {
-  text-shadow: 0 1px 2px rgb(10 18 30 / 55%), 0 2px 12px rgb(10 18 30 / 45%);
-}
+[data-visage="home"] .inv-devise { text-shadow: var(--ombre-sur-carte); }
 
 /* ⛔ LE FILIGRANE TOPOGRAPHIQUE AUSSI. Quatre courbes posées en haut à
    droite — « presque imperceptibles » sur un sol sable, mais c'est une

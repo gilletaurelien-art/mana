@@ -6,6 +6,7 @@ import { Invitation } from "./Invitation";
 import { LApplication } from "./LApplication";
 import { avecOffice, visage, signature, titrePourLHote, poserCanonique } from "./visage";
 import { entreesBarre, liensPied } from "./barre";
+import { carteEnFond, CARTE_EN_ACCUEIL } from "./fond-du-monde";
 import { couper, ecouterPoste, etatPoste, lire } from "./poste";
 import { Reglages } from "./Reglages";
 import { Hebergements } from "./Hebergements";
@@ -67,25 +68,10 @@ const B = baseUrl();
  * ⚠️ Rien n'y devient inatteignable : mentions légales et contact vivent
  *    aussi dans la barre du bas, sur toutes les pages.
  */
-/**
- * 🔴 L'ACCUEIL-CARTE EST DÉCROCHÉ — 14/11/2026, en production.
- *
- *    `CarteMonde` s'initialise une fois sur deux : le style est téléchargé
- *    (200, comme ses sprites et ses polices), mais maplibre le REFUSE —
- *    « Expected value to be of type number, but found null », neuf fois — et
- *    ne demande alors AUCUNE tuile de fond. `isStyleLoaded()` reste faux
- *    pour toujours, donc ni source, ni points, ni message : une page
- *    d'accueil BLANCHE.
- *
- * ⛔ ET C'EST LA PORTE D'ENTRÉE DU SITE. Tant que ce n'est pas compris, elle
- *    rend l'accueil précédent — la devise, la recherche, les trois portes —
- *    qui, lui, marche. La carte reste atteignable et se répare sans que
- *    personne ne tombe sur du blanc.
- * ⭐ Un drapeau qui se lève en UNE ligne vaut mieux qu'un correctif écrit
- *    dans l'urgence : on remet quand on a compris, pas quand on espère.
- * ⏳ À relever (`true`) dès que `CarteMonde` s'initialise de façon fiable.
- */
-const CARTE_EN_ACCUEIL = false;
+/* 🔴 `CARTE_EN_ACCUEIL` ET LA RÈGLE DE FOND ONT DÉMÉNAGÉ ENSEMBLE dans
+   `fond-du-monde.ts`, le 14/11/2026 — voir l'en-tête de ce fichier. Ce sont
+   les deux moitiés d'une seule question (« qui montre la carte du monde sur
+   cet écran ? ») et, séparées, elles pouvaient répondre « les deux ». */
 
 const SANS_PIED = new Set(["/carte", "/promenades", "/composer"]);
 
@@ -302,20 +288,26 @@ export default function App() {
              premier rendu. ⭐ Contourner une invariante documentée coûte
              toujours plus cher que de la respecter. */}
       {visage() !== "home" && <Fond />}
-      {/* 🔴 LA CARTE DU MONDE EN ARRIÈRE-PLAN — Aurélien, 14/11/2026 : « place
-          la carte du monde en arrière-plan de la landing ».
+      {/* 🔴 LA CARTE SATELLITE EST LE FOND D'ÉCRAN DE TOUT MANAHOME —
+          Aurélien, 14/11/2026 : « on va modifier la politique de fonds
+          d'écran = carte plein écran vue satellite sur chaque page ». Elle
+          n'était en arrière-plan que de l'accueil depuis le matin.
           ⭐ Elle remplace le fond que manahome n'avait plus, et elle le fait
-             MIEUX qu'une image : ce qu'on voit derrière la devise, ce sont
+             MIEUX qu'une image : ce qu'on voit derrière le contenu, ce sont
              les lieux que MANA connaît — pas une illustration d'ambiance.
-          ⛔ Et c'est l'emploi SÛR de ce composant. En plein écran, son refus
-             d'initialisation rendait la page blanche ; ici, le même échec ne
-             coûte qu'un décor : la devise, la recherche et les portes
-             restent lisibles. C'est pourquoi elle revient par là pendant que
-             `CARTE_EN_ACCUEIL` reste baissé.
-          ⚠️ Seulement sur l'ACCUEIL : sur les autres écrans, une carte
-             derrière une carte n'aurait aucun sens, et deux contextes WebGL
-             sur un téléphone se disputent une ressource comptée. */}
-      {visage() === "home" && path === "/" && (
+          ⭐ ET C'EST L'EMPLOI SÛR DE CE COMPOSANT. En plein écran, son refus
+             d'initialisation rendait la page blanche ; en fond, le même échec
+             ne coûte qu'un décor : le contenu reste lisible par-dessus.
+          ⚠️ LA RÈGLE EST DANS `fond-du-monde.ts`, PAS ICI — elle doit
+             s'interroger, parce qu'elle a deux versants à tenir d'accord :
+             où le fond s'affiche, et quels écrans portent déjà une carte.
+             « Chaque page » ne peut pas vouloir dire une carte derrière une
+             carte : invisible, et un second contexte WebGL sur un téléphone
+             est une ressource que le navigateur sacrifie sans prévenir.
+          ⚠️ ET ELLE EST HORS DE `.app-colonne`, DONC MONTÉE UNE SEULE FOIS :
+             naviguer d'un écran de contenu à l'autre ne recrée pas la carte,
+             ne redemande pas ses tuiles et ne perd pas le cadrage. */}
+      {carteEnFond(visage(), path) && (
         <Suspense fallback={null}><CarteMonde enFond /></Suspense>
       )}
       {/* ⭐ LA COLONNE. « Les bulles s'affichent au format mobile partout —
