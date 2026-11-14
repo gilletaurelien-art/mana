@@ -14,7 +14,8 @@
     "carte:verifier": "node scripts/carte-style.mjs --verifier && node scripts/carte-ortho.mjs --verifier",
     "carte:ortho": "node scripts/carte-ortho.mjs",
     "deploy:bzh": "./deploiement/deployer-mana-bzh.sh",
-    "build:manahome": "MANA_BASE=/ VITE_GRAPHE_BASE=https://mana.bzh/bretagne/g MANA_TITRE=\"MANAhome — explorer, composer, marcher\" vite build && rm -rf site/bretagne site/monde"
+    "build:manahome": "MANA_BASE=/ VITE_GRAPHE_BASE=https://mana.bzh/bretagne/g MANA_TITRE=\"MANAhome — explorer, composer, marcher\" vite build && rm -rf site/bretagne site/monde",
+    "deploy:tous": "./deploiement/deployer-les-deux.sh"
   },
   "dependencies": {
     "maplibre-gl": "^4.7.1",

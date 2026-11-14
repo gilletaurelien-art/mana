@@ -49,39 +49,85 @@ c'est ce qui le rend inoffensif.
 ⚠️ `pyosmium` n'est pas dans `package.json` — c'est du Python. Un
 environnement jetable suffit : `python3 -m venv .venv && .venv/bin/pip install osmium`.
 
-## L'app chez MANAhome — 14/11/2026
+## DEUX HÔTES, UNE APP — et ils dérivent si on n'y pense pas
 
-Décision d'Aurélien : « l'app de promenades déménage chez manahome ». Elle tourne
-désormais à **https://manahome.org/balades/**, en plus de mana.bzh.
+🔴 **Arbitrage d'Aurélien, 14/11/2026 : mana.bzh reste la version bretonne, et
+manahome.org sert la même app au monde.** Aucune redirection, les deux vivent.
+
+⛔ **Le prix est immédiat et il a été payé dans l'heure.** Après la promotion à
+la racine de manahome, mana.bzh servait encore `index-d4bkds03.js` — le bundle
+d'AVANT la correction de signature, zéro occurrence de « MANAhome ». Les deux
+hôtes tournaient sur deux versions, et rien ne le disait : chacun répondait 200,
+chacun affichait le bon titre.
+
+⭐ **Deux déploiements pour une source, c'est une dérive programmée.** Pas un
+risque : une certitude, le jour où l'on en lance un seul. D'où :
 
 ```bash
-npm run build:manahome     # MANA_BASE=/balades/ + graphes en absolu chez mana.bzh
-rsync -az --rsync-path="sudo rsync" site/ debian@<ks5>:/srv/www-manahome/balades/
+npm run deploy:tous     # manahome PUIS mana.bzh, dans cet ordre
 ```
 
-⭐ **UNE BASE, PAS LA RACINE.** Les deux applications se disputent trois fichiers
-à la racine — `index.html`, `llms.txt`, `robots.txt`. Sous `/balades/`, zéro
-collision, et rien de ce que manahome sert déjà ne bouge. La promotion à la
-racine est une décision de produit, pas un prérequis technique.
+⚠️ Les deux bundles ont des empreintes DIFFÉRENTES, et c'est normal : mana.bzh
+lit ses graphes en relatif (`/bretagne/g`), manahome en absolu
+(`https://mana.bzh/bretagne/g`), et leurs titres statiques diffèrent. Ce qui doit
+coïncider n'est pas l'empreinte, c'est le COMMIT.
+
+## L'app chez MANAhome — 14/11/2026
+
+Décision d'Aurélien : « l'app de promenades déménage chez manahome », puis
+« promeus /balades à la racine ». Elle tourne donc à **https://manahome.org/**,
+en plus de mana.bzh.
+
+⚠️ **CETTE SECTION A DÉCRIT UNE ÉTAPE INTERMÉDIAIRE PENDANT QUELQUES HEURES.**
+Elle annonçait la base `/balades/` et un titre « qui ment à moitié ». Les deux
+étaient vrais le matin et faux le soir : la base est la RACINE, et la signature
+se décide maintenant à l'exécution. Gardé ici comme repère daté, parce que le
+raisonnement du sous-dossier reste le bon pour qui ajoute une TROISIÈME app.
+
+⭐ **LE SOUS-DOSSIER ÉTAIT LE CHOIX PRUDENT, ET LA RACINE EST UN CHOIX DE
+PRODUIT.** Les deux applications se disputent trois fichiers à la racine —
+`index.html`, `llms.txt`, `robots.txt`. Sous `/balades/` il n'y avait aucune
+collision. À la racine il y en a trois, et chacune est tranchée explicitement :
+`fabriquer-accueil.mjs` (manahome-app) **n'écrit plus** `site/index.html` et le
+supprime après build ; `llms.txt` et `robots.txt` sont **exclus du rsync** de ce
+dépôt. Trois arbitrages valent mieux qu'un sous-dossier quand le produit demande
+la racine — mais ils doivent être écrits, pas supposés.
+
+### Le titre, et pourquoi il ne se règle pas au build
+
+Un seul code, deux noms de site. Le build peut poser un `<title>` par hôte
+(`MANA_TITRE`, plugin `titre-de-l-hote` dans `vite.config.ts`), mais tout ce que
+l'app écrit ENSUITE — les titres de `/carte`, `/promenades`, `/composer` — est
+dans le bundle. D'où `signature()` dans `src/visage.ts`, qui lit
+`location.hostname` **à l'exécution** :
+
+| hôte | signature | « en Bretagne » |
+|---|---|---|
+| `mana.bzh` | `MANA.bzh` | gardé |
+| `manahome.org` | `MANAhome` | retiré |
+| `mana.love` | `mana.love` | retiré |
+
+⛔ **`signature()` ne doit PAS dépendre de `visage()`.** Elle en dépendait, et
+`visage()` répond à une autre question — quelle VOIX parle — qui n'a pas la même
+réponse par hôte. Les deux coïncidaient par accident sur deux domaines.
+
+⚠️ **La table de titres de `App.tsx` reste bretonne d'abord** : elle nomme les
+territoires de la presqu'île, et `titrePourLHote()` la retouche à la lecture.
+C'est une réparation à la sortie, pas à la source — ⏳ à reprendre le jour où un
+troisième territoire non breton entre dans la table.
+
+### Les graphes ne déménagent pas
+
+Ils restent servis par mana.bzh (`/bretagne/g`, `/monde/g`) et sont lus en
+**cross-origin** : la liste blanche CORS de ces deux blocs contient déjà
+`manahome.org`. Vérifié depuis la page — `fetch` rend 200, `type: "cors"`,
+15 970 arêtes et 335 lieux. ⭐ Un graphe pèse 1 à 3 Mo : le servir deux fois
+serait le payer deux fois, et les deux copies divergeraient au premier
+remoissonnage.
 
 ⛔ **LE BLOC CADDY DOIT PRÉCÉDER LE REPLI SPA de manahome.** Mesuré avant la
-pose : `/balades/` rendait 200 et `/balades/composer` rendait **404 avec le
-titre « MANAhome — le territoire, relevé pays par pays »** — un 404 qui affiche
-le mauvais site.
-
-⚠️ **LES GRAPHES NE DÉMÉNAGENT PAS.** Ils restent servis par mana.bzh
-(`/bretagne/g`, `/monde/g`) et sont lus en **cross-origin** : la liste blanche
-CORS de ces deux blocs contient déjà `manahome.org`. Vérifié depuis la page —
-`fetch` rend 200, `type: "cors"`, 15 970 arêtes et 335 lieux. ⭐ Un graphe pèse
-1 à 3 Mo : le servir deux fois serait le payer deux fois, et les deux copies
-divergeraient au premier remoissonnage.
-
-🔴 **ET LE TITRE MENT MAINTENANT À MOITIÉ.** Les pages servies chez manahome
-annoncent « MANA.bzh — Promenades & découvertes en Bretagne ». C'est juste sur
-mana.bzh et faux chez manahome — et ça le restera tant que les deux servent la
-même app. ⭐ Un déménagement à moitié fait est une vérité à moitié dite : le
-titre ne pourra être juste des deux côtés qu'une fois le départ de mana.bzh
-tranché.
+pose : `/balades/composer` rendait **404 avec le titre « MANAhome — le
+territoire, relevé pays par pays »** — un 404 qui affiche le mauvais site.
 
 ## Les emprises relevées
 
