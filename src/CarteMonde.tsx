@@ -27,6 +27,9 @@ import { STYLE_CARTE as STYLE, STYLE_ORTHO } from "./carte-fond";
    voir l'en-tête de ce fichier-là : un volet masqué fabrique un écran noir
    et interdit de conclure, il n'interdit pas de vérifier autrement. */
 import { Z, SITES_POSES, tuilesDuCadre } from "./tuiles";
+/* ⭐ La porte d'entrée du style vit à part, et s'éprouve sans navigateur —
+   voir l'en-tête de ce fichier-là : elle a été fausse deux jours. */
+import { poserLaSource } from "./style-pret";
 
 const BASE = (import.meta.env.VITE_GRAPHE_BASE ?? "https://mana.bzh/bretagne/g")
   .replace(/\/bretagne\/g$/, "")
@@ -159,8 +162,6 @@ export function CarteMonde({ enFond = false }: { enFond?: boolean } = {}) {
     };
 
     const installer = () => {
-      m.addSource("sites", { type: "geojson",
-        data: { type: "FeatureCollection", features: [] } });
       /* ⭐ UNE COUCHE, PAS 1 500 ÉLÉMENTS. C'est toute la raison de cette
          carte : maplibre dessine les points sur le GPU. */
       m.addLayer({
@@ -182,37 +183,71 @@ export function CarteMonde({ enFond = false }: { enFond?: boolean } = {}) {
       taireLesEtiquettes();
       charger();
     };
-    /* 🔴 TROIS CHEMINS VERS LE MÊME MONTAGE, ET AUCUN N'EST DE TROP —
-       mesuré deux fois le 14/11/2026. Après que `StrictMode` a créé puis
-       détruit une première carte, la seconde arrive dans un état où
-       `isStyleLoaded()` est encore FAUX à la construction (donc on s'abonne
-       à `load`) et où `load` n'arrive JAMAIS — alors que `isStyleLoaded()`
-       devient vrai quelques instants plus tard. Symptôme : style peint ou
-       non selon la chance, sources réduites à celles du fond, zéro point, et
-       une trace qui s'arrête sur « carte #2 créée ».
-       ⭐ `styledata` est l'événement qui, lui, se répète : il suffit d'y
-          regarder si le style est prêt. Et `installe` garde la porte pour que
-          les trois chemins ne montent qu'une fois. */
+    /**
+     * 🔴 `isStyleLoaded()` ÉTAIT LA MAUVAISE PORTE, ET ELLE A COÛTÉ DEUX
+     *    JOURS. Ce garde disait `if (installe || !m.isStyleLoaded()) return;`
+     *    — c'est-à-dire : « n'installe rien tant que le style n'est pas
+     *    chargé ». Le nom le promet ; l'implémentation dit autre chose.
+     *
+     *    `Map.isStyleLoaded()` rend `style.loaded()`, qui exige — en plus du
+     *    style analysé — que **TOUTES les sources aient fini leurs tuiles**.
+     *    Mesuré dans la page, le 14/11/2026 :
+     *
+     *        style._loaded ............ true     ← le style EST prêt
+     *        imageManager.isLoaded() .. true
+     *        sourceCaches ............. ortho: false · openmaptiles: false
+     *        isStyleLoaded() .......... false    ← et pourtant
+     *
+     * ⛔ OR LE RELAIS ORTHO REND DES 504 À FROID — relevé le même jour sur
+     *    `carte/ortho/11/1052/865.jpg` et `11/1095/762.jpg`. Une tuile qui
+     *    tarde, et la porte reste fermée à chacun des cinquante sondages ;
+     *    au bout de dix secondes le guetteur s'arrête, pour toujours.
+     *    Résultat selon la chance du réseau : ni source `sites`, ni points,
+     *    et les vingt-cinq couches d'étiquettes JAMAIS éteintes — d'où ce
+     *    second symptôme, plus parlant que l'écran blanc : **la carte de fond
+     *    affiche les noms de pays et de villes**.
+     *
+     * ⭐ ET C'EST LA RÉPONSE À L'ÉNIGME LAISSÉE OUVERTE : « `CarteReelle`
+     *    charge le MÊME style sur le MÊME hôte sans broncher ». Évidemment —
+     *    elle ne pose AUCUNE source. Ses repères sont des éléments du DOM,
+     *    donc elle n'a jamais eu besoin que le style soit prêt. Deux
+     *    composants, un style, un seul qui attendait quelque chose.
+     *
+     * ⭐ LA BONNE PORTE EST `addSource` LUI-MÊME. En interne, il appelle
+     *    `_checkLoaded()` qui LÈVE « Style is not done loading » tant que le
+     *    style n'est pas analysé — et seulement pour cette raison-là, sans
+     *    rien savoir des tuiles. On ne demande donc plus « es-tu prêt ? » à
+     *    une fonction qui répond à une autre question : on pose la source, et
+     *    l'échec nous dit de repasser.
+     * ⚠️ C'est la source qui sert de sonde, pas un appel à blanc : une sonde
+     *    séparée mesurerait un instant, puis l'installation vraie aurait lieu
+     *    à un autre. Ici il n'y a pas d'intervalle entre les deux.
+     * ⚠️ Et `installe` passe à `true` APRÈS la pose réussie : si l'on
+     *    repasse, `addSource` lèverait cette fois « There is already a source
+     *    with ID », et on prendrait une porte ouverte pour une porte fermée.
+     */
     let installe = false;
     const tenter = () => {
-      if (installe || !m.isStyleLoaded()) return;
+      if (installe) return;
+      const pose = poserLaSource(m, "sites",
+        { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+      if (!pose) return;        // le style n'est pas analysé : on repassera
       installe = true;
       installer();
     };
+    /* ⭐ TROIS CHEMINS, ET AUCUN N'EST DE TROP. `load` peut être DÉJÀ passé
+       quand on s'abonne (`StrictMode` monte l'effet deux fois, le style est
+       alors en cache) ; `styledata`, lui, se répète. On tente donc tout de
+       suite, et à chaque occasion. */
     m.on("load", tenter);
     m.on("styledata", tenter);
     tenter();
-    /* 🔴 ET ON VÉRIFIE ACTIVEMENT, PARCE QUE LES ÉVÉNEMENTS NE SUFFISENT PAS.
-       Mesuré trois fois le 14/11/2026, EN PRODUCTION : la carte s'initialise
-       ou non selon la chance. `load` est parfois manqué, `styledata` ne
-       repasse pas toujours, et `isStyleLoaded()` devient vrai sans que rien
-       ne le signale. Symptôme : canevas plein écran, style jamais peint,
-       aucune source `sites`, aucun message — une page d'accueil BLANCHE.
-       ⭐ Un rendez-vous qu'on peut manquer demande qu'on aille voir. Dix
-          secondes de vérification toutes les 200 ms coûtent cinquante
-          réveils sans travail ; une porte d'entrée blanche coûte le site.
-       ⚠️ Bornée, et elle s'arrête dès que la pose a eu lieu : une boucle qui
-          ne finit pas serait pire que le défaut qu'elle corrige. */
+    /* ⚠️ LE GUETTEUR RESTE, MAIS IL N'EST PLUS LE FILET PRINCIPAL. Il avait
+       été posé parce qu'« un rendez-vous qu'on peut manquer demande qu'on
+       aille voir » — c'était vrai, et insuffisant : il allait voir avec la
+       mauvaise question, et rendait non cinquante fois de suite. Il garde sa
+       place pour le cas où les deux événements se croisent, et sa borne de
+       dix secondes n'est plus une condamnation. */
     const guetteur = window.setInterval(() => {
       if (installe) { window.clearInterval(guetteur); return; }
       tenter();
