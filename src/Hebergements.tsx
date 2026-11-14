@@ -17,9 +17,28 @@
 //    afficher une liste qui ressemble à un moteur de réservation en
 //    promettrait. Il dit ce qu'on sait : un nom, un type, une commune, une
 //    distance.
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { DEFAUT, territoireDe, urlHebergements, type Territoire } from "./territoires";
 import { metres } from "./composition";
+import type { Walk } from "./walks";
+
+/* ⚠️ DIFFÉRÉE, comme partout ailleurs : maplibre pèse 1,29 Mo, et qui n'ouvre
+   pas cet écran ne doit pas le payer. */
+const CarteReelle = lazy(() =>
+  import("./CarteReelle").then((m) => ({ default: m.CarteReelle })));
+
+/**
+ * ⭐ UN PARCOURS VIDE, PARCE QU'IL N'Y A PAS DE PARCOURS. `CarteReelle` est
+ *    l'instrument — on la déplace, on zoome — et depuis le 14/11 elle accepte
+ *    des épingles libres : `points: []` lui dit « ni trait, ni départ, ni
+ *    arrivée », et elle cadre sur les épingles. La condition est la donnée
+ *    elle-même, pas un drapeau de plus.
+ */
+const SANS_CHEMIN: Walk = {
+  slug: "hebergements", provenance: "mana", titre: "Où dormir",
+  lieu: "", resume: "", distanceKm: 0, dureeEstimeeH: 0,
+  points: [], etapes: [], boucle: false,
+} as unknown as Walk;
 
 const BASE = import.meta.env.VITE_GRAPHE_BASE ?? "https://mana.bzh/bretagne/g";
 
@@ -54,6 +73,8 @@ export function Hebergements() {
   const [position, setPosition] = useState<[number, number] | null>(null);
   const [liste, setListe] = useState<Hebergement[] | null>(null);
   const [erreur, setErreur] = useState(false);
+  /** ⭐ Lequel on regarde. La carte montre OÙ ; l'encart dit QUOI. */
+  const [choisi, setChoisi] = useState<number | null>(null);
 
   /* L'adresse d'abord, la géolocalisation ensuite — même ordre que le
      compositeur, pour qu'un lien partagé ouvre bien le lieu qu'il nomme. */
@@ -135,21 +156,47 @@ export function Hebergements() {
 
         {autour && autour.length > 0 && (
           <>
+            {/* 🔴 UNE CARTE, PAS UNE LISTE — demande d'Aurélien, 14/11/2026 :
+                « on n'affiche pas comme ça : on affiche une carte avec des
+                pins ». ⭐ Il a raison et la raison se dit : une liste de 57
+                campings triés par distance ne répond pas à la question qu'on
+                se pose en cherchant où dormir, qui est OÙ. Un kilométrage
+                à vol d'oiseau ne dit ni la route, ni le bon côté de la baie.
+                ⚠️ La distance reste — dans l'encart, pour celui qu'on choisit.
+                Elle informe une fois qu'on sait où c'est ; elle ne remplace
+                pas la carte. */}
             <p className="page-note">
               {autour.length} hébergement{autour.length > 1 ? "s" : ""} à moins de{" "}
-              {RAYON_M / 1000} km, du plus proche au plus loin.
+              {RAYON_M / 1000} km. Touchez une épingle.
             </p>
-            <ul className="heb-liste">
-              {autour.map(({ h, m }, i) => (
-                <li className="heb" key={`${h.n}|${h.g[0]}|${h.g[1]}|${i}`}>
-                  <span className="heb-nom">{h.n}</span>
-                  <span className="heb-dire">
-                    {[direLeType(h.t), h.c].filter(Boolean).join(" · ")}
-                  </span>
-                  <span className="heb-loin">{dire(m)}</span>
-                </li>
-              ))}
-            </ul>
+            <div className="heb-scene">
+              <Suspense fallback={<div className="heb-attente">Carte…</div>}>
+                <CarteReelle
+                  walk={SANS_CHEMIN}
+                  hauteur="100%"
+                  moi={position ? { lon: position[0], lat: position[1] } : null}
+                  epingles={autour.map(({ h }, i) => ({
+                    nom: h.n, lon: h.g[0], lat: h.g[1],
+                    choisie: choisi === i,
+                    onChoisir: () => setChoisi(i),
+                  }))}
+                />
+              </Suspense>
+              {/* ⭐ L'ENCART DU CHOISI, posé SUR la carte — même grammaire que
+                  le compositeur, où la ligne de faits flotte au bas de la
+                  scène. On ne pousse pas la carte pour faire de la place à
+                  trois lignes de texte. */}
+              {choisi !== null && autour[choisi] && (
+                <div className="heb-choisi">
+                  <p className="heb-choisi-nom">{autour[choisi].h.n}</p>
+                  <p className="heb-choisi-dire">
+                    {[direLeType(autour[choisi].h.t), autour[choisi].h.c]
+                      .filter(Boolean).join(" · ")}
+                    {" — "}{dire(autour[choisi].m)}
+                  </p>
+                </div>
+              )}
+            </div>
             {/* ⛔ LA SOURCE SE DIT, comme pour la carte et les tracés. */}
             <p className="page-note">
               Relevé depuis OpenStreetMap et les portails touristiques régionaux.

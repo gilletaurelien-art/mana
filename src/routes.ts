@@ -105,6 +105,28 @@ export const ROUTES_HORS_LOVE: Readonly<Record<string, string>> = {
 };
 
 /**
+ * 🔴 CE QUE MANAHOME NE SERT PAS — 14/11/2026, et la liste est COURTE parce
+ *    que manahome sert presque tout : c'est la même application, au monde.
+ *
+ * ⛔ `/balades-office` y était servi — il figure dans la liste blanche Caddy
+ *    `@appmanahome` — alors que l'écran refuse de le rendre (`avecOffice()`
+ *    est faux) et que le collecteur ne va même pas chercher les circuits hors
+ *    Bretagne. Une adresse qui répond 200 et ne montre rien est pire qu'un
+ *    404 : elle se partage, elle s'indexe, et elle promet un contenu qui
+ *    n'existe pas ici.
+ * ⭐ Même doctrine que `ROUTES_HORS_LOVE` : « on ne revendique pas ce qu'on ne
+ *    sert pas », et la raison vit à côté du chemin.
+ * ⚠️ Cette liste ne pilote PAS encore le bloc Caddy de manahome, qui est
+ *    écrit à la main dans `/etc/caddy/Caddyfile` et non engendré depuis ce
+ *    fichier. Elle le DÉCLARE, et le retrait côté serveur se fait à la main —
+ *    ⏳ un troisième engendrement reste à écrire si manahome gagne d'autres
+ *    exclusions.
+ */
+export const ROUTES_HORS_HOME: Readonly<Record<string, string>> = {
+  [ROUTE_OFFICE]: "pas d'Office de tourisme hors de Bretagne — l'écran refuse déjà de le rendre, et la moisson n'y va pas",
+};
+
+/**
  * 🔴 ET LES FICHIERS DE RACINE SE SOUSTRAIENT AUSSI — c'est le piège que la
  *    liste des ROUTES ne montre pas.
  *

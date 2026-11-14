@@ -3305,18 +3305,55 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
       mensonge documentaire que ce dépôt refuse pour les fiches de balade.
    ⚠️ La distance est en chiffres tabulaires et alignée à droite : une colonne
       de distances se LIT, elle ne se déchiffre pas ligne à ligne. */
-.heb-liste { list-style: none; margin: var(--sp-2) 0 0; padding: 0; }
-.heb {
-  display: grid; grid-template-columns: 1fr auto; column-gap: var(--sp-1);
-  align-items: baseline; padding: 12px 0;
-  border-bottom: 1px solid rgb(25 43 67 / 10%);
+/* ⭐ LA CARTE PREND LA SCÈNE. Une carte bornée à 420 px sur un téléphone
+   montre trois épingles sur cinquante-sept : on cherche OÙ dormir, donc il
+   faut voir le territoire. */
+.heb-scene {
+  position: relative; width: 100%;
+  height: clamp(320px, 62vh, 720px);
+  border-radius: var(--r-m); overflow: hidden;
+  margin: var(--sp-2) 0 0;
 }
-.heb-nom { font-weight: 600; color: var(--nuit); }
-.heb-dire { grid-column: 1; font-size: var(--t-s); color: var(--doux, #6e6e73); }
-.heb-loin {
-  grid-row: 1; grid-column: 2;
-  font-variant-numeric: tabular-nums; white-space: nowrap;
-  font-size: var(--t-s); color: var(--doux, #6e6e73);
+/* ⚠️ `hauteur="100%"` NE SE RÉSOUT PAS TOUT SEUL. La prop pose
+   `height: 100%` sur `.carte-plan`, et un pourcentage ne vaut que si TOUS
+   les ancêtres ont une hauteur définie. Mesuré le 14/11 : la scène faisait
+   503 px, la `<figure>` de la carte 44 — le canevas vivait sous la ligne de
+   flottaison de son propre conteneur. ⭐ Le compositeur ne tombe pas dedans
+   parce que sa scène porte déjà cette chaîne ; en la réutilisant ailleurs,
+   il fallait l'emporter avec. */
+.heb-scene > figure, .heb-scene > figure > .carte-plan { height: 100%; margin: 0; }
+
+.heb-attente {
+  display: grid; place-items: center; height: 100%;
+  color: var(--doux, #6e6e73); font-size: var(--t-s);
+}
+/* L'encart du choisi, posé SUR la carte — même grammaire que le compositeur. */
+.heb-choisi {
+  position: absolute; left: var(--sp-1); right: var(--sp-1); bottom: var(--sp-1);
+  max-width: 560px; margin: 0 auto;
+  padding: 10px 14px; border-radius: var(--r-m);
+  background: rgb(255 255 255 / 94%);
+  border: 1.5px solid rgb(25 43 67 / 12%);
+}
+.heb-choisi-nom { margin: 0; font-weight: 600; color: var(--nuit); }
+.heb-choisi-dire { margin: 2px 0 0; font-size: var(--t-s); color: var(--doux, #6e6e73); }
+
+/* ⚠️ L'ÉPINGLE EST UN BOUTON, donc elle doit avoir la taille d'un doigt —
+   et le dessin reste petit : c'est la ZONE qui grandit, pas la pastille. */
+.carte-pastille-bouton {
+  border: none; padding: 0; cursor: pointer;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--repere-couleur, var(--action));
+  box-shadow: 0 0 0 2px rgb(255 255 255 / 90%), 0 1px 3px rgb(0 0 0 / 35%);
+}
+.carte-pastille-bouton::after {
+  content: ""; position: absolute; inset: -14px;  /* la cible du doigt */
+}
+.carte-repere-epingle, .carte-repere-epingle-choisie { position: absolute; }
+.carte-repere-epingle-choisie .carte-pastille-bouton {
+  width: 22px; height: 22px;
+  background: var(--nuit);
+  box-shadow: 0 0 0 3px rgb(255 255 255 / 95%), 0 2px 6px rgb(0 0 0 / 45%);
 }
 
 /* LE CUL-DE-SAC, DIT LÀ OÙ ON REGARDE — 14/11/2026.

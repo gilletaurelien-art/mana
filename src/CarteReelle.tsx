@@ -89,6 +89,37 @@ import { STYLE_CARTE as STYLE } from "./carte-fond";
  *    c'est le SEUL lien entre un bout de chemin et son but. Trois arrivées de
  *    la même couleur rendraient les trois tracés anonymes.
  */
+/**
+ * UNE ÉPINGLE LIBRE — un point qu'on montre, sans chemin qui y mène.
+ *
+ * 🔴 AJOUTÉ LE 14/11/2026, demande d'Aurélien : « on n'affiche pas comme ça :
+ *    on affiche une carte avec des pins ». Les hébergements sortaient en
+ *    liste ; une liste de 57 campings triés par distance ne dit pas OÙ ils
+ *    sont, et c'est la seule question qu'on se pose en cherchant où dormir.
+ *
+ * ⭐ POURQUOI ICI ET PAS DANS UNE QUATRIÈME CARTE. Ce dépôt en porte déjà
+ *    trois — `CarteReelle` (l'instrument : on la déplace, on zoome),
+ *    `CarteFondOT` (l'image : on la regarde une seconde), et celle de
+ *    `Territoire2030`. Une quatrième intégration maplibre serait un
+ *    quatrième endroit où corriger le jour où la v4 épinglée bougera.
+ *    Et c'est bien l'INSTRUMENT qu'il faut : on cherche autour de soi, donc
+ *    on déplace et on zoome.
+ *
+ * ⚠️ LE CHEMIN DEVIENT FACULTATIF, ET C'EST LA SEULE CHOSE QUI CHANGE POUR
+ *    LES APPELANTS EXISTANTS : `walk.points` vide ⇒ ni trait, ni « Départ »,
+ *    ni « Arrivée », et le cadrage se fait sur les épingles. Aucun drapeau
+ *    en plus — la condition est la donnée elle-même.
+ */
+export interface Epingle {
+  nom: string;
+  lon: number;
+  lat: number;
+  /** ce qu'on dit sous le nom, quand on la choisit */
+  dire?: string;
+  choisie?: boolean;
+  onChoisir?: () => void;
+}
+
 export interface TraceCarte {
   nom: string;
   points: WalkPoint[];
@@ -106,9 +137,12 @@ export function CarteReelle({
   hauteur = 420,
   marge = 0,
   traces,
+  epingles,
 }: {
   walk: Walk;
   moi?: WalkPoint | null;
+  /** Des points à montrer, sans chemin — voir `Epingle`. */
+  epingles?: Epingle[];
   /** Trois chemins à la fois. Absent = un seul, celui de `walk`. */
   traces?: TraceCarte[];
   /** ⭐ UN NOMBRE (des pixels) OU UNE LONGUEUR CSS. Depuis le 6/11/2026,
@@ -142,7 +176,31 @@ export function CarteReelle({
   /* ⭐ Mise à jour À CHAQUE RENDU, hors effet : `redessiner` la lit depuis
      une fermeture créée une seule fois, à la naissance de la carte. */
   const tracesRef = useRef<TraceCarte[] | undefined>(traces);
+  const epinglesRef = useRef<Epingle[] | undefined>(undefined);
+
+  /**
+   * 🔴 CE QUE LA CARTE REGARDE — UNE SEULE FONCTION, ET ELLE NAÎT D'UN ÉCRAN
+   *    NOIR. Le 14/11, en rendant le chemin facultatif, j'ai gardé le repère
+   *    « Départ »… et laissé DEUX autres lectures du même tableau vide : le
+   *    repère « Arrivée », cent lignes plus bas, puis le CENTRE INITIAL de
+   *    maplibre, cent lignes plus haut. Chacune a rendu l'écran noir à son
+   *    tour, avec « Cannot read properties of undefined ».
+   * ⭐ Les corriger une par une, c'était jouer à la taupe. Trois lectures de
+   *    « où regarde-t-on ? » devaient être UNE. Celle-ci rend toujours au
+   *    moins un point tant qu'il y a quelque chose à montrer, et les
+   *    appelants n'ont plus à connaître les trois cas.
+   */
+  const aMontrer = (): WalkPoint[] => {
+    const t = tracesRef.current;
+    if (t?.length) return t.flatMap((x) => x.points);
+    if (walkRef.current.points.length) return walkRef.current.points;
+    return (epinglesRef.current ?? []).map((e) => ({ lon: e.lon, lat: e.lat }));
+  };
   tracesRef.current = traces;
+  /* ⭐ MÊME RAISON QUE `tracesRef` : `cadrer` est capturé dans un effet qui ne
+     se rejoue pas à chaque rendu. Lire `epingles` directement y figerait le
+     premier tableau — et la carte cadrerait sur les épingles d'avant. */
+  epinglesRef.current = epingles;
   /* 🔴 `walk` AUSSI PASSE PAR UNE RÉFÉRENCE — 6/11/2026, et c'est un VRAI
      défaut trouvé par le fondateur : « la carte s'efface ? ». Elle s'effaçait.
      `walk` est un `useMemo` du compositeur qui dépend de la proposition
@@ -181,7 +239,10 @@ export function CarteReelle({
     const m = new CarteML({
       container: plan.current,
       style: STYLE,
-      center: [walkRef.current.points[0].lon, walkRef.current.points[0].lat],
+      /* ⚠️ `cadrer` recadrera dans la foulée ; ce centre n'est qu'un point de
+         départ. Mais il doit EXISTER : sans chemin, `points[0]` est
+         `undefined` et maplibre lève avant tout rendu — écran noir. */
+      center: (() => { const p = aMontrer()[0]; return p ? [p.lon, p.lat] as [number, number] : [0, 0] as [number, number]; })(),
       zoom: 12,
       attributionControl: false,
     });
@@ -255,8 +316,11 @@ export function CarteReelle({
       /* ⭐ LE CADRAGE ENGLOBE LES TROIS. Cadrer sur le seul tracé choisi
          laisserait les deux autres hors de l'écran : on ne choisit pas entre
          des chemins qu'on ne voit pas. */
-      const t = tracesRef.current;
-      const b = bbox(t?.length ? t.flatMap((x) => x.points) : walkRef.current.points);
+      /* ⚠️ Cadrer sur un tableau vide donnerait un `fitBounds` sur [0,0] —
+         l'Atlantique au large du Ghana, une carte bleue que rien n'explique. */
+      const pts = aMontrer();
+      if (!pts.length) return;
+      const b = bbox(pts);
       const dLon = (b.lonMax - b.lonMin) * marge;
       const dLat = (b.latMax - b.latMin) * marge;
       m.fitBounds(
@@ -347,12 +411,36 @@ export function CarteReelle({
               repères superposés donnent deux étiquettes qui se recouvrent —
               « Départ » passait sous « Arrivée », illisible. Un seul repère,
               et il dit les deux. */}
-          <Repere
-            point={depart}
-            libelle={walk.boucle ? "Départ et arrivée" : "Départ"}
-            carte={carte}
-            variante="depart"
-          />
+          {/* ⚠️ SANS CHEMIN, PAS DE DÉPART. `depart` vaut alors `undefined`
+              et le repère se poserait à [0,0] — au large du Ghana. La
+              condition est la donnée, pas un drapeau. */}
+          {depart && (
+            <Repere
+              point={depart}
+              libelle={walk.boucle ? "Départ et arrivée" : "Départ"}
+              carte={carte}
+              variante="depart"
+            />
+          )}
+          {/* ⭐ LES ÉPINGLES — un point, pas de libellé à l'écran. Mesuré
+              ailleurs dans ce fichier et vrai ici aussi : « trois étiquettes
+              de toponymes bretons sur une carte de téléphone se recouvrent »,
+              et il y a ici 57 hébergements. Le nom se lit quand on choisit —
+              la carte montre OÙ, l'encart dit QUOI.
+              ⛔ Et le nom reste dans le DOM (`titre` → `title`/`aria-label`) :
+                 un repère muet au lecteur d'écran est un repère qui n'existe
+                 pas pour qui ne voit pas la carte. */}
+          {epingles?.map((e) => (
+            <Repere
+              key={`${e.nom}|${e.lon}|${e.lat}`}
+              point={{ lon: e.lon, lat: e.lat }}
+              libelle=""
+              titre={e.nom}
+              carte={carte}
+              variante={e.choisie ? "epingle-choisie" : "epingle"}
+              onChoisir={e.onChoisir}
+            />
+          ))}
           {/* ⚠️ LES ÉTAPES SONT NUMÉROTÉES, PAS NOMMÉES, SUR LA CARTE.
               Les noms complets ont été essayés : sur un téléphone de 375 px,
               « Grotte de l'Anse des Sévignés n° 1 » déborde du cadre et
@@ -382,7 +470,14 @@ export function CarteReelle({
                   couleur={t.couleur}
                 />
               ))
-            : !walk.boucle && (
+            /* ⚠️ `arrivee` EST `undefined` SANS CHEMIN, exactement comme
+               `depart`. J'avais gardé l'un et pas l'autre : l'écran est sorti
+               NOIR, avec « Cannot read properties of undefined (reading
+               'lat') » dans `<Repere>`. ⭐ Deux lectures du même tableau vide,
+               à cent lignes d'écart — garder la première ne garde pas la
+               seconde, et c'est la leçon que ce dépôt répète sous « compter
+               les points de pose est le geste ». */
+            : !walk.boucle && arrivee && (
                 <Repere point={arrivee} libelle="Arrivée" carte={carte} variante="arrivee" />
               )}
           {moi && <Repere point={moi} libelle="Moi" carte={carte} variante="moi" />}
@@ -405,12 +500,16 @@ function Repere({
   variante,
   titre,
   couleur,
+  onChoisir,
 }: {
   point: WalkPoint;
   libelle: string;
   carte: CarteML | null;
   variante: string;
   titre?: string;
+  /** ⭐ Une épingle qu'on peut choisir est un BOUTON, pas une puce décorée :
+   *  sans ça elle ne se prend ni au clavier ni au lecteur d'écran. */
+  onChoisir?: () => void;
   /** ⚠️ Passée en variable CSS, pas en `background` : la pastille a aussi un
    *  liseré et une ombre, que le thème décide. On ne lui donne que la teinte. */
   couleur?: string;
@@ -507,7 +606,10 @@ function Repere({
          teinte, elle garde son dessin. */
       style={couleur ? ({ ["--repere-couleur" as string]: couleur }) : undefined}
     >
-      {variante === "etape" ? (
+      {onChoisir ? (
+        <button type="button" className="carte-pastille carte-pastille-bouton"
+                onClick={onChoisir} aria-label={titre ?? libelle} />
+      ) : variante === "etape" ? (
         <span className="carte-pastille carte-numero">{libelle}</span>
       ) : (
         <>

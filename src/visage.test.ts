@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
-import { ROUTES_APP, ROUTES_LOVE, ROUTE_OFFICE, ROUTES_HORS_LOVE } from "./routes";
+import { ROUTES_APP, ROUTES_LOVE, ROUTE_OFFICE, ROUTES_HORS_LOVE, ROUTES_HORS_HOME } from "./routes";
 import { visage, avecOffice, signature, courriel, titrePourLHote, canonique, poserCanonique } from "./visage";
 import { entreesBarre } from "./barre";
 
@@ -478,19 +478,50 @@ describe("🔴 aucune marque bretonne ne doit partir sur manahome", () => {
      ⚠️ CETTE LISTE EST UN PLANCHER, PAS UN PLAFOND. Elle ne voit que les
         marques qu'on lui nomme. La vérification qui tranche reste celle qu'on
         fait sur la PAGE SERVIE, et c'est elle qui a trouvé ces quatre-là. */
+  /* 🔄 DEUX ENTRÉES DE PLUS LE 14/11 AU SOIR — trouvées par Aurélien sur
+     manahome.org/carte, pas par ce test : « supprime l'option > les circuits
+     balisés (c'est mana.bzh) ». ⭐ La liste s'allonge à chaque fois que
+     quelqu'un REGARDE, et c'est exactement ce que son avertissement annonce :
+     elle est un plancher. */
   const MARQUES = ["Au cœur de la Bretagne", "Offices de Tourisme",
-                   "Finistère", "MANA<em>.bzh</em>"];
-  const RENDUS = ["./Invitation.tsx", "./RechercheAccueil.tsx", "./App.tsx"];
+                   "Finistère", "MANA<em>.bzh</em>", "Les circuits balisés"];
+  const RENDUS = ["./Invitation.tsx", "./RechercheAccueil.tsx", "./App.tsx",
+                  "./Territoire2030.tsx"];
 
   for (const f of RENDUS) {
     it(`${f} ne sert aucune marque bretonne sans condition d'hôte`, () => {
       const src = nu(f);
       for (const m of MARQUES) {
-        if (!src.includes(m)) continue;
-        expect(src,
-          `« ${m} » est rendu par ${f} sans passer par avecOffice() : ` +
-          `manahome.org le servirait au monde entier`)
-          .toMatch(/avecOffice\(\)/);
+        let i = src.indexOf(m);
+        while (i !== -1) {
+          /* 🔴 ON REGARDE AUTOUR DE LA MARQUE, PAS LE FICHIER ENTIER —
+             corrigé le 14/11 après avoir vu ce garde NE PAS tomber. Il
+             exigeait que le fichier contienne `avecOffice()` quelque part ;
+             `Territoire2030.tsx` en contient un six cents lignes plus haut,
+             pour une tout autre raison. La mutation « la case redevient
+             inconditionnelle » est donc passée au vert.
+             ⭐ Un garde qui réussit sur le mauvais objet endort : il avait
+                l'air de tenir cinq marques, il n'en tenait aucune dans ce
+                fichier-là. 600 caractères de part et d'autre, c'est
+                largement un bloc JSX et ses commentaires. */
+          /* ⚠️ LA TABLE DES TITRES EST UNE EXCEPTION LÉGITIME, et une seule.
+             `App.tsx` y nomme le titre de CHAQUE route, y compris celles que
+             manahome ne sert pas. Une entrée dont la clé est déclarée dans
+             `ROUTES_HORS_HOME` a le droit d'être bretonne : l'adresse n'existe
+             pas là-bas. ⛔ C'est la DÉCLARATION qui l'autorise, pas le
+             silence — si le chemin revenait sur manahome, le garde reprendrait
+             la main. */
+          const ligne = src.slice(src.lastIndexOf("\n", i) + 1, src.indexOf("\n", i));
+          if (Object.keys(ROUTES_HORS_HOME).some((c) => ligne.includes(`"${c}"`))) {
+            i = src.indexOf(m, i + 1); continue;
+          }
+          const autour = src.slice(Math.max(0, i - 600), i + 600);
+          expect(autour,
+            `« ${m} » est rendu par ${f} sans condition d'hôte à proximité : ` +
+            `manahome.org le servirait au monde entier`)
+            .toMatch(/avecOffice\(\)/);
+          i = src.indexOf(m, i + 1);
+        }
       }
     });
   }

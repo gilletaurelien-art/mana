@@ -1585,10 +1585,22 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
                 panneau que le filtre par genre venait de faire déborder de
                 l'écran. ⭐ Un sous-titre qui PARAPHRASE son titre n'ajoute
                 pas de l'aide, il ajoute de la hauteur. */}
+            {/* 🔴 « SUPPRIME L'OPTION > LES CIRCUITS BALISÉS (C'EST MANA.BZH) »
+                — Aurélien, 14/11/2026, en regardant manahome.org/carte.
+                ⭐ ET LA CASE ÉTAIT DOUBLEMENT FAUSSE LÀ-BAS : plus haut dans
+                   ce fichier, `if (!avecOffice()) { setOt([]); return; }`
+                   n'allait déjà PAS chercher les circuits hors Bretagne. La
+                   case pilotait donc un calque vide — une commande qui ne
+                   commande rien, ce qui se lit comme « il n'y en a pas ici »
+                   au lieu de « ce n'est pas ce site ».
+                ⚠️ La clé `balises` reste dans l'état : la retirer ferait un
+                   `calques.balises` indéfini que trois lectures plus bas
+                   attendent en booléen. C'est l'OPTION qui disparaît, pas le
+                   calque. */}
             {([
-              ["balises", "Les circuits balisés"],
-              ["sites", "Les sites remarquables"],
-            ] as const).map(([clef, nom]) => (
+              ...(avecOffice() ? [["balises", "Les circuits balisés"] as const] : []),
+              ["sites", "Les sites remarquables"] as const,
+            ]).map(([clef, nom]) => (
               <label key={clef} className="terr-calque">
                 <input
                   type="checkbox" checked={calques[clef]}
