@@ -18,7 +18,21 @@
  *    mauvais visage dans un HTML figé.
  */
 
-export type Visage = "bzh" | "love";
+/**
+ * 🔴 TROIS VISAGES DEPUIS LE 14/11/2026, ET LE TROISIÈME CORRIGE UN DÉFAUT
+ *    QUI TOURNAIT EN PRODUCTION. Le type n'en portait que deux, et `visage()`
+ *    rendait `"bzh"` pour TOUT ce qui n'était pas mana.love. manahome.org,
+ *    qui sert la même application depuis le 14/11, était donc traité comme la
+ *    Bretagne — relevé en production sur `manahome.org/carte`, la barre du bas
+ *    proposait **« Les balades des Offices de Tourisme »**, c'est-à-dire
+ *    l'Office de Crozon, à un public mondial.
+ * ⭐ C'EST LE DÉFAUT DU REPLI QUI RESSEMBLE À UN CHOIX. Un `?:` à deux
+ *    branches ne se plaint pas quand un troisième cas arrive : il le range
+ *    dans la branche par défaut, et la branche par défaut a toujours l'air
+ *    délibérée. Un type à deux valeurs n'a rien signalé non plus — parce que
+ *    le troisième hôte n'était nulle part écrit.
+ */
+export type Visage = "bzh" | "love" | "home";
 
 /**
  * ⚠️ `?visage=love` EXISTE À DESSEIN, et ce n'est pas une porte dérobée : sans
@@ -30,8 +44,16 @@ export type Visage = "bzh" | "love";
 export function visage(): Visage {
   if (typeof location === "undefined") return "bzh";
   const force = new URLSearchParams(location.search).get("visage");
-  if (force === "love" || force === "bzh") return force;
-  return location.hostname === "mana.love" ? "love" : "bzh";
+  if (force === "love" || force === "bzh" || force === "home") return force;
+  const h = location.hostname;
+  if (h === "mana.love") return "love";
+  /* ⚠️ `endsWith` POUR LES SOUS-DOMAINES, comme `signature()` juste en dessous.
+     Les deux répondent à des questions différentes — QUELLE VOIX parle, et
+     SOUS QUEL NOM on signe — mais elles reconnaissent l'hôte de la même
+     façon, et les laisser diverger ferait un site qui signe « MANAhome » en
+     servant l'Office de Crozon. */
+  if (h === "manahome.org" || h.endsWith(".manahome.org")) return "home";
+  return "bzh";
 }
 
 /**
@@ -102,7 +124,22 @@ export const lieuDuSite = () =>
       `contact@${domaine}` aurait eu l'air juste et désigné une boîte qui
       n'existe pas — le courrier serait parti nulle part, sans rebond visible
       pour nous. */
-export const courriel = () => (visage() === "love" ? "welcome@mana.love" : "contact@mana.bzh");
+/**
+ * 🔴 TROIS ADRESSES, PARCE QU'IL Y A TROIS ÉDITEURS DE FAIT — et la troisième
+ *    manquait. Ce ternaire à deux branches rangeait manahome avec la
+ *    Bretagne : l'application y aurait annoncé `contact@mana.bzh` pendant que
+ *    les mentions légales du MÊME domaine déclarent `contact@manahome.org`
+ *    (vérifié en ligne le 14/11/2026).
+ * ⛔ Deux adresses contradictoires sur un domaine ne sont pas une coquille :
+ *    la mention de l'éditeur est une déclaration (LCEN), et ce dépôt a déjà
+ *    refusé de servir ses propres mentions à mana.love pour cette raison
+ *    exacte — « un faux 200 sur une coquille est un défaut ; un éditeur faux
+ *    est une déclaration ».
+ */
+export const courriel = () =>
+  visage() === "love" ? "welcome@mana.love"
+  : visage() === "home" ? "contact@manahome.org"
+  : "contact@mana.bzh";
 
 /**
  * 🔴 LE TITRE, SIGNÉ PAR L'HÔTE — extrait d'`App.tsx` le 7/11 au soir, après

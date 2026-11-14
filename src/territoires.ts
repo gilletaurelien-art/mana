@@ -178,6 +178,20 @@ export const urlGraphe = (base: string, t: Territoire) =>
   `${t.base ?? base}/${t.slug}.json`;
 
 /**
+ * L'URL DES HÉBERGEMENTS — même forme que le graphe, un dossier à côté.
+ *
+ * ⭐ `/g/` porte les chemins, `/h/` porte les hébergements : deux fichiers
+ *    statiques par territoire, servis par le même hôte, lus en cross-origin
+ *    par manahome comme le graphe l'est déjà.
+ * ⚠️ ON DÉRIVE L'ADRESSE DU GRAPHE AU LIEU DE LA RÉÉCRIRE. Une seconde
+ *    constante `https://mana.bzh/...` divergerait de la première au premier
+ *    déménagement, et en silence — c'est la leçon que ce dépôt répète :
+ *    une valeur recopiée se périme, une valeur dérivée suit sa source.
+ */
+export const urlHebergements = (base: string, t: Territoire) =>
+  `${(t.base ?? base).replace(/\/g$/, "/h")}/${t.slug}.json`;
+
+/**
  * D'OÙ L'ON PART, QUAND PLUSIEURS SOURCES LE DISENT — et c'est ce point qui
  * décide du graphe à télécharger (`territoireDe` ci-dessus).
  *

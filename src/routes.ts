@@ -27,12 +27,20 @@ import { NOM_STYLE_PLAN, NOM_STYLE_ORTHO } from "./carte-fond";
  */
 
 /** Les adresses exactes. */
+/* ⭐ `/hebergements` EXISTE PARTOUT, SEULE LA BARRE DIFFÈRE — 14/11/2026.
+   La Bretagne a 57 hébergements relevés, le Mullerthal 57 aussi : aucune
+   raison de refuser l'adresse à mana.bzh. Ce qui change d'un hôte à l'autre,
+   c'est ce qu'on MET EN AVANT — l'Office chez nous, les hébergements au monde.
+   ⚠️ Et la raison vit ICI, pas dans le tableau : `scripts/caddy-bloc.mjs` lit
+      ces lignes une à une et REFUSE ce qu'il ne sait pas lire — à raison, un
+      chemin tombé du bloc serait servi par l'ancien site, sans erreur. */
 export const ROUTES_APP = [
   "/",
   "/carte",
   "/promenades",
   "/composer",
   "/balades-office",
+  "/hebergements",
   "/territoire",
   "/l-application",
   "/reglages",
@@ -76,6 +84,7 @@ export const ROUTE_OFFICE = "/balades-office";
 export const ROUTES_HORS_LOVE: Readonly<Record<string, string>> = {
   "/": "la racine reste à l'application citoyenne : elle y porte sa landing, et mana.love est le sur-ensemble — sa porte doit montrer le sur-ensemble, pas la promenade seule",
   [ROUTE_OFFICE]: "pas d'Office de tourisme sur mana.love",
+  "/hebergements": "les hébergements sont le produit de MANAhome, pas de mana.love",
   "/reglages": "devient « Mon compte », tenu par l'application citoyenne",
   "/espace": "le compte citoyen de mana.love est le sien, pas le nôtre",
   /* 🔴 CES DEUX-LÀ SONT ARRIVÉS APRÈS LA POSE, et par une question que j'ai

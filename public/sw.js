@@ -109,8 +109,8 @@ const PLAFOND_TUILES = 600;
    ⚠️ Ce fichier est servi tel quel depuis `public/` : il ne peut pas
       importer `src/routes.ts`. D'où la copie, et le test qui la tient. */
 const ROUTES_APP = [
-  "/", "/carte", "/promenades", "/composer", "/balades-office", "/territoire",
-  "/l-application",
+  "/", "/carte", "/promenades", "/composer", "/balades-office", "/hebergements",
+  "/territoire", "/l-application",
   "/reglages", "/contact", "/mentions-legales", "/espace", "/radio",
 ];
 const PREFIXES_APP = ["/promenade/", "/app/", "/paysages/", "/images/"];
@@ -152,7 +152,7 @@ const ROUTE_OFFICE = "/balades-office";
 /* ⚠️ `/contact` et `/mentions-legales` ont rejoint la liste après la pose du
    bloc Caddy : servir nos mentions sous mana.love déclarerait MANA.bzh
    éditeur de son domaine (LCEN). Mesuré : notre page le nomme seize fois. */
-const ROUTES_HORS_LOVE = ["/", ROUTE_OFFICE, "/reglages", "/espace", "/radio",
+const ROUTES_HORS_LOVE = ["/", ROUTE_OFFICE, "/hebergements", "/reglages", "/espace", "/radio",
                           "/contact", "/mentions-legales"];
 const FICHIERS_HORS_LOVE = ["/sw.js"];
 const SANS_OFFICE = self.location.hostname === "mana.love";

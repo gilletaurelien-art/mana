@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { ROUTES_APP, ROUTES_LOVE, ROUTE_OFFICE, ROUTES_HORS_LOVE } from "./routes";
 import { visage, avecOffice, signature, courriel, titrePourLHote, canonique, poserCanonique } from "./visage";
+import { entreesBarre } from "./barre";
 
 const lire = (f: string) => readFileSync(new URL(f, import.meta.url), "utf8");
 const nu = (f: string) =>
@@ -398,5 +399,67 @@ describe("🔴 la canonique : une seule adresse fait foi", () => {
     const { doc } = fauxDoc();
     expect(poserCanonique(doc, "/territoire")).toBe("https://mana.bzh/territoire");
     expect(poserCanonique(doc, "/")).toBe("https://mana.bzh/");
+  });
+});
+
+/* ════════════════════════════════════════════════════════════════════════
+   🔴 LE TROISIÈME VISAGE — manahome.org, 14/11/2026
+   ════════════════════════════════════════════════════════════════════════ */
+describe("🔴 manahome n'est pas la Bretagne par défaut", () => {
+  /* ⛔ LE DÉFAUT QUE CES TESTS GARDENT A TOURNÉ EN PRODUCTION. `Visage` ne
+     portait que `"bzh" | "love"` et `visage()` rendait `"bzh"` pour TOUT ce
+     qui n'était pas mana.love. Relevé sur `manahome.org/carte` le 14/11 : la
+     barre du bas proposait « Les balades des Offices de Tourisme », c'est-à-
+     dire l'Office de Crozon, à un public mondial.
+     ⭐ Et rien ne l'avait signalé — ni le type, ni le typecheck, ni les 571
+        tests : un ternaire à deux branches ABSORBE un troisième cas, il ne
+        s'en plaint pas. C'est pourquoi ces tests nomment l'hôte. */
+  it("⛔ manahome n'a PAS d'Office de tourisme", () => {
+    expect(surLHote("manahome.org", () => visage())).toBe("home");
+    expect(surLHote("manahome.org", () => avecOffice())).toBe(false);
+    // et la Bretagne le garde
+    expect(surLHote("mana.bzh", () => avecOffice())).toBe(true);
+  });
+
+  it("⛔ et il signe de son propre courriel, pas du nôtre", () => {
+    /* 🔴 Ses mentions légales — écrites par l'autre dépôt, vérifiées en ligne
+       — déclarent `contact@manahome.org`. L'application y aurait annoncé
+       `contact@mana.bzh` : deux adresses d'éditeur contradictoires sur un
+       même domaine. Un éditeur faux est une déclaration (LCEN), pas une
+       coquille. */
+    expect(surLHote("manahome.org", () => courriel())).toBe("contact@manahome.org");
+    expect(surLHote("mana.bzh", () => courriel())).toBe("contact@mana.bzh");
+    expect(surLHote("mana.love", () => courriel())).toBe("welcome@mana.love");
+  });
+
+  it("⚠️ un sous-domaine de manahome est reconnu aussi", () => {
+    // Même règle que `signature()` : les laisser diverger ferait un site qui
+    // signe « MANAhome » en servant l'Office de Crozon.
+    expect(surLHote("www.manahome.org", () => visage())).toBe("home");
+    expect(surLHote("manahome.org", () => signature())).toBe("MANAhome");
+  });
+
+  it("🔴 la barre de manahome : hébergements, et AUCUNE passerelle mana.love", () => {
+    const e = entreesBarre("home");
+    const clefs = e.map((x) => x.clef);
+    expect(clefs).toContain("hebergements");
+    expect(clefs).not.toContain("office");
+    /* ⛔ LE PIÈGE QUE CE TEST GARDE VRAIMENT. Avant, la barre testait
+       `office = v === "bzh"` et rangeait tout le reste dans la branche de
+       mana.love : manahome aurait hérité de SES passerelles — ses déesses,
+       sa radio, son compte citoyen, tous pointant vers un autre domaine. */
+    expect(clefs, "manahome ne sert pas les passerelles de mana.love")
+      .not.toContain("chat");
+    expect(clefs).not.toContain("compte");
+    // la radio est mondiale (arbitrage d'Aurélien) et reste à NOUS
+    const radio = e.find((x) => x.clef === "radio");
+    expect(radio?.chemin, "la radio de manahome doit être la nôtre").toBe("/radio");
+    // et Réglages reste : il porte le fond de carte et la langue
+    expect(clefs).toContain("reglages");
+  });
+
+  it("⛔ la Bretagne ne perd rien au passage", () => {
+    const clefs = entreesBarre("bzh").map((x) => x.clef);
+    expect(clefs).toEqual(["carte", "office", "marque", "radio", "reglages"]);
   });
 });

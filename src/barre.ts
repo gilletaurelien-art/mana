@@ -54,8 +54,21 @@ export type Entree = {
  *    bouton qui mène à la mauvaise page ne se signale jamais, parce qu'il a
  *    l'air de marcher.
  */
+/**
+ * 🔴 TROIS VISAGES DEPUIS LE 14/11/2026, ET `office` NE PEUT PLUS TENIR LIEU
+ *    DE « NOUS ». Ce booléen voulait dire deux choses à la fois : « il y a un
+ *    Office ici » et « cet hôte est le nôtre ». Tant qu'il n'y avait que deux
+ *    sites, les deux coïncidaient. Avec manahome, `office` devient faux et
+ *    chaque colonne serait tombée dans la branche de mana.love — la barre
+ *    aurait servi au monde les PASSERELLES de mana.love : ses déesses, sa
+ *    radio, son compte citoyen.
+ * ⭐ C'est la même faute que `visage()` rendant `"bzh"` par défaut, une
+ *    couche plus haut : un test à deux issues ne signale pas l'arrivée d'un
+ *    troisième cas, il l'absorbe. On nomme donc les trois.
+ */
 export function entreesBarre(v: Visage): Entree[] {
   const office = v === "bzh";
+  const home = v === "home";
   const e: (Entree | null)[] = [
     { clef: "carte", chemin: "/carte?vue=carte", glyphe: "carte",
       libelle: "La carte du territoire" },
@@ -67,6 +80,15 @@ export function entreesBarre(v: Visage): Entree[] {
     office
       ? { clef: "office", chemin: "/balades-office", glyphe: "etincelles",
           libelle: "Les balades des Offices de Tourisme" }
+      /* 🔴 ARBITRAGE D'AURÉLIEN, 14/11 : chez MANAhome cette colonne devient
+         les hébergements. ⭐ Et c'est le MÊME métier que l'Office qu'elle
+         remplace — « ce qu'il y a autour de vous », pas un catalogue : les
+         173 pages pays de manahome comptent déjà les hébergements par pays,
+         et c'est une autre question. ⛔ D'où « autour de moi » et pas un
+         index : le bouton remplacé montrait ce qui est PRÈS. */
+      : home
+      ? { clef: "hebergements", chemin: "/hebergements", glyphe: "etincelles",
+          libelle: "Où dormir autour de moi" }
       : praticable("chat")
       ? { clef: "chat", chemin: PONTS.chat.chemin, glyphe: "etincelles",
           libelle: "Déesses", motVisible: true }
@@ -78,7 +100,12 @@ export function entreesBarre(v: Visage): Entree[] {
        elle ce n'est pas encore un chemin : la radio y est un univers,
        adressable par `?u=radio`, et une chaîne de requête ne traverse pas un
        matcher Caddy. */
-    office
+    /* ⛔ ET CHEZ MANAHOME LA RADIO RESTE LA NÔTRE — arbitrage d'Aurélien,
+       14/11 : « la radio manahome est mondiale ». Ce n'est donc pas une
+       colonne bretonne à retirer : rien dans le code ne la qualifie de
+       bretonne, seulement de « à nous » (mana.bzh, manahome) ou « à elle »
+       (mana.love). */
+    office || home
       ? { clef: "radio", chemin: "/radio", glyphe: "radio", libelle: "MANAradio",
           commute: "radio" }
       : praticable("radio")
@@ -90,7 +117,14 @@ export function entreesBarre(v: Visage): Entree[] {
        application ; notre écran de réglages n'y est même pas servi. Un onglet
        « Mon compte » qui ouvrait nos réglages était la promesse non tenue que
        ce dépôt traque — et en ligne, il ouvrait son accueil. */
-    office
+    /* ⏳ « RÉGLAGES DEVIENT-IL MON COMPTE ? » — question d'Aurélien, le 14/11,
+       NON TRANCHÉE et délibérément laissée ouverte ici. Elle supposait qu'une
+       colonne se libérait ; elle ne se libère pas, puisque la radio reste.
+       ⛔ Et Réglages n'est pas décoratif : il porte le CHOIX DU FOND DE CARTE
+          et la LANGUE. Le remplacer les perdrait. L'espace compte de manahome
+          existe pourtant (/mes-annonces, /messagerie, /publier répondent tous
+          200) — il lui manque une colonne, pas une destination. */
+    office || home
       ? { clef: "reglages", chemin: "/reglages", glyphe: "reglages", libelle: "Réglages" }
       : praticable("compte")
       ? { clef: "compte", chemin: PONTS.compte.chemin, glyphe: "reglages",
@@ -103,7 +137,16 @@ export function entreesBarre(v: Visage): Entree[] {
 /** Les liens du pied, pour un visage donné. */
 export function liensPied(v: Visage): { chemin: string; libelle: string }[] {
   const office = v === "bzh";
-  const peut = (clef: Parameters<typeof praticable>[0]) => office || praticable(clef);
+  const home = v === "home";
+  /* ⭐ `praticable()` interroge les PASSERELLES vers mana.love — il n'a rien à
+     dire de manahome, qui sert ces chemins lui-même. Vérifié en ligne le
+     14/11 : `/contact` et `/radio` y rendent l'application (ils sont dans la
+     liste blanche `@appmanahome`), et `/mentions-legales` y rend les mentions
+     de MANAhome — Alliance MANA, contact@manahome.org — écrites par l'autre
+     dépôt, qui gagne le chemin. ⛔ C'est le bon résultat et il ne doit pas
+     changer : servir NOS mentions sur son domaine déclarerait MANA.bzh
+     éditeur de manahome.org. */
+  const peut = (clef: Parameters<typeof praticable>[0]) => office || home || praticable(clef);
   return [
     { chemin: "/l-application", libelle: "Ce que fait l’application" },
     { chemin: "/promenades", libelle: "Promenades" },

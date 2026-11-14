@@ -17,6 +17,7 @@ import { avecOffice, visage, titrePourLHote, poserCanonique } from "./visage";
 import { entreesBarre, liensPied } from "./barre";
 import { couper, ecouterPoste, etatPoste, lire } from "./poste";
 import { Reglages } from "./Reglages";
+import { Hebergements } from "./Hebergements";
 import { EcranTerritoire } from "./EcranTerritoire";
 import { Composer } from "./Composer";
 import { BaladesOT } from "./BaladesOT";
@@ -94,6 +95,7 @@ export const TITRES: Record<string, string> = {
      randonnée Crozon ». Il nomme le territoire, parce qu'une page qui ne dit
      pas OÙ elle s'applique ne répond à personne. */
   "/l-application": "Ce que fait l'application — promenades, hors ligne et sécurité en presqu'île de Crozon — MANA.bzh",
+  "/hebergements": "Où dormir autour de moi — MANA.bzh",
   "/reglages": "Réglages, sources et mentions — MANA.bzh",
   "/espace": "Mon espace — MANA.bzh",
   "/contact": "Contact — MANA.bzh",
@@ -359,6 +361,8 @@ export default function App() {
         <Territoire />
       ) : path === "/l-application" ? (
         <LApplication base={B} />
+      ) : path === "/hebergements" ? (
+        <Hebergements />
       ) : path === "/reglages" ? (
         <Reglages base={B} />
       ) : path === "/mentions-legales" ? (

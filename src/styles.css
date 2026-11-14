@@ -3298,6 +3298,27 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
 /* ── C · les trois propositions ─────────────────────────────────────────── */
 .cp-propositions { margin-bottom: var(--sp-2); }
 
+/* ══ OÙ DORMIR — la liste « autour de moi » ═══════════════════════════════
+   ⭐ Une ligne par hébergement, trois informations : le nom, ce que c'est et
+      où, la distance. Pas de carte, pas de vignette : nous n'avons aucune
+      photographie de ces lieux, et en mettre une « d'ambiance » serait le
+      mensonge documentaire que ce dépôt refuse pour les fiches de balade.
+   ⚠️ La distance est en chiffres tabulaires et alignée à droite : une colonne
+      de distances se LIT, elle ne se déchiffre pas ligne à ligne. */
+.heb-liste { list-style: none; margin: var(--sp-2) 0 0; padding: 0; }
+.heb {
+  display: grid; grid-template-columns: 1fr auto; column-gap: var(--sp-1);
+  align-items: baseline; padding: 12px 0;
+  border-bottom: 1px solid rgb(25 43 67 / 10%);
+}
+.heb-nom { font-weight: 600; color: var(--nuit); }
+.heb-dire { grid-column: 1; font-size: var(--t-s); color: var(--doux, #6e6e73); }
+.heb-loin {
+  grid-row: 1; grid-column: 2;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+  font-size: var(--t-s); color: var(--doux, #6e6e73);
+}
+
 /* LE CUL-DE-SAC, DIT LÀ OÙ ON REGARDE — 14/11/2026.
    ⭐ Même matière que les propositions qu'il remplace : c'est la réponse de
       l'écran au même geste, elle doit occuper la même place. */
