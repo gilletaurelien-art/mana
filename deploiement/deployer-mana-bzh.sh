@@ -263,8 +263,17 @@ fi
 if [ "$VERIFIER" = "1" ]; then vert "✓ --verifier : rien n'a été déposé"; exit 0; fi
 
 # ── 4. déposer ──────────────────────────────────────────────────────────────
+# ⛔ CHAQUE EXCLUSION EST UN FICHIER QUI VIT SUR LE SERVEUR ET PAS DANS `site/`.
+#    `--delete` les emporterait au premier déploiement, et la perte ne se verrait
+#    qu'en 404 — trop tard. `bretagne` porte les graphes bretons ; `monde` porte
+#    ceux d'ailleurs, depuis le 14/11/2026 (Mullerthal, Luxembourg).
+#    ⚠️ Un graphe pèse ~3 Mo et se rejoue en quatre-vingts secondes
+#    (docs/graphe-pipeline.md) — mais le rejouer suppose qu'on sache qu'il a
+#    disparu. ⭐ Ajouter un dossier de graphes SANS l'ajouter ici est une perte
+#    programmée : la ligne ci-dessous est la liste de ce qui survit.
 rsync -az --delete \
-  --exclude 'robots.txt' --exclude 'llms.txt' --exclude 'bretagne' \
+  --exclude 'robots.txt' --exclude 'llms.txt' \
+  --exclude 'bretagne' --exclude 'monde' \
   -e "ssh -i $CLE -o IdentitiesOnly=yes -o ConnectTimeout=30" \
   site/ "$HOTE:$CIBLE/"
 
