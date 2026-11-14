@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
 import { lienYAller, plateformeDe } from "./y-aller";
+import { lieuxDuTerritoire } from "./lieux-du-territoire";
 import type { TraceCarte } from "./CarteReelle";
 import { indexer, composerVers, metres, fondreRencontres, ECART_MAX_M, noeudLePlusProche, traits, formeDeLaBoucle, SOURCE_MAREES, cheminDeRetour, composanteAtteint, accrocherTous, accrocherUn, accroche, propositionsAutour, promenadeVers, AUTOUR_MIN_M, AUTOUR_MAX_M, BOUCLE_PAR_ALLER } from "./composition";
 import { enGpx, telecharger } from "./Promenade";
@@ -630,23 +631,23 @@ export function Composer() {
   const [inventaire, setInventaire] = useState<Inventaire | null>(null);
   useEffect(() => { chargerLieux().then(setInventaire).catch(() => {}); }, []);
 
-  const spots = useMemo(() => {
-    if (!inventaire) return [];
-    /* ⛔ Les lieux SANS NOM ne se choisissent pas : une liste de douze
-       « Plage » ne se choisit pas, et il y en a 734 dans l'inventaire.
-       🔴 Et le drapeau `anonyme` NE COUVRE PAS TOUT — vu en production le
-          2/11 : la recherche proposait « Calvaire », un nom qui EST sa
-          catégorie. Quand une donnée ne porte pas la distinction qu'on
-          cherche, on ne la suppose pas : on en dérive une qu'on peut
-          contrôler. */
-    const vus = new Set<string>();
-    return inventaire.lieux.filter((l) => {
-      if (!l.n) return false;
-      if (plat(l.n) === plat(inventaire.libelles[l.c] ?? l.c)) return false;
-      if (vus.has(l.n)) return false;
-      vus.add(l.n); return true;
-    });
-  }, [inventaire]);
+  /**
+   * 🔴 ET L'HYPOTHÈSE DE CE RAISONNEMENT A CASSÉ LE 14/11, AU PREMIER
+   *    TERRITOIRE HORS DE BRETAGNE. Tout ce qui est écrit au-dessus reste
+   *    vrai — en Bretagne. `lieux.json` est breton (emprise −4,82 → −4,00),
+   *    et le Mullerthal, déployé la veille, offrait donc :
+   *
+   *        15 970 arêtes · 335 lieux dans son graphe · ZÉRO spot cliquable
+   *
+   *    Un écran de choix vide, sans un mot. ⭐ Le choix du 2/11 n'était pas
+   *    faux : il supposait, sans le dire, que l'inventaire couvre le
+   *    territoire affiché. `lieuxDuTerritoire` mesure cette couverture au
+   *    lieu de la supposer, et rend les lieux du GRAPHE là où l'inventaire
+   *    n'offre rien. La Bretagne ne bouge pas — vérifié par test.
+   */
+  const source = useMemo(
+    () => lieuxDuTerritoire(inventaire, graphe, LIBELLE), [inventaire, graphe]);
+  const spots = useMemo(() => source?.lieux ?? [], [source]);
 
   const positions = useMemo(
     () => spots.map((l) => l.g as readonly [number, number]), [spots]);
@@ -677,7 +678,10 @@ export function Composer() {
    */
   const trouves = useMemo(() => {
     const q = plat(requete.trim());
-    if (q.length < 2 || !inventaire) return [];
+    // ⚠️ `source` et non `inventaire` : la recherche porte sur les spots,
+    //    qui viennent de la source retenue. Garder l'inventaire ici rendrait
+    //    la recherche muette sur un territoire qu'il ne couvre pas.
+    if (q.length < 2 || !source) return [];
     const out: { i: number; lieu: Lieu }[] = [];
     for (const i of praticables) {
       if (!plat(spots[i].n!).includes(q)) continue;
@@ -1018,7 +1022,11 @@ export function Composer() {
    *    nécessité qui a disparu, pas sa justesse.
    */
   const rencontres = useMemo(() => {
-    if (!graphe || !b || !inventaire) return [];
+    // ⚠️ LA GARDE PORTE SUR LA SOURCE RETENUE, pas sur l'inventaire :
+    //    hors de Bretagne l'inventaire se charge très bien et ne sert à
+    //    rien. Tester le mauvais objet laissait passer un calcul qui
+    //    rendait 0 à tous les coups — un garde vert sur le mauvais objet.
+    if (!graphe || !b || !source) return [];
     /* 🔴 `b.contour`, ET SURTOUT PAS `traits(graphe, b).flat()` — défaut du
        2/11, trouvé en relisant ce que l'écran donne à mesurer.
        `traits()` rend la géométrie STOCKÉE de chaque arête, toujours dans le
@@ -1035,9 +1043,13 @@ export function Composer() {
         tracé juste était déjà sur l'objet, construit par `mesurer()` avec
         `[...ar[4]].reverse()`. ⛔ Une règle tenue à un endroit ne protège pas
         celui qui refabrique la même chose ailleurs. */
-    return rencontresLeLong(b.contour, inventaire.lieux).map((r) => ({
-      nom: r.l.n ?? inventaire.libelles[r.l.c] ?? r.l.c,
-      libelle: inventaire.libelles[r.l.c] ?? r.l.c,
+    /* ⚠️ `source.tous`, PAS `source.lieux` : on compte ce qu'on CROISE, et un
+       lavoir sans nom reste un lavoir. La liste filtrée est celle des lieux
+       qu'on PROPOSE — s'en servir ici sous-compterait, exactement comme le
+       2/11. */
+    return rencontresLeLong(b.contour, source.tous).map((r) => ({
+      nom: r.l.n ?? source.libelles[r.l.c] ?? r.l.c,
+      libelle: source.libelles[r.l.c] ?? r.l.c,
       lon: r.l.g[0], lat: r.l.g[1], ecart: r.m,
       /* ⭐ LA POSITION LE LONG DU PARCOURS VOYAGE AVEC — voir `etapes`. */
       ordre: r.ordre,
@@ -1051,12 +1063,12 @@ export function Composer() {
    *    proposition, contre 86 ms pour le reste du calcul.
    */
   const comptes = useMemo(() => {
-    if (!graphe || !lesProps || !inventaire) return [];
+    if (!graphe || !lesProps || !source) return [];
     /* ⚠️ `contour` ici AUSSI : c'est la même mesure, et la même faute si on
        la refait avec `traits()`. Le badge « N lieux sur le chemin » de chaque
        carte en dépend. */
-    return lesProps.map((p) => rencontresLeLong(p.parcours.contour, inventaire.lieux).length);
-  }, [graphe, lesProps, inventaire]);
+    return lesProps.map((p) => rencontresLeLong(p.parcours.contour, source.tous).length);
+  }, [graphe, lesProps, source]);
 
   /* ══ LES TROIS TRACÉS DE LA CARTE — 6/11/2026 ═══════════════════════════
      ⭐ TROIS COULEURS PRISES DANS LA PALETTE DES LIEUX (`categories.ts`),
@@ -1740,6 +1752,22 @@ export function Composer() {
                       </ul>
                     )}
                     {motGps && <p className="cp-depart-mot">{motGps}</p>}
+                    {/* ⭐ ON DIT D'OÙ VIENNENT LES LIEUX QUAND CE N'EST PAS LA
+                        SOURCE HABITUELLE. Hors de Bretagne, l'inventaire des
+                        sites remarquables n'existe pas encore : la liste vient
+                        alors des chemins eux-mêmes, et elle est plus courte.
+                        ⛔ Servir une source de second rang sans la nommer,
+                           c'est laisser croire qu'il n'y a rien à voir ici —
+                           alors que c'est NOUS qui n'avons pas encore
+                           inventorié. La différence compte pour qui habite
+                           là. */}
+                    {source?.origine === "graphe" && (
+                      <p className="cp-depart-mot">
+                        Ici, les {source.lieux.length} lieux proposés viennent des
+                        chemins eux-mêmes : MANA n'a pas encore inventorié les sites
+                        remarquables de ce territoire.
+                      </p>
+                    )}
                     {/* 🔴 RIEN NE DISAIT CE QUE FAIT CET ÉCRAN — 6/11/2026.
                         On y arrive sur une carte, un départ déjà choisi qu'on
                         n'a pas choisi, et trois bulles. Le MÉCANISME — un

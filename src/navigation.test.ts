@@ -308,8 +308,36 @@ describe("de la carte au compositeur", () => {
            "la mesure doit se faire aux deux endroits qui en ont besoin — "
            + "le parcours retenu et le décompte des propositions — et nulle part ailleurs")
       .toBe(2);
-    expect(compo, "les lieux accrochés par la moisson ne doivent plus être la source")
-      .not.toMatch(/lieux\.length\} lieu/);
+    /* 🔴 ET UNE QUATRIÈME FOIS, LE 14/11 — ce garde a dit exactement ce
+       qu'il prédit de lui-même deux paragraphes plus haut. Son motif était
+       `/lieux\.length} lieu/`, assez large pour attraper N'IMPORTE QUELLE
+       phrase comptant des lieux : il est tombé sur « les {source.lieux.length}
+       lieux proposés viennent des chemins eux-mêmes », une note qui parle des
+       spots OFFERTS sur un territoire et n'a aucun rapport avec « ce qu'on
+       croisera ».
+       ⭐ Un garde qui interdit une TOURNURE punit les passants. Ce qu'il
+          protège est que les surfaces d'affichage ne relisent pas `b.lieux` :
+          c'est `b.lieux` qu'on nomme, et rien d'autre. Vérifié par mutation
+          le 14/11 — réintroduire `b.lieux.length` dans l'écran le fait
+          tomber. */
+    expect(compo, "aucune surface d'affichage ne relit b.lieux : tout dérive du calcul commun")
+      .not.toMatch(/b\.lieux/);
+    /* 🔴 ET LE COMPTE SE FAIT SUR LA LISTE ENTIÈRE, PAS SUR L'OFFRE — garde
+       posé le 14/11 après l'avoir vu MANQUER. J'avais remplacé la source des
+       deux appels par `source.tous`, puis muté en `source.lieux` pour voir
+       un test tomber : les 566 ont passé. Mes tests gardaient le MODULE
+       (`lieux-du-territoire.test.ts` épingle que `tous` ≠ `lieux`) et rien
+       ne gardait l'ÉCRAN — le producteur de la valeur.
+       ⛔ Ce que la mutation rétablissait en silence est le défaut du 2/11 :
+          compter sur la liste filtrée sous-compte de deux tiers, parce que
+          les lieux SANS NOM sont écartés de l'offre et restent des lieux
+          qu'on croise. 1,47 annoncé contre 4,20 mesurés.
+       ⭐ Un test sur l'objet ne dit rien du producteur. */
+    expect([...compo.matchAll(/rencontresLeLong\([^)]*source\.tous\)/g)].length,
+           "les deux mesures de rencontres lisent la liste ENTIÈRE de la source")
+      .toBe(2);
+    expect(compo, "aucune mesure de rencontres ne lit la liste filtrée")
+      .not.toMatch(/rencontresLeLong\([^)]*source\.lieux\)/);
     /* 🔴 ELLES NE SONT PLUS TROIS, ET CE N'EST PAS UNE RÉGRESSION — 12/11/2026.
        La liste numérotée « Ce que vous croiserez » a été SUPPRIMÉE sur demande
        du fondateur, avec tout ce qui vivait sous la carte. Il reste le cas
@@ -589,10 +617,27 @@ describe("la distance, pas la durée", () => {
        graphe à l'inventaire : la variable a changé de nom, la règle n'avait
        pas bougé. ⭐ Il nomme désormais la règle : le nom se compare au LIBELLÉ
        DE SA CATÉGORIE, et l'égalité écarte. */
-    expect(compo, "le nom n'est pas comparé au libellé de sa catégorie")
+    /* 🔴 ET LE 14/11 IL A FALLU LE DÉMÉNAGER, PAS LE RÉÉCRIRE. La règle n'a
+       toujours pas bougé d'un mot — elle a changé de FICHIER : `choisissables()`
+       vit désormais dans `lieux-du-territoire.ts`, parce que deux sources de
+       lieux (l'inventaire breton, et le graphe là où l'inventaire ne couvre
+       rien) doivent la subir à l'identique. La recopier dans l'écran ET dans
+       le module aurait garanti qu'elles divergent.
+       ⭐ Un garde qui lit LE fichier où la règle vivait hier tombe le jour où
+          la règle emménage ailleurs — et il tombe en CRIANT « régression »
+          alors que rien n'a régressé. Il lit maintenant le fichier où elle
+          vit, et le test voisin vérifie que l'écran la DÉLÈGUE au lieu d'en
+          garder une copie. */
+    const choisir = nu("./lieux-du-territoire.ts");
+    expect(choisir, "le nom n'est pas comparé au libellé de sa catégorie")
       .toMatch(/plat\([a-z]+\.n[!]?\) === plat\((?:[a-z]+\.)?libelles\[|plat\([a-z]+\.n[!]?\) === plat\(LIBELLE\[/);
-    expect(compo, "les lieux sans nom restent écartés aussi")
+    expect(choisir, "les lieux sans nom restent écartés aussi")
       .toMatch(/if \(![a-z]+\.n\) return false;|[a-z]+\.anonyme \|\| ![a-z]+\.n/);
+    /* ⛔ ET L'ÉCRAN NE DOIT PAS EN GARDER UNE SECONDE COPIE — sinon la règle
+       existerait en deux exemplaires, ce que le déménagement visait à
+       empêcher. */
+    expect(compo, "l'écran délègue la choisissabilité, il ne la recopie pas")
+      .toMatch(/lieuxDuTerritoire\(/);
   });
 
   /* ⭐ DEUX CHEMINS VERS LE POINT DE DÉPART, parce que deux situations :
