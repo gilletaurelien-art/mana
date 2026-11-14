@@ -67,6 +67,23 @@ risque : une certitude, le jour où l'on en lance un seul. D'où :
 npm run deploy:tous     # manahome PUIS mana.bzh, dans cet ordre
 ```
 
+⚠️ **ET IL Y A UNE TROISIÈME ADRESSE, QUI N'EST PAS DANS CE GESTE — à dessein.**
+`gilletaurelien-art.github.io/mana/` se déploie **toute seule** : `.github/
+workflows/deploy.yml` lance `npm run build` (base `/mana/`) à chaque push sur
+`main`. Elle ne peut donc pas dériver, et c'est exactement pour ça qu'elle n'est
+pas ici — l'ajouter ferait un second déploiement Pages par push.
+
+| adresse | base | qui la déploie |
+|---|---|---|
+| `mana.bzh` | `/` | `deploy:tous` (ou `deploy:bzh`) |
+| `manahome.org` | `/` | `deploy:tous` |
+| `…github.io/mana/` | `/mana/` | **elle-même**, au push |
+
+⭐ **« Deux hôtes » serait donc un faux témoin tout seul.** Ce qui distingue les
+deux premiers du troisième n'est pas le domaine, c'est qu'ils attendent un geste
+humain. ⛔ Un commit poussé sans `deploy:tous` met Pages à jour et laisse les
+deux autres en arrière — et c'est la forme exacte de la dérive mesurée le 14/11.
+
 ⚠️ Les deux bundles ont des empreintes DIFFÉRENTES, et c'est normal : mana.bzh
 lit ses graphes en relatif (`/bretagne/g`), manahome en absolu
 (`https://mana.bzh/bretagne/g`), et leurs titres statiques diffèrent. Ce qui doit
