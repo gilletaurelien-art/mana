@@ -495,7 +495,17 @@ describe("le jeu de cartes des balades", () => {
           juste, appliqué trop large, refuse du travail correct — et on finit
           par désarmer le garde plutôt que par corriger sa portée. */
     const app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
-    const barre = app.slice(app.indexOf('<nav className="nav">'), app.indexOf("</nav>"));
+    /* 🔴 LA FIN SE CHERCHE DEPUIS LE DÉBUT DU BLOC, PAS DEPUIS CELUI DU
+       FICHIER — corrigé le 14/11/2026. `indexOf("</nav>")` sans position de
+       départ rendait la PREMIÈRE fermeture du fichier ; le jour où un autre
+       `<nav>` est apparu plus haut (le pied de page, extrait en composant),
+       la tranche est devenue VIDE et le test a crié « 0 > 200 » sur une barre
+       parfaitement correcte.
+       ⭐ Un découpage qui cherche sa borne de fin ailleurs qu'après sa borne
+          de début n'est pas un découpage : il marche tant que l'ordre du
+          fichier ne change pas. */
+    const debut = app.indexOf('<nav className="nav">');
+    const barre = app.slice(debut, app.indexOf("</nav>", debut));
     expect(barre.length).toBeGreaterThan(200);
     expect(barre).not.toMatch(/size=/);
   });

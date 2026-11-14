@@ -51,22 +51,57 @@ const LIBELLES: Record<string, string> = {
 export function CarteMonde() {
   const boite = useRef<HTMLDivElement | null>(null);
   const carte = useRef<CarteML | null>(null);
-  const lues = useRef(new Set<string>());
-  const points = useRef<GeoJSON.Feature[]>([]);
   const [choisi, setChoisi] = useState<Site | null>(null);
   const [mot, setMot] = useState("");
 
   useEffect(() => {
     if (!boite.current) return;
+    /* 🔴 LE CACHE APPARTIENT À LA CARTE, PAS AU COMPOSANT — et c'est une
+       course qui l'a imposé. `React.StrictMode` monte l'effet DEUX fois.
+       Quand le cache vivait dans un `useRef` partagé :
+         1. la carte A démarre, son chargement part en `await` ;
+         2. React la détruit et monte la carte B ;
+         3. le chargement de A REPREND, remplit le cache commun et appelle
+            `setData` sur une carte déjà retirée — sans effet ;
+         4. la carte B trouve toutes ses tuiles « déjà lues », n'en charge
+            aucune, et ne reçoit jamais de données.
+       Mesuré : couche présente, source présente, **0 point**, deux tuiles en
+       200 dans le réseau — un écran qui ressemble à « il n'y a rien ici ».
+       ⭐ Et ce n'est PAS un défaut de banc : tout remontage (revenir sur
+          l'écran, un rechargement à chaud) rejouerait la même course.
+       ⚠️ Déclarés DANS l'effet : chaque carte a les siens, et ils meurent
+          avec elle. Un `useRef` aurait survécu, c'est tout le défaut. */
+    const lues = new Set<string>();
+    const points: GeoJSON.Feature[] = [];
     const m = new maplibregl.Map({
       container: boite.current, style: STYLE,
       center: [6.27, 49.83], zoom: 8, attributionControl: false,
     });
     carte.current = m;
+    /* ⚠️ UNE PRISE DE MESURE, EN DÉVELOPPEMENT SEULEMENT. Sans elle, « les
+       points ne s'affichent pas » ne se distingue pas de « les points ne sont
+       pas chargés » : on ne peut ni compter la source, ni interroger la
+       couche depuis la console. Elle disparaît du build de production. */
+    if (import.meta.env.DEV) {
+      const w = window as unknown as { __carteMonde?: CarteML; __n?: number; __trace?: string[] };
+      w.__n = (w.__n ?? 0) + 1;
+      (m as unknown as { __id: number }).__id = w.__n;
+      (w.__trace ??= []).push(`carte #${w.__n} créée`);
+      w.__carteMonde = m;
+    }
     m.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
     m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
 
-    m.on("load", () => {
+    /* 🔴 `load` PEUT ÊTRE DÉJÀ PASSÉ — mesuré le 14/11/2026, et c'est ce qui
+       a tenu la carte vide une demi-heure. En développement, `StrictMode`
+       crée la carte #1, la détruit, puis crée la #2 ; le style est alors en
+       cache et son chargement se termine AVANT que mon écouteur ne soit
+       attaché. Résultat : `isStyleLoaded()` vrai, et pourtant ni source
+       `sites`, ni couche, ni chargement de tuiles — la trace s'arrêtait net
+       sur « carte #2 créée ».
+       ⭐ Un événement qu'on attend sans demander s'il est DÉJÀ survenu est
+          une attente qui peut ne jamais finir. On fait les deux. */
+    const installer = () => {
       m.addSource("sites", { type: "geojson",
         data: { type: "FeatureCollection", features: [] } });
       /* ⭐ UNE COUCHE, PAS 1 500 ÉLÉMENTS. C'est toute la raison de cette
@@ -88,11 +123,54 @@ export function CarteMonde() {
       m.on("mouseenter", "sites", () => { m.getCanvas().style.cursor = "pointer"; });
       m.on("mouseleave", "sites", () => { m.getCanvas().style.cursor = ""; });
       charger();
-    });
+    };
+    /* 🔴 TROIS CHEMINS VERS LE MÊME MONTAGE, ET AUCUN N'EST DE TROP —
+       mesuré deux fois le 14/11/2026. Après que `StrictMode` a créé puis
+       détruit une première carte, la seconde arrive dans un état où
+       `isStyleLoaded()` est encore FAUX à la construction (donc on s'abonne
+       à `load`) et où `load` n'arrive JAMAIS — alors que `isStyleLoaded()`
+       devient vrai quelques instants plus tard. Symptôme : style peint ou
+       non selon la chance, sources réduites à celles du fond, zéro point, et
+       une trace qui s'arrête sur « carte #2 créée ».
+       ⭐ `styledata` est l'événement qui, lui, se répète : il suffit d'y
+          regarder si le style est prêt. Et `installe` garde la porte pour que
+          les trois chemins ne montent qu'une fois. */
+    let installe = false;
+    const tenter = () => {
+      if (installe || !m.isStyleLoaded()) return;
+      installe = true;
+      installer();
+    };
+    m.on("load", tenter);
+    m.on("styledata", tenter);
+    tenter();
     m.on("moveend", () => charger());
+
+    /* 🔴 LA CARTE NAÎT PLUS PETITE QUE SON CONTENEUR — mesuré le 14/11/2026 :
+       scène 417 × 671, canevas 417 × **300**. maplibre lit la taille de sa
+       boîte à la construction ; ici la boîte n'a pas encore sa hauteur
+       (`100dvh − la barre`), et rien ne revient la lui dire.
+       ⭐ `CarteReelle` porte déjà cette parade, et je ne l'avais pas emportée
+          en écrivant une carte à côté — c'est le prix d'un second composant,
+          et il se paie en défauts qu'on croyait réglés.
+       ⚠️ Un observateur ET des rappels différés : l'observateur attrape les
+          changements de boîte, les délais attrapent le premier cadre, où la
+          boîte est déjà bonne mais où aucun changement ne se produira plus. */
+    const redimensionner = () => { m.resize(); };
+    const ro = new ResizeObserver(redimensionner);
+    if (boite.current) ro.observe(boite.current);
+    const minuteries = [120, 600, 1600].map((d) => window.setTimeout(redimensionner, d));
 
     /** Charge les tuiles du cadre visible, et seulement celles-là. */
     async function charger() {
+      /* ⚠️ RIEN AVANT LA SOURCE. `moveend` arrive avant `load` quand on
+         redimensionne tôt ; charger sans source remplirait le cache pour
+         rien. La condition est l'existence de la source, pas un drapeau. */
+      if (!m.getSource("sites")) return;
+      if (import.meta.env.DEV) {
+        const w = window as unknown as { __trace?: string[] };
+        (w.__trace ??= []).push(`#${(m as unknown as { __id?: number }).__id} charger z=${m.getZoom().toFixed(1)}`);
+      }
       const b = m.getBounds();
       const choix = tuilesDuCadre(
         { ouest: b.getWest(), est: b.getEast(), nord: b.getNorth(), sud: b.getSouth() },
@@ -108,14 +186,14 @@ export function CarteMonde() {
       {
         for (const [x, y] of choix.tuiles) {
           const clef = `${x}/${y}`;
-          if (lues.current.has(clef)) continue;
-          lues.current.add(clef);
+          if (lues.has(clef)) continue;
+          lues.add(clef);
           try {
             const r = await fetch(`${TUILES}/${Z}/${x}/${y}.json`);
             if (!r.ok) continue;            // tuile vide : il n'y a rien ici
             const t = (await r.json()) as { l: Site[] };
             for (const s of t.l) {
-              points.current.push({
+              points.push({
                 type: "Feature",
                 geometry: { type: "Point", coordinates: s.g },
                 properties: { n: s.n, c: s.c, ...(s.a ? { a: 1 } : {}) },
@@ -125,14 +203,39 @@ export function CarteMonde() {
           } catch { /* une tuile manquante n'est pas une panne */ }
         }
       }
+      if (import.meta.env.DEV) {
+        const w = window as unknown as { __trace?: string[] };
+        (w.__trace ??= []).push(`#${(m as unknown as { __id?: number }).__id} neuf=${neuf} points=${points.length}`);
+      }
       if (neuf) {
-        (m.getSource("sites") as maplibregl.GeoJSONSource | undefined)?.setData({
-          type: "FeatureCollection", features: points.current,
-        });
+        /* 🔴 CE `?.` AVALAIT L'ÉCHEC — et il m'a coûté une demi-heure. Écrit
+           `getSource("sites")?.setData(...)`, il ne fait RIEN quand la source
+           n'existe pas encore, sans un mot. Or `moveend` peut survenir AVANT
+           `load` (mes propres rappels de redimensionnement en déclenchent un
+           à 120 ms) : la source n'est pas posée, les tuiles sont pourtant
+           notées comme lues, et le `charger` qui suit `load` n'a plus rien à
+           charger. Résultat mesuré : 3 000 points collectés, source à ZÉRO.
+           ⭐ Un appel optionnel sur un objet qu'on sait devoir exister n'est
+              pas de la prudence, c'est un silence. */
+        const src = m.getSource("sites") as maplibregl.GeoJSONSource | undefined;
+        if (!src) {
+          /* On n'a rien pu poser : ces tuiles ne sont PAS lues. */
+          for (const [x, y] of choix.tuiles) lues.delete(`${x}/${y}`);
+          return;
+        }
+        src.setData({ type: "FeatureCollection", features: points });
       }
     }
 
-    return () => { m.remove(); carte.current = null; };
+    return () => {
+      if (import.meta.env.DEV) {
+        const w = window as unknown as { __trace?: string[] };
+        (w.__trace ??= []).push(`carte #${(m as unknown as { __id?: number }).__id} détruite`);
+      }
+      ro.disconnect();
+      for (const id of minuteries) window.clearTimeout(id);
+      m.remove(); carte.current = null;
+    };
   }, []);
 
   return (

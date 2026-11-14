@@ -1,4 +1,6 @@
 import { ATTRIBUTION, lireFond, poserFond, type Fond } from "./carte-fond";
+import { visage } from "./visage";
+import { ContenuDuPied } from "./App";
 import { useEffect, useState } from "react";
 
 /**
@@ -143,6 +145,21 @@ export function Reglages({ base }: { base: string }) {
           <a className="m-action-fine" href={`${base}/mentions-legales`}>Mentions légales</a>
           <a className="m-action-fine" href={`${base}/contact`}>Nous écrire</a>
         </nav>
+
+        {/* 🔴 LE PIED DE PAGE VIT ICI DÉSORMAIS — Aurélien, 14/11/2026 : « le
+            footer doit disparaître partout, et vivre dans l'onglet réglages ».
+            ⭐ C'est le MÊME composant que celui que le pied rendait, pas une
+               recopie : deux versions du même contenu divergeraient au premier
+               lien ajouté, et personne ne compare un pied de page à un écran
+               de réglages.
+            ⚠️ Rendu seulement là où le pied a disparu. Ailleurs il est encore
+               en bas de chaque page, et l'afficher deux fois serait pire que
+               de ne pas l'avoir déplacé. */}
+        {visage() === "home" && (
+          <section className="reg-pied">
+            <ContenuDuPied B={base} />
+          </section>
+        )}
       </div>
     </main>
   );

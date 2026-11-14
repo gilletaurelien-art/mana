@@ -24,7 +24,11 @@ import { PONTS, praticable } from "./passerelle";
 export type Entree = {
   readonly clef: string;
   readonly chemin: string;
-  readonly glyphe: "carte" | "etincelles" | "marque" | "radio" | "reglages";
+  /** ⚠️ UN AUTRE DOMAINE, donc pas de préfixe de base à lui coller devant.
+   *  Les passerelles existantes sont des CHEMINS de mana.love ; manatimebank
+   *  est un site à part, et `${B}${chemin}` en ferait une adresse morte. */
+  readonly externe?: boolean;
+  readonly glyphe: "carte" | "etincelles" | "marque" | "radio" | "reglages" | "sablier";
   readonly libelle: string;
   /** Le mot est-il écrit à l'écran, ou réservé aux lecteurs d'écran ? */
   readonly motVisible?: true;
@@ -94,7 +98,16 @@ export function entreesBarre(v: Visage): Entree[] {
           libelle: "Déesses", motVisible: true }
       : null,
 
-    { clef: "marque", chemin: "/", glyphe: "marque", libelle: "MANA", motVisible: true },
+    /* 🔴 CHEZ MANAHOME, LA MARQUE DEVIENT UN SABLIER — Aurélien, 14/11/2026.
+       ⭐ Et elle change de DESTINATION en même temps que de dessin : le mot
+          MANA ramenait à l'accueil, le sablier mène au temps. Garder l'un et
+          changer l'autre aurait fait une icône qui ment sur ce qu'elle ouvre.
+       ⚠️ Le solde n'y est pas : ni compte dans cette application, ni adresse
+          qui le rende chez manatimebank (mesuré, 404). C'est une PORTE. */
+    home
+      ? { clef: "temps", chemin: "https://manatimebank.org/", externe: true,
+          glyphe: "sablier", libelle: "Mon temps" }
+      : { clef: "marque", chemin: "/", glyphe: "marque", libelle: "MANA", motVisible: true },
 
     /* ⚠️ La radio est à NOUS sur mana.bzh et à ELLE sur mana.love — et chez
        elle ce n'est pas encore un chemin : la radio y est un univers,

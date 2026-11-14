@@ -4260,23 +4260,70 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
    ⭐ Elle prend TOUT : « tout va se faire via la carte => pas de listing ».
       Pas de titre, pas de chapeau — la carte est la page. */
 .page-monde { padding: 0; }
+/* 🔴 PLEIN ÉCRAN — Aurélien, 14/11/2026 : « la carte est en plein écran. La
+   bottom bar vient s'afficher dessus avec de l'ombre (effet 3D) ».
+   ⭐ La barre n'avait RIEN à changer : elle est déjà `position: fixed` en bas,
+      `z-index: 10`, donc elle flottait déjà au-dessus. Ce qui lui réservait
+      de la place, c'était CETTE hauteur — `100dvh moins la barre`. La carte
+      prend maintenant tout, et la barre se pose dessus.
+   ⚠️ `100dvh` et non `100vh` : sur un téléphone, `vh` ignore la barre
+      d'adresse qui se rétracte, et la carte dépassait alors sous l'écran. */
 .monde-scene {
   position: relative; width: 100%;
-  height: calc(100dvh - var(--barre-espace, 96px));
+  height: 100dvh;
 }
-.monde-plan { position: absolute; inset: 0; }
+/* 🔴 LA RÈGLE QUI GAGNE N'ÉTAIT PAS LA MIENNE — mesuré le 14/11/2026 :
+   `.monde-plan` calculait `position: relative; height: 0px`, et le canevas
+   restait à 300 px dans une scène de 671.
+   ⛔ La feuille de maplibre (`maplibre-gl.css`) est importée par le composant,
+      donc chargée APRÈS celle-ci, et `.maplibregl-map { position: relative }`
+      a la même spécificité que `.monde-plan` : à égalité, la dernière gagne.
+      Mon `position: absolute` tombait, `inset: 0` n'avait plus de prise, et la
+      hauteur retombait à `auto` — c'est-à-dire zéro, puisque le seul enfant
+      est absolu.
+   ⭐ On monte donc d'un cran (`.monde-scene > .monde-plan`, 0-2-0 contre
+      0-1-0) et on écrit la hauteur EN PLUS de l'`inset` : deux chemins vers
+      la même taille, dont un qui ne dépend pas de `position`. */
+.monde-scene > .monde-plan { position: absolute; inset: 0; width: 100%; height: 100%; }
 .monde-mot {
-  position: absolute; left: 50%; top: var(--sp-2); transform: translateX(-50%);
+  /* ⚠️ Sous l'étiquette du lieu choisi : les deux peuvent coexister, et
+     deux encarts superposés en haut d'écran se lisent comme un défaut. */
+  position: absolute; left: 50%; top: calc(var(--sp-2) + 72px); transform: translateX(-50%);
   margin: 0; padding: 10px 16px; max-width: min(92%, 520px);
   border-radius: var(--r-m); text-align: center; font-size: var(--t-s);
   background: rgb(255 255 255 / 94%); color: var(--nuit);
   border: 1.5px solid rgb(25 43 67 / 12%);
 }
+/* 🔴 LE LIBELLÉ EN HAUT — Aurélien, 14/11/2026 : « affiche le libellé des
+   lieux en haut de l'écran ». ⭐ Et c'est le bon côté : la barre flotte en
+   bas, le pouce y vit, et une étiquette posée là se ferait recouvrir au
+   premier geste. En haut, elle est lue et ne gêne rien.
+   ⚠️ Même matière et même ombre que la barre : deux objets qui flottent
+      au-dessus de la même carte doivent se ressembler, sinon ils se lisent
+      comme deux couches différentes. */
 .monde-choisi {
-  position: absolute; left: var(--sp-1); right: var(--sp-1); bottom: var(--sp-1);
+  position: absolute; left: var(--sp-1); right: var(--sp-1);
+  top: calc(var(--sp-2) + env(safe-area-inset-top, 0px));
   max-width: 560px; margin: 0 auto; padding: 10px 14px;
   border-radius: var(--r-m); background: rgb(255 255 255 / 94%);
   border: 1.5px solid rgb(25 43 67 / 12%);
+  box-shadow: 0 2px 6px rgb(10 18 30 / 24%), 0 14px 34px rgb(10 18 30 / 28%);
 }
 .monde-choisi-nom { margin: 0; font-weight: 600; color: var(--nuit); }
 .monde-choisi-dire { margin: 2px 0 0; font-size: var(--t-s); color: var(--doux, #6e6e73); }
+
+
+/* ══ L'OMBRE PORTÉE DE LA BARRE — 14/11/2026 ════════════════════════════
+   🔴 « La bottom bar vient s'afficher dessus avec de l'ombre (effet 3D). »
+   ⭐ Posée SUR la pilule, pas sur son conteneur : c'est elle qu'on voit
+      flotter, et une ombre sur le conteneur pleine largeur ferait une bande.
+   ⚠️ Deux ombres, et c'est ce qui fait le relief : une courte et dense qui
+      colle l'objet au doigt, une longue et diffuse qui le décolle du fond.
+      Une seule ombre donne un autocollant, pas un objet posé.
+   ⛔ Bornée à manahome : « on ne touche qu'à manahome.org » (Aurélien, le
+      même jour). mana.bzh garde sa barre telle quelle. */
+[data-visage="home"] .site-header .wrap {
+  box-shadow:
+    0 2px 6px rgb(10 18 30 / 28%),
+    0 14px 34px rgb(10 18 30 / 34%);
+}

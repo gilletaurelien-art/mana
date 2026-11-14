@@ -187,6 +187,35 @@ export function GlyphReglages({ size = 24 }: GlyphProps) {
 }
 
 /**
+ * SABLIER — le temps, et le solde de MANA.
+ *
+ * 🔴 ARBITRAGE D'AURÉLIEN, 14/11/2026 : « MANA dans la bottom bar va devenir
+ *    une icône de sablier > représentant le solde de MANA de manatimebank >
+ *    ce solde n'est accessible que pour un compte connecté ».
+ * ⚠️ LE CHIFFRE N'EST PAS LÀ, ET LE GLYPHE NE FAIT PAS SEMBLANT. Mesuré le
+ *    même jour : cette application n'a AUCUNE notion de compte — son écran
+ *    d'espace personnel le dit en toutes lettres, « personnel sans être
+ *    identifié, pas de compte, pas de courriel » — et manatimebank.org ne
+ *    sert aucun solde (`/api` et `/api/solde` : 404). Le sablier est donc une
+ *    PORTE vers le temps, pas un compteur. ⛔ Un compteur sans source
+ *    afficherait un nombre faux ou un vide, et ce dépôt a un mot pour ça :
+ *    un bouton qui ne tient pas sa promesse.
+ * ⭐ Le sable du bas est plein, celui du haut vide : un temps qu'on a REÇU,
+ *    pas un compte à rebours.
+ */
+export function GlyphSablier({ size = 24 }: GlyphProps) {
+  return (
+    <svg {...base} width={size} height={size} className="m-icone" aria-hidden="true">
+      <path d="M7 3h10M7 21h10" />
+      <path d="M8 3v3.2c0 2 1.4 3.3 2.9 4.4.7.5.7 1.3 0 1.8C9.4 13.5 8 14.8 8 16.8V21" />
+      <path d="M16 3v3.2c0 2-1.4 3.3-2.9 4.4-.7.5-.7 1.3 0 1.8 1.5 1.1 2.9 2.4 2.9 4.4V21" />
+      {/* le sable déjà passé — plein en bas */}
+      <path d="M9.6 19.4c.6-1.6 1.5-2.4 2.4-2.4s1.8.8 2.4 2.4z" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+/**
  * ÉTINCELLES — « ce qu'il y a à découvrir ».
  *
  * ⭐ TROIS ÉCLATS, DE TAILLES DIFFÉRENTES. Trois identiques forment un motif

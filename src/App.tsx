@@ -1,16 +1,7 @@
 import { useState, lazy, Suspense } from "react";
 import { useEffect, useRef, useLayoutEffect } from "react";
 import { usePath, baseUrl, routePromenade, routeEnChemin, routeRencontres, routeComplet } from "./router";
-import {
-  GlyphRadio,
-  GlyphEtincelles,
-  GlyphReglages,
-  GlyphNavigation,
-  GlyphSecurite,
-  GlyphDecouverte,
-  GlyphCarte,
-  GlyphSentier,
-} from "./Glyphs";
+import { GlyphRadio, GlyphEtincelles, GlyphReglages, GlyphNavigation, GlyphSecurite, GlyphDecouverte, GlyphCarte, GlyphSentier, GlyphSablier } from "./Glyphs";
 import { Invitation } from "./Invitation";
 import { LApplication } from "./LApplication";
 import { avecOffice, visage, signature, titrePourLHote, poserCanonique } from "./visage";
@@ -102,6 +93,72 @@ export const TITRES: Record<string, string> = {
   "/contact": "Contact — MANA.bzh",
   "/mentions-legales": "Mentions légales — MANA.bzh",
 };
+
+
+/**
+ * CE QUE LE PIED DISAIT — devenu un composant, parce qu'il a déménagé.
+ *
+ * 🔴 ARBITRAGE D'AURÉLIEN, 14/11/2026 : « le footer doit disparaître partout,
+ *    et vivre dans l'onglet réglages ».
+ * ⭐ EXTRAIT PLUTÔT QUE RECOPIÉ. Le même contenu doit servir à deux endroits
+ *    pendant la transition — le pied, là où il reste, et Réglages. Deux
+ *    copies divergeraient au premier lien ajouté, et en silence : personne ne
+ *    compare un pied de page à un écran de réglages.
+ */
+export function ContenuDuPied({ B }: { B: string }) {
+  return (
+<div className="wrap footer-colonnes">
+          <div>
+            {/* 🔴 LA MARQUE DU PIED ÉTAIT ÉCRITE EN DUR — « MANA.bzh » sur
+                manahome.org, relevé sur la page servie le 14/11/2026, dans le
+                pied de TOUTES les pages. ⭐ `signature()` existait et disait
+                déjà le bon nom trois lignes plus haut, dans le `<title>` : ce
+                n'est pas une règle qui manquait, c'est un endroit qui ne la
+                lisait pas. ⚠️ L'`<em>` porte le style, pas le sens : on coupe
+                donc après « MANA » quel que soit le nom. */}
+            <p className="brand">
+              {(() => {
+                const s = signature();
+                return s.toUpperCase().startsWith("MANA")
+                  ? <>MANA<em>{s.slice(4)}</em></>
+                  : <em>{s}</em>;
+              })()}
+            </p>
+            {/* 🔄 « Presqu'île de Crozon » → « Finistère », demande du
+                fondateur le 12/11/2026. Le pied annonçait un territoire que
+                l'offre a dépassé : 116 circuits de CINQ offices, de la pointe
+                de Pen-Hir aux dunes de Keremma. ⭐ Un périmètre écrit plus
+                étroit que la matière fait passer pour local ce qui ne l'est
+                plus — et personne ne va chercher aux abers une app qui dit
+                « presqu'île de Crozon ». */}
+            {/* ⚠️ « Finistère » NE SE DIT QUE CHEZ NOUS. Le reste de la
+                phrase est vrai partout — hors ligne, GPS, GPX, gratuit, aucune
+                donnée revendue —, c'est le TERRITOIRE qui ne l'est pas. ⛔ Et
+                on n'écrit pas « le monde » à la place : annoncer un périmètre
+                plus large que la matière est la faute symétrique de celle que
+                la note du 12/11 corrigeait en élargissant à « Finistère ». */}
+            <p className="footer-note">
+              {avecOffice() && "Finistère. "}Hors ligne, GPS, GPX. Gratuit, aucune
+              donnée revendue.
+            </p>
+            <ContactForm />
+          </div>
+          <nav className="footer-nav" aria-label="Pied de page">
+            {/* ⚠️ Les trois liens vers nos promenades sont partis le 31/10 avec
+                leur retrait de la vitrine. Les URL, elles, répondent toujours —
+                c'est le pied de page qui cesse de les annoncer, pas le site qui
+                les perd. */}
+            {/* ⭐ EN TÊTE DU PIED, ET SUR TOUTES LES PAGES. Une page
+                indexable qu'aucun lien interne ne désigne est une page que
+                les moteurs trouvent mal et que personne ne traverse. Le pied
+                est le seul endroit présent partout. */}
+            {liensPied(visage()).map((l) => (
+              <a key={l.chemin} href={`${B}${l.chemin}`}>{l.libelle}</a>
+            ))}
+          </nav>
+        </div>
+  );
+}
 
 export default function App() {
   const path = usePath();
@@ -266,6 +323,7 @@ export default function App() {
                   {e.glyphe === "etincelles" && <GlyphEtincelles />}
                   {e.glyphe === "radio" && <GlyphRadio />}
                   {e.glyphe === "reglages" && <GlyphReglages />}
+                  {e.glyphe === "sablier" && <GlyphSablier />}
                 </>
               );
               /* ⭐ L'ENTRÉE QUI COMMUTE EST UN BOUTON, PAS UN LIEN DÉTOURNÉ.
@@ -310,7 +368,12 @@ export default function App() {
               return (
                 <a key={e.clef}
                    className={e.glyphe === "marque" ? "brand" : undefined}
-                   href={`${B}${e.chemin}`}
+                   /* ⚠️ Un lien EXTERNE ne prend pas le préfixe de base, et
+                      il s'ouvre ailleurs : `rel` posé parce qu'une cible
+                      nouvelle sans lui donne au site ouvert la main sur le
+                      nôtre (`window.opener`). */
+                   href={e.externe ? e.chemin : `${B}${e.chemin}`}
+                   {...(e.externe ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                    aria-current={path === e.chemin.split("?")[0] ? "page" : undefined}>
                   {glyphe}
                   {e.glyphe === "marque"
@@ -445,58 +508,19 @@ export default function App() {
              `/composer` rendent le même écran depuis la fusion du 3/11) :
              les fondre en un préfixe masquerait le pied sur une adresse
              future qui commencerait pareil, sans que personne l'ait voulu. */}
-      {!SANS_PIED.has(path) && (
+      {/* 🔴 LE PIED A DÉMÉNAGÉ DANS RÉGLAGES — Aurélien, 14/11/2026 : « le
+          footer doit disparaître partout, et vivre dans l'onglet réglages ».
+          ⛔ Borné à manahome, parce que la consigne qui tient depuis ce matin
+             est « on ne touche qu'à manahome.org ». Sur mana.bzh le pied
+             reste — ⏳ à étendre d'un mot si « partout » voulait dire les deux.
+          ⚠️ ET CE RETRAIT A UN COÛT QUI SE DIT : le pied était le SEUL
+             endroit présent sur toutes les pages, donc le seul à désigner les
+             pages indexables par un lien interne. Les déplacer dans Réglages
+             les laisse atteignables par un humain, mais un moteur qui ne
+             traverse pas cet écran ne les verra plus se faire citer. */}
+      {!SANS_PIED.has(path) && visage() !== "home" && (
       <footer className="site-footer">
-        <div className="wrap footer-colonnes">
-          <div>
-            {/* 🔴 LA MARQUE DU PIED ÉTAIT ÉCRITE EN DUR — « MANA.bzh » sur
-                manahome.org, relevé sur la page servie le 14/11/2026, dans le
-                pied de TOUTES les pages. ⭐ `signature()` existait et disait
-                déjà le bon nom trois lignes plus haut, dans le `<title>` : ce
-                n'est pas une règle qui manquait, c'est un endroit qui ne la
-                lisait pas. ⚠️ L'`<em>` porte le style, pas le sens : on coupe
-                donc après « MANA » quel que soit le nom. */}
-            <p className="brand">
-              {(() => {
-                const s = signature();
-                return s.toUpperCase().startsWith("MANA")
-                  ? <>MANA<em>{s.slice(4)}</em></>
-                  : <em>{s}</em>;
-              })()}
-            </p>
-            {/* 🔄 « Presqu'île de Crozon » → « Finistère », demande du
-                fondateur le 12/11/2026. Le pied annonçait un territoire que
-                l'offre a dépassé : 116 circuits de CINQ offices, de la pointe
-                de Pen-Hir aux dunes de Keremma. ⭐ Un périmètre écrit plus
-                étroit que la matière fait passer pour local ce qui ne l'est
-                plus — et personne ne va chercher aux abers une app qui dit
-                « presqu'île de Crozon ». */}
-            {/* ⚠️ « Finistère » NE SE DIT QUE CHEZ NOUS. Le reste de la
-                phrase est vrai partout — hors ligne, GPS, GPX, gratuit, aucune
-                donnée revendue —, c'est le TERRITOIRE qui ne l'est pas. ⛔ Et
-                on n'écrit pas « le monde » à la place : annoncer un périmètre
-                plus large que la matière est la faute symétrique de celle que
-                la note du 12/11 corrigeait en élargissant à « Finistère ». */}
-            <p className="footer-note">
-              {avecOffice() && "Finistère. "}Hors ligne, GPS, GPX. Gratuit, aucune
-              donnée revendue.
-            </p>
-            <ContactForm />
-          </div>
-          <nav className="footer-nav" aria-label="Pied de page">
-            {/* ⚠️ Les trois liens vers nos promenades sont partis le 31/10 avec
-                leur retrait de la vitrine. Les URL, elles, répondent toujours —
-                c'est le pied de page qui cesse de les annoncer, pas le site qui
-                les perd. */}
-            {/* ⭐ EN TÊTE DU PIED, ET SUR TOUTES LES PAGES. Une page
-                indexable qu'aucun lien interne ne désigne est une page que
-                les moteurs trouvent mal et que personne ne traverse. Le pied
-                est le seul endroit présent partout. */}
-            {liensPied(visage()).map((l) => (
-              <a key={l.chemin} href={`${B}${l.chemin}`}>{l.libelle}</a>
-            ))}
-          </nav>
-        </div>
+        <ContenuDuPied B={B} />
       </footer>
       )}
       </div>
