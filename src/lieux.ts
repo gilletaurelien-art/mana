@@ -31,6 +31,33 @@ export interface Inventaire {
   lieux: Lieu[];
 }
 
+/**
+ * 🔴 CE QUE L'INVENTAIRE COUVRE, ET LE MOT QUI LE DIT — 14/11/2026, après la
+ *    question d'Aurélien sur le moteur de recherche de manahome.
+ *
+ * ⛔ LA PREMIÈRE RÉDACTION DE CETTE PHRASE ÉTAIT FAUSSE, et c'est un garde
+ *    qui l'a dit avant qu'elle ne parte. Elle dérivait la couverture des
+ *    `TERRITOIRES` déclarés — « la presqu'île de Crozon et l'Aulne maritime »
+ *    — ce qui paraissait irréprochable : une valeur dérivée, pas recopiée.
+ *    Mesuré : **4 478 des 5 676 lieux sont HORS de ces deux emprises**, soit
+ *    79 %. Les emprises décrivent les GRAPHES de promenade, pas l'inventaire
+ *    des lieux ; j'avais pris une liste pour une autre.
+ * ⭐ Une valeur dérivée n'est juste que si on dérive de la BONNE source. Le
+ *    « dérivé plutôt que recopié » ne protège de rien tout seul.
+ *
+ * ⭐ CE QUI RESTE VRAI SE VÉRIFIE : tous les lieux tiennent dans la boîte
+ *    ci-dessous, et `recherche-accueil.test.ts` le refait à chaque exécution.
+ *    Le MOT n'est donc pas une affirmation posée là : c'est une affirmation
+ *    tenue. Le jour où l'inventaire sort de cette boîte, le test tombe et la
+ *    phrase d'interface doit changer — ce qui est exactement ce qu'on veut.
+ */
+export const ETENDUE = {
+  /** ⚠️ Il entre dans une phrase : « la recherche ne couvre que … ». */
+  mot: "la Bretagne",
+  /** [ouest, sud, est, nord] — la Bretagne administrative, large. */
+  boite: [-5.25, 47.0, -0.9, 48.95] as [number, number, number, number],
+};
+
 let cache: Promise<Inventaire> | null = null;
 
 /** ⭐ Une seule promesse mémorisée : deux écrans ne téléchargent pas 110 Ko

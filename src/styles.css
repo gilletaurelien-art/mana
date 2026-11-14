@@ -3700,6 +3700,16 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
 }
 .rech-porte:focus-visible { outline: 2px solid var(--ocre); outline-offset: 2px; }
 .rech-mot { margin: 0; padding: 0 14px; font-size: var(--t-xs); color: var(--bulle-texte-doux); }
+/* ⭐ LA PORTÉE DE LA RECHERCHE — 14/11/2026. Elle emprunte `.rech-mot` plutôt
+   que d'inventer une matière : c'est le même registre (une note de l'écran sur
+   lui-même), et deux styles pour un seul rôle divergent à la première
+   retouche. Seul le rythme change — elle vit COLLÉE à la liste qu'elle
+   qualifie, pas flottante au milieu.
+   ⚠️ Elle n'est rendue que hors de mana.bzh : voir `RechercheAccueil.tsx`. */
+.rech-portee {
+  margin: 0 0 4px; padding: 0 14px;
+  font-size: var(--t-xs); color: var(--bulle-texte-doux);
+}
 .rech-liste {
   list-style: none; margin: 0; padding: 6px; display: grid; gap: 2px;
   border-radius: var(--r-l);
@@ -4264,6 +4274,15 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
    — ni de la longueur du texte, ni de ce qu'il y a dessous. */
 [data-visage="home"] .page .hero-label,
 [data-visage="home"] .page .page-titre { text-shadow: var(--ombre-sur-carte); }
+
+/* 🔴 LES NOTES DE LA RECHERCHE SONT SUR LA CARTE, PAS DANS UNE BULLE — vu à
+   l'écran le 15/11/2026 : « Dans la Bretagne — le reste du monde est sur la
+   carte » était posé en clair sur une orthophoto d'Alpes enneigées, donc
+   illisible. ⭐ La ligne la plus importante de l'écran — celle qui dit que la
+   liste en dessous n'est pas ce qu'on cherchait — ne peut pas être la moins
+   lisible. Même ombre que les titres : on protège le TEXTE, pas la carte. */
+[data-visage="home"] .rech-portee,
+[data-visage="home"] .rech-mot { text-shadow: var(--ombre-sur-carte); }
 
 
 /* ══ LA CARTE DU MONDE — l'accueil de MANAhome, 14/11/2026 ═══════════════

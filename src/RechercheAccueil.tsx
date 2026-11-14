@@ -30,8 +30,9 @@
  *    trois promenades proposées autour.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { avecOffice } from "./visage";
-import { chargerLieux, type Inventaire } from "./lieux";
+import { avecOffice, visage } from "./visage";
+
+import { chargerLieux, ETENDUE, type Inventaire } from "./lieux";
 import { chercher, LONGUEUR_MIN, type Resultat } from "./recherche";
 /* ⚠️ UN JSON S'IMPORTE EN `(string | number)[][]`, pas en tuple : TypeScript
    ne peut pas deviner qu'un tableau de trois cases est [nom, lon, lat]. On
@@ -74,20 +75,76 @@ export function RechercheAccueil({ base }: { base: string }) {
 
   const assezLong = requete.trim().length >= LONGUEUR_MIN;
 
+  /**
+   * 🔴 DIRE OÙ L'ON CHERCHE, QUAND CE N'EST PAS LÀ OÙ L'ON EST — 14/11/2026.
+   *    Mesuré sur manahome.org : taper « Rome » rend CINQ propositions, toutes
+   *    bretonnes — Grotte de Roméo, Château de Troménec, Menhir de Tromel,
+   *    Chapelle Saint-Laurent de Troménec, Église Saint-Jérôme. Le moteur
+   *    compare des sous-chaînes sans accents (`recherche.ts`), donc « rome »
+   *    est bien dans « T-rome-nec » et dans « Jé-rôme ». Chaque ligne est
+   *    exacte ; l'ensemble est un mensonge.
+   *
+   * ⛔ ET C'EST PIRE QU'UNE LISTE VIDE. Un vide se comprend du premier coup
+   *    d'œil ; une liste de noms plausibles se CROIT. « Berlin » tombait, lui,
+   *    sur un refus honnête — c'est le cas chanceux, pas la règle.
+   *
+   * ⭐ ON NE RESTREINT PAS LE MOTEUR, ON NOMME CE QU'IL FOUILLE. Serrer la
+   *    comparaison (début de mot plutôt que sous-chaîne) ferait disparaître
+   *    quatre des cinq lignes et laisserait la cinquième — une grotte bretonne
+   *    offerte à qui cherche Rome — en paraissant réparé. Le défaut n'est pas
+   *    la souplesse de la comparaison, c'est que l'écran ne dit pas DANS QUOI
+   *    il cherche. Alors il le dit, une fois, au-dessus de la liste.
+   *
+   * ⛔ ET PAS LIGNE PAR LIGNE, C'EST MESURÉ. Première idée : étiqueter chaque
+   *    résultat de son territoire (`territoireDe`). 79 % des 5 676 lieux sont
+   *    hors des deux emprises déclarées — quatre résultats sur cinq
+   *    n'auraient porté aucune étiquette, et l'absence se serait lue comme
+   *    « celui-là est ailleurs ». Une information partielle sur une ligne est
+   *    pire qu'une information franche sur l'ensemble.
+   *
+   * ⚠️ SEULEMENT HORS DE mana.bzh. Là-bas l'index EST le territoire du site :
+   *    annoncer « la Bretagne » à qui est déjà sur mana.bzh serait répéter ce
+   *    que le domaine dit. Ailleurs — manahome, mana.love — le site promet
+   *    autre chose que ce que l'index tient, et c'est cet écart qui se lit.
+   */
+  const ailleurs = visage() !== "bzh";
+
   /** Partir DE ce lieu. ⚠️ `encodeURIComponent` sur le nom : « Pointe de
    *  Pen-Hir » ne s'écrit pas comme il se lit. */
   const versLieu = (r: Resultat) =>
     `${base}/promenades?lon=${r.g[0]}&lat=${r.g[1]}&nom=${encodeURIComponent(r.nom)}`;
 
-  /* ⭐ ENTRÉE SANS CHOISIR MÈNE QUAND MÊME QUELQUE PART. `/promenades` lit
-     déjà `?q=` (Composer.tsx). Sans ça, taper puis valider ne ferait rien —
-     et un champ qui ne répond pas à la touche Entrée est un champ cassé pour
-     qui n'emploie pas la souris. */
+  /**
+   * 🔴 CE COMMENTAIRE A MENTI PENDANT HUIT JOURS, ET LE CODE AVEC LUI. Il
+   *    disait : « ENTRÉE SANS CHOISIR MÈNE QUAND MÊME QUELQUE PART.
+   *    `/promenades` lit déjà `?q=` (Composer.tsx). Sans ça, taper puis
+   *    valider ne ferait rien. » Le raisonnement est juste. Le code qu'il
+   *    décrit n'existe pas : mesuré le 14/11/2026, les SEULS paramètres que
+   *    cette application lit sont `lon`, `lat`, `dest`, `nom`, `vers`, `vue`
+   *    et `visage`. Personne, nulle part, ne lit `q`.
+   *
+   * ⛔ CE QUE ÇA DONNAIT EN LIGNE : taper « Berlin » sur manahome.org et
+   *    valider menait à une boucle de 1,7 km au départ du MENHIR DE CROZON,
+   *    sans une mention de Berlin nulle part. Le composeur ignorait la
+   *    requête et retombait sur son défaut breton — un écran plein de
+   *    confiance, et faux de bout en bout.
+   * ⭐ C'est le défaut nommé dans CLAUDE.md : une description fidèle à la
+   *    place du comportement. Elle était datée, argumentée, exacte dans son
+   *    intention — et c'est ce qui l'a rendue invisible.
+   *
+   * ⚠️ ON NE VA DONC NULLE PART SANS RÉSULTAT, et le champ n'est pas cassé
+   *    pour autant : les trois états se disent déjà juste en dessous
+   *    (« Lecture de l'inventaire… », « L'inventaire n'a pas pu être
+   *    chargé », « Aucun lieu de ce nom »). Rester en place en DISANT
+   *    pourquoi vaut mieux que partir ailleurs en silence.
+   * ⏳ Le jour où `/promenades` saura lire un NOM, cette porte se rouvrira —
+   *    et il faudra que `?q=` soit lu avant que ce code ne l'écrive, pas
+   *    l'inverse. Un garde de `recherche-accueil.test.ts` tient cet ordre.
+   */
   const soumettre = (e: React.FormEvent) => {
     e.preventDefault();
     if (!assezLong) return;
     if (resultats.length) { window.location.href = versLieu(resultats[0]); return; }
-    window.location.href = `${base}/promenades?q=${encodeURIComponent(requete.trim())}`;
   };
 
   useEffect(() => { if (inv) champ.current?.focus({ preventScroll: true }); }, [inv]);
@@ -131,7 +188,21 @@ export function RechercheAccueil({ base }: { base: string }) {
         <p className="rech-mot">Lecture de l’inventaire…</p>
       )}
       {assezLong && inv && resultats.length === 0 && (
-        <p className="rech-mot">Aucun lieu de ce nom. Essayez une commune, une pointe, une plage.</p>
+        /* ⚠️ DEUX PHRASES, PARCE QUE CE N'EST PAS LE MÊME REFUS. Sur mana.bzh,
+           « aucun lieu de ce nom » est vrai et suffisant : l'index couvre le
+           territoire du site. Ailleurs, le même mot laisserait croire que
+           Berlin n'existe pas — alors que c'est la recherche qui ne va pas
+           jusque-là. ⛔ Un refus qui attribue le manque au MONDE plutôt qu'à
+           soi est un refus malhonnête.
+           ⭐ Et il dit où la suite se trouve : la carte, elle, porte le
+              monde entier. Un refus sans porte de sortie est une porte
+              fermée ; avec, c'est un aiguillage. */
+        <p className="rech-mot">
+          {ailleurs
+            ? `Ce nom n’est pas dans l’index. La recherche ne couvre encore que `
+              + `${ETENDUE.mot} — le reste du monde est sur la carte, pas encore ici.`
+            : "Aucun lieu de ce nom. Essayez une commune, une pointe, une plage."}
+        </p>
       )}
 
       {/* ⭐ UNE PORTE AU REPOS. Le champ ne propose rien tant qu'on n'a pas
@@ -190,6 +261,11 @@ export function RechercheAccueil({ base }: { base: string }) {
         </nav>
       )}
 
+      {/* ⭐ LA PORTÉE SE DIT AVANT LA LISTE, pas après : qui lit « Grotte de
+          Roméo » après avoir tapé Rome a déjà conclu. */}
+      {ailleurs && resultats.length > 0 && (
+        <p className="rech-portee">Dans {ETENDUE.mot} — le reste du monde est sur la carte.</p>
+      )}
       {resultats.length > 0 && (
         <ul className="rech-liste" id="rech-liste" role="listbox" aria-label="Lieux trouvés">
           {resultats.map((r) => (

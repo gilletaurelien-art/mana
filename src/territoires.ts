@@ -223,3 +223,4 @@ export function positionDeDepart(
 ): [number, number] {
   return mesuree ?? visee ?? repli;
 }
+
