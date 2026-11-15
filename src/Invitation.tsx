@@ -26,6 +26,7 @@
  */
 import { RechercheAccueil } from "./RechercheAccueil";
 import { avecOffice } from "./visage";
+import { MOT, devise } from "./marque";
 
 export function Invitation({ base }: { base: string }) {
   /* 🔴 « AUTOUR DE MOI » EST PARTI LE 1/11/2026, sur demande du fondateur, et
@@ -67,7 +68,7 @@ export function Invitation({ base }: { base: string }) {
 
       <div className="inv-contenu">
         <header className="inv-marque">
-          <p className="inv-mot">MANA</p>
+          <p className="inv-mot">{MOT}</p>
           {/* 🔄 « Terre, mer & lumière » → « Au cœur de la Bretagne », puis le
               grand titre SUPPRIMÉ — demandes du fondateur, 12/11/2026. La
               devise disait une ATMOSPHÈRE, celle-ci dit un LIEU ; et la phrase
@@ -97,7 +98,7 @@ export function Invitation({ base }: { base: string }) {
                 ⚠️ Et c'est le NOM du site, pas une phrase : la devise bretonne
                    dit un lieu, celle-ci dit une adresse. Les deux tiennent le
                    même rôle — le seul `h1` de l'accueil. */}
-            {avecOffice() ? "Au cœur de la Bretagne" : "home.org"}
+            {devise()}
           </h1>
         </header>
 
@@ -137,7 +138,15 @@ export function Invitation({ base }: { base: string }) {
                diluerait la mention au lieu de l'honorer. Il est descendu
                dans la section « Carnet, export GPX et circuits balisés »,
                celle qui montre leurs 46 circuits et leurs 708 km. */}
-        <RechercheAccueil base={base} />
+        {/* 🔴 PLUS DE CHAMP EN BAS SUR MANAHOME — Aurélien, 15/11/2026 :
+            « supprime cette barre de saisie ». La recherche a déménagé dans la
+            pilule d'en-tête, derrière la loupe (voir `CarteMonde`).
+            ⭐ ELLE DÉMÉNAGE, ELLE NE SE DUPLIQUE PAS : deux champs pour un même
+               geste, ce sont deux états à tenir d'accord et deux endroits où
+               taper la même chose.
+            ⚠️ mana.bzh et mana.love gardent le leur ici : chez eux l'accueil
+               n'est pas une carte, et il n'y a pas de pilule où le mettre. */}
+        {avecOffice() && <RechercheAccueil base={base} />}
 
 
       </div>

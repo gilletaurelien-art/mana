@@ -144,3 +144,39 @@ export function chercher(requete: string, index: Index): Resultat[] {
     })
     .slice(0, RESULTATS_MAX);
 }
+
+/**
+ * L'ANCRE DU CHAMP DE RECHERCHE — un seul identifiant, trois usages.
+ *
+ * 🔴 15/11/2026, Aurélien : « on pourrait ajouter l'icône de recherche de lieu
+ *    à gauche de manahome.org — le header aurait 2 icônes ». Le champ, lui,
+ *    reste en bas, là où il a été posé le 14/11 (« place la barre de saisie
+ *    au-dessus de la bottom bar ») : l'icône ne le déplace pas, elle y mène.
+ *
+ * ⭐ L'IDENTIFIANT CESSE D'ÊTRE UNE CHAÎNE RECOPIÉE. Il vivait déjà en deux
+ *    exemplaires — sur l'`input` et sur le `htmlFor` de son étiquette — et le
+ *    bouton d'en-tête en aurait fait un troisième, dans un AUTRE fichier.
+ *    Trois copies d'une chaîne qui lie deux éléments : le jour où elle change
+ *    quelque part, rien ne casse, l'étiquette cesse simplement de désigner son
+ *    champ et le bouton de le trouver. Silencieux des deux côtés.
+ */
+export const ID_CHAMP = "rech-q";
+
+/**
+ * Met le champ de recherche sous la main — et sous le clavier.
+ *
+ * ⚠️ `preventScroll: false` À DESSEIN : sur l'accueil-carte, le champ est en
+ *    bas de l'écran et le bouton en haut. Le faire venir sans l'amener serait
+ *    un bouton qui donne le focus à quelque chose qu'on ne voit pas.
+ * ⛔ Rend `false` si le champ n'est pas là, et l'appelant doit en tenir
+ *    compte : sur un écran sans recherche, l'icône n'a rien à ouvrir — donc
+ *    elle n'a pas à paraître.
+ */
+export function viserLeChamp(): boolean {
+  if (typeof document === "undefined") return false;
+  const champ = document.getElementById(ID_CHAMP) as HTMLInputElement | null;
+  if (!champ) return false;
+  champ.focus();
+  champ.select();
+  return true;
+}

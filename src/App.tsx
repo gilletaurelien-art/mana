@@ -1,7 +1,7 @@
 import { useState, lazy, Suspense } from "react";
 import { useEffect, useRef, useLayoutEffect } from "react";
 import { usePath, baseUrl, routePromenade, routeEnChemin, routeRencontres, routeComplet } from "./router";
-import { GlyphRadio, GlyphEtincelles, GlyphReglages, GlyphNavigation, GlyphSecurite, GlyphDecouverte, GlyphCarte, GlyphSentier, GlyphSablier, GlyphContribution } from "./Glyphs";
+import { GlyphRadio, GlyphEtincelles, GlyphReglages, GlyphNavigation, GlyphSecurite, GlyphDecouverte, GlyphCarte, GlyphSentier, GlyphContribution } from "./Glyphs";
 import { Invitation } from "./Invitation";
 import { LApplication } from "./LApplication";
 import { avecOffice, visage, signature, titrePourLHote, poserCanonique } from "./visage";
@@ -363,7 +363,6 @@ export default function App() {
                   {e.glyphe === "etincelles" && <GlyphEtincelles />}
                   {e.glyphe === "radio" && <GlyphRadio />}
                   {e.glyphe === "reglages" && <GlyphReglages />}
-                  {e.glyphe === "sablier" && <GlyphSablier />}
                   {e.glyphe === "contribution" && <GlyphContribution />}
                 </>
               );

@@ -28,7 +28,13 @@ export type Entree = {
    *  Les passerelles existantes sont des CHEMINS de mana.love ; manatimebank
    *  est un site à part, et `${B}${chemin}` en ferait une adresse morte. */
   readonly externe?: boolean;
-  readonly glyphe: "carte" | "contribution" | "etincelles" | "marque" | "radio" | "reglages" | "sablier";
+  /* ⚠️ « sablier » EST PARTI AVEC LA COLONNE QU'IL SERVAIT (15/11/2026).
+     Le laisser dans ce type aurait gardé vivant, dans l'aiguillage d'`App.tsx`,
+     un cas que plus rien n'atteint — et `GlyphSablier` avec lui. Un type qui
+     promet une valeur que personne n'émet est un fantôme qui compile.
+     ⭐ Le dessin, lui, RESTE dans `Glyphs.tsx` : il est juste, il a coûté une
+        mesure, et le temps reviendra. C'est le CÂBLAGE qu'on retire. */
+  readonly glyphe: "carte" | "contribution" | "etincelles" | "marque" | "radio" | "reglages";
   readonly libelle: string;
   /** Le mot est-il écrit à l'écran, ou réservé aux lecteurs d'écran ? */
   readonly motVisible?: true;
@@ -80,9 +86,9 @@ export function entreesBarre(v: Visage): Entree[] {
        cartes, dont une bretonne : sur un site qui revendique le monde, le
        premier bouton de la barre ouvrait la presqu'île de Crozon.
        ⭐ ELLE NE DISPARAÎT PAS, ELLE CHANGE DE MÉTIER. Manahome n'a pas de
-          bouton « accueil » — la marque y est devenue le sablier — donc cette
-          colonne est le SEUL chemin de retour. La supprimer aurait laissé une
-          barre dont aucune icône ne ramène à la carte.
+          bouton « accueil » du tout — sa colonne centrale ne porte pas la
+          marque — donc celle-ci est le SEUL chemin de retour. La supprimer
+          aurait laissé une barre dont aucune icône ne ramène à la carte.
        ⛔ `/carte` reste servi et reste la carte DU TERRITOIRE : c'est
           l'écran de mana.bzh, avec ses graphes, ses circuits balisés et ses
           promenades. ⏳ L'unification des deux surfaces — une étendue par
@@ -127,14 +133,25 @@ export function entreesBarre(v: Visage): Entree[] {
       : null,
 
     /* 🔴 CHEZ MANAHOME, LA MARQUE DEVIENT UN SABLIER — Aurélien, 14/11/2026.
-       ⭐ Et elle change de DESTINATION en même temps que de dessin : le mot
-          MANA ramenait à l'accueil, le sablier mène au temps. Garder l'un et
-          changer l'autre aurait fait une icône qui ment sur ce qu'elle ouvre.
-       ⚠️ Le solde n'y est pas : ni compte dans cette application, ni adresse
-          qui le rende chez manatimebank (mesuré, 404). C'est une PORTE. */
+       ⚠️ CETTE NOTE DÉCRIT UN ÉTAT QUI A DURÉ VINGT-QUATRE HEURES. Le sablier
+          est retiré le 15/11 (voir plus bas) ; elle est gardée parce qu'elle
+          dit POURQUOI il était arrivé — « le solde n'y est pas : ni compte
+          dans cette application, ni adresse qui le rende chez manatimebank,
+          mesuré, 404 » — et c'est la raison qui l'a fait repartir. */
+    /* 🔴 LE SABLIER EST RETIRÉ — Aurélien, 15/11/2026 : « supprime le sablier
+       dans la bottom ». Il était arrivé le 14/11 comme porte vers
+       manatimebank, et il n'a jamais porté de solde : ni compte dans cette
+       application, ni adresse qui le rende là-bas (mesuré, 404). Une porte
+       qui n'ouvre que sur un autre domaine, sans rien dire de ce qu'on y
+       trouve, n'est pas une colonne de barre.
+       ⭐ ET LA COLONNE NE SE REMPLIT PAS. Manahome passe à quatre onglets :
+          la carte, contribuer, la radio, les réglages. Chercher quoi y mettre
+          serait prendre la place avant d'avoir le besoin — c'est ce qui a mis
+          le sablier là. ⏳ Le temps reviendra quand il aura un solde à dire.
+       ⚠️ mana.bzh et mana.love gardent leur marque centrale : rien n'y
+          change. */
     home
-      ? { clef: "temps", chemin: "https://manatimebank.org/", externe: true,
-          glyphe: "sablier", libelle: "Mon temps" }
+      ? null
       : { clef: "marque", chemin: "/", glyphe: "marque", libelle: "MANA", motVisible: true },
 
     /* ⚠️ La radio est à NOUS sur mana.bzh et à ELLE sur mana.love — et chez

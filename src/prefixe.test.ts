@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { describe, it, expect } from "vitest";
 import { execFileSync } from "node:child_process";
 
@@ -45,7 +45,22 @@ describe("le préfixe de service", () => {
         `index.html` est traversé, mais seulement via `%BASE_URL%`. */
   it("⛔ aucun fichier servi n'écrit « /mana » à la main", () => {
     const TEXTE = /\.(json|webmanifest|js|txt|svg|html|css)$/;
+    /* 🔴 ET ON NE DESCEND MÊME PLUS DANS LA DONNÉE — 15/11/2026, après une
+       SECONDE expiration. La première (14/11) venait de la LECTURE des
+       11 721 tuiles de sites ; celle-ci vient de leur simple ÉNUMÉRATION,
+       maintenant que 7 365 tuiles d'hébergements s'y sont ajoutées : 19 086
+       fichiers à parcourir, filtrer et jeter avant même d'en ouvrir un.
+       15,5 s seul, au-delà des 30 s quand la suite tourne en parallèle.
+       ⭐ LA COUVERTURE NE CHANGE PAS D'UN FICHIER : ces arbres sont confiés
+          ENTIERS à `grep -rl` juste en dessous, qui les lit tous. On cesse
+          de les compter deux fois — une fois pour les écarter, une fois pour
+          les grepper.
+       ⚠️ C'est la même décision qu'hier, poussée d'un cran : on ne change pas
+          CE QUE le garde couvre, seulement COMMENT il y accède. */
+    const DONNEE_RACINES = ["public/monde/s", "public/monde/g", "public/monde/h",
+                            "public/bretagne/g", "public/bretagne/h"];
     const parcourir = (d: string): string[] =>
+      DONNEE_RACINES.includes(d) ? [] :
       readdirSync(d, { withFileTypes: true }).flatMap((e) => {
         const chemin = `${d}/${e.name}`;
         if (e.isDirectory()) return parcourir(chemin);
@@ -68,12 +83,12 @@ describe("le préfixe de service", () => {
           retirer, un `includes` brut y suffit et coûte mille fois moins.
        ⚠️ Si un jour une tuile portait vraiment « /mana/ », ce test le dirait
           toujours — c'est la seule chose qui importe. */
-    const DONNEE = /^public\/(monde\/s|bretagne\/g|monde\/g|bretagne\/h|monde\/h)\//;
-    const donnees = porteurs.filter((f) => DONNEE.test(f));
     for (const f of porteurs) {
-      if (DONNEE.test(f)) continue;
       expect(nu(lire(f)), `${f} écrit le préfixe à la main`).not.toMatch(/["'(/]\/mana\//);
     }
+    /* Les arbres de donnée qui existent vraiment sur cette machine : ils sont
+       hors git (rejouables), donc absents d'un clone frais. */
+    const donnees = DONNEE_RACINES.filter((d) => existsSync(d));
 
     /* ⚠️ LA DONNÉE EST LUE PAR `grep`, ET C'EST UNE QUESTION DE SECONDES, PAS
        DE PRINCIPE. Lire 138 Mo depuis Node et y passer deux expressions
@@ -81,10 +96,9 @@ describe("le préfixe de service", () => {
        en une fraction. ⛔ La couverture ne change PAS : si une tuile portait
        « /mana/ », elle serait nommée ici. */
     if (donnees.length) {
-      const dossiers = [...new Set(donnees.map((f) => f.split("/").slice(0, 3).join("/")))];
       let trouves = "";
       try {
-        trouves = execFileSync("grep", ["-rl", "--", "/mana/", ...dossiers],
+        trouves = execFileSync("grep", ["-rl", "--", "/mana/", ...donnees],
           { encoding: "utf8" });
       } catch (e) {
         /* ⭐ `grep` sort en 1 quand il ne trouve RIEN — c'est le cas sain.
@@ -96,17 +110,26 @@ describe("le préfixe de service", () => {
       }
       expect(trouves.trim(), "un fichier de donnée écrit le préfixe à la main").toBe("");
     }
-    expect(donnees.length, "aucun fichier de donnée trouvé").toBeGreaterThan(0);
-  /* ⚠️ TRENTE SECONDES, ET LA RAISON EST ÉCRITE. Ce test lisait quelques
-     dizaines de fichiers ; depuis le 14/11/2026 il balaie aussi les 11 721
-     tuiles de sites du monde (138 Mo). Seul, il prend 2,3 s ; dans la suite
-     complète, où les fichiers tournent en parallèle et se disputent le
-     disque, il dépassait les 5 s par défaut.
+    /* ⛔ Un garde qui ne lit rien dit oui — ici aussi. Si aucun arbre de
+       donnée n'est présent, c'est une machine sans moisson, et il faut le
+       DIRE plutôt que de passer en silence. */
+    expect(donnees.length, "aucun arbre de donnée trouvé — relancez les moissons")
+      .toBeGreaterThan(0);
+  /* ⚠️ DEUX MINUTES, ET LA RAISON SE RECOMPTE. Ce test lisait quelques
+     dizaines de fichiers ; il balaie aujourd'hui les 11 721 tuiles de sites
+     ET les 7 365 tuiles d'hébergements — 19 086 fichiers, ~190 Mo. Seul, il
+     prend 2,5 s ; dans la suite complète, huit ouvriers se disputent le
+     disque et il a dépassé 30 s le 15/11.
      ⛔ La borne n'est PAS une façon de le faire taire : c'est le coût réel
         d'un garde qui refuse de nommer ses porteurs — et ce refus est
         précisément ce qui lui a évité de garder un fantôme. On paie la
-        couverture, on ne la réduit pas. */
-  }, 30_000);
+        couverture, on ne la réduit pas.
+     ⏳ ELLE A DOUBLÉ DEUX FOIS EN DEUX JOURS, et ça ne peut pas continuer :
+        la prochaine moisson la refera sauter. Le jour où elle gêne, la sortie
+        n'est pas une borne plus haute mais un `grep` qui ne relit que ce qui
+        a CHANGÉ — la couverture resterait entière, le coût deviendrait
+        proportionnel au travail et non à l'archive. */
+  }, 120_000);
 
   it("index.html prend le préfixe de Vite, et sait le retirer des deux côtés", () => {
     const html = nu(lire("index.html"));

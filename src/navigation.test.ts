@@ -1,4 +1,16 @@
 import { describe, it, expect } from "vitest";
+import { devise } from "./marque";
+
+/** ⚠️ `devise()` lit l'hôte : on le force, comme `visage.test.ts` le fait. */
+function surLHote<T>(hote: string, f: () => T): T {
+  const avant = globalThis.location;
+  Object.defineProperty(globalThis, "location",
+    { value: { hostname: hote, search: "" }, configurable: true, writable: true });
+  try { return f(); } finally {
+    Object.defineProperty(globalThis, "location",
+      { value: avant, configurable: true, writable: true });
+  }
+}
 import { readFileSync } from "node:fs";
 import { MOT_CLEF_OFFICE } from "./ot";
 
@@ -243,14 +255,31 @@ describe("le titre de l'accueil", () => {
         qu'un hôte reçoive celui de l'autre.
      ⚠️ Et il tient toujours le compte : UN seul h1. C'est lui que la section
         désigne par `aria-labelledby`. */
+  /* 🔄 RETOURNÉ UNE TROISIÈME FOIS, LE 15/11/2026. Il lisait le TEXTE de la
+     balise et y exigeait « Au cœur de la Bretagne ». Depuis que la marque
+     paraît à DEUX endroits — l'accueil et la pilule d'en-tête de la carte
+     vivante — les deux mots vivent dans `marque.ts`, et le `h1` ne porte plus
+     qu'un appel. Le garde y lisait donc « {devise()} » et refusait.
+     ⭐ CE QU'IL PROTÈGE N'A TOUJOURS PAS BOUGÉ, et c'est la troisième fois que
+        ça se vérifie : UN titre, et le texte du fondateur par hôte. Ce qui
+        change à chaque fois, c'est l'ENDROIT où ce texte se trouve — donc on
+        cesse de le chercher dans la balise et on INTERROGE la fonction. Un
+        garde qui suit une valeur de fichier en fichier finira par la perdre ;
+        un garde qui appelle la suit partout. */
   it("UN seul h1, et il nomme le territoire de SON hôte", () => {
     const h1s = [...src.matchAll(/<h1[^>]*>([\s\S]*?)<\/h1>/g)];
     expect(h1s.length, "l'accueil doit porter exactement un h1").toBe(1);
-    const dedans = h1s[0][1].replace(/<br\s*\/?>/g, " ").replace(/\s+/g, " ").trim();
-    expect(dedans, "la devise bretonne est le texte arrêté par le fondateur le 12/11")
-      .toContain("Au cœur de la Bretagne");
-    expect(dedans, "elle doit dépendre de l'hôte, sinon manahome la sert au monde")
-      .toMatch(/avecOffice\(\)/);
+    expect(h1s[0][1], "le titre doit venir de la source unique de la marque")
+      .toMatch(/devise\(\)/);
+    expect(surLHote("mana.bzh", () => devise()),
+      "la devise bretonne est le texte arrêté par le fondateur le 12/11")
+      .toBe("Au cœur de la Bretagne");
+    expect(surLHote("manahome.org", () => devise()),
+      "et manahome a la sienne, arrêtée le 14/11").toBe("home.org");
+    /* ⛔ Et les deux DIFFÈRENT : une devise unique servirait la Bretagne au
+       monde, ce qui est exactement l'accident du 14/11. */
+    expect(surLHote("mana.bzh", () => devise()))
+      .not.toBe(surLHote("manahome.org", () => devise()));
   });
 
   it("🔴 et la section reste DÉSIGNÉE par son titre — l'ancre a suivi le rôle", () => {

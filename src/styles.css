@@ -122,6 +122,30 @@
   font-weight: 400;
   font-display: swap;
 }
+/**
+ * 🔴 PRESS START 2P — la marque de MANAhome en pixels, 15/11/2026, demande
+ *    d'Aurélien : « change la police de home.org en press start (pixel art) ».
+ *
+ * ⚠️ ELLE PÈSE 16,7 Ko ET NE SERT QU'À HUIT CARACTÈRES. C'est assumé, et le
+ *    coût est BORNÉ par la façon dont les navigateurs chargent les polices :
+ *    un fichier n'est téléchargé que si du texte rendu l'emploie. Comme la
+ *    seule règle qui la demande est sous `[data-visage="home"]`, mana.bzh et
+ *    mana.love ne la paient JAMAIS.
+ * ⏳ Elle est sous-ensemblée sur tout le jeu de l'interface (327 caractères)
+ *    plutôt que sur « home.org » seul, pour que le garde de couverture
+ *    continue de valoir pour elle comme pour les autres. La réduire à huit
+ *    glyphes ferait gagner ~16 Ko et demanderait d'apprendre au garde qu'une
+ *    police peut avoir un emploi déclaré — à faire le jour où une seconde
+ *    police de titrage arrive, pas pour celle-ci seule.
+ * ⛔ Téléchargée UNE FOIS et versionnée avec sa licence (OFL), comme les
+ *    trois autres : aucune police distante, jamais.
+ */
+@font-face {
+  font-family: "Press Start 2P";
+  src: url("./fonts/PressStart2P-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
 @font-face {
   font-family: "Rubik";
   src: url("./fonts/Rubik-Bold.woff2") format("woff2");
@@ -4435,8 +4459,14 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
    ⚠️ Et ce dépôt a déjà payé l'inverse : « un contraste qui dépend de la
       LONGUEUR du texte est un hasard ». Ici l'ombre suit chaque lettre, donc
       elle ne dépend de rien. */
+/* ⚠️ L'OMBRE COMPTE DOUBLE DEPUIS QUE LA MARQUE A RÉTRÉCI. À 4,2 rem elle
+   portait sa propre masse ; à 2,2 rem sur une orthophoto de ville, chaque
+   lettre a besoin de son contour. Deux couches : un liseré serré qui détache
+   le trait, une ombre large qui assoit le mot. */
 [data-visage="home"] .inv-mot,
-[data-visage="home"] .inv-devise { text-shadow: var(--ombre-sur-carte); }
+[data-visage="home"] .inv-devise {
+  text-shadow: 0 1px 1px rgb(10 18 30 / 72%), var(--ombre-sur-carte);
+}
 
 /* ⛔ LE FILIGRANE TOPOGRAPHIQUE AUSSI. Quatre courbes posées en haut à
    droite — « presque imperceptibles » sur un sol sable, mais c'est une
@@ -4560,7 +4590,11 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
       carte n'a pas les commandes de la carte du territoire au-dessus.
    ⚠️ `position: absolute` dans `.monde-fond` / `.monde-scene`, qui sont tous
       deux des blocs positionnés : le panneau suit la carte, pas la page. */
-.monde-calques-bouton {
+/* ⚠️ SUR LA CARTE-PAGE, le bouton se pose seul en haut à droite ; sur
+   l'accueil vivant, c'est la PILULE qui se pose et lui n'est plus qu'un
+   élément de sa rangée. D'où le `:not()` — sans lui, le bouton garderait un
+   positionnement absolu à l'intérieur de la pilule et en sortirait. */
+.monde-calques-bouton:not(.monde-entete > *) {
   position: absolute; z-index: var(--z-panneau);
   top: calc(var(--sp-2) + env(safe-area-inset-top, 0px)); right: var(--sp-2);
 }
@@ -4629,3 +4663,203 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
 }
 /* ⚠️ Et le genre choisi, lui, garde sa teinte de pin : c'est de la donnée. */
 [data-visage="home"] .terr-genre { color: var(--bulle-texte); }
+
+
+/* ══ LA MARQUE DE MANAHOME, SUR UNE LIGNE — 15/11/2026 ════════════════════
+   🔴 Aurélien : « on va intégrer le titre dans l'icône — le titre sur une
+      ligne : MANAhome.org ». Puis, la veille : « centre le titre », « change
+      la police de home.org en press start ».
+
+   ⭐ LA LIGNE UNIQUE N'EST PAS UNE MISE EN PAGE, C'EST CE QUI RÉSOUT LE RESTE.
+      Empilée sur deux lignes, la marque tenait 73 px de haut : tout ce qu'on
+      pose sur la carte devait l'éviter, et trois choses ont dû descendre pour
+      elle dans la même journée — le compteur de sites, le panneau de calques,
+      la fiche du lieu. Pire, le panneau accroché à son bouton se faisait
+      recouvrir PAR le titre, qui vit dans une autre couche ; il avait fallu
+      effacer l'en-tête pendant l'ouverture du menu.
+      Sur une ligne, la marque tient dans la hauteur du bouton : plus rien ne
+      se chevauche, et l'effacement disparaît avec la cause qui l'exigeait.
+   ⛔ ON A DONC RETIRÉ UNE RUSE EN CHANGEANT LA FORME. C'est le bon ordre —
+      une règle qui compense une géométrie survit à la géométrie.
+
+   ⚠️ DEUX POLICES SUR UNE SEULE LIGNE, alignées sur la LIGNE DE BASE et non
+      sur la boîte : Instrument Serif et Press Start 2P n'ont ni la même
+      hauteur d'œil ni le même talon. Centrées verticalement, « MANA » aurait
+      flotté au-dessus de « home.org ». `align-items: baseline` les pose sur
+      le même sol, ce qui est la seule façon de lire les douze caractères
+      comme UN mot. */
+[data-visage="home"] .inv-marque {
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0;
+}
+/* ⚠️ LA MARQUE SE CALE SUR LA HAUTEUR DU BOUTON, pas sur 13vw. L'enseigne de
+   mana.bzh est un HÉROS qui occupe le haut de l'accueil ; celle-ci est un
+   en-tête d'application, posé à côté d'une commande de 44 px. */
+/* 🔄 +10 % LE 15/11/2026, demande d'Aurélien. ⚠️ Les TROIS bornes montent
+   ensemble — ne hausser que la valeur préférée ferait grandir la marque sur
+   un écran moyen et pas sur les deux extrêmes, donc changerait la PROPORTION
+   avec « home.org » selon la largeur. 1,4 → 1,54 · 7 → 7,7 · 2,2 → 2,42. */
+[data-visage="home"] .inv-mot {
+  font-size: clamp(1.54rem, 7.7vw, 2.42rem);
+}
+/* ⚠️ La police pixel dessine sur une grille carrée : à taille égale elle est
+   deux fois plus large qu'un romain. Elle tient donc le second rôle, calée
+   pour que « home.org » fasse à peu près la longueur de « MANA ». */
+/* 🔄 −10 % LE 15/11/2026, dans le même geste : la marque monte, la devise
+   descend, et l'écart entre les deux se creuse de 20 %.
+   0,6 → 0,54 · 2,9 → 2,61 · 0,95 → 0,855. */
+[data-visage="home"] .inv-devise {
+  font-family: "Press Start 2P", "Rubik", monospace;
+  font-size: clamp(0.54rem, 2.61vw, 0.855rem);
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: none;
+  /* ⭐ UN CHEVEU D'AIR, PAS UN BLANC DE MOT. « MANAhome.org » s'écrit sans
+     espace ; le serif finit sur un empattement et le pixel commence sur un
+     bord franc, et deux glyphes collés se lisent comme une coquille. */
+  padding-left: 0.12em;
+  /* 🔴 ET ELLE REPREND L'ENCRE PLEINE — vu à l'écran : « home.org » sortait
+     délavé sur une orthophoto claire. Il héritait de `--texte-immersif-doux`,
+     c'est-à-dire du blanc à 72 %, posé pour un SECOND RANG de texte.
+     ⭐ Ce n'en est plus un : depuis qu'elle est sur la même ligne, cette
+        moitié n'accompagne plus la marque, elle EST la marque. Une encre
+        atténuée disait une hiérarchie qui n'existe plus. */
+  color: var(--bulle-texte, #fff);
+}
+
+/* 🔴 LE MENU REVIENT SOUS SON ICÔNE, et il peut y rester. Il s'en était
+   détaché ce matin pour ne pas recouvrir une marque de 73 px ; celle-ci en
+   fait 40. ⚠️ 52 px = le bouton (44) plus son air (8). */
+[data-visage="home"] .monde-fond[data-vivante] .monde-calques {
+  top: calc(var(--sp-2) + env(safe-area-inset-top, 0px) + 52px);
+}
+
+
+/* ══ LA PILULE D'EN-TÊTE — 15/11/2026 ═════════════════════════════════════
+   🔴 « Intégrer MANAhome.org sur la même ligne que l'icône et faire que
+      l'icône et le titre apparaissent dans le même fond sombre. »
+   ⭐ MÊME MATIÈRE QUE LA BARRE DU BAS, et ce n'est pas une coquetterie : les
+      deux sont les seules surfaces d'interface posées sur la carte, l'une en
+      haut, l'autre en bas. Leur donner deux verres différents aurait fait
+      deux objets étrangers sur le même fond — c'est exactement le reproche
+      que `tokens.css` adresse à l'ancienne barre blanche.
+   ⚠️ Elle NE PREND PAS TOUTE LA LARGEUR : `width: max-content` la fait tenir
+      à ses mots. Une barre pleine largeur aurait coupé la carte en deux et
+      rendu l'écran à une page avec un en-tête — or l'accueil EST la carte. */
+.monde-entete {
+  position: absolute; z-index: var(--z-panneau);
+  top: calc(var(--sp-2) + env(safe-area-inset-top, 0px));
+  left: 50%; transform: translateX(-50%);
+  width: max-content; max-width: calc(100% - var(--sp-2) * 2);
+  /* ⚠️ Le rembourrage devient SYMÉTRIQUE depuis qu'il y a une icône de chaque
+     côté : l'asymétrie d'hier compensait le texte collé au bord gauche. */
+  display: flex; align-items: center; gap: var(--sp-1);
+  padding: 6px;
+  border-radius: var(--r-rond);
+  background: var(--bulle); color: var(--bulle-texte);
+  -webkit-backdrop-filter: var(--bulle-flou); backdrop-filter: var(--bulle-flou);
+  border: 1px solid var(--bulle-trait);
+  box-shadow: var(--ombre-levee, 0 14px 34px rgb(0 0 0 / 42%));
+}
+/* ⭐ L'ÉCHO DE LA MARQUE — mêmes classes que l'accueil (`.inv-mot`,
+   `.inv-devise`), donc mêmes polices et mêmes tailles : une seule charte, pas
+   deux. ⚠️ Mais plus d'ombre portée : sur le verre sombre de la pilule elle
+   n'a plus rien à protéger, et une ombre sans fond à combattre salit le
+   trait. */
+/* 🔴 DEUX LIGNES, ET SERRÉES AU MAXIMUM — Aurélien, 15/11/2026 : « ligne 1 :
+   MANA · ligne 2 : home.org · approche les 2 lignes au maximum ».
+   ⭐ CE QUI SÉPARE DEUX LIGNES N'EST PAS UN ESPACE, C'EST DE LA PLACE DANS LES
+      GLYPHES. Mettre `gap: 0` ne change presque rien : l'air vient des
+      `line-height`, et surtout du TALON de la police pixel, qui réserve sous
+      chaque caractère une rangée de pixels vide. On descend donc les deux
+      interlignes à 1 ET on remonte la seconde ligne d'un cheveu négatif —
+      c'est la seule façon d'approcher deux polices qui ne partagent ni œil ni
+      talon.
+   ⚠️ `margin-top` NÉGATIF, pas `gap` négatif : `gap` n'accepte pas de valeur
+      négative, et la tentation serait de bricoler avec `position: relative`,
+      qui déplacerait le dessin sans réduire la boîte — la pilule garderait sa
+      hauteur et le serrage ne se verrait qu'à moitié. */
+.monde-marque {
+  margin: 0; display: flex; flex-direction: column; align-items: center;
+  white-space: nowrap; padding: 0 var(--sp-1); line-height: 1;
+}
+.monde-marque .inv-mot { line-height: 0.92; }
+.monde-marque .inv-devise { line-height: 1; margin-top: -0.12em; }
+[data-visage="home"] .monde-marque .inv-mot,
+[data-visage="home"] .monde-marque .inv-devise { text-shadow: none; }
+/* 🔴 « MANA » EN BLANC — Aurélien, 15/11/2026. Il héritait de `--craie`,
+   l'encre de la charte bretonne : un blanc cassé, chaud, réglé pour le kaki.
+   Sur le verre noir de MANAhome il tirait vers le jaune à côté de
+   « home.org », qui est du blanc pur. Deux blancs voisins qui ne sont pas le
+   même blanc se voient tout de suite, et se lisent comme une erreur
+   d'impression. ⭐ Une palette noir et blanc n'a qu'un blanc. */
+[data-visage="home"] .inv-mot { color: var(--bulle-texte, #fff); }
+
+/* 🔴 L'ICÔNE RETROUVE SES TRAITS BLANCS — « remets la belle icône de base aux
+   traits blancs ». En entrant dans la pilule, le bouton a perdu `terr-rond`,
+   qui lui donnait sa couleur autant que son rond ; il est retombé sur
+   `color: inherit` du bouton nu, c'est-à-dire sur le gris du navigateur.
+   ⭐ Le dessin n'a pas changé d'un trait : c'est son ENCRE qui s'était
+      perdue avec la classe qu'on lui a retirée. Elle se redonne ici, à
+      l'endroit qui la concerne. */
+.monde-entete .monde-calques-bouton {
+  width: 44px; height: 44px; flex: none;
+  display: grid; place-items: center;
+  border: 0; border-radius: 50%; cursor: pointer;
+  background: transparent; color: var(--bulle-texte, #fff);
+  transition: background var(--d-micro, 160ms) var(--e-doux, ease);
+}
+.monde-entete .monde-calques-bouton:hover { background: var(--bulle-survol); }
+.monde-entete .monde-calques-bouton:focus-visible {
+  outline: 2px solid var(--bulle-texte, #fff); outline-offset: 2px;
+}
+/* ⛔ ET L'ACCUEIL CACHE LE SIEN, sans le retirer du document : le `h1` reste
+   lisible par une machine et par un lecteur d'écran, puisqu'il est le titre
+   de la page. `clip-path` plutôt que `display: none` — ce qui disparaît ici
+   est l'IMAGE du titre, pas le titre. */
+[data-visage="home"] .monde-fond[data-vivante] ~ .app-colonne .inv-marque {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
+}
+
+
+/* ══ LA RECHERCHE DANS LA PILULE — 15/11/2026 ═════════════════════════════
+   🔴 Aurélien : « ça fait une double barre, une barre simple suffit ».
+      Vu à l'écran : la pilule d'en-tête contenait le composant de recherche,
+      qui apporte SA propre pilule — fond, liseré, rayon et loupe. Deux
+      bordures concentriques et deux loupes à deux centimètres.
+   ⭐ CE N'EST PAS UN DÉFAUT DU COMPOSANT : il a été dessiné pour se poser SUR
+      la carte, seul, au-dessus de la barre du bas. Son habillage était son
+      fond. Déplacé DANS un contenant qui a déjà le sien, c'est cet habillage
+      qui devient le doublon — pas le composant.
+   ⚠️ On le lui retire ICI, à l'endroit du déplacement, et nulle part ailleurs :
+      sur mana.bzh il garde sa pilule, puisqu'il y est encore seul sur la
+      carte. Une règle de contexte vit avec le contexte. */
+.monde-chercher { flex: 1 1 auto; min-width: 0; display: flex; }
+.monde-chercher .rech { gap: 0; }
+.monde-chercher .rech-forme {
+  background: none; border: 0; backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  height: 32px; padding: 0; gap: 0;
+}
+/* ⛔ ET LA SECONDE LOUPE PART AVEC. Celle de la pilule est à sa gauche, et
+   c'est elle qui a ouvert la recherche : en garder deux ferait croire à deux
+   actions. */
+.monde-chercher .rech-loupe { display: none; }
+/* ⚠️ CE QUI TOMBE SOUS LE CHAMP SORT DE LA PILULE — sinon il l'étire et la
+   carte disparaît derrière. Un SEUL bloc est positionné, pas ses trois
+   enfants : c'est la raison d'être de `.rech-sous` (voir `RechercheAccueil`).
+   ⭐ Avant lui, les trois visaient le même `top` et se recouvraient — la
+      ligne de portée passait derrière la liste. */
+.monde-chercher .rech-sous {
+  position: absolute; left: 0; right: 0;
+  top: calc(100% + var(--sp-1));
+  display: flex; flex-direction: column; gap: var(--sp-1);
+}
+
+/* ⭐ AILLEURS, LE GROUPE N'EST QU'UNE COLONNE — il reprend l'espacement que
+   `.rech` donnait à ses enfants, pour que l'accueil de mana.bzh ne bouge pas
+   d'un pixel. */
+.rech-sous { display: flex; flex-direction: column; gap: 8px; }

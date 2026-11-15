@@ -27,6 +27,8 @@ import { STYLE_CARTE as STYLE, STYLE_ORTHO } from "./carte-fond";
    voir l'en-tête de ce fichier-là : un volet masqué fabrique un écran noir
    et interdit de conclure, il n'interdit pas de vérifier autrement. */
 import { Z, SITES_POSES, tuilesDuCadre } from "./tuiles";
+import { ID_CHAMP } from "./recherche";
+import { RechercheAccueil } from "./RechercheAccueil";
 /* 🔴 L'ÉTENDUE DÉCIDE OÙ LA CARTE S'OUVRE — architecture du 15/11/2026 :
    un produit, trois étendues (monde / France / Bretagne). Voir `etendue.ts`. */
 import { etendueDe } from "./etendue";
@@ -38,6 +40,7 @@ import { lienYAller, plateformeDe } from "./y-aller";
 import { usePropositions, type Destination } from "./propositions-du-point";
 import { baseUrl } from "./router";
 import { visage } from "./visage";
+import { MOT, devisePartie } from "./marque";
 /* ⭐ La porte d'entrée du style vit à part, et s'éprouve sans navigateur —
    voir l'en-tête de ce fichier-là : elle a été fausse deux jours. */
 import { poserLaSource } from "./style-pret";
@@ -194,6 +197,23 @@ export function CarteMonde(
                        typeof navigator === "undefined" ? 0 : navigator.maxTouchPoints),
     []);
   const [calquesOuverts, setCalquesOuverts] = useState(false);
+  /**
+   * 🔴 LA PILULE DEVIENT LA BARRE DE SAISIE — Aurélien, 15/11/2026 : « quand
+   *    on clique sur la loupe, manahome.org s'efface et ça devient la barre
+   *    de saisie », puis « supprime cette barre de saisie » (celle du bas).
+   *
+   * ⭐ UNE SEULE RECHERCHE, UN SEUL ÉTAT. La tentation était d'ajouter un
+   *    champ dans l'en-tête et de laisser celui du bas : deux entrées pour le
+   *    même geste, donc deux états à tenir d'accord et deux endroits où taper
+   *    la même chose. Ce dépôt a déjà retiré un doublon de ce genre hier
+   *    (« deux chemins vers la même page à trois centimètres l'un de
+   *    l'autre »). La recherche DÉMÉNAGE, elle ne se duplique pas.
+   * ⚠️ CE QUE ÇA DÉFAIT, ET IL FAUT LE DIRE : le 14/11, le champ avait été
+   *    descendu au-dessus de la barre du bas « parce que le pouce vit en
+   *    bas ». Il remonte en haut — mais derrière un bouton, donc il n'occupe
+   *    plus l'écran en permanence, et c'est ce bouton qui est au pouce.
+   */
+  const [cherche, setCherche] = useState(false);
   const [genres, setGenres] = useState<string[]>([]);
   const [genresChoisis, setGenresChoisis] = useState<ReadonlySet<string>>(new Set());
   /** ⚠️ Posé par `installer()` : les effets de calque ne peuvent rien avant. */
@@ -756,19 +776,84 @@ export function CarteMonde(
    *    sur l'accueil vivant, la colonne ne reçoit plus les gestes, et un
    *    panneau posé là serait un panneau mort.
    */
+  /** Le bouton qui ouvre les calques — un seul, posé différemment selon le cas. */
+  const boutonCalques = (
+    <button type="button"
+      className={vivante ? "monde-calques-bouton" : "terr-rond monde-calques-bouton"}
+      aria-expanded={calquesOuverts} aria-controls="monde-calques"
+      onClick={() => setCalquesOuverts((o) => !o)}>
+      <span className="sr-only">Calques de la carte</span>
+      <svg viewBox="0 0 24 24" aria-hidden="true" width="20" height="20"
+           fill="none" stroke="currentColor" strokeWidth="1.6"
+           strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 3 3 7.5 12 12l9-4.5L12 3z" />
+        <path d="m3 12.5 9 4.5 9-4.5M3 17l9 4.5 9-4.5" />
+      </svg>
+    </button>
+  );
+
   const panneau = (
     <>
-      <button type="button" className="terr-rond monde-calques-bouton"
-        aria-expanded={calquesOuverts} aria-controls="monde-calques"
-        onClick={() => setCalquesOuverts((o) => !o)}>
-        <span className="sr-only">Calques de la carte</span>
-        <svg viewBox="0 0 24 24" aria-hidden="true" width="20" height="20"
-             fill="none" stroke="currentColor" strokeWidth="1.6"
-             strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 3 3 7.5 12 12l9-4.5L12 3z" />
-          <path d="m3 12.5 9 4.5 9-4.5M3 17l9 4.5 9-4.5" />
-        </svg>
-      </button>
+      {/* 🔴 LA MARQUE ET LE MENU DANS UNE SEULE PILULE — Aurélien, 15/11/2026 :
+          « intégrer MANAhome.org sur la même ligne que l'icône et faire que
+          l'icône et le titre apparaissent dans le même fond sombre ».
+          ⭐ UN SEUL FOND EXIGE UN SEUL PARENT. Les deux vivaient dans des
+             couches différentes — le titre dans la colonne de l'application,
+             le bouton dans la carte — et deux fonds voisins ne font pas une
+             pilule : ils font deux pastilles avec une couture au milieu. On
+             les rend donc FRÈRES, du côté de la carte, qui est la surface.
+          ⚠️ LE `h1` RESTE DANS L'ACCUEIL : il porte l'ancre `inv-titre` que
+             la section désigne, et deux `h1` de même identifiant feraient un
+             document à deux titres. Ce qui paraît ici en est l'ÉCHO, et il se
+             déclare comme tel (`aria-hidden`). */}
+      {vivante
+        ? (
+          <div className="monde-entete">
+            {/* 🔴 DEUX ICÔNES, UNE DE CHAQUE CÔTÉ — Aurélien, 15/11/2026 :
+                « ajouter l'icône de recherche de lieu à gauche de
+                manahome.org ; le header aurait 2 icônes ».
+                ⭐ ELLE NE DÉPLACE PAS LE CHAMP, ELLE Y MÈNE. La barre de
+                   saisie reste au-dessus de la barre du bas, là où elle a été
+                   posée hier pour le pouce ; ce bouton lui donne le focus et
+                   l'amène sous les yeux. Déplacer le champ ici aurait défait
+                   une décision prise la veille pour une raison qui tient
+                   toujours.
+                ⛔ ET ELLE NE PARAÎT QUE S'IL Y A UN CHAMP À VISER. Sur un
+                   écran sans recherche, un bouton loupe qui ne fait rien est
+                   une promesse creuse — `viserLeChamp()` rend `false` et
+                   l'écran le dit en ne montrant rien. */}
+            <button type="button" className="monde-calques-bouton"
+              aria-expanded={cherche} aria-controls={ID_CHAMP}
+              onClick={() => setCherche((c) => !c)}>
+              <span className="sr-only">
+                {cherche ? "Fermer la recherche" : "Chercher un lieu"}
+              </span>
+              <svg viewBox="0 0 24 24" aria-hidden="true" width="20" height="20"
+                   fill="none" stroke="currentColor" strokeWidth="1.8"
+                   strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="7" />
+                <path d="M20 20l-4.3-4.3" />
+              </svg>
+            </button>
+            {cherche
+              ? (
+                /* ⭐ LA VRAIE RECHERCHE, PAS UN CHAMP DE PLUS. C'est le même
+                   composant que l'accueil portait en bas — il emporte son
+                   moteur, ses états honnêtes et sa liste de résultats. */
+                <div className="monde-chercher"><RechercheAccueil base={B} /></div>
+              )
+              : (
+                <p className="monde-marque" aria-hidden="true">
+                  <span className="inv-mot">{MOT}</span>
+                  <span className="inv-devise">
+                    {devisePartie().map((p) => <span key={p}>{p}</span>)}
+                  </span>
+                </p>
+              )}
+            {boutonCalques}
+          </div>
+        )
+        : boutonCalques}
       {calquesOuverts && (
         <div className="monde-calques" id="monde-calques">
           {([["sites", "Les sites remarquables"],

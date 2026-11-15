@@ -33,7 +33,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { avecOffice, visage } from "./visage";
 
 import { chargerLieux, ETENDUE, type Inventaire } from "./lieux";
-import { chercher, LONGUEUR_MIN, type Resultat } from "./recherche";
+import { chercher, LONGUEUR_MIN, ID_CHAMP, type Resultat } from "./recherche";
 /* ⚠️ UN JSON S'IMPORTE EN `(string | number)[][]`, pas en tuple : TypeScript
    ne peut pas deviner qu'un tableau de trois cases est [nom, lon, lat]. On
    NOMME la forme ici, une fois — plutôt que de la forcer à chaque usage.
@@ -148,16 +148,21 @@ export function RechercheAccueil({ base }: { base: string }) {
   };
 
   useEffect(() => { if (inv) champ.current?.focus({ preventScroll: true }); }, [inv]);
+  /* ⭐ ET AU MONTAGE AUSSI, depuis que ce champ naît d'un clic sur la loupe
+     (15/11/2026) : on vient de demander à chercher, il serait absurde d'avoir
+     à toucher une seconde fois pour taper. ⚠️ Sans `preventScroll` ici : le
+     champ est en haut de l'écran, rien à faire venir. */
+  useEffect(() => { champ.current?.focus(); }, []);
 
   return (
     <search className="rech">
       <form className="rech-forme" onSubmit={soumettre} role="search">
-        <label className="sr-only" htmlFor="rech-q">Une commune, un lieu</label>
+        <label className="sr-only" htmlFor={ID_CHAMP}>Une commune, un lieu</label>
         <svg className="rech-loupe" viewBox="0 0 24 24" aria-hidden="true">
           <circle cx="11" cy="11" r="7" /><path d="M20 20l-4.3-4.3" />
         </svg>
         <input
-          id="rech-q" ref={champ} type="search" className="rech-champ"
+          id={ID_CHAMP} ref={champ} type="search" className="rech-champ"
           placeholder="Une commune, un lieu…"
           autoComplete="off" enterKeyHint="search"
           value={requete}
@@ -176,6 +181,20 @@ export function RechercheAccueil({ base }: { base: string }) {
           </button>
         )}
       </form>
+
+      {/* 🔴 UN PARENT POUR TOUT CE QUI TOMBE SOUS LE CHAMP — 15/11/2026.
+          Les trois choses qui suivent (le mot d'état, la portée, la liste)
+          étaient des FRÈRES du formulaire. Tant que la recherche vivait seule
+          au-dessus de la barre du bas, elles s'empilaient dans le flux et
+          c'était juste. Déplacée dans la pilule d'en-tête, il a fallu les
+          sortir du cadre — et trois frères absolus visant le même point
+          d'ancrage se sont superposés : la ligne de portée s'est retrouvée
+          DERRIÈRE la liste.
+          ⭐ Un groupe qui doit se déplacer ensemble doit d'abord EXISTER
+             ensemble. Le parent ne change rien à l'accueil de mana.bzh — il
+             y est un bloc transparent dans une colonne — et il donne au
+             contexte qui en a besoin une seule chose à positionner. */}
+      <div className="rech-sous">
 
       {/* ⛔ CHAQUE ÉTAT SE DIT. Un champ qui ne répond rien laisse croire
           qu'il n'a rien trouvé, alors qu'il n'a parfois rien reçu — c'est la
@@ -278,6 +297,7 @@ export function RechercheAccueil({ base }: { base: string }) {
           ))}
         </ul>
       )}
+      </div>
     </search>
   );
 }
