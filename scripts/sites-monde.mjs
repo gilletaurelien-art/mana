@@ -56,12 +56,45 @@ export const PLAFOND = 1500;
 
 /** Le vocabulaire retenu. ⚠️ Il vient de la moisson MONDIALE, qui l'emploie
  *  proprement ; les mêmes mots couvrent la Bretagne (`lieux.json`). */
+/**
+ * 🔄 VINGT-QUATRE MOTS DEPUIS LE 15/11/2026, ET LE COMPTE A BAISSÉ — c'est
+ *    une session voisine qui a fait regarder, à propos d'un mot à AJOUTER.
+ *
+ * ✅ `monument` ENTRE. Aurélien a arbitré `historic=monument` le 15/11 et
+ *    49 396 fiches mondiales sont versées. Mesuré avant de l'écrire :
+ *    `mots[1] = 'monument'` rend **49 388 lignes, dont 49 388 OSM** — 100 %,
+ *    et zéro que le garde des adresses dise domicile. Le mot est propre.
+ *
+ * ⛔ NEUF MOTS SORTENT, PARCE QU'ILS NE RAMASSENT QUE DU BRUIT FRANÇAIS.
+ *    Mesuré le même jour, sur le gisement réel :
+ *
+ *        fontaine     207  (100 % hors OSM)  « Square La Fontaine »
+ *        archeologie  133  (100 % hors OSM)  « SOC … HISTOIRE ARCHEOLOGIE »
+ *        nature         5                    « Visite Nature et Vin »
+ *        musee          1                    « Visite du Musée Napoléon »
+ *        oeuvre         1                    « Les Oeuvres des Perchés »
+ *        memoire · fortification · epave · rocher :  ZÉRO ligne
+ *
+ *    Soit 347 épingles, toutes fausses : un square nommé d'après le fabuliste
+ *    annoncé « Fontaine », une SOCIÉTÉ savante annoncée « Site
+ *    archéologique », des ÉVÉNEMENTS annoncés « Musée ». Et quatre mots qui
+ *    n'ont jamais rien rendu. ⭐ Une liste blanche dont neuf entrées sur
+ *    trente-deux ne servent qu'à faire entrer du faux n'est pas une liste
+ *    blanche : c'est une passoire qui a l'air sévère.
+ * ⚠️ `site_archeologique` RESTE — c'est le mot de la moisson mondiale ;
+ *    `archeologie` était son doublon français. Les deux se ressemblaient
+ *    assez pour qu'on les garde tous les deux sans regarder.
+ *
+ * ⚠️ ET LES LIBELLÉS DES MOTS RETIRÉS RESTENT, DES DEUX CÔTÉS, À DESSEIN :
+ *    une tuile déjà en cache chez un visiteur porte encore ces catégories
+ *    pendant des semaines. Retirer la traduction afficherait la clé technique
+ *    en minuscules — le défaut du 4/11, « onze boutons sur vingt-trois ».
+ */
 export const CATEGORIES = [
   "parc", "sommet", "memorial", "plage", "panorama", "sentier", "baie",
   "site_archeologique", "source_naturelle", "cap", "ruine", "chateau",
   "chapelle", "grotte", "col", "cascade", "calvaire", "moulin", "megalithe",
-  "phare", "ile", "rocher", "fontaine", "epave", "musee", "oeuvre", "lande",
-  "lieu_de_culte", "fortification", "archeologie", "nature", "memoire",
+  "phare", "ile", "lande", "lieu_de_culte", "monument",
 ];
 
 /**
@@ -106,7 +139,7 @@ const LIBELLES = {
   rocher: "Rocher", fontaine: "Fontaine", epave: "Épave", musee: "Musée",
   oeuvre: "Œuvre", lande: "Lande", lieu_de_culte: "Édifice religieux",
   fortification: "Fortification", archeologie: "Site archéologique",
-  nature: "Espace naturel", memoire: "Mémoire",
+  nature: "Espace naturel", memoire: "Mémoire", monument: "Monument",
 };
 /** ⚠️ Accents et casse retirés — même normalisation que `recherche.ts`. */
 const plat = (s) => (s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
@@ -120,7 +153,7 @@ const estAnonyme = (n, c) => {
 };
 
 function demanderJson(sql) {
-  const payload = `\\pset format unaligned\n\\pset tuples_only on\n${sql}\n`;
+  const payload = `\\pset format unaligned\n\\pset tuples_only on\n${sql}\n   AND NOT public.adresse_est_un_domicile(r.source, r.rna, r.naf, r.siret)`;
   return execFileSync("ssh",
     ["-o", "ConnectTimeout=25", HOTE,
      "sudo docker exec -i pg-repetition psql -U postgres -d postgres"],
@@ -195,12 +228,64 @@ const TABLE_FORMES = FORMES.join(",");
 /* ⭐ LE FILTRE EST ÉCRIT UNE FOIS. Deux requêtes (les tuiles, puis le résumé
    mondial) doivent porter sur EXACTEMENT le même gisement — sinon le total
    annoncé ne serait pas celui des points posés, et personne ne le verrait. */
+/**
+ * 🔴 LE GARDE DES ADRESSES MANQUAIT ICI, ET CE CALQUE EST ALLUMÉ PAR DÉFAUT
+ *    — posé le 15/11/2026, après l'avoir mesuré : **204 lignes** du gisement
+ *    sont des associations selon `public.adresse_est_un_domicile()`, et elles
+ *    étaient posées en épingles au bâtiment près depuis le 14/11.
+ *
+ * ⛔ 204 SUR 4,2 MILLIONS, ET C'EST BIEN LE PROBLÈME : trop peu pour se voir,
+ *    assez pour publier le domicile d'un dirigeant. Le siège déclaré d'une
+ *    association est très souvent celui d'un bénévole — deux demandes RGPD le
+ *    même soir des 19-20/10 l'ont établi, et « une carte au mètre est une
+ *    adresse ».
+ * ⭐ ET C'EST LE MÊME OUBLI QUE `services-monde.ts` A ÉVITÉ LE MATIN MÊME, à
+ *    quelques heures d'intervalle, dans le fichier d'à côté. Un garde posé
+ *    sur une surface n'est pas posé sur la suivante : **compter les points de
+ *    pose est le geste, pas poser le garde.**
+ * ⚠️ On APPELLE le garde de la base, on n'en réécrit pas un septième : un
+ *    motif recopié ici divergerait du jour où la base affine sa règle.
+ */
 const GISEMENT = `
   FROM ressources r
  WHERE r.source = 'lieu' AND r.geom IS NOT NULL
    AND r.mots[1] = ANY (ARRAY[${liste}])
    AND r.titre IS NOT NULL AND btrim(r.titre) <> ''
-   AND ST_Y(r.geom) BETWEEN -85 AND 85`;
+   AND ST_Y(r.geom) BETWEEN -85 AND 85
+`;
+
+/* ⛔ ET IL NE SUFFIT PAS DE L'ÉCRIRE. Le garde ne demande pas « ai-je posé le
+   filtre ? » — il est trois lignes plus haut, on le voit — mais « le filtre
+   laisse-t-il passer une association ? ». Un garde qui relit sa propre
+   intention est le défaut que ce dépôt a payé plus d'une fois. */
+{
+  const [g] = demanderJson(
+    `SELECT json_build_object(
+              'exportables', count(*),
+              'domiciles_qui_passent', count(*) FILTER (
+                 WHERE public.adresse_est_un_domicile(r.source, r.rna, r.naf, r.siret)))::text
+       ${GISEMENT};`);
+  /* 🔴 `Number(undefined)` VAUT NaN, ET `NaN > 0` EST FAUX — donc renommer
+     le champ dans le SQL sans le renommer ici DÉSARME le garde en silence.
+     Mesuré par mutation le 15/11 : le test restait vert. ⛔ « Un repli qui
+     rend un vide qui ressemble à une réponse » : on exige donc un NOMBRE
+     avant de le comparer. */
+  const passent = Number(g.domiciles_qui_passent);
+  if (!Number.isFinite(passent)) {
+    console.error("🔴 le garde n'a rendu AUCUN compte (`domiciles_qui_passent`).");
+    console.error("   Le champ a été renommé dans le SQL sans l'être à la lecture :");
+    console.error("   le garde ne mesurait plus rien. On n'exporte rien.");
+    process.exit(1);
+  }
+  if (passent > 0) {
+    console.error(`🔴 ${passent} ligne(s) de domicile traversent le filtre.`);
+    console.error("   Une épingle au bâtiment près sur le siège d'une association,");
+    console.error("   c'est publier le domicile d'un bénévole. On n'exporte rien.");
+    process.exit(1);
+  }
+  console.log(`✓ garde : aucun domicile ne passe — `
+    + `${Number(g.exportables).toLocaleString("fr-FR")} sites exportables`);
+}
 
 /* Les colonnes de tuiles z3 à traiter — découper la lecture évite de faire
    passer 4,2 M de lignes en une seule fois par SSH. */

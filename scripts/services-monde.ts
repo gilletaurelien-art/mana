@@ -164,8 +164,21 @@ const [garde] = demanderJson(
                WHERE public.adresse_est_un_domicile(r.source, r.rna, r.naf, r.siret)),
             'sante_qui_passe', count(*) FILTER (WHERE coalesce(r.naf,'') LIKE '86%'))::text
      ${GISEMENT};`);
-if (Number(garde.assos_qui_passent) > 0) {
-  console.error(`🔴 ${garde.assos_qui_passent} association(s) traversent le filtre.`);
+/* 🔴 `Number(undefined)` VAUT NaN, ET `NaN > 0` EST FAUX — un champ renommé
+   dans le SQL et pas ici désarme le garde EN SILENCE. Trouvé par mutation sur
+   le garde jumeau de `sites-monde.mjs`, le 15/11 ; le même trou était ici. */
+const compte = (clef: string): number => {
+  const n = Number((garde as Record<string, unknown>)[clef]);
+  if (!Number.isFinite(n)) {
+    console.error(`🔴 le garde n'a rendu AUCUN compte pour « ${clef} ».`);
+    console.error("   Le champ a été renommé dans le SQL sans l'être à la lecture :");
+    console.error("   le garde ne mesurait plus rien. On n'exporte rien.");
+    process.exit(1);
+  }
+  return n;
+};
+if (compte("assos_qui_passent") > 0) {
+  console.error(`🔴 ${compte("assos_qui_passent")} association(s) traversent le filtre.`);
   console.error("   Une épingle au bâtiment près sur le siège d'une association,");
   console.error("   c'est publier le domicile d'un bénévole. On n'exporte rien.");
   process.exit(1);
@@ -175,14 +188,14 @@ if (Number(garde.assos_qui_passent) > 0) {
    voit — mais « le filtre laisse-t-il passer une ligne de santé ? ». Un garde
    qui relit sa propre intention est le défaut que ce dépôt a payé plus d'une
    fois, et celui-ci garde une décision du FONDATEUR, pas une règle de code. */
-if (Number(garde.sante_qui_passe) > 0) {
-  console.error(`🔴 ${garde.sante_qui_passe} ligne(s) de santé (NAF 86.*) traversent le filtre.`);
+if (compte("sante_qui_passe") > 0) {
+  console.error(`🔴 ${compte("sante_qui_passe")} ligne(s) de santé (NAF 86.*) traversent le filtre.`);
   console.error("   92 % d'entre elles portent un NOM DE PERSONNE — une entreprise");
   console.error("   individuelle est dénommée par son praticien. Aurélien a tranché le");
   console.error("   21/10 : la santé sort de la base (API eSanté). On n'exporte rien.");
   process.exit(1);
 }
-console.log(`✓ garde : aucune association ne passe — ${Number(garde.exportables).toLocaleString("fr-FR")} fiches exportables`);
+console.log(`✓ garde : aucune association ne passe — ${compte("exportables").toLocaleString("fr-FR")} fiches exportables`);
 
 const [deb, fin] = process.argv.slice(2).length
   ? process.argv.slice(2).map(Number) : [0, 7];

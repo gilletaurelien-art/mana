@@ -131,7 +131,7 @@ const LIBELLES: Record<string, string> = {
   rocher: "Rocher", fontaine: "Fontaine", epave: "Épave", musee: "Musée",
   oeuvre: "Œuvre", lande: "Lande", lieu_de_culte: "Édifice religieux",
   fortification: "Fortification", archeologie: "Site archéologique",
-  nature: "Espace naturel", memoire: "Mémoire",
+  nature: "Espace naturel", memoire: "Mémoire", monument: "Monument",
 };
 
 /** La position passée dans l'adresse, s'il y en a une — même contrat que le

@@ -316,3 +316,100 @@ describe("le producteur et l'écran lisent la MÊME table de familles", () => {
     }
   });
 });
+
+/* ═══ DEUX TABLES DE CATÉGORIES, AUCUN IMPORT POSSIBLE ════════════════════
+   🔴 `scripts/sites-monde.mjs` est du node pur (il tourne sans tsx) et
+      `CarteMonde.tsx` du TypeScript : ils ne peuvent pas partager un module,
+      et chacun porte SA table `LIBELLES`. Deux écritures d'une même valeur
+      divergent toujours — c'est déjà écrit dans ce dépôt à propos du nom de
+      cache, partagé entre `public/sw.js` et `emporter.ts` par un test faute
+      de pouvoir l'être par un import.
+   ⛔ ET LA DIVERGENCE EST MUETTE : une catégorie produite par le générateur
+      que l'écran ne sait pas traduire s'affiche en CLÉ TECHNIQUE, en
+      minuscules — « onze boutons sur vingt-trois », le 4/11/2026.
+   ⚠️ Le garde est ORIENTÉ, et c'est voulu : tout ce que le générateur PRODUIT
+      doit être traduisible. L'inverse est permis — l'écran garde les libellés
+      de catégories retirées, parce qu'une tuile en cache chez un visiteur les
+      porte encore pendant des semaines. */
+describe("ce que le générateur produit, l'écran sait le dire", () => {
+  const script = lire("../scripts/sites-monde.mjs");
+
+  /**
+   * Les clés d'un objet littéral `const NOM = { a: "…" };`.
+   * ⚠️ `const NOM` PEUT PORTER UN TYPE — l'écran écrit
+   *    `const LIBELLES: Record<string, string> = {`. Ma première rédaction
+   *    cherchait `NOM = {` et rendait `null` sur l'écran ; c'est le refus
+   *    EXPLICITE du `null` qui l'a dit, au lieu d'un `?? new Set()` qui
+   *    aurait rendu le garde vert sur une table vide.
+   */
+  const tableDe = (texte: string, nom: string) => {
+    const m = texte.match(new RegExp(`${nom}(?::[^=]+)? = \\{`));
+    if (!m) return null;
+    const i = texte.indexOf(m[0]);
+    const corps = texte.slice(i, texte.indexOf("\n};", i));
+    return new Set([...corps.matchAll(/(\w+):\s*"/g)].map((x) => x[1]));
+  };
+
+  it("chaque catégorie produite a un libellé des DEUX côtés", () => {
+    const m = script.match(/export const CATEGORIES = \[([\s\S]*?)\];/);
+    expect(m, "CATEGORIES est introuvable dans le générateur").not.toBeNull();
+    const produites = [...m![1].matchAll(/"([a-z_]+)"/g)].map((x) => x[1]);
+    expect(produites.length, "aucune catégorie lue : le motif a raté sa cible")
+      .toBeGreaterThan(10);
+
+    const cote = { script: tableDe(script, "const LIBELLES"),
+                   ecran: tableDe(carte, "const LIBELLES") };
+    for (const [ou, table] of Object.entries(cote)) {
+      expect(table, `la table LIBELLES de ${ou} est introuvable`).not.toBeNull();
+      const muettes = produites.filter((c) => !table!.has(c));
+      expect(muettes,
+        `${ou} : ${muettes.join(", ")} s'afficherai(en)t en clé technique`)
+        .toEqual([]);
+    }
+  });
+
+  /* ⛔ ET LES MOTS QUI NE RAMASSENT QUE DU BRUIT NE REVIENNENT PAS. Mesuré le
+     15/11/2026 : `fontaine` rendait 207 lignes dont « Square La Fontaine »,
+     `archeologie` 133 SOCIÉTÉS savantes annoncées « Site archéologique »,
+     et `memoire`/`fortification`/`epave`/`rocher` ZÉRO. 347 épingles fausses.
+     ⚠️ Le garde nomme les neuf, pour qu'un retour soit une DÉCISION et non un
+        copier-coller depuis une vieille version du fichier. */
+  it("les neuf mots qui ne ramassaient que du bruit restent dehors", () => {
+    const m = script.match(/export const CATEGORIES = \[([\s\S]*?)\];/)!;
+    const produites = new Set([...m[1].matchAll(/"([a-z_]+)"/g)].map((x) => x[1]));
+    for (const mot of ["fontaine", "archeologie", "nature", "musee", "oeuvre",
+                       "memoire", "fortification", "epave", "rocher"]) {
+      expect(produites.has(mot),
+        `« ${mot} » est revenu dans la liste blanche — il ne rend que du bruit `
+        + "français (sociétés savantes, événements, squares homonymes)")
+        .toBe(false);
+    }
+    /* ⭐ Et `site_archeologique` RESTE : c'est le mot de la moisson mondiale,
+       dont `archeologie` n'était que le doublon français. */
+    expect(produites.has("site_archeologique")).toBe(true);
+  });
+
+  /* ⛔ LE GARDE DES ADRESSES EST DANS LE GISEMENT, PAS DANS UNE INTENTION.
+     204 associations étaient posées au bâtiment près depuis le 14/11. */
+  it("le générateur appelle le garde des adresses de la base", () => {
+    expect(script, "le gisement ne filtre pas les domiciles")
+      .toMatch(/AND NOT public\.adresse_est_un_domicile\(/);
+    /* ⭐ LE CHAMP ÉCRIT EN SQL ET LE CHAMP LU EN JS SONT LE MÊME — dérivé,
+       pas recopié. Mutation posée le 15/11 : renommer le champ côté SQL
+       laissait le garde VERT, parce que `Number(undefined)` vaut NaN et que
+       `NaN > 0` est faux. Le garde ne mesurait plus rien, en silence. */
+    const champ = script.match(
+      /'(\w+)', count\(\*\) FILTER \(\s*WHERE public\.adresse_est_un_domicile/)?.[1];
+    expect(champ, "le compte des domiciles n'est pas demandé au SQL").toBeTruthy();
+    expect(script, `le champ « ${champ} » n'est jamais relu côté JavaScript`)
+      .toContain(`g.${champ}`);
+    /* ⛔ Et un compte ABSENT doit refuser, pas passer : sans ce contrôle, un
+       renommage désarme le garde sans qu'une ligne ne bouge à l'écran. */
+    expect(script, "un compte non numérique passerait pour « zéro domicile »")
+      .toMatch(/Number\.isFinite\(passent\)/);
+    /* ⚠️ Et il appelle la fonction de la BASE : un motif recopié ici
+       divergerait du jour où la base affine sa règle. */
+    expect(script, "un septième caviardage a été réécrit à la main")
+      .not.toMatch(/naf\s+LIKE\s+'94/);
+  });
+});
