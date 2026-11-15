@@ -810,12 +810,33 @@ export function CarteMonde(
     if (!m || !pret) return;
     if (!m.getSource("ot-circuits")) {
       m.addSource("ot-circuits", { type: "geojson", data: otGeoJSON });
-      /* ⚠️ SOUS LES SITES, comme sur la carte du territoire : un trait qui
-         passerait par-dessus les épingles les couperait en deux. */
+      /* 🔴 DEUX TRAITS, PAS UN — et c'est une mesure qui l'a imposé. La
+         première version reprenait la couleur de la carte du territoire
+         (`#92977c`, gris-vert, 1,6 px). Vérifié dans la page : la couche
+         existait, elle portait ses 116 circuits, elle était visible — et on
+         ne voyait RIEN. Un gris-vert de 1,6 px sur une orthophoto de
+         Bretagne, c'est du vert sur du vert.
+         ⭐ UNE TEINTE SE CHOISIT CONTRE UN FOND, et ce dépôt l'a déjà écrit à
+            l'envers le 4/11 : « une teinte choisie pour se détacher d'une
+            PHOTO SATELLITE n'a aucune raison de se détacher aussi d'un
+            panneau d'interface ». Là-bas le trait vivait sur un plan ; ici il
+            vit sur la photo.
+         ⭐ LA RÉPONSE EST CARTOGRAPHIQUE, PAS CHROMATIQUE : un fourreau
+            sombre et large, un cœur clair et fin. Le couple tient sur
+            n'importe quel sol — champs clairs, forêt sombre, mer — là où une
+            couleur unique gagne sur l'un et perd sur l'autre.
+         ⚠️ LES DEUX COUCHES VONT ET VIENNENT ENSEMBLE : elles sont posées ici
+            dans le même `if`, et `setData` plus bas n'en touche qu'une source.
+            Les séparer un jour laisserait un fourreau sans cœur. */
+      m.addLayer({
+        id: "ot-fourreau", type: "line", source: "ot-circuits",
+        layout: { "line-join": "round", "line-cap": "round" },
+        paint: { "line-color": "#0b0b0c", "line-width": 4.5, "line-opacity": 0.55 },
+      }, m.getLayer("sites") ? "sites" : undefined);
       m.addLayer({
         id: "ot-trace", type: "line", source: "ot-circuits",
         layout: { "line-join": "round", "line-cap": "round" },
-        paint: { "line-color": "#92977c", "line-width": 1.6, "line-opacity": 0.8 },
+        paint: { "line-color": "#ffffff", "line-width": 1.8, "line-opacity": 0.95 },
       }, m.getLayer("sites") ? "sites" : undefined);
     } else {
       (m.getSource("ot-circuits") as maplibregl.GeoJSONSource).setData(otGeoJSON);
