@@ -44,8 +44,16 @@ export const MOT = "MANA";
    simplement cessé d'être demandée. ⭐ On la retire au lieu de la laisser
    inutilisée : un morceau qu'aucune surface ne pose est un fantôme qui se
    remet à servir un jour, mal. */
+/* 🔄 « AU CŒUR DE LA BRETAGNE » → « .bzh », le 15/11/2026 au soir. C'est la
+   CINQUIÈME devise bretonne en seize jours (« Terre, mer & lumière » le
+   31/10, « Au cœur de la Bretagne » le 12/11, « Partout où l'on marche » —
+   ma proposition — puis « home.org » pour manahome le 14/11, et celle-ci).
+   ⭐ ET ELLE DIT POURQUOI CE FICHIER EXISTE. Recopiée dans le `h1` et dans la
+      pilule, elle aurait déjà divergé deux fois aujourd'hui. Les deux sites
+      portent maintenant la même forme : un nom, puis une adresse —
+      « MANA / .bzh » et « MANA / home.org ». */
 export const devisePartie = (): readonly string[] =>
-  (avecOffice() ? ["Au cœur de la Bretagne"] : ["home.org"]);
+  (avecOffice() ? [".bzh"] : ["home.org"]);
 
 /**
  * La devise d'un seul tenant — pour le `h1`, qui est une PHRASE et non une

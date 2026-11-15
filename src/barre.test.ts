@@ -79,8 +79,14 @@ describe("la barre du bas, par visage", () => {
     const love = entreesBarre("love").map((e) => e.clef);
     expect(bzh, "l'Office a quitté mana.bzh").toContain("office");
     expect(love, "l'Office est revenu sur mana.love").not.toContain("office");
-    /* ⛔ Et la carte et la marque ne bougent sur aucun des deux. */
-    for (const c of ["carte", "marque"]) {
+    /* ⛔ Et la carte ne bouge sur aucun des deux.
+       🔄 LA MARQUE EST SORTIE DE CETTE CLAUSE LE 15/11/2026 : elle a quitté la
+          barre de nos deux visages pour la pilule d'en-tête — le sablier
+          d'abord, le mot MANA ensuite. Elle n'y est plus une colonne, donc
+          elle ne peut plus y être stable.
+       ⭐ Ce que la clause protège — une colonne qui ne change pas de place
+          d'un hôte à l'autre — vaut toujours pour « carte ». */
+    for (const c of ["carte"]) {
       expect(bzh).toContain(c);
       expect(love).toContain(c);
     }

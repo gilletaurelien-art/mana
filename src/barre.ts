@@ -150,7 +150,21 @@ export function entreesBarre(v: Visage): Entree[] {
           le sablier là. ⏳ Le temps reviendra quand il aura un solde à dire.
        ⚠️ mana.bzh et mana.love gardent leur marque centrale : rien n'y
           change. */
-    home
+    /* 🔴 LA COLONNE CENTRALE EST VIDE SUR NOS DEUX VISAGES — 15/11/2026.
+       Le sablier est parti de manahome le matin, le mot MANA de mana.bzh le
+       soir (« supprime MANA de la bottom barre »).
+       ⭐ ET LA MARQUE N'EST PLUS PERDUE POUR AUTANT : elle est montée dans la
+          pilule d'en-tête, en haut de l'écran, où elle est lisible au lieu
+          d'être un sixième bouton. Un mot dans une barre d'onglets est une
+          destination ; dans un en-tête, c'est une identité.
+       ⚠️ ET LE RETOUR À L'ACCUEIL RESTE : c'est la première colonne, « La
+          carte », qui ramène à « / » sur manahome — et sur mana.bzh « / » est
+          désormais la carte aussi. ⏳ Reste à trancher si la colonne 1 de
+          mana.bzh doit, elle aussi, pointer « / » plutôt que « /carte » :
+          les deux écrans existent encore et ne montrent pas la même chose.
+       ⛔ mana.love GARDE SA MARQUE : elle n'a pas la pilule, donc rien ne la
+          nommerait ailleurs. */
+    office || home
       ? null
       : { clef: "marque", chemin: "/", glyphe: "marque", libelle: "MANA", motVisible: true },
 

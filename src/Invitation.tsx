@@ -138,15 +138,11 @@ export function Invitation({ base }: { base: string }) {
                diluerait la mention au lieu de l'honorer. Il est descendu
                dans la section « Carnet, export GPX et circuits balisés »,
                celle qui montre leurs 46 circuits et leurs 708 km. */}
-        {/* 🔴 PLUS DE CHAMP EN BAS SUR MANAHOME — Aurélien, 15/11/2026 :
-            « supprime cette barre de saisie ». La recherche a déménagé dans la
-            pilule d'en-tête, derrière la loupe (voir `CarteMonde`).
-            ⭐ ELLE DÉMÉNAGE, ELLE NE SE DUPLIQUE PAS : deux champs pour un même
-               geste, ce sont deux états à tenir d'accord et deux endroits où
-               taper la même chose.
-            ⚠️ mana.bzh et mana.love gardent le leur ici : chez eux l'accueil
-               n'est pas une carte, et il n'y a pas de pilule où le mettre. */}
-        {avecOffice() && <RechercheAccueil base={base} />}
+        {/* 🔴 PLUS DE CHAMP ICI DU TOUT — 15/11/2026 au soir. Il avait quitté
+            manahome le matin (la recherche est montée dans la pilule) ;
+            mana.bzh suit, puisqu'il a la même charte et le même accueil-carte.
+            ⭐ Et mana.love n'en perd pas : elle ne sert JAMAIS cet écran —
+               « / » est dans `ROUTES_HORS_LOVE` depuis le 7/11. */}
 
 
       </div>

@@ -271,9 +271,16 @@ describe("le titre de l'accueil", () => {
     expect(h1s.length, "l'accueil doit porter exactement un h1").toBe(1);
     expect(h1s[0][1], "le titre doit venir de la source unique de la marque")
       .toMatch(/devise\(\)/);
+    /* 🔄 QUATRIÈME RETOURNEMENT, ET LE TROISIÈME EN DOUZE HEURES. « Au cœur
+       de la Bretagne » (12/11) devient « .bzh » (15/11 au soir), pour que les
+       deux sites portent la même forme : un nom, puis une adresse.
+       ⭐ Ce garde ne défend PAS un texte — il en a protégé cinq. Il défend
+          que la devise soit CELLE DU FONDATEUR et qu'elle DIFFÈRE d'un hôte à
+          l'autre. C'est pour ça qu'il interroge la fonction : la valeur bouge
+          toutes les semaines, la règle jamais. */
     expect(surLHote("mana.bzh", () => devise()),
-      "la devise bretonne est le texte arrêté par le fondateur le 12/11")
-      .toBe("Au cœur de la Bretagne");
+      "la devise bretonne est le mot arrêté par le fondateur le 15/11")
+      .toBe(".bzh");
     expect(surLHote("manahome.org", () => devise()),
       "et manahome a la sienne, arrêtée le 14/11").toBe("home.org");
     /* ⛔ Et les deux DIFFÈRENT : une devise unique servirait la Bretagne au

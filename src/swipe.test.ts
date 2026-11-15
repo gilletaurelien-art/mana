@@ -266,12 +266,25 @@ describe("le jeu de cartes des balades", () => {
    *   scinder ou remplacer un composant de l'accueil ne peut plus endormir
    *   ces règles — seul le fait de retirer la règle le peut, et cela se voit.
    */
+  /* 🔄 L'ACCUEIL A CHANGÉ DE FICHIER LE 15/11/2026 AU SOIR, et ce garde avec
+     lui. Il partait d'`Invitation.tsx` ; depuis que l'accueil des deux sites
+     EST la carte vivante, la recherche vit dans la pilule de `CarteMonde`.
+     ⭐ On ne NOMME toujours pas les composants : on part des deux racines
+        possibles et on suit ce qu'elles RENDENT. Un garde qui nommerait
+        `RechercheAccueil` aurait survécu au déménagement en gardant un
+        fantôme — c'est précisément ce que l'en-tête de ce fichier reproche
+        aux gardes de septembre. */
   const accueil = () => {
     const lire = (f: string) => readFileSync(new URL(f, import.meta.url), "utf8");
-    const racine = lire("./Invitation.tsx");
-    const importes = [...racine.matchAll(/from "\.\/([A-Za-z0-9_-]+)"/g)].map((m) => m[1]);
-    const rendus = importes.filter((n) => racine.includes(`<${n} `) || racine.includes(`<${n}/`));
-    return [racine, ...rendus.map((n) => lire(`./${n}.tsx`))].join("\n");
+    const racines = ["./Invitation.tsx", "./CarteMonde.tsx"].map(lire);
+    const vus = new Set<string>();
+    for (const racine of racines) {
+      for (const m of racine.matchAll(/from "\.\/([A-Za-z0-9_-]+)"/g)) {
+        const n = m[1];
+        if (racine.includes(`<${n} `) || racine.includes(`<${n}/`)) vus.add(n);
+      }
+    }
+    return [...racines, ...[...vus].map((n) => lire(`./${n}.tsx`))].join("\n");
   };
   const sansCommentaires = (t: string) =>
     t.replace(/\{\/\*[\s\S]*?\*\/\}/g, "").replace(/\/\*[\s\S]*?\*\//g, "")
@@ -360,7 +373,21 @@ describe("le jeu de cartes des balades", () => {
     const barre = entreesBarre("bzh").map((e) => e.chemin);
     expect(barre.length, "les onglets de la barre du bas").toBeGreaterThanOrEqual(4);
 
-    expect(liens.length, "l'accueil n'offre plus aucune porte").toBeGreaterThan(0);
+    /* 🔄 RETOURNÉ LE 15/11/2026 AU SOIR : L'ACCUEIL N'A PLUS DE PORTE DU
+       TOUT. Il est devenu la carte vivante sur les deux sites, et les deux
+       boutons n'avaient plus d'écran où vivre — ils seraient d'ailleurs
+       apparus DANS la pilule d'en-tête, sous le champ.
+       ⭐ CE QUE CE GARDE PROTÉGEAIT NE DISPARAÎT PAS AVEC EUX, il se déplace :
+          la porte de l'Office existait parce que son onglet est MUET (une
+          icône d'étincelles sans mot). Elle est remplacée par un CALQUE
+          nommé en toutes lettres dans le panneau — « Les balades des Offices
+          de Tourisme ». La règle vivante est donc : ce que la barre ne nomme
+          pas, une autre surface doit le nommer. */
+    expect(net, "la porte au repos a disparu avec l'accueil qui la portait")
+      .not.toContain("rech-portes");
+    const carte = readFileSync(new URL("./CarteMonde.tsx", import.meta.url), "utf8");
+    expect(carte, "l'Office n'est nommé nulle part : son onglet est muet")
+      .toContain("Les balades des Offices de Tourisme");
 
     /* 🔴 LA CLAUSE « AUCUNE DESTINATION EN DOUBLE » EST RETIRÉE, ET IL FAUT
        DIRE POURQUOI PLUTÔT QUE DE LA LAISSER MOURIR. Elle comptait les
@@ -415,7 +442,12 @@ describe("le jeu de cartes des balades", () => {
           du travail juste. Les portes, elles, portent une classe. */
     const portes = [...accueil().matchAll(/className="rech-porte[^"]*"\s+href=\{`\$\{base\}([^`]*)`\}/g)]
       .map((m) => m[1]);
-    expect(portes.length, "l'accueil n'a plus de bouton d'entrée").toBeGreaterThan(0);
+    /* 🔄 ET CE COMPTE EST PASSÉ DE « AU MOINS UN » À « AUCUN », LE 15/11/2026
+       AU SOIR. L'accueil des deux sites est devenu la carte vivante : il n'a
+       plus de bouton d'entrée, parce qu'il n'a plus d'écran où en poser.
+       ⭐ LA RÈGLE DE FOND SURVIT ENTIÈRE, et c'est elle qu'on garde : pas de
+          doublon. Zéro porte, zéro doublon — la clause ci-dessous reste vraie
+          et redeviendra utile le jour où une porte revient. */
     expect(new Set(portes).size, `boutons en double : ${portes.join(" ")}`).toBe(portes.length);
     // ⭐ et l'écran sait entrer par `?vue=carte`, que la barre emploie, sinon le lien ment
     expect(barre).toContain("/carte?vue=carte");
@@ -442,9 +474,17 @@ describe("le jeu de cartes des balades", () => {
        bougé d'un mot : les portes ne paraissent que le champ VIDE, donc
        jamais avec les résultats. C'est `!requete` qui les garde, qu'il soit
        seul ou accompagné. */
-    expect(rech, "la porte doit être conditionnée au champ VIDE")
-      .toMatch(/\{!requete &&[\s\S]{0,60}?\(/);
+    /* 🔄 RETOURNÉ UNE TROISIÈME FOIS, LE 15/11/2026 AU SOIR — et cette fois
+       la porte elle-même a disparu. Ce qu'il protégeait : deux contrôles ne
+       se font concurrence que s'ils sont visibles EN MÊME TEMPS. Sans porte,
+       il ne reste qu'une chose à tenir — et elle compte autant : les ÉTATS
+       de la recherche s'excluent. Un « Aucun lieu de ce nom » sous une liste
+       de résultats serait le même défaut, en pire : il se contredirait. */
     expect(rech, "les résultats au champ REMPLI").toMatch(/\{resultats\.length > 0 && \(/);
+    expect(rech, "le refus ne paraît que SANS résultat")
+      .toMatch(/resultats\.length === 0 && \(/);
+    expect(rech, "la porte au repos a disparu avec l'accueil qui la portait")
+      .not.toContain("rech-portes");
   });
 
   /**
@@ -457,8 +497,22 @@ describe("le jeu de cartes des balades", () => {
    *    quel qu'il soit, ne possède de minuterie. L'ancien garde ne le
    *    demandait qu'à un fichier nommé.
    */
+  /* 🔄 ET CELUI-CI GARDE SA PROPRE RACINE, DEPUIS LE 15/11/2026 AU SOIR.
+     Quand `accueil()` s'est mis à suivre la carte vivante, ce garde a attrapé
+     les minuteries de `CarteMonde` — le guetteur d'initialisation et les
+     rappels de redimensionnement, tous deux documentés et sans rapport avec
+     le battement du fond.
+     ⛔ ÉLARGIR UN GARDE N'EST PAS LE RENFORCER : celui-ci protège « une seule
+        horloge pour la ROTATION », pas « aucune minuterie nulle part ». Il
+        repart donc de l'Invitation et de ce qu'elle rend — le périmètre de
+        la règle, qui n'a pas bougé. */
   it("aucun composant de l'accueil ne tient sa propre minuterie", () => {
-    expect(sansCommentaires(accueil())).not.toMatch(/setInterval|setTimeout/);
+    const lire = (f: string) => readFileSync(new URL(f, import.meta.url), "utf8");
+    const racine = lire("./Invitation.tsx");
+    const rendus = [...racine.matchAll(/from "\.\/([A-Za-z0-9_-]+)"/g)].map((m) => m[1])
+      .filter((n) => racine.includes(`<${n} `) || racine.includes(`<${n}/`));
+    const tournant = [racine, ...rendus.map((n) => lire(`./${n}.tsx`))].join("\n");
+    expect(sansCommentaires(tournant)).not.toMatch(/setInterval|setTimeout/);
     const fond = readFileSync(new URL("./Fond.tsx", import.meta.url), "utf8");
     expect(fond).toMatch(/diffuserBattement\(n \+ 1\)/);
   });
@@ -655,13 +709,23 @@ describe("la barre du bas", () => {
    *     comptait l'IMPLÉMENTATION — deux étincelles « une par branche », un
    *     détail qui n'existait que dans le texte. La barre se rend désormais
    *     depuis une liste ; l'ordre est celui de la liste, par visage. */
-  it("garde l'ordre : carte · étincelles · MANA · radio · réglages", () => {
+  /* 🔄 LA COLONNE CENTRALE EST PARTIE DE NOS DEUX VISAGES — 15/11/2026 : le
+     sablier de manahome le matin, le mot MANA de mana.bzh le soir. La marque
+     est montée dans la pilule d'en-tête.
+     ⭐ CE QUE CE GARDE PROTÈGE EST L'ORDRE, PAS LE NOMBRE : « un masquage qui
+        réordonnerait la barre déplacerait les boutons sous le doigt des
+        gens ». Il tient donc le RANG, et celui-ci n'a pas bougé — on a
+        retiré une colonne, on n'a pas permuté les autres. */
+  it("garde l'ordre : carte · étincelles · radio · réglages", () => {
     expect(entreesBarre("bzh").map((e) => e.glyphe))
-      .toEqual(["carte", "etincelles", "marque", "radio", "reglages"]);
+      .toEqual(["carte", "etincelles", "radio", "reglages"]);
     /* ⚠️ Sur love, les colonnes dont le pont est fermé manquent — mais celles
        qui restent gardent LEUR RANG. Un masquage qui réordonnerait la barre
        déplacerait les boutons sous le doigt des gens. */
     const love = entreesBarre("love").map((e) => e.glyphe);
+    /* ⚠️ `marque` RESTE DANS LE RANG DE RÉFÉRENCE : mana.love la garde, et
+       c'est elle que cette clause vérifie. Le retirer d'ici aurait fait
+       passer le garde pour la mauvaise raison. */
     const rang = ["carte", "etincelles", "marque", "radio", "reglages"] as const;
     expect(love).toEqual(rang.filter((g) => love.includes(g)) as string[]);
   });

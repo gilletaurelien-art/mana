@@ -579,8 +579,18 @@
       qui l'a imposé : « aucune couleur en hexadécimal brut hors des tokens ».
       Il avait raison deux fois — une palette n'est pas un style de composant,
       et la refuser ailleurs est ce qui empêche les couleurs de se disperser.
-      ⭐ Il ne mord que sous `[data-visage="home"]` : mana.bzh garde son kaki
-         et son ocre, c'est la consigne qui tient depuis le 14/11.
+   🔄 ET IL A CESSÉ D'ÊTRE CELLE DE MANAHOME SEULE, LE 15/11/2026 AU SOIR.
+      Aurélien : « pour le site mana.bzh, tu vas lui offrir la même charte
+      graphique que manahome.org, à l'identique. » Le kaki et l'ocre, arrêtés
+      le 31/10 et défendus pendant quinze jours, s'arrêtent ici.
+   ⛔ mana.love EN RESTE DEHORS, et ce n'est pas un oubli : elle n'emprunte
+      que deux écrans à cette application, et sa charte est celle de l'autre
+      dépôt. Lui imposer la nôtre serait repeindre chez le voisin.
+   ⚠️ `:is()` ET NON UNE LISTE DE SÉLECTEURS : il porte la spécificité de son
+      argument le plus fort, donc (0,2,0) avec `:root` — exactement ce que
+      portait `:root[data-visage="home"]`. Une liste aurait doublé chaque
+      règle ; `:where()` aurait mis la spécificité à zéro et fait perdre au
+      bloc les batailles qu'il gagnait hier.
 
    ⛔ CE QUI RESTE EN COULEUR, ET C'EST VOLONTAIRE : les épingles de la carte
       et les pastilles de genre. Elles ne sont pas de l'habillage, elles sont
@@ -604,7 +614,7 @@
       égalité, et c'est alors le dernier écrit qui tranche — celui-ci.
    ⚠️ Une palette qui ne s'applique pas ne casse rien : elle rend l'ancienne.
       C'est pour ça qu'on la VÉRIFIE À L'ÉCRAN, et pas en relisant le fichier. */
-:root[data-visage="home"] {
+:root:is([data-visage="bzh"],[data-visage="home"]) {
   /* le verre : noir, uni, sans dégradé — un dégradé coloré est une couleur */
   --bulle:            rgb(10 10 11 / 66%);
   --bulle-unie:       #121214;

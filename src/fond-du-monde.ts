@@ -76,11 +76,13 @@ export function carteEnFond(
   chemin: string,
   accueilEstLaCarte: boolean = CARTE_EN_ACCUEIL,
 ): boolean {
-  /* ⛔ MANAHOME SEULEMENT. mana.bzh garde ses vingt-deux paysages tournants
-     et mana.love les siens : « on ne touche qu'à manahome.org » tient depuis
-     ce matin, et un fond satellite sur mana.bzh effacerait une identité
-     choisie et réaffirmée, pas un réglage. */
-  if (v !== "home") return false;
+  /* 🔄 NOS DEUX VISAGES, DEPUIS LE 15/11/2026 AU SOIR. Aurélien : « pour le
+     site mana.bzh, tu vas lui offrir la même charte graphique que
+     manahome.org, à l'identique » — et, interrogé sur le sol : le satellite,
+     comme manahome. Les vingt-deux paysages tournants s'arrêtent là.
+     ⛔ mana.love RESTE DEHORS : elle n'emprunte que deux écrans à cette
+        application et sa charte est celle de l'autre dépôt. */
+  if (v === "love") return false;
   /* L'accueil en plein écran EST la carte : pas de seconde carte dessous. */
   if (chemin === "/" && accueilEstLaCarte) return false;
   if (AVEC_LEUR_CARTE.has(chemin)) return false;

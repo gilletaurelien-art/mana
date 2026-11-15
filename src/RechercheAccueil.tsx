@@ -224,64 +224,29 @@ export function RechercheAccueil({ base }: { base: string }) {
         </p>
       )}
 
-      {/* ⭐ UNE PORTE AU REPOS. Le champ ne propose rien tant qu'on n'a pas
-          tapé : un accueil dont le premier écran n'offre aucun geste ne dit
-          pas ce que le site fait. Une seule, et qui ne double aucun onglet
-          de la barre du bas — le doublon « deux contrôles pour un seul
-          endroit » est le défaut que le fondateur a déjà trouvé ici en
-          septembre, et qu'un test tient depuis.
-          ⚠️ Elle ne dépend d'AUCUNE donnée : elle existe même si
-             l'inventaire n'arrive jamais. */}
-      {/* 🔴 LES DEUX PORTES DISPARAISSENT CHEZ MANAHOME — Aurélien,
-          14/11/2026 : « supprime les 2 boutons de la landing qui ne servent à
-          rien ». ⭐ Et il a raison, c'est mesurable : « Où dormir autour de
-          moi » est DÉJÀ la deuxième icône de la barre du bas, et la barre est
-          sur tous les écrans. Deux chemins vers la même page, à trois
-          centimètres l'un de l'autre, ce n'est pas un raccourci — c'est une
-          hésitation offerte.
-          ⚠️ Le champ de recherche RESTE : lui n'a pas de jumeau dans la
-             barre, et c'est par lui qu'on entre dans un lieu.
-          ⛔ Sur mana.bzh elles restent : là-bas « Les balades des Offices de
-             Tourisme » n'est qu'une icône sans mot dans la barre, et c'est le
-             SEUL endroit de l'accueil où l'Office est nommé comme une
-             destination — la note qui l'explique est juste en dessous. */}
-      {!requete && avecOffice() && (
-        <nav className="rech-portes" aria-label="Entrer">
-          {/* 🔄 6/11/2026, demande du fondateur : « composer une promenade =
-              fais en bouton », et « créer un bouton les balades, lien vers
-              OT ». C'était un lien de texte au milieu d'une phrase — il se
-              lisait comme une note, pas comme une porte. */}
-          <a className="rech-porte" href={`${base}/promenades`}>
-            Composer une promenade
-          </a>
-          {/* ⛔ CE BOUTON DOUBLE UN ONGLET DE LA BARRE DU BAS, et c'est
-              assumé — voir le garde retourné dans `swipe.test.ts`. La barre
-              ne porte qu'une ICÔNE sans libellé : personne ne devine que les
-              étincelles mènent aux balades de l'Office. Un libellé qui nomme
-              le partenaire n'est pas le doublon de septembre (deux boutons
-              TEXTE voisins vers le même écran) ; c'est le seul endroit de
-              l'accueil où l'Office est nommé comme une destination. */}
-          {/* 🔴 ET CETTE PORTE CHANGE DE MÉTIER SELON L'HÔTE — 14/11/2026.
-              La barre du bas avait été corrigée le matin même ; CELLE-CI
-              était restée, et manahome.org proposait donc encore « Les
-              balades des Offices de Tourisme » sur sa page d'accueil, au
-              monde entier. ⭐ Corriger une surface ne corrige pas les autres :
-              c'est le même métier offert à deux endroits, et il fallait
-              chercher les DEUX. */}
-          {avecOffice() ? (
-            <a className="rech-porte rech-porte-fine" href={`${base}/balades-office`}>
-              Les balades des Offices de Tourisme
-            </a>
-          ) : (
-            <a className="rech-porte rech-porte-fine" href={`${base}/hebergements`}>
-              Où dormir autour de moi
-            </a>
-          )}
-        </nav>
-      )}
+      {/* 🔴 LES DEUX PORTES SONT PARTIES — 15/11/2026 au soir, et pas par
+          choix de style : l'accueil de mana.bzh est devenu la carte vivante,
+          donc il n'y a plus d'accueil où les poser. Elles vivaient ici depuis
+          le 6/11 (« composer une promenade = fais en bouton »), et celle de
+          manahome était déjà partie le 14/11.
+          ⛔ ET LES LAISSER AURAIT ÉTÉ PIRE QUE LES RETIRER : ce composant vit
+             maintenant DANS la pilule d'en-tête ; les deux boutons seraient
+             apparus à l'intérieur, sous le champ, au premier clic sur la
+             loupe.
+          ⭐ CE QU'ELLES OUVRAIENT RESTE ATTEIGNABLE, et c'est la seule chose
+             qui compte : les balades de l'Office sont devenues un CALQUE de
+             la carte — nommées en toutes lettres dans le panneau, ce que la
+             barre ne fait pas — et le compositeur s'ouvre depuis n'importe
+             quel lieu par « Partir d'ici », ainsi que par le pied de page.
+          ⚠️ Un garde de `swipe.test.ts` tenait leur condition d'affichage ;
+             il a été retourné vers ce qui reste vrai. */}
 
       {/* ⭐ LA PORTÉE SE DIT AVANT LA LISTE, pas après : qui lit « Grotte de
-          Roméo » après avoir tapé Rome a déjà conclu. */}
+          Roméo » après avoir tapé Rome a déjà conclu.
+          ⚠️ ELLE AVAIT ÉTÉ EMPORTÉE AVEC LES DEUX PORTES, le 15/11 au soir —
+             ma coupe allait du commentaire des portes jusqu'à la liste, et
+             elle passait par-dessus. C'est un garde qui l'a dit, pas une
+             relecture : « la ligne de portée a disparu ». */}
       {ailleurs && resultats.length > 0 && (
         <p className="rech-portee">Dans {ETENDUE.mot} — le reste du monde est sur la carte.</p>
       )}

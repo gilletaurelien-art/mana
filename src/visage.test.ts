@@ -469,9 +469,18 @@ describe("🔴 manahome n'est pas la Bretagne par défaut", () => {
     expect(clefs).toContain("reglages");
   });
 
-  it("⛔ la Bretagne ne perd rien au passage", () => {
+  /* 🔄 « NE PERD RIEN » A ÉTÉ ÉCRIT LE 14/11, QUAND MANAHOME EST ARRIVÉ : il
+     fallait qu'un troisième visage n'ampute pas le premier. Le 15/11 au soir,
+     c'est le FONDATEUR qui retire la colonne centrale de mana.bzh — « supprime
+     MANA de la bottom barre » — après l'avoir retirée de manahome le matin.
+     ⭐ Ce que ce garde protège reste vrai et compte toujours : l'Office est à
+        la Bretagne, et aucun ajout d'hôte ne doit le lui prendre. C'est la
+        clause qu'on garde ; le compte des colonnes suit le produit. */
+  it("⛔ la Bretagne garde son Office, et ses colonnes dans l'ordre", () => {
     const clefs = entreesBarre("bzh").map((x) => x.clef);
-    expect(clefs).toEqual(["carte", "office", "marque", "radio", "reglages"]);
+    expect(clefs).toEqual(["carte", "office", "radio", "reglages"]);
+    expect(clefs, "l'Office est à la Bretagne, et à elle seule").toContain("office");
+    expect(entreesBarre("home").map((x) => x.clef)).not.toContain("office");
   });
 });
 

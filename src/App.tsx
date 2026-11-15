@@ -289,7 +289,12 @@ export default function App() {
              enfant, sans une ligne en console : le composant jetait avant le
              premier rendu. ⭐ Contourner une invariante documentée coûte
              toujours plus cher que de la respecter. */}
-      {visage() !== "home" && <Fond />}
+      {/* 🔄 LA ROTATION NE SERT PLUS QUE mana.love — 15/11/2026 au soir.
+          Elle a été la signature de mana.bzh depuis le 31/10 ; la charte de
+          MANAhome est devenue la sienne, sol compris.
+          ⛔ ON NE LA SUPPRIME PAS : mana.love en vit encore, et une rotation
+             qui ne sert plus qu'un hôte reste une rotation qui sert. */}
+      {visage() === "love" && <Fond />}
       {/* 🔴 LA CARTE SATELLITE EST LE FOND D'ÉCRAN DE TOUT MANAHOME —
           Aurélien, 14/11/2026 : « on va modifier la politique de fonds
           d'écran = carte plein écran vue satellite sur chaque page ». Elle

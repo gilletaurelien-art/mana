@@ -29,6 +29,8 @@ import { STYLE_CARTE as STYLE, STYLE_ORTHO } from "./carte-fond";
 import { Z, SITES_POSES, tuilesDuCadre } from "./tuiles";
 import { ID_CHAMP } from "./recherche";
 import { RechercheAccueil } from "./RechercheAccueil";
+import { chargerOT, type ItineraireOT } from "./ot";
+import { avecOffice } from "./visage";
 /* 🔴 L'ÉTENDUE DÉCIDE OÙ LA CARTE S'OUVRE — architecture du 15/11/2026 :
    un produit, trois étendues (monde / France / Bretagne). Voir `etendue.ts`. */
 import { etendueDe } from "./etendue";
@@ -188,7 +190,24 @@ export function CarteMonde(
    *    pour la même raison : ce sont 7 365 tuiles de plus à aller chercher,
    *    et qui ouvre la carte pour regarder des sites n'a pas à les payer.
    */
-  const [calques, setCalques] = useState({ sites: true, hebergements: false });
+  /**
+   * 🔴 UN TROISIÈME CALQUE, SUR mana.bzh SEULEMENT — Aurélien, 15/11/2026 :
+   *    « on ajoute les balades de l'office dans la pilule avec les sites
+   *    remarquables et les hébergements ».
+   *
+   * ⭐ ET C'EST LA RÉPONSE À LA PORTE PERDUE. L'accueil de mana.bzh devient la
+   *    carte, donc ses deux boutons disparaissent — dont « Les balades des
+   *    Offices de Tourisme », qui était le SEUL endroit où l'Office était
+   *    nommé comme une destination (la barre n'en montre qu'une icône sans
+   *    mot). Le panneau le renomme, et mieux : il ne mène plus à un écran,
+   *    il pose les circuits SUR la carte.
+   * ⚠️ `balises` naît ÉTEINT comme les hébergements, et pour la même raison :
+   *    `ot.json` pèse 264 Ko, et qui ouvre la carte pour regarder des sites
+   *    n'a pas à les payer.
+   */
+  const [calques, setCalques] = useState({
+    sites: true, hebergements: false, balises: false,
+  });
   /* ⚠️ Lue UNE FOIS : l'appareil ne change pas en cours de session, et
      `plateformeDe` lit le `userAgent` — même raison que sur la carte du
      territoire. */
@@ -762,6 +781,47 @@ export function CarteMonde(
       : null);
   }, [genresChoisis, pret]);
 
+  /* ⛔ ON NE TÉLÉCHARGE PAS LES CIRCUITS SUR UN HÔTE QUI N'A PAS D'OFFICE.
+     C'est la règle déjà écrite dans `Territoire2030` le 7/11 : masquer coûte
+     la bande passante de ce qu'on cache ; ne pas charger coûte zéro. Et la
+     moisson ne va pas chercher les circuits hors de Bretagne — un calque
+     vide se lirait « il n'y en a pas ici » au lieu de « ce n'est pas ce
+     site ». ⭐ D'où l'OPTION elle-même absente ailleurs, pas seulement sa
+     donnée : une commande qui ne commande rien est pire qu'une absente. */
+  const [ot, setOt] = useState<ItineraireOT[]>([]);
+  const otCharge = useRef(false);
+  useEffect(() => {
+    if (!calques.balises || !avecOffice() || otCharge.current) return;
+    otCharge.current = true;
+    chargerOT().then((r) => setOt(r.itineraires)).catch(() => setOt([]));
+  }, [calques.balises]);
+
+  const otGeoJSON = useMemo(() => ({
+    type: "FeatureCollection" as const,
+    features: (calques.balises ? ot : []).map((i) => ({
+      type: "Feature" as const,
+      geometry: { type: "LineString" as const, coordinates: i.p },
+      properties: { titre: i.titre },
+    })),
+  }), [ot, calques.balises]);
+
+  useEffect(() => {
+    const m = carte.current;
+    if (!m || !pret) return;
+    if (!m.getSource("ot-circuits")) {
+      m.addSource("ot-circuits", { type: "geojson", data: otGeoJSON });
+      /* ⚠️ SOUS LES SITES, comme sur la carte du territoire : un trait qui
+         passerait par-dessus les épingles les couperait en deux. */
+      m.addLayer({
+        id: "ot-trace", type: "line", source: "ot-circuits",
+        layout: { "line-join": "round", "line-cap": "round" },
+        paint: { "line-color": "#92977c", "line-width": 1.6, "line-opacity": 0.8 },
+      }, m.getLayer("sites") ? "sites" : undefined);
+    } else {
+      (m.getSource("ot-circuits") as maplibregl.GeoJSONSource).setData(otGeoJSON);
+    }
+  }, [pret, otGeoJSON]);
+
   const basculerGenre = (g: string) =>
     setGenresChoisis((avant) => {
       const apres = new Set(avant);
@@ -857,7 +917,14 @@ export function CarteMonde(
       {calquesOuverts && (
         <div className="monde-calques" id="monde-calques">
           {([["sites", "Les sites remarquables"],
-             ["hebergements", "Les hébergements"]] as const).map(([clef, nom]) => (
+             ["hebergements", "Les hébergements"],
+             /* ⛔ L'OPTION N'EXISTE QUE LÀ OÙ L'OFFICE EXISTE — voir la note
+                sur le chargement : une case qui pilote un calque vide se lit
+                « il n'y en a pas ici ». */
+             ...(avecOffice()
+               ? [["balises", "Les balades des Offices de Tourisme"] as const]
+               : []),
+            ] as const).map(([clef, nom]) => (
             <label key={clef} className="terr-calque">
               <input type="checkbox" checked={calques[clef]}
                 onChange={(e) => setCalques((c) => ({ ...c, [clef]: e.target.checked }))} />

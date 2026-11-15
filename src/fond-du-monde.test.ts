@@ -37,15 +37,31 @@ describe("la politique de fond d'écran de MANAhome", () => {
     }
   });
 
-  /* ⛔ LA CONSIGNE DU JOUR, ET ELLE EST AUSSI UN ENGAGEMENT : « on ne touche
-     qu'à manahome.org ». mana.bzh garde ses paysages tournants, mana.love les
-     siens. Un fond satellite qui déborderait sur l'un des deux ne casserait
-     rien — il effacerait seulement une identité, sans un mot. */
-  it("ne touche ni mana.bzh ni mana.love", () => {
-    for (const chemin of ["/", "/reglages", "/territoire"]) {
-      expect(carteEnFond("bzh", chemin), `bzh ${chemin}`).toBe(false);
+  /**
+   * 🔄 RETOURNÉ LE 15/11/2026 AU SOIR, ET C'EST LE FONDATEUR QUI L'A DÉCIDÉ.
+   *    Ce garde disait « ne touche ni mana.bzh ni mana.love » — la consigne
+   *    du 14/11, « on ne touche qu'à manahome.org ». Aurélien l'a levée :
+   *    « pour le site mana.bzh, tu vas lui offrir la même charte graphique
+   *    que manahome.org, à l'identique », sol compris.
+   * ⭐ CE QU'IL PROTÉGEAIT N'A PAS DISPARU, IL S'EST RÉDUIT À UN HÔTE. La
+   *    règle vivante est : un fond qui déborde sur un site qui ne l'a pas
+   *    demandé efface une identité sans un mot. mana.love ne l'a pas demandé.
+   * ⛔ On ne supprime donc pas le garde : on lui retire la moitié que le
+   *    fondateur a tranchée, et on garde l'autre — qui, elle, tient toujours.
+   */
+  it("ne touche pas mana.love", () => {
+    for (const chemin of ["/", "/reglages", "/territoire", "/carte"]) {
       expect(carteEnFond("love", chemin), `love ${chemin}`).toBe(false);
     }
+  });
+
+  it("et s'étend bien à mana.bzh, qui a la même charte depuis le 15/11", () => {
+    expect(carteEnFond("bzh", "/")).toBe(true);
+    expect(carteEnFond("bzh", "/reglages")).toBe(true);
+    /* ⚠️ Les écrans-cartes restent exclus chez lui aussi : une carte derrière
+       une carte n'a pas plus de sens en Bretagne qu'ailleurs. */
+    expect(carteEnFond("bzh", "/carte")).toBe(false);
+    expect(carteEnFond("bzh", "/composer")).toBe(false);
   });
 
   /* ⭐ LE RÉGIME QU'ON NE REGARDE PAS. `CARTE_EN_ACCUEIL` est baissé ; le jour
