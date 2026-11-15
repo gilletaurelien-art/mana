@@ -4503,3 +4503,42 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
 .contrib-position { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-1); margin: 0 0 var(--sp-2); }
 .contrib-note { font-size: var(--t-xs); opacity: .78; line-height: 1.5; margin: var(--sp-1) 0; }
 .page-contribuer .btn-primary { margin: var(--sp-2) 0 var(--sp-1); display: inline-block; }
+
+
+/* ══ LE PANNEAU DE CALQUES SUR LA CARTE COMMUNE — 15/11/2026 ═══════════════
+   ⭐ Le panneau lui-même emprunte `.terr-calques` (voir systeme.css) : même
+      verre, même largeur bornée, même défilement contenu. Il ne reste ici
+      qu'à le POSITIONNER — c'est la seule chose qui diffère, parce que cette
+      carte n'a pas les commandes de la carte du territoire au-dessus.
+   ⚠️ `position: absolute` dans `.monde-fond` / `.monde-scene`, qui sont tous
+      deux des blocs positionnés : le panneau suit la carte, pas la page. */
+.monde-calques-bouton {
+  position: absolute; z-index: var(--z-panneau);
+  top: calc(var(--sp-2) + env(safe-area-inset-top, 0px)); right: var(--sp-2);
+}
+.monde-calques {
+  top: calc(var(--sp-2) + env(safe-area-inset-top, 0px) + 52px);
+  right: var(--sp-2);
+}
+/* ⛔ ET SUR L'ACCUEIL VIVANT, IL DOIT REPRENDRE LES GESTES. La carte attrape
+   tout ce qui tombe dessus ; le panneau est DANS la carte, donc il hérite de
+   `pointer-events: auto` — mais il est aussi sous la devise, qui, elle, est
+   dans la colonne éteinte. Rien à faire de plus, et c'est écrit pour qu'on ne
+   le « répare » pas en ajoutant une règle qui n'a pas lieu d'être. */
+[data-visage="home"] .monde-fond[data-vivante] .monde-calques-bouton,
+[data-visage="home"] .monde-fond[data-vivante] .monde-calques {
+  pointer-events: auto;
+}
+
+/* 🔴 ET SUR L'ACCUEIL, IL DESCEND SOUS LA MARQUE — mesuré à l'écran le
+   15/11/2026 : le panneau fait 26 rem de large (416 px) sur un téléphone de
+   385, donc il occupe TOUTE la largeur et recouvrait « MANA / home.org »,
+   qui tient 48→126 px. Le bouton rond, lui, reste en haut à droite : il est
+   plus petit que la marque n'est large.
+   ⭐ C'est la deuxième fois aujourd'hui qu'un élément de la carte recouvre la
+      marque — après le compteur de sites. L'accueil n'est plus une page avec
+      une carte derrière : c'est une carte avec des choses POSÉES dessus, et
+      chacune doit désormais dire où elle se pose. */
+[data-visage="home"] .monde-fond[data-vivante] .monde-calques {
+  top: 140px;
+}

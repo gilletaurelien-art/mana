@@ -30,6 +30,10 @@ import { Z, SITES_POSES, tuilesDuCadre } from "./tuiles";
 /* 🔴 L'ÉTENDUE DÉCIDE OÙ LA CARTE S'OUVRE — architecture du 15/11/2026 :
    un produit, trois étendues (monde / France / Bretagne). Voir `etendue.ts`. */
 import { etendueDe } from "./etendue";
+/* ⭐ LA MÊME TABLE QUE LA CARTE DU TERRITOIRE ET LES PASTILLES DE /balades-office :
+   une couleur corrigée là se voit ici, et l'inverse. */
+import { couleurCategorie } from "./categories";
+import { direLeType } from "./hebergements-du-territoire";
 import { visage } from "./visage";
 /* ⭐ La porte d'entrée du style vit à part, et s'éprouve sans navigateur —
    voir l'en-tête de ce fichier-là : elle a été fausse deux jours. */
@@ -39,8 +43,14 @@ const BASE = (import.meta.env.VITE_GRAPHE_BASE ?? "https://mana.bzh/bretagne/g")
   .replace(/\/bretagne\/g$/, "")
   .replace(/\/monde\/g$/, "");
 const TUILES = `${BASE}/monde/s`;
+/* ⭐ MÊME DÉCOUPAGE, MÊME ZOOM que les sites — voir l'en-tête de
+   `scripts/hebergements-monde.ts`. `tuilesDuCadre()` sert les deux, donc un
+   seul cadrage, un seul « trop loin », un seul cache par calque. */
+const TUILES_H = `${BASE}/monde/h`;
 
 interface Site { n: string; c: string; g: [number, number]; a?: 1 }
+/** Ce que porte une tuile d'hébergements — voir `scripts/hebergements-monde.ts`. */
+interface Heb { n: string; t?: string; g: [number, number] }
 
 const LIBELLES: Record<string, string> = {
   parc: "Parc", sommet: "Sommet", memorial: "Mémorial", plage: "Plage",
@@ -81,6 +91,18 @@ function depuisURL(): [number, number] | null {
  *    `pointerdown` qui leur est destiné — c'est la leçon déjà écrite dans
  *    `CarteFondOT`. On la regarde, on ne la manipule pas.
  */
+/**
+ * Le mot qu'on met sur ce qui est choisi.
+ * ⭐ UN SEUL ENDROIT POUR LES DEUX CALQUES. `choisi.c` porte un genre de site
+ *    (« megalithe ») ou un type d'hébergement (« guest_house ») ; deux
+ *    traductions écrites à deux endroits auraient fini par n'en couvrir
+ *    qu'une — et l'autre aurait montré sa clé technique à l'écran, ce que ce
+ *    dépôt refuse depuis le 4/11 (« onze boutons sur vingt-trois affichaient
+ *    la clé en minuscules »).
+ */
+export const direLeGenre = (c: string): string =>
+  LIBELLES[c] ?? direLeType(c) ?? c;
+
 export function CarteMonde(
   { enFond = false, vivante = false }: { enFond?: boolean; vivante?: boolean } = {},
 ) {
@@ -88,6 +110,28 @@ export function CarteMonde(
   const carte = useRef<CarteML | null>(null);
   const [choisi, setChoisi] = useState<Site | null>(null);
   const [mot, setMot] = useState("");
+  /**
+   * 🔴 LA SURFACE COMMUNE — 15/11/2026, architecture d'Aurélien : « un
+   *    produit, trois étendues ». Cette carte portait un seul calque ; elle
+   *    porte maintenant ce que le panneau de la carte du territoire portait,
+   *    pour que manahome n'ait pas à emprunter un écran breton.
+   * ⚠️ Les hébergements NAISSENT ÉTEINTS, comme sur la carte du territoire et
+   *    pour la même raison : ce sont 7 365 tuiles de plus à aller chercher,
+   *    et qui ouvre la carte pour regarder des sites n'a pas à les payer.
+   */
+  const [calques, setCalques] = useState({ sites: true, hebergements: false });
+  const [calquesOuverts, setCalquesOuverts] = useState(false);
+  const [genres, setGenres] = useState<string[]>([]);
+  const [genresChoisis, setGenresChoisis] = useState<ReadonlySet<string>>(new Set());
+  /** ⚠️ Posé par `installer()` : les effets de calque ne peuvent rien avant. */
+  const [pret, setPret] = useState(false);
+  /* ⭐ LES CLOSURES DE L'EFFET DE MONTAGE NE VOIENT PAS L'ÉTAT D'AUJOURD'HUI.
+     `charger()` vit dans un effet monté une seule fois ; sans ce relais, elle
+     lirait éternellement `{sites: true, hebergements: false}` — le calque
+     s'allumerait à l'écran et ne chargerait jamais rien. */
+  const calquesVivants = useRef(calques);
+  calquesVivants.current = calques;
+  const rechargerRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (!boite.current) return;
@@ -106,8 +150,10 @@ export function CarteMonde(
           l'écran, un rechargement à chaud) rejouerait la même course.
        ⚠️ Déclarés DANS l'effet : chaque carte a les siens, et ils meurent
           avec elle. Un `useRef` aurait survécu, c'est tout le défaut. */
-    const lues = new Set<string>();
-    const points: GeoJSON.Feature[] = [];
+    const lots = {
+      sites: { lues: new Set<string>(), points: [] as GeoJSON.Feature[] },
+      hebergements: { lues: new Set<string>(), points: [] as GeoJSON.Feature[] },
+    };
     const m = new maplibregl.Map({
       container: boite.current, style: enFond ? STYLE_ORTHO : STYLE,
       /* 🔴 LE CENTRE ÉTAIT LE MULLERTHAL, EN DUR — c'est le point où je
@@ -203,7 +249,38 @@ export function CarteMonde(
       });
       m.on("mouseenter", "sites", () => { m.getCanvas().style.cursor = "pointer"; });
       m.on("mouseleave", "sites", () => { m.getCanvas().style.cursor = ""; });
+
+      /* ⭐ LES HÉBERGEMENTS : UNE FORME, PAS UNE COULEUR DE PLUS — la même
+         décision que sur la carte du territoire ce matin, et pour la même
+         raison. Les genres de sites occupent la palette ; une teinte de plus
+         se confondrait avec l'une d'elles. Le blanc cerné d'encre ne
+         ressemble à aucune pastille, et se lit sans légende comme au
+         daltonisme. */
+      m.addSource("hebergements", { type: "geojson",
+        data: { type: "FeatureCollection", features: [] } });
+      m.addLayer({
+        id: "hebergements", type: "circle", source: "hebergements",
+        layout: { visibility: "none" },
+        paint: {
+          "circle-radius": ["interpolate", ["linear"], ["zoom"], 7, 2.5, 12, 5, 16, 8],
+          "circle-color": "#f6f3e6",
+          "circle-stroke-width": 1.5,
+          "circle-stroke-color": "#1f2a1c",
+        },
+      });
+      m.on("click", "hebergements", (e) => {
+        const p = e.features?.[0]?.properties as { n: string; t?: string } | undefined;
+        const g = (e.features?.[0]?.geometry as GeoJSON.Point | undefined)?.coordinates;
+        /* ⚠️ On réemploie la fiche des sites : `c` y porte le TYPE
+           d'hébergement, que `direLeType` sait lire. Un second encart aurait
+           été deux encarts à tenir d'accord. */
+        if (p && g) setChoisi({ n: p.n, c: p.t || "hebergement", g: [g[0], g[1]] });
+      });
+      m.on("mouseenter", "hebergements", () => { m.getCanvas().style.cursor = "pointer"; });
+      m.on("mouseleave", "hebergements", () => { m.getCanvas().style.cursor = ""; });
+
       taireLesEtiquettes();
+      setPret(true);
       charger();
     };
     /**
@@ -304,6 +381,62 @@ export function CarteMonde(
     if (boite.current) ro.observe(boite.current);
     const minuteries = [120, 600, 1600].map((d) => window.setTimeout(redimensionner, d));
 
+    /**
+     * Moissonne UN calque sur les tuiles données.
+     *
+     * ⭐ ÉCRITE UNE FOIS POUR LES DEUX. Les sites et les hébergements ont le
+     *    même découpage, le même cache et le même rattrapage d'échec ; deux
+     *    copies auraient divergé au premier correctif — et ce dépôt sait ce
+     *    que ça coûte (« deux moteurs pour un même travail »).
+     */
+    async function moissonner(
+      nom: "sites" | "hebergements", racine: string,
+      tuiles: readonly (readonly [number, number])[],
+      proprietes: (e: any) => Record<string, unknown>,
+    ) {
+      const lot = lots[nom];
+      let neuf = 0;
+      for (const [x, y] of tuiles) {
+        const clef = `${x}/${y}`;
+        if (lot.lues.has(clef)) continue;
+        lot.lues.add(clef);
+        try {
+          const r = await fetch(`${racine}/${Z}/${x}/${y}.json`);
+          if (!r.ok) continue;            // tuile vide : il n'y a rien ici
+          const t = (await r.json()) as { l: any[] };
+          for (const e of t.l) {
+            lot.points.push({
+              type: "Feature",
+              geometry: { type: "Point", coordinates: e.g },
+              properties: proprietes(e),
+            });
+          }
+          neuf++;
+        } catch { /* une tuile manquante n'est pas une panne */ }
+      }
+      if (!neuf) return;
+      /* 🔴 CE `?.` AVALAIT L'ÉCHEC — et il a coûté une demi-heure le 14/11.
+         Écrit `getSource(nom)?.setData(...)`, il ne fait RIEN quand la source
+         n'existe pas encore, sans un mot : les tuiles sont pourtant notées
+         comme lues, et le chargement suivant n'a plus rien à charger.
+         ⭐ Un appel optionnel sur un objet qu'on sait devoir exister n'est pas
+            de la prudence, c'est un silence. */
+      const src = m.getSource(nom) as maplibregl.GeoJSONSource | undefined;
+      if (!src) {
+        for (const [x, y] of tuiles) lot.lues.delete(`${x}/${y}`);
+        return;
+      }
+      src.setData({ type: "FeatureCollection", features: lot.points });
+      if (nom === "sites") {
+        /* ⚠️ LES GENRES SE DÉCOUVRENT EN MARCHANT, et c'est honnête : le
+           panneau propose ce qui est SOUS LES YEUX, pas le vocabulaire
+           complet des 32 catégories dont la plupart seraient vides ici. */
+        const vus = new Set<string>();
+        for (const f of lot.points) vus.add(String((f.properties as any).c));
+        setGenres([...vus].sort());
+      }
+    }
+
     /** Charge les tuiles du cadre visible, et seulement celles-là. */
     async function charger() {
       /* ⚠️ RIEN AVANT LA SOURCE. `moveend` arrive avant `load` quand on
@@ -325,46 +458,19 @@ export function CarteMonde(
         return;
       }
       setMot("");
-      let neuf = 0;
-      {
-        for (const [x, y] of choix.tuiles) {
-          const clef = `${x}/${y}`;
-          if (lues.has(clef)) continue;
-          lues.add(clef);
-          try {
-            const r = await fetch(`${TUILES}/${Z}/${x}/${y}.json`);
-            if (!r.ok) continue;            // tuile vide : il n'y a rien ici
-            const t = (await r.json()) as { l: Site[] };
-            for (const s of t.l) {
-              points.push({
-                type: "Feature",
-                geometry: { type: "Point", coordinates: s.g },
-                properties: { n: s.n, c: s.c, ...(s.a ? { a: 1 } : {}) },
-              });
-            }
-            neuf++;
-          } catch { /* une tuile manquante n'est pas une panne */ }
-        }
-      }
-      if (neuf) {
-        /* 🔴 CE `?.` AVALAIT L'ÉCHEC — et il m'a coûté une demi-heure. Écrit
-           `getSource("sites")?.setData(...)`, il ne fait RIEN quand la source
-           n'existe pas encore, sans un mot. Or `moveend` peut survenir AVANT
-           `load` (mes propres rappels de redimensionnement en déclenchent un
-           à 120 ms) : la source n'est pas posée, les tuiles sont pourtant
-           notées comme lues, et le `charger` qui suit `load` n'a plus rien à
-           charger. Résultat mesuré : 3 000 points collectés, source à ZÉRO.
-           ⭐ Un appel optionnel sur un objet qu'on sait devoir exister n'est
-              pas de la prudence, c'est un silence. */
-        const src = m.getSource("sites") as maplibregl.GeoJSONSource | undefined;
-        if (!src) {
-          /* On n'a rien pu poser : ces tuiles ne sont PAS lues. */
-          for (const [x, y] of choix.tuiles) lues.delete(`${x}/${y}`);
-          return;
-        }
-        src.setData({ type: "FeatureCollection", features: points });
+      await moissonner("sites", TUILES, choix.tuiles,
+        (e: Site) => ({ n: e.n, c: e.c, ...(e.a ? { a: 1 } : {}) }));
+      /* ⛔ ON NE TÉLÉCHARGE PAS UN CALQUE ÉTEINT. Masquer coûte la bande
+         passante de ce qu'on cache ; ne pas charger coûte zéro. Même règle
+         que `ot.json` sur la carte du territoire. */
+      if (calquesVivants.current.hebergements) {
+        await moissonner("hebergements", TUILES_H, choix.tuiles,
+          (e: Heb) => ({ n: e.n, t: e.t ?? "" }));
       }
     }
+    /* ⭐ Le relais vers l'extérieur de l'effet : allumer un calque doit
+       déclencher sa moisson, et le bouton vit dans le rendu. */
+    rechargerRef.current = () => { void charger(); };
 
     return () => {
       ro.disconnect();
@@ -374,6 +480,105 @@ export function CarteMonde(
       m.remove(); carte.current = null;
     };
   }, []);
+
+  /**
+   * ⭐ ALLUMER UN CALQUE, C'EST DEUX GESTES : le montrer, et aller chercher
+   *    ce qu'il montre. Le second ne vaut que pour les hébergements, qui ne
+   *    sont pas chargés tant qu'ils sont éteints.
+   */
+  useEffect(() => {
+    const m = carte.current;
+    if (!m || !pret || !m.getLayer("sites")) return;
+    m.setLayoutProperty("sites", "visibility", calques.sites ? "visible" : "none");
+    m.setLayoutProperty("hebergements", "visibility",
+      calques.hebergements ? "visible" : "none");
+    if (calques.hebergements) rechargerRef.current?.();
+  }, [calques, pret]);
+
+  /**
+   * 🔴 ICI LE FILTRE maplibre EST LE BON OUTIL, ET IL NE L'ÉTAIT PAS AILLEURS.
+   *    `Territoire2030` a retiré ses `setFilter` le 4/11 parce qu'il tenait
+   *    DEUX listes — une dessinée, une visée par `viser()`/`survol()` — qui
+   *    divergeaient dès le premier filtre : on cliquait un point doré et la
+   *    fiche d'une fontaine masquée s'ouvrait.
+   * ⭐ Ici il n'y a qu'une liste. Le clic passe par `m.on("click", "sites")`,
+   *    que maplibre ne déclenche QUE pour les objets effectivement rendus —
+   *    donc filtrés. Ce qui est cliquable est ce qui est visible, par
+   *    construction et non par discipline.
+   */
+  useEffect(() => {
+    const m = carte.current;
+    if (!m || !pret || !m.getLayer("sites")) return;
+    m.setFilter("sites", genresChoisis.size
+      ? ["in", ["get", "c"], ["literal", [...genresChoisis]]] as any
+      : null);
+  }, [genresChoisis, pret]);
+
+  const basculerGenre = (g: string) =>
+    setGenresChoisis((avant) => {
+      const apres = new Set(avant);
+      if (!apres.delete(g)) apres.add(g);
+      return apres;
+    });
+
+  /**
+   * LE PANNEAU DES CALQUES — le même métier que celui de la carte du
+   * territoire, sur la surface commune.
+   * ⚠️ Il est rendu DANS la carte (et non dans la colonne de l'application) :
+   *    sur l'accueil vivant, la colonne ne reçoit plus les gestes, et un
+   *    panneau posé là serait un panneau mort.
+   */
+  const panneau = (
+    <>
+      <button type="button" className="terr-rond monde-calques-bouton"
+        aria-expanded={calquesOuverts} aria-controls="monde-calques"
+        onClick={() => setCalquesOuverts((o) => !o)}>
+        <span className="sr-only">Calques de la carte</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true" width="20" height="20"
+             fill="none" stroke="currentColor" strokeWidth="1.6"
+             strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 3 3 7.5 12 12l9-4.5L12 3z" />
+          <path d="m3 12.5 9 4.5 9-4.5M3 17l9 4.5 9-4.5" />
+        </svg>
+      </button>
+      {calquesOuverts && (
+        <div className="monde-calques" id="monde-calques">
+          {([["sites", "Les sites remarquables"],
+             ["hebergements", "Les hébergements"]] as const).map(([clef, nom]) => (
+            <label key={clef} className="terr-calque">
+              <input type="checkbox" checked={calques[clef]}
+                onChange={(e) => setCalques((c) => ({ ...c, [clef]: e.target.checked }))} />
+              <span className="terr-calque-nom">{nom}</span>
+            </label>
+          ))}
+          {/* ⭐ LE FILTRE NE PARAÎT QUE SI LE CALQUE EST ALLUMÉ — un contrôle
+              qui ne change rien à l'écran se lit comme une panne. Et il
+              attend d'avoir plus d'un genre : filtrer parmi un seul n'est pas
+              un choix. */}
+          {calques.sites && genres.length > 1 && (
+            <div className="terr-genres" role="group" aria-label="Genres de sites">
+              <button type="button"
+                className={genresChoisis.size === 0 ? "ot-filtre ot-filtre-actif" : "ot-filtre"}
+                aria-pressed={genresChoisis.size === 0}
+                onClick={() => setGenresChoisis(new Set())}>
+                Tous
+              </button>
+              {genres.map((g) => (
+                <button key={g} type="button"
+                  className={genresChoisis.has(g) ? "ot-filtre ot-filtre-actif" : "ot-filtre"}
+                  aria-pressed={genresChoisis.has(g)}
+                  onClick={() => basculerGenre(g)}>
+                  <span className="ot-pastille"
+                        style={{ background: couleurCategorie(g) }} aria-hidden="true" />
+                  {LIBELLES[g] ?? g}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  );
 
   if (enFond) {
     return (
@@ -385,13 +590,14 @@ export function CarteMonde(
       <div className="monde-fond" data-vivante={vivante || undefined}
            aria-hidden={vivante ? undefined : true}>
         <div className="monde-plan" ref={boite} />
+        {vivante && panneau}
         {vivante && choisi && (
           <div className="monde-choisi">
             <p className="monde-choisi-nom">
-              {choisi.a ? (LIBELLES[choisi.c] ?? choisi.c) : choisi.n}
+              {choisi.a ? direLeGenre(choisi.c) : choisi.n}
             </p>
             <p className="monde-choisi-dire">
-              {choisi.a ? "Sans nom connu" : (LIBELLES[choisi.c] ?? choisi.c)}
+              {choisi.a ? "Sans nom connu" : direLeGenre(choisi.c)}
             </p>
           </div>
         )}
@@ -404,6 +610,7 @@ export function CarteMonde(
     <main className="page page-monde">
       <div className="monde-scene">
         <div className="monde-plan" ref={boite} />
+        {panneau}
         {mot && <p className="monde-mot">{mot}</p>}
         {choisi && (
           <div className="monde-choisi">
@@ -412,10 +619,10 @@ export function CarteMonde(
                 (Aurélien, 14/11). On montre alors son TYPE, qui est la seule
                 chose vraie qu'on sache en dire. */}
             <p className="monde-choisi-nom">
-              {choisi.a ? (LIBELLES[choisi.c] ?? choisi.c) : choisi.n}
+              {choisi.a ? direLeGenre(choisi.c) : choisi.n}
             </p>
             <p className="monde-choisi-dire">
-              {choisi.a ? "Sans nom connu" : (LIBELLES[choisi.c] ?? choisi.c)}
+              {choisi.a ? "Sans nom connu" : direLeGenre(choisi.c)}
             </p>
           </div>
         )}

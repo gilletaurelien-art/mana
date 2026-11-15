@@ -990,7 +990,12 @@
 .terr-rond:hover { color: var(--texte-action); }
 .terr-rond:focus-visible { outline: 2px solid var(--ocre); outline-offset: 2px; }
 
-.terr-calques {
+/* ⭐ LA CARTE COMMUNE PORTE LE MÊME PANNEAU — 15/11/2026. Elle n'en a pas
+   reçu une copie : elle s'ajoute au sélecteur. Deux panneaux identiques
+   écrits à deux endroits divergent à la première retouche, et une divergence
+   de charte ne casse rien — donc personne ne la signale. */
+.terr-calques,
+.monde-calques {
   position: absolute; z-index: var(--z-panneau);
   top: calc(var(--sp-2) + env(safe-area-inset-top, 0px) + 52px); right: var(--sp-2);
   /* 🔴 LE VERRE DE LA BARRE — 4/11/2026, demande du fondateur. Le panneau
