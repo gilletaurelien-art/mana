@@ -19,7 +19,7 @@
 // ⚠️ LES TUILES SE CHARGENT SELON CE QU'ON REGARDE. 11 721 fichiers, 138 Mo :
 //    on ne les télécharge évidemment pas tous. Le cadre visible donne les
 //    tuiles z8 à demander, et on garde celles déjà lues.
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import maplibregl, { type Map as CarteML } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { STYLE_CARTE as STYLE, STYLE_ORTHO } from "./carte-fond";
@@ -34,12 +34,30 @@ import { etendueDe } from "./etendue";
    une couleur corrigée là se voit ici, et l'inverse. */
 import { couleurCategorie } from "./categories";
 import { direLeType } from "./hebergements-du-territoire";
+import { lienYAller, plateformeDe } from "./y-aller";
+import { usePropositions, type Destination } from "./propositions-du-point";
+import { baseUrl } from "./router";
 import { visage } from "./visage";
 /* ⭐ La porte d'entrée du style vit à part, et s'éprouve sans navigateur —
    voir l'en-tête de ce fichier-là : elle a été fausse deux jours. */
 import { poserLaSource } from "./style-pret";
 
-const BASE = (import.meta.env.VITE_GRAPHE_BASE ?? "https://mana.bzh/bretagne/g")
+/**
+ * 🔴 DEUX BASES, ET LES CONFONDRE A COÛTÉ UN REFUS FAUX — mesuré le
+ *    15/11/2026 : la fiche annonçait « Le réseau de chemins n'a pas pu être
+ *    lu » sur un menhir de Crozon, alors que le graphe est servi en 200 avec
+ *    le bon CORS. J'avais passé la base des TUILES (la racine du domaine) à
+ *    `urlGraphe`, qui attend celle des GRAPHES (`…/bretagne/g`) : l'adresse
+ *    demandée était `https://mana.bzh/presquile.json`.
+ * ⭐ LE REFUS HONNÊTE A FAIT SON TRAVAIL : il distinguait « illisible » de
+ *    « rien ici », donc il m'a envoyé chercher le réseau au lieu de croire
+ *    le territoire vide. Un message qui dit la bonne cause fait gagner
+ *    l'heure qu'un message vague fait perdre.
+ * ⚠️ `GRAPHES` garde le suffixe, `BASE` le retire — elles ne sont PAS
+ *    interchangeables, et leurs noms le disent maintenant.
+ */
+const GRAPHES = import.meta.env.VITE_GRAPHE_BASE ?? "https://mana.bzh/bretagne/g";
+const BASE = GRAPHES
   .replace(/\/bretagne\/g$/, "")
   .replace(/\/monde\/g$/, "");
 const TUILES = `${BASE}/monde/s`;
@@ -47,10 +65,27 @@ const TUILES = `${BASE}/monde/s`;
    `scripts/hebergements-monde.ts`. `tuilesDuCadre()` sert les deux, donc un
    seul cadrage, un seul « trop loin », un seul cache par calque. */
 const TUILES_H = `${BASE}/monde/h`;
+/* ⚠️ Le préfixe des ADRESSES de l'app (`/mana/` sur Pages, `/` ailleurs) —
+   à ne pas confondre avec `BASE`, qui est celui des DONNÉES servies. */
+const B = baseUrl();
 
 interface Site { n: string; c: string; g: [number, number]; a?: 1 }
 /** Ce que porte une tuile d'hébergements — voir `scripts/hebergements-monde.ts`. */
-interface Heb { n: string; t?: string; g: [number, number] }
+interface Heb { n: string; t?: string; c?: string; lits?: number; ch?: number; g: [number, number] }
+
+/**
+ * 🔴 CE QU'ON REGARDE — un site remarquable OU un hébergement, 15/11/2026.
+ *
+ * ⛔ LA PREMIÈRE VERSION FAISAIT PASSER LE TYPE D'HÉBERGEMENT POUR UNE
+ *    CATÉGORIE DE SITE (`c: p.t || "hebergement"`). Ça marchait tant que la
+ *    fiche ne disait qu'un nom et un mot ; dès qu'elle détaille — commune,
+ *    chambres, couchages — il faut savoir DE QUOI on parle. Un champ qui
+ *    porte deux sens finit toujours par être lu avec le mauvais.
+ */
+type Choisi =
+  | { genre: "site"; n: string; c: string; g: [number, number]; a?: 1 }
+  | { genre: "hebergement"; n: string; t?: string; commune?: string;
+      lits?: number; ch?: number; g: [number, number] };
 
 const LIBELLES: Record<string, string> = {
   parc: "Parc", sommet: "Sommet", memorial: "Mémorial", plage: "Plage",
@@ -103,12 +138,43 @@ function depuisURL(): [number, number] | null {
 export const direLeGenre = (c: string): string =>
   LIBELLES[c] ?? direLeType(c) ?? c;
 
+/** Le titre de la fiche. ⚠️ Un site sans nom porte son GENRE — « une plage
+ *  sans nom reste une plage ». Un hébergement en a toujours un : la moisson
+ *  écarte les lignes au titre vide. */
+export const titreDe = (x: Choisi): string =>
+  x.genre === "site" && x.a ? direLeGenre(x.c) : x.n;
+
+/**
+ * La ligne de détail, sous le nom.
+ *
+ * 🔴 « TU PEUX AUSSI LES DÉTAILLER » — Aurélien, 15/11/2026. Un hébergement
+ *    ne disait que son type ; la base porte aussi sa commune, ses chambres et
+ *    ses couchages, et l'export par territoire les sortait déjà.
+ * ⭐ ON N'ÉCRIT QUE CE QU'ON SAIT. Les champs manquent souvent — un point OSM
+ *    porte rarement ses couchages. Une ligne « Hôtel · — chambres » serait un
+ *    trou maquillé ; on joint ce qui existe, et rien d'autre.
+ * ⚠️ Le SINGULIER se dit : « 1 chambres » trahit un gabarit, et on le lit
+ *    comme un défaut du produit entier.
+ */
+export function direLeDetail(x: Choisi): string {
+  if (x.genre === "site") return x.a ? "Sans nom connu" : direLeGenre(x.c);
+  const bouts = [
+    x.t ? direLeType(x.t) : null,
+    x.commune || null,
+    x.ch ? `${x.ch} chambre${x.ch > 1 ? "s" : ""}` : null,
+    x.lits ? `${x.lits} couchage${x.lits > 1 ? "s" : ""}` : null,
+  ].filter(Boolean);
+  /* ⚠️ Jamais vide : « Hébergement » est la seule chose vraie qu'on sache
+     dire quand la moisson n'a rien d'autre. */
+  return bouts.length ? bouts.join(" · ") : "Hébergement";
+}
+
 export function CarteMonde(
   { enFond = false, vivante = false }: { enFond?: boolean; vivante?: boolean } = {},
 ) {
   const boite = useRef<HTMLDivElement | null>(null);
   const carte = useRef<CarteML | null>(null);
-  const [choisi, setChoisi] = useState<Site | null>(null);
+  const [choisi, setChoisi] = useState<Choisi | null>(null);
   const [mot, setMot] = useState("");
   /**
    * 🔴 LA SURFACE COMMUNE — 15/11/2026, architecture d'Aurélien : « un
@@ -120,6 +186,13 @@ export function CarteMonde(
    *    et qui ouvre la carte pour regarder des sites n'a pas à les payer.
    */
   const [calques, setCalques] = useState({ sites: true, hebergements: false });
+  /* ⚠️ Lue UNE FOIS : l'appareil ne change pas en cours de session, et
+     `plateformeDe` lit le `userAgent` — même raison que sur la carte du
+     territoire. */
+  const plateforme = useMemo(
+    () => plateformeDe(typeof navigator === "undefined" ? "" : navigator.userAgent,
+                       typeof navigator === "undefined" ? 0 : navigator.maxTouchPoints),
+    []);
   const [calquesOuverts, setCalquesOuverts] = useState(false);
   const [genres, setGenres] = useState<string[]>([]);
   const [genresChoisis, setGenresChoisis] = useState<ReadonlySet<string>>(new Set());
@@ -132,6 +205,24 @@ export function CarteMonde(
   const calquesVivants = useRef(calques);
   calquesVivants.current = calques;
   const rechargerRef = useRef<(() => void) | null>(null);
+
+  /**
+   * 🔴 LES TROIS PROMENADES DEPUIS LE LIEU CHOISI — Aurélien, 15/11/2026 :
+   *    « implémente la fonction de mana.bzh : on clique sur un site
+   *    remarquable, Y aller ou Partir d'ici, 3 options ».
+   *
+   * ⭐ LES DESTINATIONS SONT CE QUE LA CARTE A DÉJÀ SOUS LES YEUX. Elles
+   *    viennent des tuiles chargées, pas d'un second téléchargement : la
+   *    composition cherche entre 600 et 4 000 m, et les tuiles du cadre
+   *    couvrent cette portée. ⚠️ Donc les propositions dépendent de ce qui a
+   *    été parcouru — c'est honnête (on ne propose que ce qu'on connaît ici)
+   *    et c'est le même marché que la recherche de l'accueil.
+   * ⛔ Les ANONYMES en sont exclus par `usePropositions` : « une liste de
+   *    douze "Plage" ne se choisit pas ».
+   */
+  const [destinations, setDestinations] = useState<Destination[]>([]);
+  const etatProp = usePropositions(
+    GRAPHES, choisi ? choisi.g : null, destinations);
 
   useEffect(() => {
     if (!boite.current) return;
@@ -245,7 +336,10 @@ export function CarteMonde(
       m.on("click", "sites", (e) => {
         const p = e.features?.[0]?.properties as { n: string; c: string; a?: number } | undefined;
         const g = (e.features?.[0]?.geometry as GeoJSON.Point | undefined)?.coordinates;
-        if (p && g) setChoisi({ n: p.n, c: p.c, g: [g[0], g[1]], ...(p.a ? { a: 1 } : {}) });
+        if (p && g) {
+          setChoisi({ genre: "site", n: p.n, c: p.c, g: [g[0], g[1]],
+                      ...(p.a ? { a: 1 as const } : {}) });
+        }
       });
       m.on("mouseenter", "sites", () => { m.getCanvas().style.cursor = "pointer"; });
       m.on("mouseleave", "sites", () => { m.getCanvas().style.cursor = ""; });
@@ -269,12 +363,20 @@ export function CarteMonde(
         },
       });
       m.on("click", "hebergements", (e) => {
-        const p = e.features?.[0]?.properties as { n: string; t?: string } | undefined;
+        const p = e.features?.[0]?.properties as
+          { n: string; t?: string; c?: string; lits?: number; ch?: number } | undefined;
         const g = (e.features?.[0]?.geometry as GeoJSON.Point | undefined)?.coordinates;
-        /* ⚠️ On réemploie la fiche des sites : `c` y porte le TYPE
-           d'hébergement, que `direLeType` sait lire. Un second encart aurait
-           été deux encarts à tenir d'accord. */
-        if (p && g) setChoisi({ n: p.n, c: p.t || "hebergement", g: [g[0], g[1]] });
+        /* ⭐ MÊME FICHE QUE LES SITES, et c'est la demande d'Aurélien du
+           15/11 : « tu peux aussi les détailler et offrir les options, comme
+           les sites remarquables ? ». Un second encart aurait été deux
+           encarts à tenir d'accord — et le second aurait vieilli. */
+        if (p && g) {
+          setChoisi({ genre: "hebergement", n: p.n, t: p.t || undefined,
+                      commune: p.c || undefined,
+                      ...(p.lits ? { lits: Number(p.lits) } : {}),
+                      ...(p.ch ? { ch: Number(p.ch) } : {}),
+                      g: [g[0], g[1]] });
+        }
       });
       m.on("mouseenter", "hebergements", () => { m.getCanvas().style.cursor = "pointer"; });
       m.on("mouseleave", "hebergements", () => { m.getCanvas().style.cursor = ""; });
@@ -434,6 +536,17 @@ export function CarteMonde(
         const vus = new Set<string>();
         for (const f of lot.points) vus.add(String((f.properties as any).c));
         setGenres([...vus].sort());
+        /* ⚠️ Les mêmes points servent de DESTINATIONS possibles — pas une
+           seconde liste : une liste dessinée et une liste proposée, tenues
+           séparément, divergent au premier filtre. C'est la leçon que la
+           carte du territoire a payée le 4/11. */
+        setDestinations(lot.points
+          .filter((f) => !(f.properties as any).a)
+          .map((f) => ({
+            n: String((f.properties as any).n),
+            c: String((f.properties as any).c),
+            g: (f.geometry as GeoJSON.Point).coordinates as [number, number],
+          })));
       }
     }
 
@@ -465,7 +578,11 @@ export function CarteMonde(
          que `ot.json` sur la carte du territoire. */
       if (calquesVivants.current.hebergements) {
         await moissonner("hebergements", TUILES_H, choix.tuiles,
-          (e: Heb) => ({ n: e.n, t: e.t ?? "" }));
+          /* ⚠️ `?? ""` et non `?? null` : maplibre ne garde pas les propriétés
+             nulles, et l'écran doit pouvoir lire la clé pour savoir qu'elle
+             est vide. */
+          (e: Heb) => ({ n: e.n, t: e.t ?? "", c: e.c ?? "",
+                         lits: e.lits ?? 0, ch: e.ch ?? 0 }));
       }
     }
     /* ⭐ Le relais vers l'extérieur de l'effet : allumer un calque doit
@@ -480,6 +597,107 @@ export function CarteMonde(
       m.remove(); carte.current = null;
     };
   }, []);
+
+  /**
+   * LA FICHE DU LIEU CHOISI — le nom, les deux portes, les trois promenades.
+   *
+   * ⭐ L'ORDRE DIT LE PRODUIT, et il est repris tel quel de la carte du
+   *    territoire : « Y aller » vient d'abord parce qu'il vient d'abord dans
+   *    la vie — on n'est pas encore là — mais c'est « Partir d'ici » qui
+   *    porte l'or : la promenade est ce que MANA apporte, l'itinéraire
+   *    routier est une commodité qu'on emprunte ailleurs.
+   *
+   * ⛔ ET CHAQUE REFUS A SON MOT. Sur une carte mondiale, la plupart des
+   *    points n'ont pas de réseau piéton chez nous : trois territoires sur la
+   *    Terre. Rendre une liste vide ferait croire qu'il n'y a rien à marcher
+   *    là-bas — alors que c'est NOUS qui n'y sommes pas. Quatre états, quatre
+   *    phrases, et « Y aller » marche dans les quatre.
+   */
+  const fiche = choisi && (
+    <div className="monde-choisi">
+      <p className="monde-choisi-nom">{titreDe(choisi)}</p>
+      <p className="monde-choisi-dire">{direLeDetail(choisi)}</p>
+
+      <div className="terr-actions">
+        {/* ⛔ ON PASSE LA MAIN, ON N'ITINÈRE PAS — voir `y-aller.ts` : le
+            graphe servi ne porte pas la classe de voirie, donc on ne sait
+            pas où une voiture a le droit de passer. */}
+        <a className="m-action-fine terr-bouton"
+           href={lienYAller(choisi.g, titreDe(choisi), plateforme)}
+           target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18"
+               fill="none" stroke="currentColor" strokeWidth="1.6"
+               strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z" />
+            <circle cx="12" cy="10" r="2.6" />
+          </svg>
+          Y aller
+        </a>
+        {/* ⚠️ `/promenades`, PAS `/composer` : les deux rendent le même écran,
+            mais `/promenades` est l'adresse canonique.
+            ⛔ Et le bouton ne paraît QUE là où l'on sait composer. Une porte
+               qui mène à un refus est pire qu'une porte absente : elle a
+               l'air d'une promesse. */}
+        {etatProp && etatProp.etat !== "hors-reseau" && (
+          <a className="m-action terr-bouton"
+             href={`${B}/promenades?lon=${choisi.g[0]}&lat=${choisi.g[1]}`
+                   + `&nom=${encodeURIComponent(titreDe(choisi))}`}>
+            Partir d'ici →
+          </a>
+        )}
+      </div>
+
+      {etatProp?.etat === "hors-reseau" && (
+        <p className="monde-choisi-mot">
+          Nous n'avons pas encore le réseau de chemins ici. « Y aller » marche
+          quand même.
+        </p>
+      )}
+      {etatProp?.etat === "chargement" && (
+        <p className="monde-choisi-mot">
+          Lecture du réseau de chemins {etatProp.territoire.avecArticle}…
+        </p>
+      )}
+      {etatProp?.etat === "echec" && (
+        <p className="monde-choisi-mot">
+          Le réseau de chemins n'a pas pu être lu — ce n'est pas qu'il n'y a
+          rien ici.
+        </p>
+      )}
+      {etatProp?.etat === "aucune" && (
+        <p className="monde-choisi-mot">
+          Aucun chemin ne passe assez près pour composer une promenade d'ici.
+        </p>
+      )}
+      {etatProp?.etat === "ok" && (
+        <ol className="monde-props">
+          {etatProp.propositions.map((prop, i) => (
+            <li key={`${prop.spot.n}-${i}`}>
+              <a className="monde-prop"
+                 href={`${B}/promenades?lon=${choisi.g[0]}&lat=${choisi.g[1]}`
+                       + `&vers=${prop.spot.g[0]},${prop.spot.g[1]}`
+                       + `&nom=${encodeURIComponent(prop.spot.n ?? "ce lieu")}`}>
+                <span className="monde-prop-rang" aria-hidden="true">{i + 1}</span>
+                <span className="monde-prop-nom">{prop.spot.n}</span>
+                {/* 🔴 `prop.metres` ET NON `prop.parcours.metres` — le type le
+                    dit en toutes lettres : « CE QU'ON AFFICHE : le réseau PLUS
+                    les deux bouts hors réseau ». Le second compte le chemin
+                    balisé seul et oublie l'approche et la sortie, donc il
+                    ANNONCE MOINS QUE CE QU'ON MARCHE. Un chiffre juste pour
+                    une autre question est un chiffre faux pour celle-ci.
+                    ⚠️ ARRONDI AU MÈTRE : « 1 868,4 m » annonce une précision
+                    que le décimètre ne peut pas tenir sur un chemin de
+                    terre, et la décimale se lit comme une garantie. */}
+                <span className="monde-prop-m">
+                  {Math.round(prop.metres).toLocaleString("fr-FR")} m
+                </span>
+              </a>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
 
   /**
    * ⭐ ALLUMER UN CALQUE, C'EST DEUX GESTES : le montrer, et aller chercher
@@ -563,16 +781,29 @@ export function CarteMonde(
                 onClick={() => setGenresChoisis(new Set())}>
                 Tous
               </button>
-              {genres.map((g) => (
-                <button key={g} type="button"
-                  className={genresChoisis.has(g) ? "ot-filtre ot-filtre-actif" : "ot-filtre"}
-                  aria-pressed={genresChoisis.has(g)}
-                  onClick={() => basculerGenre(g)}>
-                  <span className="ot-pastille"
-                        style={{ background: couleurCategorie(g) }} aria-hidden="true" />
-                  {LIBELLES[g] ?? g}
-                </button>
-              ))}
+              {/* 🔴 `.terr-genre`, PAS UNE PASTILLE DE MA MAIN — corrigé le
+                  15/11/2026 après l'avoir vue à l'écran. J'avais écrit
+                  `<span className="ot-pastille">` avec la couleur en fond :
+                  cette classe n'existe dans AUCUNE feuille, donc le `span`
+                  restait en `display: inline`, sans boîte, et la couleur ne
+                  peignait rien. Le composant existait à côté, mûri le 4/11
+                  avec sa mesure de contraste sur les vingt-trois genres.
+                  ⭐ Inventer une classe est plus silencieux qu'inventer une
+                     balise : rien ne lève, le nom a l'air juste, et l'élément
+                     est simplement invisible. */}
+              {genres.map((g) => {
+                const actif = genresChoisis.has(g);
+                return (
+                  <button key={g} type="button"
+                    className={actif ? "terr-genre terr-genre-actif" : "terr-genre"}
+                    style={{ "--pin": couleurCategorie(g) } as CSSProperties}
+                    aria-pressed={actif}
+                    onClick={() => basculerGenre(g)}>
+                    <span className="terr-genre-pin" aria-hidden="true" />
+                    {LIBELLES[g] ?? g}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -591,16 +822,7 @@ export function CarteMonde(
            aria-hidden={vivante ? undefined : true}>
         <div className="monde-plan" ref={boite} />
         {vivante && panneau}
-        {vivante && choisi && (
-          <div className="monde-choisi">
-            <p className="monde-choisi-nom">
-              {choisi.a ? direLeGenre(choisi.c) : choisi.n}
-            </p>
-            <p className="monde-choisi-dire">
-              {choisi.a ? "Sans nom connu" : direLeGenre(choisi.c)}
-            </p>
-          </div>
-        )}
+        {vivante && fiche}
         {vivante && mot && <p className="monde-mot">{mot}</p>}
       </div>
     );
@@ -612,20 +834,7 @@ export function CarteMonde(
         <div className="monde-plan" ref={boite} />
         {panneau}
         {mot && <p className="monde-mot">{mot}</p>}
-        {choisi && (
-          <div className="monde-choisi">
-            {/* ⚠️ UN LIEU SANS NOM GARDE SA PLACE — « si la plage n'a pas de
-                nom ce n'est pas grave, si elle est à côté, c'est bon »
-                (Aurélien, 14/11). On montre alors son TYPE, qui est la seule
-                chose vraie qu'on sache en dire. */}
-            <p className="monde-choisi-nom">
-              {choisi.a ? direLeGenre(choisi.c) : choisi.n}
-            </p>
-            <p className="monde-choisi-dire">
-              {choisi.a ? "Sans nom connu" : direLeGenre(choisi.c)}
-            </p>
-          </div>
-        )}
+        {fiche}
       </div>
     </main>
   );

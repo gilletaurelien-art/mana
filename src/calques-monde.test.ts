@@ -57,3 +57,46 @@ describe("les deux calques de la carte commune partagent leur découpage", () =>
     expect(carte).toMatch(/m\.on\("click", "sites"/);
   });
 });
+
+/* ═══ LA FICHE DIT CE QU'ELLE SAIT, ET SEULEMENT ÇA ═══════════════════════ */
+import { titreDe, direLeDetail } from "./CarteMonde";
+
+describe("la fiche détaille un hébergement comme un site", () => {
+  it("un site nommé porte son nom, un anonyme porte son genre", () => {
+    expect(titreDe({ genre: "site", n: "Menhir de Crozon", c: "megalithe", g: [0, 0] }))
+      .toBe("Menhir de Crozon");
+    expect(titreDe({ genre: "site", n: "Plage", c: "plage", a: 1, g: [0, 0] }))
+      .toBe("Plage");
+    expect(direLeDetail({ genre: "site", n: "Plage", c: "plage", a: 1, g: [0, 0] }))
+      .toBe("Sans nom connu");
+  });
+
+  it("un hébergement joint ce qu'on sait, dans l'ordre", () => {
+    expect(direLeDetail({ genre: "hebergement", n: "Le Phare", t: "hotel",
+                          commune: "Crozon", ch: 12, lits: 24, g: [0, 0] }))
+      .toBe("Hôtel · Crozon · 12 chambres · 24 couchages");
+  });
+
+  /* ⛔ ON N'ÉCRIT PAS CE QU'ON NE SAIT PAS. Un point OSM porte rarement ses
+     couchages : « Hôtel · — chambres » serait un trou maquillé. */
+  it("il ne mentionne pas les champs absents", () => {
+    expect(direLeDetail({ genre: "hebergement", n: "Chez X", t: "camp_site", g: [0, 0] }))
+      .toBe("Camping");
+    expect(direLeDetail({ genre: "hebergement", n: "Chez X", g: [0, 0] }))
+      .toBe("Hébergement");
+  });
+
+  /* ⚠️ « 1 chambres » trahit un gabarit, et se lit comme un défaut du produit
+     entier — pas comme une faute de frappe. */
+  it("le singulier se dit", () => {
+    expect(direLeDetail({ genre: "hebergement", n: "Gîte", ch: 1, lits: 1, g: [0, 0] }))
+      .toBe("1 chambre · 1 couchage");
+  });
+
+  /* ⭐ Un type inconnu se montre TEL QUEL plutôt que de devenir
+     « Hébergement », qui effacerait une information au lieu de l'avouer. */
+  it("un type non traduit passe sans être effacé", () => {
+    expect(direLeDetail({ genre: "hebergement", n: "X", t: "Rifugio alpino", g: [0, 0] }))
+      .toBe("Rifugio alpino");
+  });
+});

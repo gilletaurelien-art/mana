@@ -560,3 +560,78 @@
   --verre:  var(--sauge);
   --lumiere:var(--ocre);
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   MANAHOME EN NOIR ET BLANC — 15/11/2026
+   ═══════════════════════════════════════════════════════════════════════
+   🔴 Aurélien : « pour MANAhome, tu peux habiller de noir et de blanc la
+      bottom bar, la barre de saisie de texte, les encadrés, les icônes. »
+
+   ⭐ ON REDÉFINIT LES JETONS, ON NE RESTYLE AUCUN COMPOSANT. La barre, le
+      champ, les fiches, le panneau de calques et les glyphes descendent tous
+      de la même poignée de variables — `--bulle*`, `--action*`, `--texte*`.
+      Les atteindre une par une aurait demandé de retrouver chaque sélecteur,
+      d'en oublier un, et de le découvrir à l'écran : c'est exactement ce que
+      `tokens.css` dit trois fois — « un changement de fond est un changement
+      de PALETTE ».
+   ⚠️ IL VIT DANS `tokens.css` ET NON DANS `styles.css`, et c'est un garde
+      qui l'a imposé : « aucune couleur en hexadécimal brut hors des tokens ».
+      Il avait raison deux fois — une palette n'est pas un style de composant,
+      et la refuser ailleurs est ce qui empêche les couleurs de se disperser.
+      ⭐ Il ne mord que sous `[data-visage="home"]` : mana.bzh garde son kaki
+         et son ocre, c'est la consigne qui tient depuis le 14/11.
+
+   ⛔ CE QUI RESTE EN COULEUR, ET C'EST VOLONTAIRE : les épingles de la carte
+      et les pastilles de genre. Elles ne sont pas de l'habillage, elles sont
+      la DONNÉE — vingt-trois genres qui se distinguent par leur teinte. Les
+      blanchir rendrait le filtre illisible et la carte muette. « Noir et
+      blanc » habille ce qui entoure la carte, pas ce qu'elle dit.
+
+   ⚠️ LE CONTRASTE EST TENU PAR LA MATIÈRE, PAS PAR L'OPACITÉ. Le verre passe
+      à du noir à 66 %, posé sur une orthophoto dont les zones claires
+      (neige, sable, ville) montent très haut : du blanc pur dessus garde
+      plus de 7:1, là où un gris moyen tomberait sous 4,5. C'est la leçon
+      déjà écrite dans `tokens.css` — « une opacité est un contraste
+      déguisé » — appliquée dans l'autre sens. */
+[data-visage="home"] {
+  /* le verre : noir, uni, sans dégradé — un dégradé coloré est une couleur */
+  --bulle:            rgb(10 10 11 / 66%);
+  --bulle-unie:       #121214;
+  --bulle-creux:      #0b0b0c;
+  --bulle-texte:      #ffffff;
+  --bulle-texte-doux: rgb(255 255 255 / 72%);
+  --bulle-trait:      rgb(255 255 255 / 20%);
+  --bulle-trait-fort: rgb(255 255 255 / 38%);
+  /* ⛔ AUCUN REFLET INTÉRIEUR, et c'est un second garde qui l'a dit : « le
+     reflet intérieur blanc est le MARQUEUR de l'ancienne charte, il simule
+     une lumière venue d'en haut sur une surface vernie ». En noir et blanc
+     il serait littéralement du blanc pur — le cas exact que le §8.3 refuse.
+     ⭐ Et le noir et blanc n'en a pas besoin : le liseré d'un pixel suffit à
+        poser le bord, là où un verre coloré avait besoin d'une arête. */
+  --bulle-eclat:      none;
+  --bulle-survol:     rgb(255 255 255 / 10%);
+  --bulle-action:     #ffffff;
+
+  /* l'action : du blanc plein, de l'encre dessus — l'inverse exact de l'ocre */
+  --action:           #ffffff;
+  --action-texte:     #0b0b0c;
+  --action-survol:    rgb(255 255 255 / 86%);
+  --ocre:             #ffffff;
+  --primary:          #ffffff;
+
+  /* ⚠️ `--texte*` commande les glyphes de la barre et les boutons fins. */
+  --texte:            #ffffff;
+  --texte-action:     #ffffff;
+  --texte-immersif-doux: rgb(255 255 255 / 72%);
+  --trait-fort:       rgb(255 255 255 / 38%);
+  --fond-surelevé:    rgb(10 10 11 / 72%);
+  --ombre-carte:      0 2px 6px rgb(0 0 0 / 38%), 0 14px 34px rgb(0 0 0 / 42%);
+}
+
+/* ⛔ LA FICHE DU LIEU ÉTAIT ÉCRITE EN DUR — `rgb(255 255 255 / 94%)` et
+   `var(--nuit)`, posés avant que cette carte n'ait une charte. Elle ne
+   descendait donc d'aucun jeton, et serait restée blanche au milieu du noir.
+   ⭐ C'est le cas que la redéfinition de palette ne couvre pas, et la raison
+      pour laquelle on la cherche : une valeur écrite en dur est invisible à
+      un changement de thème. */

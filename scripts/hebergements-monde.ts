@@ -96,6 +96,18 @@ for (let col = deb; col <= fin; col++) {
   const lues = demanderJson(`
     WITH g AS (
       SELECT h.titre AS n, nullif(btrim(coalesce(h.typologie, '')), '') AS t,
+             /* 🔴 LA COMMUNE, LES CHAMBRES ET LES COUCHAGES — ajoutés le
+                15/11/2026 : « pour les hébergements, tu peux aussi les
+                détailler ». Ils existent dans la base et l'export par
+                territoire les sort déjà ; la première version des tuiles les
+                avait laissés de côté pour le poids, ce qui revenait à payer
+                la moisson sans en servir la moitié.
+                ⛔ ET TOUJOURS PAS L'ADRESSE, même publique : la position
+                   suffit à mener sur place, et une adresse en clair dans un
+                   fichier servi est une donnée de plus à défendre pour un
+                   gain nul. */
+             nullif(btrim(coalesce(h.commune, '')), '') AS c,
+             h.couchages AS lits, h.chambres AS ch,
              round(ST_X(h.geom)::numeric, 5) AS x, round(ST_Y(h.geom)::numeric, 5) AS y
         ${GISEMENT}
          AND ST_X(h.geom) >= ${lonMin} AND ST_X(h.geom) < ${lonMax}),
@@ -110,7 +122,9 @@ for (let col = deb; col <= fin; col++) {
         FROM t)
     SELECT json_build_object(
              'z', ${ZOOM}, 'x', tx, 'y', ty, 'total', min(total),
-             'l', json_agg(json_build_object('n', n, 't', t, 'g', json_build_array(x, y))
+             'l', json_agg(json_build_object('n', n, 't', t, 'c', c,
+                                             'lits', lits, 'ch', ch,
+                                             'g', json_build_array(x, y))
                            ORDER BY rg))::text
       FROM r WHERE rg <= ${PLAFOND} GROUP BY tx, ty ORDER BY tx, ty;`);
 
@@ -124,13 +138,25 @@ for (let col = deb; col <= fin; col++) {
           il est borné (moins de 200 m, donc les seuls cas sont ceux qui
           longent une frontière de tuile) et il se dit. */
     const avant: Hebergement[] = tuile.l.map((e: any) => ({
-      n: e.n, t: e.t ?? null, c: null, g: [e.x ?? e.g[0], e.y ?? e.g[1]] as [number, number],
+      n: e.n, t: e.t ?? null, c: e.c ?? null,
+      ...(e.lits ? { lits: Number(e.lits) } : {}),
+      ...(e.ch ? { ch: Number(e.ch) } : {}),
+      g: [e.g[0], e.g[1]] as [number, number],
     }));
     const apres = fusionner(avant);
     fondus += avant.length - apres.length;
     const corps = JSON.stringify({
       z: ZOOM, x: tuile.x, y: tuile.y, total: tuile.total,
-      l: apres.map((h) => ({ n: h.n, ...(h.t ? { t: h.t } : {}), g: h.g })),
+      /* ⚠️ Les champs absents ne sont PAS écrits : sur 628 605 entrées, un
+         `"c":null` de plus par ligne pèse plus que l'information qu'il porte. */
+      l: apres.map((h) => ({
+        n: h.n,
+        ...(h.t ? { t: h.t } : {}),
+        ...(h.c ? { c: h.c } : {}),
+        ...(h.lits ? { lits: h.lits } : {}),
+        ...(h.ch ? { ch: h.ch } : {}),
+        g: h.g,
+      })),
     }) + "\n";
     const dossier = resolve(SORTIE, String(ZOOM), String(tuile.x));
     mkdirSync(dossier, { recursive: true });

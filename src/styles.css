@@ -4346,6 +4346,54 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
 .monde-choisi-nom { margin: 0; font-weight: 600; color: var(--nuit); }
 .monde-choisi-dire { margin: 2px 0 0; font-size: var(--t-s); color: var(--doux, #6e6e73); }
 
+/* ══ LA FICHE DEVIENT UNE FEUILLE — 15/11/2026 ════════════════════════════
+   🔴 Elle ne portait qu'un nom et un type ; elle porte maintenant « Y aller »,
+      « Partir d'ici » et trois promenades — la fonction de mana.bzh, demandée
+      sur la surface commune.
+   ⚠️ ELLE DESCEND SUR L'ACCUEIL VIVANT, et c'est la TROISIÈME collision du
+      jour avec la marque (après le compteur de sites et le panneau de
+      calques) : tout ce qui se pose sur la carte vise le haut de l'écran,
+      où « MANA / home.org » tient 48→121 px.
+   ⭐ Le bas est d'ailleurs sa vraie place : c'est une réponse à un geste, et
+      le pouce vit en bas — c'est déjà là que la carte du territoire la met.
+      Même ancrage que le mot de la carte, juste au-dessus de la recherche. */
+[data-visage="home"] .monde-fond[data-vivante] .monde-choisi {
+  top: auto;
+  bottom: calc(var(--reserve-barre) + 72px);
+  max-height: calc(100dvh - var(--reserve-barre) - 220px);
+  overflow-y: auto; overscroll-behavior: contain;
+}
+.monde-choisi .terr-actions { margin-top: 10px; }
+/* ⚠️ Un mot d'état, pas une alerte : « nous n'avons pas encore le réseau
+   ici » n'est pas une panne, c'est une limite de couverture. */
+.monde-choisi-mot {
+  margin: 10px 0 0; font-size: var(--t-xs); line-height: 1.5;
+  color: var(--doux, #6e6e73);
+}
+.monde-props { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 2px; }
+/* ⭐ LE RANG EST UNE PASTILLE, et c'est la même que sur la carte du
+   territoire : la n° 2 de la liste est la n° 2 de la carte. Un numéro qui ne
+   se retrouve pas sur le plan ne numérote rien. */
+.monde-prop {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center;
+  gap: 10px; padding: 8px 6px; border-radius: var(--r-s, 8px);
+  color: var(--nuit); text-decoration: none;
+}
+.monde-prop:hover { background: rgb(25 43 67 / 6%); }
+.monde-prop-rang {
+  width: 22px; height: 22px; display: grid; place-items: center;
+  border-radius: 50%; background: var(--ocre); color: #fff;
+  font: 700 12px/1 var(--sans);
+}
+.monde-prop-nom {
+  font-size: var(--t-s); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* ⚠️ `tabular-nums` : trois distances alignées se comparent d'un coup d'œil,
+   et c'est pour les comparer qu'elles sont là. */
+.monde-prop-m {
+  font-size: var(--t-xs); color: var(--doux, #6e6e73); font-variant-numeric: tabular-nums;
+}
+
 
 /* ══ L'OMBRE PORTÉE DE LA BARRE — 14/11/2026 ════════════════════════════
    🔴 « La bottom bar vient s'afficher dessus avec de l'ombre (effet 3D). »
@@ -4542,3 +4590,42 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
 [data-visage="home"] .monde-fond[data-vivante] .monde-calques {
   top: 140px;
 }
+
+
+[data-visage="home"] .monde-choisi {
+  background: var(--bulle); color: var(--bulle-texte);
+  -webkit-backdrop-filter: var(--bulle-flou); backdrop-filter: var(--bulle-flou);
+  border-color: var(--bulle-trait);
+}
+[data-visage="home"] .monde-choisi-nom { color: var(--bulle-texte); }
+[data-visage="home"] .monde-choisi-dire,
+[data-visage="home"] .monde-choisi-mot,
+[data-visage="home"] .monde-prop-m { color: var(--bulle-texte-doux); }
+[data-visage="home"] .monde-prop { color: var(--bulle-texte); }
+[data-visage="home"] .monde-prop:hover { background: var(--bulle-survol); }
+[data-visage="home"] .monde-prop-rang {
+  background: var(--action); color: var(--action-texte);
+}
+/* ⚠️ Le mot de la carte portait lui aussi sa propre matière. */
+[data-visage="home"] .monde-mot {
+  background: var(--bulle); color: var(--bulle-texte);
+  border-color: var(--bulle-trait);
+}
+
+/* 🔴 LE CHIP ACTIF ÉTAIT BLANC SUR BLANC — mesuré à l'écran le 15/11/2026 :
+   « Tous » rendait `background rgb(255,255,255)` ET `color rgb(255,255,255)`.
+   ⭐ LA CAUSE EST UNE SPÉCIFICITÉ, PAS UNE COULEUR. `.terr-genres .ot-filtre`
+      (0,2,0) pose `color: var(--bulle-texte)` et bat `.ot-filtre-actif`
+      (0,1,0), qui pose `color: var(--action-texte)`. Sur le kaki de mana.bzh
+      la craie sur l'ocre reste lisible, donc le défaut y dormait ; en noir et
+      blanc, les deux tokens tombent sur la même valeur et l'étiquette
+      disparaît. C'est le piège que cette feuille documente déjà à propos de
+      `.ot-entete .ot-filtre-actif` — même forme, autre endroit.
+   ⚠️ On reprend donc la main avec la MÊME spécificité, et seulement sous le
+      visage qui a changé de palette. */
+[data-visage="home"] .terr-genres .ot-filtre-actif,
+[data-visage="home"] .monde-calques .ot-filtre-actif {
+  color: var(--action-texte);
+}
+/* ⚠️ Et le genre choisi, lui, garde sa teinte de pin : c'est de la donnée. */
+[data-visage="home"] .terr-genre { color: var(--bulle-texte); }
