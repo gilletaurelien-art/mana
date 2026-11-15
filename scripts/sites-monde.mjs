@@ -296,14 +296,31 @@ let total = 0, tuiles = 0, octets = 0, plafonnees = 0, anonymes = 0;
 const desaccords = [];
 /** Ce que CE passage a écrit — voir la purge, tout en bas. */
 const ecrites = new Set();
+/** Les tuiles qu'un même passage aurait écrites deux fois — voir le garde. */
+const doubles = [];
 for (let col = deb; col <= fin; col++) {
   const lonMin = -180 + col * 45, lonMax = lonMin + 45;
+  /* 🔴 LE FILTRE DE COLONNE LIT LA MÊME LONGITUDE QUE LE CALCUL DE TUILE —
+     corrigé le 15/11/2026. Il lisait `ST_X(r.geom)` brut pendant que `tx` se
+     calcule sur `x`, ARRONDI à 4 décimales. Un point à -135,00003° appartient
+     donc à la colonne 2 pour le filtre et à une tuile de la colonne 1 pour le
+     découpage : la tuile est écrite par les DEUX colonnes, et la seconde
+     écriture écrase la première. Mesuré avant correction : 5 tuiles écrites
+     deux fois, 8 points perdus — et le script annonçait 11 728 tuiles quand
+     le disque en portait 11 723.
+     ⭐ 8 sur 2,4 millions : trop peu pour se voir, et c'est bien le problème.
+        Un découpage qui n'emploie pas la même valeur que son filtre perd ses
+        bords en silence.
+     ⚠️ ET L'EXPLICATION VIT ICI, PAS DANS LE GABARIT SQL : une apostrophe
+        inverse dans un littéral de gabarit le referme. Première rédaction
+        refusée par `node --check`, quarante lignes plus bas. */
   const tuilesLues = demanderJson(`
     WITH g AS (
       SELECT r.titre AS n, r.mots[1] AS c,
              round(ST_X(r.geom)::numeric, 4) AS x, round(ST_Y(r.geom)::numeric, 4) AS y
         ${GISEMENT}
-         AND ST_X(r.geom) >= ${lonMin} AND ST_X(r.geom) < ${lonMax}),
+         AND round(ST_X(r.geom)::numeric, 4) >= ${lonMin}
+         AND round(ST_X(r.geom)::numeric, 4) < ${lonMax}),
     formes(c, forme) AS (VALUES ${TABLE_FORMES}),
     t AS (
       SELECT *,
@@ -351,6 +368,11 @@ for (let col = deb; col <= fin; col++) {
        ici il lit toujours la même chose. */
     const corps = JSON.stringify(tuile) + "\n";
     writeFileSync(resolve(dossier, `${ty}.json`), corps, "utf8");
+    /* ⛔ UNE TUILE ÉCRITE DEUX FOIS EST UNE TUILE AMPUTÉE : chaque écriture
+       ne porte que les points de SA colonne, donc la seconde efface ce que la
+       première avait posé. C'est l'accident qu'on vient de corriger ; le
+       garde reste, parce qu'un découpage se retouche. */
+    if (ecrites.has(`${tx}/${ty}`)) doubles.push(`${tx}/${ty}`);
     ecrites.add(`${tx}/${ty}`);
     octets += Buffer.byteLength(corps);
     tuiles++; total += l.length;
@@ -364,6 +386,21 @@ console.log(`\n✓ ${tuiles} tuiles · ${total.toLocaleString("fr-FR")} lieux po
   + `${Math.round(octets / 1024 / 1024)} Mo · ${plafonnees} tuile(s) plafonnée(s) · `
   + `${anonymes.toLocaleString("fr-FR")} anonyme(s)`);
 if (!existsSync(SORTIE)) { console.error("🔴 rien n'a été écrit"); process.exit(1); }
+if (doubles.length) {
+  console.error(`\n🔴 ${doubles.length} tuile(s) écrite(s) DEUX fois dans ce passage.`);
+  console.error("   Chaque écriture ne porte que les points de sa colonne : la");
+  console.error("   seconde efface ce que la première avait posé. Le découpage et");
+  console.error("   le filtre de colonne ne lisent pas la même longitude.");
+  for (const d of doubles.slice(0, 8)) console.error(`   · tuile ${d}`);
+  process.exit(1);
+}
+/* ⚠️ ET LE COMPTE ANNONCÉ EST CELUI DES FICHIERS, pas des écritures : c'est
+   l'écart entre les deux qui avait trahi le défaut (11 728 annoncées, 11 723
+   sur le disque). Les deux doivent désormais coïncider. */
+if (tuiles !== ecrites.size) {
+  console.error(`\n🔴 ${tuiles} écriture(s) pour ${ecrites.size} tuile(s) distincte(s).`);
+  process.exit(1);
+}
 if (desaccords.length) {
   console.error(`\n🔴 ${desaccords.length} entrée(s) où SQL et estAnonyme() ne sont PAS d'accord.`);
   console.error("   Le tri du plafond et le drapeau `a` suivraient alors deux règles.");
