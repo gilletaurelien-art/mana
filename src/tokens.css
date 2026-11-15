@@ -594,7 +594,17 @@
       plus de 7:1, là où un gris moyen tomberait sous 4,5. C'est la leçon
       déjà écrite dans `tokens.css` — « une opacité est un contraste
       déguisé » — appliquée dans l'autre sens. */
-[data-visage="home"] {
+/* 🔴 `:root[…]` ET NON `[…]` SEUL — mesuré à l'écran le 15/11/2026 : le
+   bouton « Partir d'ici » rendait blanc sur blanc, et `--action-texte` y
+   valait `#ffffff` alors que ce bloc pose `#0b0b0c`.
+   ⭐ LA CAUSE EST UNE SPÉCIFICITÉ, POUR LA DEUXIÈME FOIS DANS LA MÊME HEURE.
+      `:root[data-theme="dark"]` pèse (0,2,0) ; `[data-visage="home"]` ne
+      pesait que (0,1,0), donc le thème sombre gagnait sur le visage, quel que
+      soit l'ordre des lignes. `:root[data-visage="home"]` met les deux à
+      égalité, et c'est alors le dernier écrit qui tranche — celui-ci.
+   ⚠️ Une palette qui ne s'applique pas ne casse rien : elle rend l'ancienne.
+      C'est pour ça qu'on la VÉRIFIE À L'ÉCRAN, et pas en relisant le fichier. */
+:root[data-visage="home"] {
   /* le verre : noir, uni, sans dégradé — un dégradé coloré est une couleur */
   --bulle:            rgb(10 10 11 / 66%);
   --bulle-unie:       #121214;
