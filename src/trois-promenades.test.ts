@@ -99,3 +99,53 @@ it("le graphe de la presqu'île est là (sinon les tests ci-dessus se sautent)",
   expect(present, `graphe absent : ${CHEMIN.pathname} — voir docs/graphe-pipeline.md`)
     .toBe(true);
 });
+
+/**
+ * 🔴 LE CAP DE LA CHÈVRE — le cas qui a fait mentir la fiche, le 15/11/2026.
+ *    Elle annonçait « Aucun chemin ne passe assez près » ; mesuré, le point
+ *    EST accroché, et c'est la liste des destinations à portée qui est vide.
+ *    Deux causes, un seul message.
+ *
+ * ⭐ CE TEST FIGE LA DISTINCTION, PAS LA DONNÉE. Avec l'inventaire breton
+ *    COMPLET (1 318 lieux nommés dans ce secteur), le Cap rend bien trois
+ *    promenades ; avec ce que la carte du monde en sert (627 nommés, parce
+ *    que la tuile est plafonnée à 1 500 sur 4 665), il n'en rend aucune.
+ *    Le même point, deux réponses, selon ce qu'on lui donne à viser — donc
+ *    on éprouve la RÈGLE : accroché ne veut pas dire « il y a quelque chose
+ *    à portée ».
+ */
+describe.skipIf(!present)("accroché n'est pas « il y a quelque chose à portée »", () => {
+  const g = JSON.parse(readFileSync(CHEMIN, "utf8")) as Graphe;
+  const ix = indexer(g, new Set());
+  const cap: [number, number] = [-4.5527, 48.1687];
+
+  it("le Cap de la Chèvre EST sur le réseau", () => {
+    expect(accroche(accrocherUn(g, ix, cap)),
+      "si ce point cesse d'être accroché, la distinction ne se mesure plus ici")
+      .toBe(true);
+  });
+
+  /* ⛔ Un point accroché, zéro destination : l'état que la fiche doit nommer
+     « rien à portée », jamais « pas de chemin ». */
+  it("sans destination, un point accroché ne rend rien — et ce n'est pas « hors chemin »", () => {
+    const props = propositionsAutour(g, ix, accrocherUn(g, ix, cap), [], [], []);
+    expect(props.length).toBe(0);
+    expect(accroche(accrocherUn(g, ix, cap))).toBe(true);
+  });
+
+  it("avec l'inventaire entier, le même point rend bien des promenades", () => {
+    const vus = new Set<string>();
+    const spots = inv.lieux.filter((l) => {
+      if (!l.n || l.n === (inv.libelles[l.c] ?? l.c) || vus.has(l.n)) return false;
+      vus.add(l.n); return true;
+    });
+    const positions = spots.map((s) => s.g as readonly [number, number]);
+    const accroches = accrocherTous(g, ix, positions, { ecartSiLoin: false });
+    const props = propositionsAutour(
+      g, ix, accrocherUn(g, ix, cap), spots, positions, accroches);
+    /* ⭐ C'EST LA MESURE QUI DIT QUE LE PLAFOND COÛTE QUELQUE CHOSE : le même
+       point, le même graphe, et trois promenades au lieu de zéro — la seule
+       différence est le nombre de destinations qu'on a bien voulu servir. */
+    expect(props.length).toBeGreaterThan(0);
+  });
+});

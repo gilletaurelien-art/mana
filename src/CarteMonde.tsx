@@ -664,9 +664,19 @@ export function CarteMonde(
           rien ici.
         </p>
       )}
-      {etatProp?.etat === "aucune" && (
+      {etatProp?.etat === "hors-chemin" && (
         <p className="monde-choisi-mot">
-          Aucun chemin ne passe assez près pour composer une promenade d'ici.
+          Aucun chemin ne passe assez près de ce point pour en partir à pied.
+        </p>
+      )}
+      {etatProp?.etat === "aucune" && (
+        /* ⚠️ ON DIT CE QU'ON A REGARDÉ. « Rien à portée » tout court laisse
+           croire que l'endroit est désert ; le nombre dit qu'on a cherché, et
+           dans quoi. Le compositeur vise entre 600 m et 4 km : plus près,
+           ce n'est pas une promenade ; plus loin, ce n'est plus « autour ». */
+        <p className="monde-choisi-mot">
+          Un chemin passe ici, mais aucun des {etatProp.destinations.toLocaleString("fr-FR")} lieux
+          connus alentour n'est à portée de promenade (600 m à 4 km).
         </p>
       )}
       {etatProp?.etat === "ok" && (

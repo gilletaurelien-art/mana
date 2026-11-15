@@ -43,8 +43,20 @@ export type EtatPropositions =
   | { etat: "chargement"; territoire: Territoire }
   /** Il n'a pas pu être lu — ce n'est PAS « il n'y a rien ici ». */
   | { etat: "echec"; territoire: Territoire }
-  /** Le réseau est là, et aucune boucle ne part d'ici. */
-  | { etat: "aucune"; territoire: Territoire }
+  /**
+   * 🔴 DEUX SITUATIONS, DEUX ÉTATS — séparés le 15/11/2026 après les avoir
+   *    confondus. La fiche annonçait « Aucun chemin ne passe assez près » sur
+   *    le Cap de la Chèvre ; mesuré sur le vrai graphe : le point EST accroché
+   *    (`accroche` vrai), il y a 558 destinations, et zéro proposition. Le
+   *    chemin passe — c'est la liste des lieux à portée qui est vide.
+   * ⛔ Un message qui nomme une cause qu'on n'a pas vérifiée envoie chercher
+   *    au mauvais endroit, et il a l'air d'un diagnostic. C'est la faute que
+   *    ce dépôt répare depuis deux jours, sous sa cinquième forme.
+   */
+  /** Aucun chemin ne passe assez près du point lui-même. */
+  | { etat: "hors-chemin"; territoire: Territoire }
+  /** Le point est sur le réseau, mais rien de connu n'est à portée. */
+  | { etat: "aucune"; territoire: Territoire; destinations: number }
   | { etat: "ok"; territoire: Territoire; propositions: Proposition<Destination>[] };
 
 /* ⭐ UN CACHE PAR SLUG, HORS DU COMPOSANT. Un graphe pèse de 0,8 à 2,9 Mo :
@@ -151,11 +163,11 @@ export function usePropositions(
     /* ⚠️ Un point DANS le territoire peut n'être accroché à rien : une île,
        un bout de côte sans chemin. Ce n'est pas « hors réseau » — le réseau
        est là, il ne passe pas par ici. */
-    if (!accroche(depuis)) return { etat: "aucune", territoire };
+    if (!accroche(depuis)) return { etat: "hors-chemin", territoire };
     const propositions = propositionsAutour(
       graphe, ix, depuis, spots, positions, accroches);
     return propositions.length
       ? { etat: "ok", territoire, propositions }
-      : { etat: "aucune", territoire };
+      : { etat: "aucune", territoire, destinations: spots.length };
   }, [point, territoire, rate, graphe, ix, accroches, spots, positions]);
 }
