@@ -2,7 +2,6 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 export default defineConfig({
-  plugins: [react()],
   /* ⭐ UNE SEULE DÉCLARATION DU PRÉFIXE, ET ELLE EST VARIABLE — 1/11.
      GitHub Pages sert sous `/mana/` : sans base, les bundles 404 et la page
      reste blanche. Mais la même application doit pouvoir servir la RACINE
@@ -13,6 +12,7 @@ export default defineConfig({
         l'écran est blanc, et rien ne dit pourquoi. Un test tient la règle. */
   base: process.env.MANA_BASE ?? "/mana/",
   plugins: [
+    react(),
     {
       /* 🔴 LE TITRE STATIQUE EST CE QU'UN ROBOT LIT SANS JAVASCRIPT, et il
          était figé à « MANA.bzh — Promenades & découvertes en Bretagne ».
