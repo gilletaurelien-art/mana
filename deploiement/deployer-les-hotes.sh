@@ -79,7 +79,7 @@ rouge() { printf '\033[31m%s\033[0m\n' "$*"; }
 #    le lançait d'abord, le rsync vers manahome expédierait le build de
 #    mana.bzh : des graphes cherchés en relatif sur un hôte qui n'en sert pas,
 #    donc une carte vide — et un 200 partout.
-printf '\033[1m→ 1/3  manahome.org\033[0m\n'
+printf '\033[1m→ 1/4  manahome.org\033[0m\n'
 npm run build:manahome
 
 [ -f site/index.html ] || { rouge "⛔ site/index.html absent : rien à déposer"; exit 1; }
@@ -127,7 +127,7 @@ echo
 # ⭐ MÊME SOURCE, TROISIÈME VISAGE. Seul le titre change
 #    (`npm run build:manafrance`) : les graphes et les tuiles du monde restent
 #    servis par mana.bzh en absolu, donc AUCUNE donnée n'est dupliquée ici.
-printf '\033[1m→ 2/3  manafrance.org\033[0m\n'
+printf '\033[1m→ 2/4  manafrance.org\033[0m\n'
 npm run build:manafrance
 
 [ -f site/index.html ] || { rouge "⛔ site/index.html absent : rien à déposer"; exit 1; }
@@ -159,8 +159,30 @@ done
 vert "✓ manafrance.org sert cette version ($MARQUEUR_FR)"
 echo
 
-printf '\033[1m→ 3/3  mana.bzh\033[0m\n'
+printf '\033[1m→ 3/4  mana.bzh\033[0m\n'
 npm run deploy:bzh
+
+# ── 4. LE RELAIS RÉPOND-IL À CHACUN DE CES HÔTES ? ──────────────────────────
+#
+# 🔴 POSÉ LE 15/11/2026, APRÈS UN DÉFAUT MESURÉ EN PRODUCTION LE SOIR MÊME.
+#    manafrance.org venait d'être servi ; sa carte satellite est restée
+#    BLANCHE. Les trois hôtes répondaient 200 partout, le bon bundle était en
+#    ligne, la charte était juste — et le relais de mana.bzh, qui sert les
+#    tuiles, les sprites et les polices aux DEUX autres domaines, ne nommait
+#    pas manafrance dans ses listes blanches d'origines. Le navigateur
+#    refusait chaque fichier, sans qu'aucune erreur n'apparaisse à l'écran.
+#
+# ⛔ AUCUN CONTRÔLE DE CE SCRIPT NE POUVAIT LE VOIR. Ils mesurent tous ce que
+#    l'hôte SERT (le bundle, les routes) ; celui-ci mesure ce que l'hôte a le
+#    droit d'ALLER CHERCHER. Un déploiement parfait sur un hôte sans droit de
+#    lecture donne une page qui s'affiche et un produit qui ne marche pas.
+#
+# ⭐ ET IL MESURE L'EFFET, PAS LA CONFIGURATION : il demande les ressources
+#    avec un en-tête `Origin` et regarde ce qui revient. Un Caddyfile juste
+#    mais pas rechargé passerait une relecture et échoue ici.
+echo
+printf '\033[1m→ 4/4  le relais sert-il ces hôtes ?\033[0m\n'
+node scripts/verifier-relais-cors.mjs
 
 echo
 vert "✓ les TROIS hôtes servent le commit $(git rev-parse --short HEAD)"
