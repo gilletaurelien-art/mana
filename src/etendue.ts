@@ -29,7 +29,7 @@ import { TERRITOIRES, deContree } from "./territoires";
 
 export interface Etendue {
   /** l'identifiant, pour les tests et les traces */
-  clef: "monde" | "france" | "bretagne";
+  clef: "monde" | "france" | "bto";
   /** ce qu'on en dit à l'écran, article compris */
   nom: string;
   /** [ouest, sud, est, nord] */
@@ -56,26 +56,90 @@ export interface Etendue {
   ouverture: [number, number];
   /** Le zoom d'ouverture — jamais sous 6, voir la note ci-dessus. */
   zoom: number;
+  /**
+   * 🔴 LA CARTE SE LIMITE-T-ELLE À CETTE BOÎTE ? — 15/11/2026.
+   *
+   * ⛔ JUSQU'ICI, UNE ÉTENDUE NE DÉCIDAIT QUE DE L'OUVERTURE. On pouvait
+   *    glisser de Crozon jusqu'à Nantes : le champ `boite` existait et ne
+   *    retenait rien. « La carte se limite au Finistère » (Aurélien) demande
+   *    un vrai cadre, pas un point de départ — `maxBounds` côté maplibre.
+   * ⭐ ET C'EST UN ARGUMENT DE VENTE AVANT D'ÊTRE UN RÉGLAGE : on va demander
+   *    à des EPCI de financer la promotion de LEURS balades. Une carte qui
+   *    s'arrête à leur territoire dit que l'outil est le leur.
+   * ⚠️ `monde` ne se borne PAS, et ce n'est pas un oubli : manahome revendique
+   *    la Terre. Un cadre y serait une frontière que personne n'a posée.
+   */
+  cadre: boolean;
 }
 
 /**
- * ⭐ LA BRETAGNE SE DÉRIVE, elle ne se recopie pas : c'est l'union des
- *    emprises réellement moissonnées, la même que `TOUT` emploie pour cadrer
- *    la carte du territoire. Ajouter un territoire breton l'étend tout seul.
- * ⛔ Et la leçon d'hier tient : on dérive de la BONNE source. Ici la question
- *    est « que revendique mana.bzh ? », et la réponse est bien ce qui a été
- *    moissonné — pas l'inventaire des lieux, qui déborde ces emprises de 79 %
- *    (voir `ETENDUE` dans `lieux.ts`).
+ * 🔴 LE CADRE DE mana.bzh EST CELUI DE BREST TERRES OCÉANES — 15/11/2026,
+ *    décision d'Aurélien, et c'est une décision COMMERCIALE avant d'être
+ *    technique : « je vais présenter mana.bzh à BTO, puis demander un
+ *    financement aux EPCI du nord Finistère pour promouvoir leurs balades
+ *    d'Office de Tourisme ». Une carte qui laisse glisser jusqu'à Nantes dit
+ *    « vous êtes une région parmi d'autres » ; une carte qui s'arrête à leur
+ *    territoire dit « cet outil est le vôtre ».
+ *
+ * ⛔ CE QU'IL REMPLACE PORTAIT UN NOM QUI MENTAIT. `ETENDUES.bretagne`
+ *    s'appelait « la Bretagne » et valait l'union des DEUX territoires
+ *    moissonnés — Crozon et l'Aulne : **45 km sur 21**. Le cadre BTO est donc
+ *    un AGRANDISSEMENT, pas une restriction, et personne ne s'en serait douté
+ *    en lisant le nom.
+ *
+ * ⚠️ LA BOÎTE EST ÉCRITE, ET C'EST ASSUMÉ — même raison que `FRANCE` plus
+ *    bas : c'est un périmètre administratif, pas une valeur vivante. Mais
+ *    elle n'est pas INVENTÉE : elle est l'union des boîtes des six EPCI, lues
+ *    dans `epci_index` le 15/11/2026, les six trouvées sur six :
+ *
+ *      Brest Métropole                        [-4.6310, 48.2228, -4.3445, 48.4749]
+ *      CC du Pays d'Iroise                    [-5.1398, 48.2620, -4.6187, 48.5753]
+ *      CC du Pays des Abers                   [-4.6528, 48.4629, -4.4113, 48.6430]
+ *      CC Lesneven Côte des Légendes          [-4.4346, 48.4476, -4.2193, 48.6779]
+ *      CA du Pays de Landerneau-Daoulas       [-4.3419, 48.2820, -4.0941, 48.5445]
+ *      CC Presqu'île de Crozon-Aulne maritime [-4.5273, 48.1614, -4.2164, 48.3887]
+ *
+ *    La recette, pour la refaire le jour où une EPCI entre ou sort :
+ *      SELECT ST_Extent(boite) FROM public.epci_index
+ *       WHERE departement_code='29' AND libelle IN (…les six…);
+ *
+ * ⭐ ET LE PÉRIMÈTRE SUIT LE FINANCEMENT, PAS L'INVERSE. Le jour où Morlaix
+ *    ou Quimper entrent au tour de table, cette boîte grandit — c'est une
+ *    ligne à changer, pas une architecture.
  */
-function boiteBretonne(): [number, number, number, number] {
-  const ts = deContree(TERRITOIRES[0].contree);
+const BTO_EPCI: [number, number, number, number] = [-5.1398, 48.1614, -4.0941, 48.6779];
+
+/**
+ * 🔴 ET LE CADRE DÉBORDE LES SIX EPCI DE 5 km À L'EST — arbitrage d'Aurélien,
+ *    15/11/2026, sur une mesure que le garde a sortie.
+ *
+ * ⛔ NOTRE TERRITOIRE « AULNE MARITIME » NE TIENT PAS DANS BTO. Il va jusqu'à
+ *    -4,0210 (Châteaulin, Port-Launay) quand l'union des six s'arrête à
+ *    -4,0941 : **5 km dehors**. Plus étrange encore, il va **14 km plus à
+ *    l'est que l'EPCI qui porte son nom** (« Presqu'île de Crozon-Aulne
+ *    maritime » s'arrête à -4,2164) : nous avons moissonné jusque dans
+ *    Pleyben-Châteaulin-Porzay, qui n'est pas sollicitée.
+ * ⭐ Un cadre DUR qui ne contient pas ce qu'on a moissonné enferme la carte
+ *    hors de ses propres données : le haut du halage de l'Aulne serait
+ *    devenu inatteignable, sans un mot d'explication — un `maxBounds` ne
+ *    s'explique pas, il résiste.
+ *
+ * ⚠️ ET ON NE RAJOUTE PAS 0,073° À LA MAIN. Le cadre est l'UNION de deux
+ *    sources — le périmètre qu'on vend, et ce qu'on a moissonné — donc il
+ *    suit tout seul le jour où un territoire s'étend ou qu'une EPCI entre.
+ *    Une marge écrite en dur, elle, serait juste aujourd'hui et fausse au
+ *    premier ajout, sans que personne ne la relise.
+ */
+function cadreDeManaBzh(): [number, number, number, number] {
+  const notres = deContree(TERRITOIRES[0].contree).map((t) => t.emprise);
   return [
-    Math.min(...ts.map((t) => t.emprise[0])),
-    Math.min(...ts.map((t) => t.emprise[1])),
-    Math.max(...ts.map((t) => t.emprise[2])),
-    Math.max(...ts.map((t) => t.emprise[3])),
+    Math.min(BTO_EPCI[0], ...notres.map((e) => e[0])),
+    Math.min(BTO_EPCI[1], ...notres.map((e) => e[1])),
+    Math.max(BTO_EPCI[2], ...notres.map((e) => e[2])),
+    Math.max(BTO_EPCI[3], ...notres.map((e) => e[3])),
   ];
 }
+const BTO = cadreDeManaBzh();
 
 /**
  * ⚠️ LA FRANCE EST ÉCRITE, ET C'EST ASSUMÉ : c'est une frontière, pas une
@@ -110,11 +174,12 @@ const centre = (b: [number, number, number, number]): [number, number] =>
 export const ETENDUES: Record<Etendue["clef"], Etendue> = {
   /* ⚠️ [6, 48] : l'Europe de l'Ouest. Un point de départ assumé, pas une
      mesure — voir `ouverture` ci-dessus. */
-  monde: { clef: "monde", nom: "le monde", boite: MONDE, ouverture: [6, 48], zoom: 6 },
+  monde: { clef: "monde", nom: "le monde", boite: MONDE, ouverture: [6, 48], zoom: 6,
+           cadre: false },
   france: { clef: "france", nom: "la France", boite: FRANCE,
-            ouverture: centre(FRANCE), zoom: 6 },
-  bretagne: { clef: "bretagne", nom: "la Bretagne", boite: boiteBretonne(),
-              ouverture: centre(boiteBretonne()), zoom: 9 },
+            ouverture: centre(FRANCE), zoom: 6, cadre: true },
+  bto: { clef: "bto", nom: "Brest terres océanes", boite: BTO,
+         ouverture: centre(BTO), zoom: 9, cadre: true },
 };
 
 /**
@@ -127,7 +192,7 @@ export const ETENDUES: Record<Etendue["clef"], Etendue> = {
  *    personne n'a posée. La base commune est la bonne réponse par défaut.
  */
 export function etendueDe(v: Visage): Etendue {
-  if (v === "bzh") return ETENDUES.bretagne;
+  if (v === "bzh") return ETENDUES.bto;
   /* 🔴 LA LIGNE QUI MANQUAIT PENDANT DEUX HEURES — voir la note de `FRANCE`
      ci-dessus. Sans elle, manafrance.org tombait dans le repli du monde :
      une carte satellite ouverte sur l'Europe de l'Ouest, pour un site qui ne
@@ -143,3 +208,19 @@ export const centreDe = (e: Etendue): [number, number] => centre(e.boite);
 /** Le point est-il dans l'étendue ? */
 export const dansLEtendue = (e: Etendue, lon: number, lat: number): boolean =>
   lon >= e.boite[0] && lon <= e.boite[2] && lat >= e.boite[1] && lat <= e.boite[3];
+
+/**
+ * LE CADRE À DONNER À MAPLIBRE — `[[ouest, sud], [est, nord]]`, ou rien.
+ *
+ * ⭐ IL SE DÉRIVE DE L'ÉTENDUE, IL NE SE RECOPIE PAS. Une seconde écriture
+ *    des bornes dans `CarteMonde` divergerait de `boite` au premier
+ *    ajustement de périmètre — et le symptôme serait muet : une carte qui
+ *    s'arrête ailleurs que là où le produit le promet.
+ * ⚠️ Rend `undefined` plutôt que la boîte du monde : passer
+ *    `[[-180,-85],[180,85]]` à maplibre n'est PAS équivalent à ne rien
+ *    passer — ça interdit de franchir l'antiméridien, sur une carte qui
+ *    revendique la Terre.
+ */
+export const cadreDe = (e: Etendue):
+  [[number, number], [number, number]] | undefined =>
+  e.cadre ? [[e.boite[0], e.boite[1]], [e.boite[2], e.boite[3]]] : undefined;

@@ -33,7 +33,7 @@ import { chargerOT, type ItineraireOT } from "./ot";
 import { avecOffice } from "./visage";
 /* 🔴 L'ÉTENDUE DÉCIDE OÙ LA CARTE S'OUVRE — architecture du 15/11/2026 :
    un produit, trois étendues (monde / France / Bretagne). Voir `etendue.ts`. */
-import { etendueDe } from "./etendue";
+import { etendueDe, cadreDe } from "./etendue";
 /* ⭐ LA MÊME TABLE QUE LA CARTE DU TERRITOIRE ET LES PASTILLES DE /balades-office :
    une couleur corrigée là se voit ici, et l'inverse. */
 import { couleurCategorie } from "./categories";
@@ -379,6 +379,20 @@ export function CarteMonde(
             étroite (la Bretagne), on serre d'un cran de plus. */
       center: depuisURL() ?? etendueDe(visage()).ouverture,
       zoom: depuisURL() ? 10 : etendueDe(visage()).zoom,
+      /* 🔴 LE CADRE DUR — 15/11/2026, et c'est une décision COMMERCIALE :
+         « la carte se limite au Finistère » (Aurélien), devenue le périmètre
+         de Brest terres océanes, celui des six EPCI qu'on va solliciter.
+         ⭐ Une carte qui s'arrête à leur territoire dit que l'outil est le
+            leur ; une carte qui glisse jusqu'à Nantes dit qu'ils sont une
+            région parmi d'autres.
+         ⚠️ IL VIENT DE L'ÉTENDUE, IL NE SE RECOPIE PAS ICI : deux écritures
+            des mêmes bornes divergeraient au premier changement de
+            périmètre, et la carte s'arrêterait ailleurs que là où le produit
+            le promet.
+         ⛔ `undefined` POUR LE MONDE, et pas la boîte terrestre : passer
+            `[[-180,-85],[180,85]]` interdirait de franchir l'antiméridien
+            sur une carte qui revendique la Terre. */
+      maxBounds: cadreDe(etendueDe(visage())),
       attributionControl: false,
       /* ⭐ EN FOND, ELLE PEUT ÊTRE VIVANTE — 15/11/2026, Aurélien :
          « j'ai demandé la carte en plein écran », et l'accueil de MANAhome

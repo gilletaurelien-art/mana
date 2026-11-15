@@ -1,11 +1,14 @@
 import { describe, it, expect } from "vitest";
-import { etendueDe, ETENDUES, centreDe, dansLEtendue } from "./etendue";
+import { etendueDe, ETENDUES, centreDe, dansLEtendue, cadreDe } from "./etendue";
 import { VISAGES } from "./visage";
 import { TERRITOIRES } from "./territoires";
 
 /**
  * 🔴 CE QUE CE FICHIER TIENT : « architecture commune de base = manahome.org /
  *    manafrance = la france only / mana.bzh = la bretagne seulement »
+ * 🔄 ET mana.bzh S'EST RESSERRÉ LE 15/11 : « la carte se limite au
+ *    Finistère », puis au périmètre de Brest terres océanes — les six EPCI
+ *    qu'Aurélien va solliciter. Le cadre est un argument de vente.
  *    (Aurélien, 15/11/2026). Un produit, trois étendues.
  */
 describe("l'étendue suit l'hôte", () => {
@@ -15,9 +18,16 @@ describe("l'étendue suit l'hôte", () => {
     expect(dansLEtendue(etendueDe("home"), -4.49, 48.24)).toBe(true);   // Crozon
   });
 
-  it("mana.bzh ne revendique que la Bretagne", () => {
+  /**
+   * 🔄 RETOURNÉ LE 15/11/2026 — ET LE NOM D'AVANT MENTAIT. Ce test exigeait
+   *    `clef === "bretagne"` pour une boîte qui valait l'union de Crozon et
+   *    de l'Aulne : 45 km sur 21. On ne jette pas le test, on le retourne :
+   *    ce qu'il protégeait — « mana.bzh ne revendique pas toute la France » —
+   *    vaut toujours, sous un périmètre qui porte enfin son vrai nom.
+   */
+  it("mana.bzh ne revendique que Brest terres océanes", () => {
     const e = etendueDe("bzh");
-    expect(e.clef).toBe("bretagne");
+    expect(e.clef).toBe("bto");
     expect(dansLEtendue(e, -4.49, 48.24), "Crozon").toBe(true);
     expect(dansLEtendue(e, 2.35, 48.86), "Paris").toBe(false);
     expect(dansLEtendue(e, 12.49, 41.89), "Rome").toBe(false);
@@ -26,17 +36,25 @@ describe("l'étendue suit l'hôte", () => {
   /* ⭐ LA BRETAGNE SE DÉRIVE. Ce test ne vérifie pas des nombres : il vérifie
      que la boîte EST l'union des emprises moissonnées. Un territoire breton
      ajouté demain doit l'étendre sans que personne n'y touche. */
-  it("la boîte bretonne est l'union des emprises moissonnées", () => {
+  /**
+   * 🔄 RETOURNÉ LE 15/11/2026, ET SA PRÉMISSE A DISPARU. Ce test exigeait que
+   *    la boîte SOIT l'union des emprises moissonnées — vrai tant que
+   *    l'étendue se dérivait d'elles. Le cadre vient désormais des six EPCI
+   *    de Brest terres océanes, qui est une tout autre source.
+   * ⭐ MAIS CE QU'IL PROTÉGEAIT TIENT TOUJOURS, ET IL COMPTE PLUS QU'AVANT :
+   *    un cadre DUR qui ne contiendrait pas ce qu'on a moissonné enfermerait
+   *    la carte hors de ses propres données. On n'exige plus l'égalité — on
+   *    exige l'INCLUSION, qui est la vraie promesse.
+   */
+  it("le cadre BTO contient tout ce qu'on a moissonné en Bretagne", () => {
     const bzh = TERRITOIRES.filter((t) => t.contree === TERRITOIRES[0].contree);
-    const e = ETENDUES.bretagne;
-    expect(e.boite[0]).toBe(Math.min(...bzh.map((t) => t.emprise[0])));
-    expect(e.boite[2]).toBe(Math.max(...bzh.map((t) => t.emprise[2])));
-    /* ⛔ Et chaque territoire breton y tient EN ENTIER : une union qui
-       perdrait un coin serait une promesse rognée, et personne ne le verrait
-       avant d'y marcher. */
+    expect(bzh.length, "aucun territoire breton : la mesure est vide")
+      .toBeGreaterThan(0);
     for (const t of bzh) {
-      expect(dansLEtendue(e, t.emprise[0], t.emprise[1]), `${t.slug} sud-ouest`).toBe(true);
-      expect(dansLEtendue(e, t.emprise[2], t.emprise[3]), `${t.slug} nord-est`).toBe(true);
+      expect(dansLEtendue(ETENDUES.bto, t.emprise[0], t.emprise[1]),
+        `${t.slug} sud-ouest tombe hors du cadre`).toBe(true);
+      expect(dansLEtendue(ETENDUES.bto, t.emprise[2], t.emprise[3]),
+        `${t.slug} nord-est tombe hors du cadre`).toBe(true);
     }
   });
 
@@ -64,8 +82,8 @@ describe("l'étendue suit l'hôte", () => {
   });
 
   it("le centre se déduit de la boîte", () => {
-    const c = centreDe(ETENDUES.bretagne);
-    expect(dansLEtendue(ETENDUES.bretagne, c[0], c[1])).toBe(true);
+    const c = centreDe(ETENDUES.bto);
+    expect(dansLEtendue(ETENDUES.bto, c[0], c[1])).toBe(true);
   });
 
   /**
@@ -89,7 +107,7 @@ describe("l'étendue suit l'hôte", () => {
      rester : deux valeurs écrites séparément divergeraient à la première
      retouche de l'emprise. */
   it("sur une étendue bornée, l'ouverture suit le centre", () => {
-    for (const e of [ETENDUES.bretagne, ETENDUES.france]) {
+    for (const e of [ETENDUES.bto, ETENDUES.france]) {
       expect(e.ouverture, e.clef).toEqual(centreDe(e));
     }
   });
@@ -119,8 +137,8 @@ describe("l'étendue suit l'hôte", () => {
    *    `etendueDe` ferait un test qui se contente d'être d'accord avec lui.
    */
   it("chaque visage servi a l'étendue que son domaine revendique", () => {
-    const attendu: Record<string, "monde" | "france" | "bretagne"> = {
-      bzh: "bretagne",   // la Bretagne seulement
+    const attendu: Record<string, "monde" | "france" | "bto"> = {
+      bzh: "bto",        // Brest terres océanes : les six EPCI sollicitées
       home: "monde",     // l'architecture commune de base
       france: "france",  // « manafrance = la france only »
       love: "monde",     // invitée : aucun territoire à elle
@@ -165,5 +183,69 @@ describe("l'étendue suit l'hôte", () => {
     /* Elle n'emprunte que deux écrans : lui donner la Bretagne l'enfermerait
        dans un territoire qu'elle ne revendique pas. */
     expect(etendueDe("love").clef).toBe("monde");
+  });
+
+  /* ═══ LE CADRE DUR — ce que la carte REFUSE de montrer ═══════════════════
+     🔴 JUSQU'AU 15/11/2026, `boite` ne retenait RIEN : une étendue ne
+        décidait que de l'ouverture, et on pouvait glisser de Crozon à
+        Nantes. « La carte se limite au… » demande un vrai cadre. */
+
+  it("les deux hôtes territoriaux ont un cadre, le monde n'en a pas", () => {
+    expect(cadreDe(ETENDUES.bto), "mana.bzh glisse hors de BTO").toBeDefined();
+    expect(cadreDe(ETENDUES.france), "manafrance glisse hors de France").toBeDefined();
+    /* ⛔ Et le monde n'en a PAS. Passer la boîte terrestre à maplibre n'est
+       pas équivalent à ne rien passer : ça interdit de franchir
+       l'antiméridien sur une carte qui revendique la Terre. */
+    expect(cadreDe(ETENDUES.monde), "manahome s'est vu poser une frontière")
+      .toBeUndefined();
+  });
+
+  it("le cadre est la boîte, dans l'ordre que maplibre attend", () => {
+    const c = cadreDe(ETENDUES.bto)!;
+    const b = ETENDUES.bto.boite;
+    expect(c).toEqual([[b[0], b[1]], [b[2], b[3]]]);
+    /* ⚠️ Sud-ouest d'abord, nord-est ensuite : inversés, maplibre rend une
+       boîte vide et la carte se fige sur un point. */
+    expect(c[0][0]).toBeLessThan(c[1][0]);
+    expect(c[0][1]).toBeLessThan(c[1][1]);
+  });
+
+  /**
+   * ⭐ LE GARDE QUI TIENT LA PROMESSE COMMERCIALE, PAS LE CODE.
+   *    Le cadre existe pour montrer à six EPCI que l'outil est le leur. Il
+   *    doit donc contenir leurs six territoires — et rien qui les dilue.
+   *    Les bornes viennent de `epci_index`, lues le 15/11/2026.
+   */
+  it("le cadre BTO contient les six EPCI sollicitées", () => {
+    const EPCI: [string, number, number, number, number][] = [
+      ["Brest Métropole",                 -4.6310, 48.2228, -4.3445, 48.4749],
+      ["Pays d'Iroise",                   -5.1398, 48.2620, -4.6187, 48.5753],
+      ["Pays des Abers",                  -4.6528, 48.4629, -4.4113, 48.6430],
+      ["Lesneven Côte des Légendes",      -4.4346, 48.4476, -4.2193, 48.6779],
+      ["Landerneau-Daoulas",              -4.3419, 48.2820, -4.0941, 48.5445],
+      ["Presqu'île de Crozon-Aulne",      -4.5273, 48.1614, -4.2164, 48.3887],
+    ];
+    for (const [nom, o, s2, e2, n] of EPCI) {
+      expect(dansLEtendue(ETENDUES.bto, o, s2), `${nom} sud-ouest`).toBe(true);
+      expect(dansLEtendue(ETENDUES.bto, e2, n), `${nom} nord-est`).toBe(true);
+    }
+    /* ⛔ ET IL NE DOIT PAS DÉBORDER SUR CE QU'ON NE SOLLICITE PAS. Un élu de
+       la Côte des Légendes qui voit Concarneau se demande ce qu'il finance. */
+    for (const [nom, lo, la] of [["Quimper", -4.1115, 47.9988],
+                                 ["Concarneau", -3.9204, 47.8736],
+                                 ["Morlaix", -3.8164, 48.5996],
+                                 ["Lorient", -3.3740, 47.7483]] as const) {
+      expect(dansLEtendue(ETENDUES.bto, lo, la), `${nom} est dans le cadre`).toBe(false);
+    }
+  });
+
+  /* ⚠️ Et le cadre reste PRATICABLE : son centre d'ouverture est dedans, et
+     il est assez large pour qu'une carte s'y déplace. 77 km sur 57. */
+  it("le cadre BTO est praticable", () => {
+    const [lo, la] = ETENDUES.bto.ouverture;
+    expect(dansLEtendue(ETENDUES.bto, lo, la)).toBe(true);
+    const b = ETENDUES.bto.boite;
+    expect(b[2] - b[0], "cadre trop étroit pour s'y déplacer").toBeGreaterThan(0.5);
+    expect(b[3] - b[1], "cadre trop plat pour s'y déplacer").toBeGreaterThan(0.3);
   });
 });
