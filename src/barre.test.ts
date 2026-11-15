@@ -120,3 +120,47 @@ describe("la barre du bas, par visage", () => {
     expect(estANous("/"), "l'accueil a quitté mana.bzh").toBe(true);
   });
 });
+
+describe("⛔ aucun hôte ne sert les passerelles d'un autre", () => {
+  /* 🔴 TROISIÈME FOIS QUE LE MÊME DÉFAUT MORD, EN DEUX JOURS. `visage()`
+     repliait sur « bzh », `entreesBarre` repliait sur mana.love, et chaque
+     fois le repli avait l'air délibéré. Le 15/11, manafrance.org — posé une
+     heure plus tôt — proposait EN LIGNE « Déesses » et « Mon compte » à des
+     visiteurs français.
+     ⭐ LE GARDE ÉNUMÈRE LES VISAGES ET COMPARE LEURS BARRES. Vérifier un cas
+        à la fois est précisément ce qui a laissé passer les trois : c'est
+        l'ARRIVÉE d'un visage non prévu qu'il faut rendre visible, pas la
+        justesse d'un visage connu. */
+  const VISAGES = ["bzh", "love", "home", "france"] as const;
+  const clefs = (v: (typeof VISAGES)[number]) => entreesBarre(v).map((e) => e.clef);
+
+  it("seul mana.love porte les passerelles de mana.love", () => {
+    for (const v of VISAGES) {
+      const k = clefs(v);
+      if (v === "love") continue;
+      expect(k, `${v} propose « Mon compte », qui est l'écran de mana.love`)
+        .not.toContain("compte");
+      expect(k, `${v} propose les déesses de mana.love`).not.toContain("deesses");
+    }
+  });
+
+  it("seul mana.bzh porte l'Office de tourisme de Crozon", () => {
+    const avec = VISAGES.filter((v) => clefs(v).includes("office"));
+    expect(avec).toEqual(["bzh"]);
+  });
+
+  it("⛔ un visage inconnu ne doit PAS ressembler à un visage connu par hasard", () => {
+    /* ⚠️ C'est la mesure qui aurait crié le 14 ET le 15 : deux visages
+       distincts dont la barre est identique signalent un repli, pas un
+       choix. mana.bzh et mana.love diffèrent ; manahome et manafrance
+       partagent délibérément la même forme (même produit, deux domaines) —
+       c'est la seule paire admise, et elle est ÉCRITE. */
+    const paires: Record<string, string> = {};
+    for (const v of VISAGES) paires[v] = clefs(v).join(",");
+    expect(paires.bzh).not.toBe(paires.love);
+    expect(paires.home).not.toBe(paires.love);
+    expect(paires.france).not.toBe(paires.love);
+    expect(paires.france, "manafrance et manahome ont divergé sans décision")
+      .toBe(paires.home);
+  });
+});

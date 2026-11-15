@@ -77,8 +77,23 @@ export type Entree = {
  *    troisième cas, il l'absorbe. On nomme donc les trois.
  */
 export function entreesBarre(v: Visage): Entree[] {
+  /* 🔴 QUATRIÈME VISAGE, TROISIÈME FOIS QUE CE DÉFAUT MORD — 15/11/2026 au
+     soir. L'en-tête juste au-dessus dit : « un test à deux issues ne signale
+     pas l'arrivée d'un troisième cas, il l'absorbe. On nomme donc les trois. »
+     Il y en a QUATRE depuis une heure, et manafrance.org tombait dans la
+     branche de mana.love : relevé EN LIGNE, sa barre proposait « Déesses » et
+     « Mon compte » à des visiteurs français.
+     ⭐ NOMMER LES CAS NE SUFFIT PAS SI ON LES NOMME PAR LEUR SITE. `home`
+        voulait dire « manahome » ; il fallait qu'il veuille dire « l'accueil
+        EST la carte ». Une capacité se nomme par la capacité — c'est déjà
+        écrit dans `visage.ts` à propos d'`avecOffice()`, et c'est la règle
+        qu'on vient d'enfreindre une couche plus bas.
+     ⛔ `notre` remplace `office || home`, répété cinq fois : « cet hôte est le
+        nôtre », par opposition à mana.love où nous sommes INVITÉS. Un invité
+        ne propose ni sa radio ni ses réglages, il emprunte les passerelles. */
   const office = v === "bzh";
-  const home = v === "home";
+  const accueilEstLaCarte = v === "home" || v === "france";
+  const notre = v !== "love";
   const e: (Entree | null)[] = [
     /* 🔴 CHEZ MANAHOME, CETTE COLONNE RAMÈNE À L'ACCUEIL — 15/11/2026, et
        c'est une conséquence directe de l'architecture arrêtée ce jour-là :
@@ -93,7 +108,7 @@ export function entreesBarre(v: Visage): Entree[] {
           l'écran de mana.bzh, avec ses graphes, ses circuits balisés et ses
           promenades. ⏳ L'unification des deux surfaces — une étendue par
           hôte sur UNE carte — est le chantier ouvert par la même décision. */
-    home
+    accueilEstLaCarte
       ? { clef: "carte", chemin: "/", glyphe: "carte", libelle: "La carte" }
       : { clef: "carte", chemin: "/carte?vue=carte", glyphe: "carte",
           libelle: "La carte du territoire" },
@@ -124,7 +139,7 @@ export function entreesBarre(v: Visage): Entree[] {
          ⚠️ `/hebergements` RESTE SERVI : l'écran n'est pas supprimé ici, il
             perd sa porte. ⏳ À trancher — une page que plus rien ne désigne
             est un fantôme, et ce dépôt les traque. */
-      : home
+      : accueilEstLaCarte
       ? { clef: "contribuer", chemin: "/contribuer", glyphe: "contribution",
           libelle: "Contribuer à la carte" }
       : praticable("chat")
@@ -164,7 +179,7 @@ export function entreesBarre(v: Visage): Entree[] {
           les deux écrans existent encore et ne montrent pas la même chose.
        ⛔ mana.love GARDE SA MARQUE : elle n'a pas la pilule, donc rien ne la
           nommerait ailleurs. */
-    office || home
+    notre
       ? null
       : { clef: "marque", chemin: "/", glyphe: "marque", libelle: "MANA", motVisible: true },
 
@@ -177,7 +192,7 @@ export function entreesBarre(v: Visage): Entree[] {
        colonne bretonne à retirer : rien dans le code ne la qualifie de
        bretonne, seulement de « à nous » (mana.bzh, manahome) ou « à elle »
        (mana.love). */
-    office || home
+    notre
       ? { clef: "radio", chemin: "/radio", glyphe: "radio", libelle: "MANAradio",
           commute: "radio" }
       : praticable("radio")
@@ -196,7 +211,7 @@ export function entreesBarre(v: Visage): Entree[] {
           et la LANGUE. Le remplacer les perdrait. L'espace compte de manahome
           existe pourtant (/mes-annonces, /messagerie, /publier répondent tous
           200) — il lui manque une colonne, pas une destination. */
-    office || home
+    notre
       ? { clef: "reglages", chemin: "/reglages", glyphe: "reglages", libelle: "Réglages" }
       : praticable("compte")
       ? { clef: "compte", chemin: PONTS.compte.chemin, glyphe: "reglages",
@@ -208,8 +223,14 @@ export function entreesBarre(v: Visage): Entree[] {
 
 /** Les liens du pied, pour un visage donné. */
 export function liensPied(v: Visage): { chemin: string; libelle: string }[] {
-  const office = v === "bzh";
-  const home = v === "home";
+  /* ⭐ MÊME NOTION QUE DANS `entreesBarre`, ET MÊME CORRECTION (15/11/2026) :
+     `office || home` nommait DEUX SITES là où la question est « cet hôte est-il
+     le nôtre ? ». manafrance.org, quatrième visage, n'était dans aucun des deux
+     — son pied renvoyait donc vers les passerelles de mana.love.
+     ⚠️ Et c'est un test qui l'a dit, pas une relecture : en remplaçant
+        `office || home` partout, j'ai laissé cette ligne-ci sans sa variable.
+        `home is not defined` — deux tests rouges en trois secondes. */
+  const notre = v !== "love";
   /* ⭐ `praticable()` interroge les PASSERELLES vers mana.love — il n'a rien à
      dire de manahome, qui sert ces chemins lui-même. Vérifié en ligne le
      14/11 : `/contact` et `/radio` y rendent l'application (ils sont dans la
@@ -218,7 +239,7 @@ export function liensPied(v: Visage): { chemin: string; libelle: string }[] {
      dépôt, qui gagne le chemin. ⛔ C'est le bon résultat et il ne doit pas
      changer : servir NOS mentions sur son domaine déclarerait MANA.bzh
      éditeur de manahome.org. */
-  const peut = (clef: Parameters<typeof praticable>[0]) => office || home || praticable(clef);
+  const peut = (clef: Parameters<typeof praticable>[0]) => notre || praticable(clef);
   return [
     { chemin: "/l-application", libelle: "Ce que fait l’application" },
     { chemin: "/promenades", libelle: "Promenades" },
