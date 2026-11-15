@@ -22,6 +22,7 @@ import { describe, it, expect } from "vitest";
 import { readdirSync, readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const DOSSIER = resolve(__dirname, "..", "deploiement");
 const SCRIPTS = readdirSync(DOSSIER).filter((f) => f.endsWith(".sh"));
@@ -53,4 +54,37 @@ describe("les scripts de déploiement", () => {
       expect(fautifs).toEqual([]);
     });
   }
+});
+
+/**
+ * 🔴 UN ACCENT GRAVE DANS UN COMMENTAIRE **SQL** FERME LE LITTÉRAL **JS** QUI
+ *    LE CONTIENT — vécu le 15/11/2026 sur `scripts/sites-monde.mjs`. La ligne
+ *    fautive était un commentaire de requête :
+ *
+ *        (un commentaire SQL portant des accents graves)
+ *
+ *    Elle vit à l'intérieur d'un `demanderJson(`…`)`. L'accent grave y termine
+ *    le gabarit, le reste de la requête devient du code, et node annonce
+ *    « missing ) after argument list » **quinze lignes plus bas**, sur une
+ *    ligne parfaitement correcte.
+ *
+ * ⭐ C'EST LE JUMEAU EXACT DE L'APOSTROPHE IMPAIRE DANS `${VAR:?…}` que ce
+ *    fichier garde déjà pour bash : un caractère de citation avalé par un
+ *    autre langage, et une erreur qui pointe ailleurs. La parade est la même —
+ *    demander au moteur lui-même, pas relire.
+ */
+describe("les scripts de moisson s'analysent", () => {
+  const scripts = readdirSync(new URL("../scripts", import.meta.url))
+    .filter((f) => f.endsWith(".mjs"));
+
+  it("il y a bien des scripts à vérifier", () => {
+    expect(scripts.length, "aucun .mjs trouvé — ce garde ne garde rien")
+      .toBeGreaterThan(0);
+  });
+
+  it.each(scripts)("%s passe `node --check`", (f) => {
+    const chemin = fileURLToPath(new URL(`../scripts/${f}`, import.meta.url));
+    expect(() => execFileSync("node", ["--check", chemin], { stdio: "pipe" }))
+      .not.toThrow();
+  });
 });
