@@ -392,8 +392,20 @@ describe("ce que le générateur produit, l'écran sait le dire", () => {
   /* ⛔ LE GARDE DES ADRESSES EST DANS LE GISEMENT, PAS DANS UNE INTENTION.
      204 associations étaient posées au bâtiment près depuis le 14/11. */
   it("le générateur appelle le garde des adresses de la base", () => {
-    expect(script, "le gisement ne filtre pas les domiciles")
+    /* 🔴 LA BONNE CHAÎNE AU MAUVAIS ENDROIT — vécu ici même, dix minutes
+       après avoir posé ce garde. Mon harnais de mutation a remis la ligne du
+       filtre DANS `demanderJson`, à la fin du `payload` envoyé à psql. Le
+       motif « la chaîne apparaît quelque part » restait VERT ; c'est le
+       générateur qui a refusé, à l'exécution, sur une erreur de syntaxe SQL.
+       ⭐ Le garde vise donc le GISEMENT, pas le fichier. */
+    const gisement = script.match(/const GISEMENT = `([\s\S]*?)`;/)?.[1];
+    expect(gisement, "le gisement est introuvable").toBeTruthy();
+    expect(gisement, "le gisement ne filtre pas les domiciles")
       .toMatch(/AND NOT public\.adresse_est_un_domicile\(/);
+    /* ⛔ Et nulle part ailleurs : une clause SQL égarée dans l'enveloppe qui
+       parle à psql casse la requête au lieu de filtrer. */
+    expect((script.match(/AND NOT public\.adresse_est_un_domicile\(/g) ?? []).length,
+      "la clause de filtre apparaît plus d'une fois dans le fichier").toBe(1);
     /* ⭐ LE CHAMP ÉCRIT EN SQL ET LE CHAMP LU EN JS SONT LE MÊME — dérivé,
        pas recopié. Mutation posée le 15/11 : renommer le champ côté SQL
        laissait le garde VERT, parce que `Number(undefined)` vaut NaN et que

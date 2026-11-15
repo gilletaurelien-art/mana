@@ -153,7 +153,7 @@ const estAnonyme = (n, c) => {
 };
 
 function demanderJson(sql) {
-  const payload = `\\pset format unaligned\n\\pset tuples_only on\n${sql}\n   AND NOT public.adresse_est_un_domicile(r.source, r.rna, r.naf, r.siret)`;
+  const payload = `\\pset format unaligned\n\\pset tuples_only on\n${sql}\n`;
   return execFileSync("ssh",
     ["-o", "ConnectTimeout=25", HOTE,
      "sudo docker exec -i pg-repetition psql -U postgres -d postgres"],
@@ -252,7 +252,7 @@ const GISEMENT = `
    AND r.mots[1] = ANY (ARRAY[${liste}])
    AND r.titre IS NOT NULL AND btrim(r.titre) <> ''
    AND ST_Y(r.geom) BETWEEN -85 AND 85
-`;
+   AND NOT public.adresse_est_un_domicile(r.source, r.rna, r.naf, r.siret)`;
 
 /* ⛔ ET IL NE SUFFIT PAS DE L'ÉCRIRE. Le garde ne demande pas « ai-je posé le
    filtre ? » — il est trois lignes plus haut, on le voit — mais « le filtre
