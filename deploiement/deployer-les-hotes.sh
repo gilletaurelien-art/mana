@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ═══════════════════════════════════════════════════════════════════════════
-# UNE SOURCE, DEUX HÔTES — mana.bzh ET manahome.org, dans le même geste
+# UNE SOURCE, TROIS HÔTES — manahome.org, manafrance.org ET mana.bzh
 # ═══════════════════════════════════════════════════════════════════════════
 #
 # 🔴 CE SCRIPT EXISTE PARCE QUE LA DÉRIVE A ÉTÉ MESURÉE, PAS REDOUTÉE —
@@ -27,6 +27,21 @@
 #    bundle — c'est le COMMIT. Comparer les empreintes entre hôtes ferait
 #    crier au loup à chaque déploiement réussi.
 #
+# ⭐ TROIS DEPUIS LE 15/11/2026, ET C'EST CE FICHIER QUI L'EXIGEAIT. Son propre
+#    en-tête dit : « deux déploiements pour une source n'est pas un risque,
+#    c'est une échéance ; la parade n'est pas de s'en souvenir, c'est de n'avoir
+#    qu'un geste à lancer. » Ajouter manafrance À CÔTÉ aurait recréé exactement
+#    la dérive du 14/11, en pire — trois versions au lieu de deux.
+#    ⚠️ Le fichier s'appelait `deployer-les-deux.sh`. Un nom qui compte se
+#       périme au premier ajout ; il ne compte plus.
+#
+# ⛔ manafrance.org A SON PROPRE DOSSIER, et ce n'est pas un détail. Les deux
+#    autres hôtes partagent leur racine avec un AUTRE dépôt et se protègent en
+#    n'employant jamais `--delete`. Chez manafrance ça ne suffirait pas :
+#    `manafrance-org/package.json` déploie, lui, AVEC `--delete` — il
+#    effacerait l'app au premier envoi, et la perte ne se verrait qu'en 404.
+#    L'app vit donc dans `www-manafrance-carte/`, et Caddy l'aiguille.
+#
 # Usage :  npm run deploy:tous
 set -euo pipefail
 
@@ -52,6 +67,7 @@ fi
 #    même défaut y dort, à un mot près.
 : "${MANA_KS5:?MANA_KS5 est absente — voir deploiement/deployer-mana-bzh.sh}"
 CIBLE_MANAHOME="${MANA_MANAHOME_CIBLE:-/srv/www-manahome/}"
+CIBLE_MANAFRANCE="${MANA_MANAFRANCE_CIBLE:-/srv/www-manafrance-carte/}"
 CLE="${MANA_SSH_KEY:-$HOME/.ssh/id_ed25519}"
 
 vert()  { printf '\033[32m%s\033[0m\n' "$*"; }
@@ -63,7 +79,7 @@ rouge() { printf '\033[31m%s\033[0m\n' "$*"; }
 #    le lançait d'abord, le rsync vers manahome expédierait le build de
 #    mana.bzh : des graphes cherchés en relatif sur un hôte qui n'en sert pas,
 #    donc une carte vide — et un 200 partout.
-printf '\033[1m→ 1/2  manahome.org\033[0m\n'
+printf '\033[1m→ 1/3  manahome.org\033[0m\n'
 npm run build:manahome
 
 [ -f site/index.html ] || { rouge "⛔ site/index.html absent : rien à déposer"; exit 1; }
@@ -107,11 +123,47 @@ vert "✓ manahome.org sert cette version ($MARQUEUR_HOME)"
 #    @applove, ponts, build racine, vérification HTTP. Le dupliquer ici serait
 #    fabriquer deux gardes qui divergent.
 echo
-printf '\033[1m→ 2/2  mana.bzh\033[0m\n'
+# ── 2. MANAFRANCE ───────────────────────────────────────────────────────────
+# ⭐ MÊME SOURCE, TROISIÈME VISAGE. Seul le titre change
+#    (`npm run build:manafrance`) : les graphes et les tuiles du monde restent
+#    servis par mana.bzh en absolu, donc AUCUNE donnée n'est dupliquée ici.
+printf '\033[1m→ 2/3  manafrance.org\033[0m\n'
+npm run build:manafrance
+
+[ -f site/index.html ] || { rouge "⛔ site/index.html absent : rien à déposer"; exit 1; }
+MARQUEUR_FR="$(grep -oE 'app/index-[A-Za-z0-9_-]+\.js' site/index.html | head -1)"
+[ -n "$MARQUEUR_FR" ] || { rouge "⛔ impossible de lire le bundle construit"; exit 1; }
+
+echo "→ envoi vers $CIBLE_MANAFRANCE …"
+rsync -az --human-readable \
+  --rsync-path="sudo rsync" \
+  -e "ssh -i $CLE -o IdentitiesOnly=yes -o ConnectTimeout=30" \
+  site/ "$MANA_KS5:$CIBLE_MANAFRANCE"
+
+# ⭐ Même contrôle que chez manahome : le NOM DU BUNDLE, pas le code 200. Les
+#    routes de l'app rendent toutes `index.html` et répondraient 200 en servant
+#    l'ancienne version. Un nom tout neuf ne peut répondre 200 que s'il vient
+#    d'arriver. ⚠️ Et on contrôle AUSSI que les pages de l'autre dépôt
+#    répondent encore : l'app ne doit RIEN avoir avalé.
+# ⚠️ REMIS À ZÉRO EXPLICITEMENT. Le compteur est celui de la section
+#    précédente, qui sort en cas d'échec — donc il vaut 0 ici « par
+#    conséquence », pas par construction. Une section ajoutée entre les deux
+#    suffirait à le rendre faux, sans que rien ne le dise.
+ECHECS=0
+for u in / /carte /promenades "/$MARQUEUR_FR" /associations/ /missions/ /mentions.html; do
+  code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 25 "https://manafrance.org$u" || echo 000)"
+  if [ "$code" = "200" ]; then printf '  \033[32m%s\033[0m %s\n' "$code" "$u"
+  else printf '  \033[31m%s\033[0m %s\n' "$code" "$u"; ECHECS=$((ECHECS + 1)); fi
+done
+[ "$ECHECS" = "0" ] || { rouge "⛔ $ECHECS URL ne répondent pas chez manafrance"; exit 1; }
+vert "✓ manafrance.org sert cette version ($MARQUEUR_FR)"
+echo
+
+printf '\033[1m→ 3/3  mana.bzh\033[0m\n'
 npm run deploy:bzh
 
 echo
-vert "✓ les DEUX hôtes servent le commit $(git rev-parse --short HEAD)"
+vert "✓ les TROIS hôtes servent le commit $(git rev-parse --short HEAD)"
 # ⚠️ « le même commit » est ce qu'on vient de déposer, pas ce qui est en
 #    ligne : un travail non committé part aussi. C'est voulu — c'est la règle
 #    du dépôt partout ailleurs — mais ça veut dire que cette ligne nomme un
