@@ -57,7 +57,20 @@ describe("le préfixe de service", () => {
           les grepper.
        ⚠️ C'est la même décision qu'hier, poussée d'un cran : on ne change pas
           CE QUE le garde couvre, seulement COMMENT il y accède. */
+    /* `public/monde/c` AJOUTÉ LE 15/11/2026 — les services et commerces,
+       3 411 tuiles, 113 Mo. Il est COUVERT par le `grep -rl` ci-dessous comme
+       ses voisins : vérifié par mutation, un faux « /mana/ » glissé dans une
+       tuile fait échouer le test en la NOMMANT.
+       ⚠️ ET CE N'EST PAS UN GAIN DE TEMPS, contrairement à ce que la première
+          rédaction de ce commentaire affirmait : 60,57 s avant l'ajout,
+          59,54 s après. Le coût ne disparaît pas, il passe du parcours Node au
+          `grep` — qui doit bien lire ces 113 Mo pour les couvrir. La durée de
+          ce test a DOUBLÉ depuis les 15 s notées plus haut, et c'est la donnée
+          nouvelle qui la porte, pas la façon de la lire.
+       ⛔ La liste n'est donc pas une exclusion : tout arbre qu'on y met DOIT
+          être relu par le grep, sinon on troque du temps contre un trou. */
     const DONNEE_RACINES = ["public/monde/s", "public/monde/g", "public/monde/h",
+                            "public/monde/c",
                             "public/bretagne/g", "public/bretagne/h"];
     const parcourir = (d: string): string[] =>
       DONNEE_RACINES.includes(d) ? [] :
