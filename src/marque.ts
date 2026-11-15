@@ -19,7 +19,7 @@
  *    porte qu'un écho, marqué `aria-hidden`. Deux `h1` de même identifiant
  *    seraient un document invalide et une page à deux titres.
  */
-import { avecOffice } from "./visage";
+import { signature } from "./visage";
 
 /** Le mot, toujours le même. */
 export const MOT = "MANA";
@@ -52,8 +52,25 @@ export const MOT = "MANA";
       pilule, elle aurait déjà divergé deux fois aujourd'hui. Les deux sites
       portent maintenant la même forme : un nom, puis une adresse —
       « MANA / .bzh » et « MANA / home.org ». */
-export const devisePartie = (): readonly string[] =>
-  (avecOffice() ? [".bzh"] : ["home.org"]);
+/* 🔴 LA DEVISE SUIT LA SIGNATURE, PLUS `avecOffice()` — 15/11/2026 au soir.
+   Elle valait `avecOffice() ? [".bzh"] : ["home.org"]` : un prédicat de
+   CAPACITÉ (« y a-t-il un Office de tourisme ici ? ») décidait d'un NOM. Tant
+   qu'il n'y avait que deux hôtes la réponse était la même, et la confusion ne
+   coûtait rien — c'est le défaut que `visage.ts` raconte deux fois, et que ce
+   fichier reproduisait une troisième.
+   ⛔ Au quatrième hôte il a mordu : manafrance.org affichait « .bzh ». Et il
+      mordait DÉJÀ sans qu'on le voie — mana.love, qui n'a pas d'Office, se
+      voyait servir « home.org », le nom d'un autre site.
+   ⭐ `signature()` répond à la question posée : sous quel nom ce domaine
+      s'annonce-t-il ? La devise en est l'adresse, rien de plus. */
+export const devisePartie = (): readonly string[] => {
+  switch (signature()) {
+    case "MANA.bzh":    return [".bzh"];
+    case "MANAhome":    return ["home.org"];
+    case "MANAfrance":  return ["france.org"];
+    case "mana.love":   return [".love"];
+  }
+};
 
 /**
  * La devise d'un seul tenant — pour le `h1`, qui est une PHRASE et non une

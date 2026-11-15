@@ -32,7 +32,17 @@
  *    délibérée. Un type à deux valeurs n'a rien signalé non plus — parce que
  *    le troisième hôte n'était nulle part écrit.
  */
-export type Visage = "bzh" | "love" | "home";
+/* 🔴 QUATRE VISAGES DEPUIS LE 15/11/2026, ET LE QUATRIÈME RÉPÈTE MOT POUR MOT
+   LE DÉFAUT RACONTÉ JUSTE AU-DESSUS. manafrance.org sert la même application
+   depuis ce soir ; `visage()` ne le connaissait pas et le rangeait dans la
+   branche par défaut, « bzh ». La pilule d'en-tête y affichait donc « .bzh »,
+   et la barre du bas proposait **« Les balades des Offices de Tourisme »** —
+   l'Office de Crozon — à un public français. Exactement ce que manahome a
+   vécu le 14/11, à vingt-quatre heures d'intervalle, pour la même raison.
+   ⭐ ET C'EST MOI QUI L'AI REPRODUIT en posant l'hôte sans toucher à ce
+      fichier. Un nouveau visage n'est pas « un domaine de plus » : c'est une
+      branche que trois fonctions doivent apprendre. */
+export type Visage = "bzh" | "love" | "home" | "france";
 
 /**
  * ⚠️ `?visage=love` EXISTE À DESSEIN, et ce n'est pas une porte dérobée : sans
@@ -44,7 +54,7 @@ export type Visage = "bzh" | "love" | "home";
 export function visage(): Visage {
   if (typeof location === "undefined") return "bzh";
   const force = new URLSearchParams(location.search).get("visage");
-  if (force === "love" || force === "bzh" || force === "home") return force;
+  if (force === "love" || force === "bzh" || force === "home" || force === "france") return force;
   const h = location.hostname;
   if (h === "mana.love") return "love";
   /* ⚠️ `endsWith` POUR LES SOUS-DOMAINES, comme `signature()` juste en dessous.
@@ -53,6 +63,7 @@ export function visage(): Visage {
      façon, et les laisser diverger ferait un site qui signe « MANAhome » en
      servant l'Office de Crozon. */
   if (h === "manahome.org" || h.endsWith(".manahome.org")) return "home";
+  if (h === "manafrance.org" || h.endsWith(".manafrance.org")) return "france";
   return "bzh";
 }
 
@@ -92,6 +103,7 @@ export const signature = () => {
   const h = typeof location === "undefined" ? "" : location.hostname;
   if (h === "mana.love") return "mana.love";
   if (h === "manahome.org" || h.endsWith(".manahome.org")) return "MANAhome";
+  if (h === "manafrance.org" || h.endsWith(".manafrance.org")) return "MANAfrance";
   return "MANA.bzh";
 };
 
@@ -136,9 +148,14 @@ export const lieuDuSite = () =>
  *    exacte — « un faux 200 sur une coquille est un défaut ; un éditeur faux
  *    est une déclaration ».
  */
+/* 🔄 QUATRE ADRESSES LE 15/11 — même motif qu'au-dessus : sans cette branche,
+   manafrance.org aurait annoncé `contact@mana.bzh` alors que ses mentions
+   légales, servies par un AUTRE dépôt sur le même domaine, déclarent autre
+   chose. Un éditeur faux n'est pas une coquille, c'est une déclaration. */
 export const courriel = () =>
   visage() === "love" ? "welcome@mana.love"
   : visage() === "home" ? "contact@manahome.org"
+  : visage() === "france" ? "contact@manafrance.org"
   : "contact@mana.bzh";
 
 /**

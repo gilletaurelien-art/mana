@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { ROUTES_APP, ROUTES_LOVE, ROUTE_OFFICE, ROUTES_HORS_LOVE, ROUTES_HORS_HOME } from "./routes";
 import { visage, avecOffice, signature, courriel, titrePourLHote, canonique, poserCanonique } from "./visage";
+import { devise } from "./marque";
 import { entreesBarre } from "./barre";
 
 const lire = (f: string) => readFileSync(new URL(f, import.meta.url), "utf8");
@@ -551,5 +552,57 @@ describe("🔴 aucune marque bretonne ne doit partir sur manahome", () => {
     const trouvees = MARQUES.filter((m) => RENDUS.some((f) => nu(f).includes(m)));
     expect(trouvees.length, "aucune marque trouvée : la liste a vieilli")
       .toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe("⛔ un nouvel hôte n'est pas « un domaine de plus »", () => {
+  /* 🔴 CE GARDE NAÎT DE LA TROISIÈME RÉPÉTITION DU MÊME DÉFAUT EN DEUX JOURS.
+     `visage()` a un repli — « bzh » — et un repli a toujours l'air délibéré.
+     Le 14/11 manahome.org y est tombé : la barre proposait l'Office de Crozon
+     à un public mondial. Le 15/11 manafrance.org y est tombé de la même façon,
+     posé par moi, qui venais de LIRE le commentaire racontant le premier cas.
+     ⭐ Ce qui manquait n'était pas l'attention, c'était un garde qui ÉNUMÈRE :
+        tant que la liste des hôtes vit dans trois `if` séparés, en ajouter un
+        quelque part et l'oublier ailleurs ne se voit nulle part. */
+  const HOTES = [
+    { hote: "mana.bzh",        visage: "bzh",    signature: "MANA.bzh",   office: true  },
+    { hote: "mana.love",       visage: "love",   signature: "mana.love",  office: false },
+    { hote: "manahome.org",    visage: "home",   signature: "MANAhome",   office: false },
+    { hote: "manafrance.org",  visage: "france", signature: "MANAfrance", office: false },
+  ] as const;
+
+  const sousHote = (h: string, f: () => unknown) => {
+    const avant = globalThis.location;
+    Object.defineProperty(globalThis, "location",
+      { value: { hostname: h, search: "" }, configurable: true, writable: true });
+    try { return f(); } finally {
+      Object.defineProperty(globalThis, "location",
+        { value: avant, configurable: true, writable: true });
+    }
+  };
+
+  for (const h of HOTES) {
+    it(`${h.hote} : visage, signature et Office répondent ensemble`, () => {
+      expect(sousHote(h.hote, visage), `${h.hote} tombe dans le repli`).toBe(h.visage);
+      expect(sousHote(h.hote, signature), `${h.hote} signe du mauvais nom`).toBe(h.signature);
+      expect(sousHote(h.hote, avecOffice), `${h.hote} et l'Office de Crozon`).toBe(h.office);
+    });
+  }
+
+  it("⛔ UN SEUL hôte porte l'Office de tourisme", () => {
+    /* C'est la conséquence qui a été VUE en production : un office local
+       proposé à un public qui n'est pas le sien. */
+    const avec = HOTES.filter((h) => sousHote(h.hote, avecOffice));
+    expect(avec.map((h) => h.hote)).toEqual(["mana.bzh"]);
+  });
+
+  it("⛔ chaque hôte a une devise DISTINCTE, et aucune n'est celle d'un autre", () => {
+    /* 🔴 `devisePartie()` lisait `avecOffice()` — un prédicat de CAPACITÉ pour
+       décider d'un NOM. mana.love se voyait donc servir « home.org ». */
+    const devises = HOTES.map((h) => sousHote(h.hote, devise) as string);
+    expect(new Set(devises).size, `deux hôtes partagent une devise : ${devises.join(" · ")}`)
+      .toBe(HOTES.length);
+    expect(sousHote("manafrance.org", devise)).toBe("france.org");
+    expect(sousHote("mana.bzh", devise)).toBe(".bzh");
   });
 });
