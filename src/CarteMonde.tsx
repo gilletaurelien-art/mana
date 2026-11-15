@@ -27,6 +27,10 @@ import { STYLE_CARTE as STYLE, STYLE_ORTHO } from "./carte-fond";
    voir l'en-tête de ce fichier-là : un volet masqué fabrique un écran noir
    et interdit de conclure, il n'interdit pas de vérifier autrement. */
 import { Z, SITES_POSES, tuilesDuCadre } from "./tuiles";
+/* 🔴 L'ÉTENDUE DÉCIDE OÙ LA CARTE S'OUVRE — architecture du 15/11/2026 :
+   un produit, trois étendues (monde / France / Bretagne). Voir `etendue.ts`. */
+import { etendueDe } from "./etendue";
+import { visage } from "./visage";
 /* ⭐ La porte d'entrée du style vit à part, et s'éprouve sans navigateur —
    voir l'en-tête de ce fichier-là : elle a été fausse deux jours. */
 import { poserLaSource } from "./style-pret";
@@ -77,7 +81,9 @@ function depuisURL(): [number, number] | null {
  *    `pointerdown` qui leur est destiné — c'est la leçon déjà écrite dans
  *    `CarteFondOT`. On la regarde, on ne la manipule pas.
  */
-export function CarteMonde({ enFond = false }: { enFond?: boolean } = {}) {
+export function CarteMonde(
+  { enFond = false, vivante = false }: { enFond?: boolean; vivante?: boolean } = {},
+) {
   const boite = useRef<HTMLDivElement | null>(null);
   const carte = useRef<CarteML | null>(null);
   const [choisi, setChoisi] = useState<Site | null>(null);
@@ -121,10 +127,27 @@ export function CarteMonde({ enFond = false }: { enFond?: boolean } = {}) {
          ⛔ Et on ne « corrige » pas ce 404 par un fond de plan derrière :
             deux mosaïques superposées pour cacher un trou, c'est un trou
             qu'on cesse de voir sans l'avoir comblé. */
-      center: depuisURL() ?? [10, 46],
-      zoom: depuisURL() ? 10 : (enFond ? 6 : 2),
+      /* 🔴 LE CENTRE ÉTAIT [10, 46] — l'Europe, parce que c'est là que je
+         regardais. Il vient maintenant de l'ÉTENDUE DE L'HÔTE : le monde pour
+         manahome, la Bretagne pour mana.bzh. Une carte s'ouvre sur ce que le
+         site revendique, jamais sur un point choisi par qui l'écrit.
+         ⚠️ LE ZOOM RESTE À 6 AU MINIMUM, et ce n'est pas un goût : mesuré, le
+            relais ortho répond à partir de z6 et rend 404 en dessous. Une vue
+            du monde entier en satellite n'existe pas ici. Pour une étendue
+            étroite (la Bretagne), on serre d'un cran de plus. */
+      center: depuisURL() ?? etendueDe(visage()).ouverture,
+      zoom: depuisURL() ? 10 : etendueDe(visage()).zoom,
       attributionControl: false,
-      interactive: !enFond,
+      /* ⭐ EN FOND, ELLE PEUT ÊTRE VIVANTE — 15/11/2026, Aurélien :
+         « j'ai demandé la carte en plein écran », et l'accueil de MANAhome
+         DEVIENT la carte qu'on manipule, avec la devise, la recherche et la
+         barre posées par-dessus.
+         ⛔ `vivante` et `enFond` restent DEUX questions : « où est-elle
+            posée ? » et « peut-on la manipuler ? ». Les fondre en une seule
+            remettrait le fond figé et la carte vivante dans le même mot, et
+            c'est exactement ce qui fait qu'un jour l'un prend la place de
+            l'autre sans qu'on l'ait voulu. */
+      interactive: !enFond || vivante,
     });
     carte.current = m;
     /* ⚠️ L'ATTRIBUTION RESTE, MÊME EN FOND : OpenStreetMap et OpenFreeMap se
@@ -354,8 +377,25 @@ export function CarteMonde({ enFond = false }: { enFond?: boolean } = {}) {
 
   if (enFond) {
     return (
-      <div className="monde-fond" aria-hidden="true">
+      /* ⚠️ `aria-hidden` SEULEMENT QUAND ELLE EST MORTE. Une carte figée est
+         un décor, et un décor annoncé encombre un lecteur d'écran ; une carte
+         qu'on manipule est un contenu, et la cacher la rendrait inatteignable
+         à qui ne voit pas. Le même élément, deux rôles — donc deux
+         déclarations. */
+      <div className="monde-fond" data-vivante={vivante || undefined}
+           aria-hidden={vivante ? undefined : true}>
         <div className="monde-plan" ref={boite} />
+        {vivante && choisi && (
+          <div className="monde-choisi">
+            <p className="monde-choisi-nom">
+              {choisi.a ? (LIBELLES[choisi.c] ?? choisi.c) : choisi.n}
+            </p>
+            <p className="monde-choisi-dire">
+              {choisi.a ? "Sans nom connu" : (LIBELLES[choisi.c] ?? choisi.c)}
+            </p>
+          </div>
+        )}
+        {vivante && mot && <p className="monde-mot">{mot}</p>}
       </div>
     );
   }

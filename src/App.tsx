@@ -310,7 +310,17 @@ export default function App() {
              naviguer d'un écran de contenu à l'autre ne recrée pas la carte,
              ne redemande pas ses tuiles et ne perd pas le cadrage. */}
       {carteEnFond(visage(), path) && (
-        <Suspense fallback={null}><CarteMonde enFond /></Suspense>
+        /* 🔴 VIVANTE SUR L'ACCUEIL — Aurélien, 15/11/2026 : « j'ai demandé la
+           carte en plein écran ». L'accueil de MANAhome n'est plus une image
+           de carte derrière du texte : c'est LA carte, qu'on déplace et dont
+           on clique les sites, avec la devise, la recherche et la barre
+           posées dessus.
+           ⚠️ Sur les autres écrans elle reste FIGÉE : une carte vivante sous
+              un écran de réglages avalerait les gestes destinés aux
+              commandes, et personne ne l'a demandée là. */
+        <Suspense fallback={null}>
+          <CarteMonde enFond vivante={path === "/"} />
+        </Suspense>
       )}
       {/* ⭐ LA COLONNE. « Les bulles s'affichent au format mobile partout —
           mobile, desktop, tablette ; seul le fond s'élargit » (31/10). Une

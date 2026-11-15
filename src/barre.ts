@@ -74,8 +74,23 @@ export function entreesBarre(v: Visage): Entree[] {
   const office = v === "bzh";
   const home = v === "home";
   const e: (Entree | null)[] = [
-    { clef: "carte", chemin: "/carte?vue=carte", glyphe: "carte",
-      libelle: "La carte du territoire" },
+    /* 🔴 CHEZ MANAHOME, CETTE COLONNE RAMÈNE À L'ACCUEIL — 15/11/2026, et
+       c'est une conséquence directe de l'architecture arrêtée ce jour-là :
+       l'accueil EST la carte. La laisser pointer sur `/carte` donnait deux
+       cartes, dont une bretonne : sur un site qui revendique le monde, le
+       premier bouton de la barre ouvrait la presqu'île de Crozon.
+       ⭐ ELLE NE DISPARAÎT PAS, ELLE CHANGE DE MÉTIER. Manahome n'a pas de
+          bouton « accueil » — la marque y est devenue le sablier — donc cette
+          colonne est le SEUL chemin de retour. La supprimer aurait laissé une
+          barre dont aucune icône ne ramène à la carte.
+       ⛔ `/carte` reste servi et reste la carte DU TERRITOIRE : c'est
+          l'écran de mana.bzh, avec ses graphes, ses circuits balisés et ses
+          promenades. ⏳ L'unification des deux surfaces — une étendue par
+          hôte sur UNE carte — est le chantier ouvert par la même décision. */
+    home
+      ? { clef: "carte", chemin: "/", glyphe: "carte", libelle: "La carte" }
+      : { clef: "carte", chemin: "/carte?vue=carte", glyphe: "carte",
+          libelle: "La carte du territoire" },
 
     /* La deuxième colonne change de métier selon l'hôte : les balades de
        l'Office sur mana.bzh, les déesses sur mana.love. ⭐ Elle se libère

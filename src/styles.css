@@ -4398,6 +4398,70 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
   position: absolute; inset: 0; width: 100%; height: 100%;
 }
 
+/* ══ L'ACCUEIL EST LA CARTE — 15/11/2026 ═════════════════════════════════
+   🔴 Aurélien : « j'ai demandé la carte en plein écran ». Elle était un
+      DÉCOR figé derrière la devise ; elle devient la surface qu'on manipule,
+      et le contenu se pose dessus.
+   ⭐ LE RENVERSEMENT TIENT EN UNE PROPRIÉTÉ, ET C'EST LE BON OUTIL. La
+      colonne de l'application cesse de recevoir les gestes ; ses COMMANDES
+      les reprennent, une par une. Déplacer le contenu, le rétrécir ou le
+      rendre transparent aurait changé ce qu'on VOIT ; seul
+      `pointer-events` change ce qu'on ATTRAPE, sans toucher à la mise en
+      page que le fondateur a arrêtée hier.
+   ⛔ ET LA LISTE DES EXCEPTIONS EST LE POINT DÉLICAT : tout ce qui se clique
+      doit y être. Un bouton oublié ne se signale pas — il devient une zone
+      morte qui a l'air d'un bouton. D'où le garde `accueil-carte.test.ts`,
+      qui compte les commandes de l'accueil et exige que chacune reprenne
+      les gestes.
+   ⚠️ La barre du bas est dans `.app-colonne` elle aussi : sans la ligne
+      ci-dessous, les cinq onglets de MANAhome seraient morts. */
+/* 🔴 ET `z-index: -1` NE SUFFISAIT PAS — mesuré à l'écran le 15/11/2026.
+   Avec `pointer-events: auto` sur la carte et `none` sur la colonne, un clic
+   au milieu de l'accueil atterrissait encore sur une `DIV` nue : la RACINE
+   React, parente des deux. Un enfant en z-index NÉGATIF peint sous le
+   contenu de son parent, et le parent lui reste dessus au test de pointage.
+   ⭐ On la remonte donc à `0` — juste au-dessus de la racine, et toujours
+      sous `.app-colonne`, qui vient après elle dans le DOM et garde donc le
+      dessus sans avoir besoin d'un z-index à elle. La carte se voit ET
+      s'attrape ; le contenu se voit par-dessus.
+   ⚠️ Seulement quand elle est VIVANTE : sur les écrans de contenu, le fond
+      reste à −1, où il n'a rien à attraper. */
+[data-visage="home"] .monde-fond[data-vivante] { pointer-events: auto; z-index: 0; }
+[data-visage="home"] .monde-fond[data-vivante] ~ .app-colonne { pointer-events: none; }
+[data-visage="home"] .monde-fond[data-vivante] ~ .app-colonne .site-header,
+[data-visage="home"] .monde-fond[data-vivante] ~ .app-colonne .rech,
+[data-visage="home"] .monde-fond[data-vivante] ~ .app-colonne a,
+[data-visage="home"] .monde-fond[data-vivante] ~ .app-colonne button,
+[data-visage="home"] .monde-fond[data-vivante] ~ .app-colonne input,
+[data-visage="home"] .monde-fond[data-vivante] ~ .app-colonne label {
+  pointer-events: auto;
+}
+/* ⭐ La main dit que ça se déplace. Sans ça, une carte plein écran sous du
+   texte ressemble encore à une image. */
+[data-visage="home"] .monde-fond[data-vivante] .maplibregl-canvas { cursor: grab; }
+[data-visage="home"] .monde-fond[data-vivante] .maplibregl-canvas:active { cursor: grabbing; }
+
+/* ⚠️ LA FICHE DU LIEU CHOISI VIT DANS LE FOND, pas dans la colonne — elle
+   appartient à la carte, qui la fait apparaître. Elle est donc hors du
+   `pointer-events: none` ci-dessus, et n'a rien à y reprendre. */
+[data-visage="home"] .monde-fond[data-vivante] .monde-choisi { pointer-events: auto; }
+
+/* 🔴 LE MOT DE LA CARTE DESCEND SOUS LA DEVISE — mesuré à l'écran le
+   15/11/2026, et il recouvrait la marque : `.inv-marque` occupe 48→126 px,
+   `.monde-mot` naissait à 88. « MANA / home.org » passait derrière « 2 384 329
+   sites remarquables dans le monde ».
+   ⭐ IL NE DISPARAÎT PAS POUR AUTANT, et c'est délibéré : sur un monde ouvert
+      au zoom 6, cette phrase est la plus utile de l'écran — elle dit qu'il y
+      a quelque chose à trouver, et quoi faire pour le voir. On la déplace, on
+      ne la tait pas.
+   ⚠️ Il se pose JUSTE AU-DESSUS de la recherche, qui est elle-même collée à
+      la barre : `--reserve-barre` (88 px) + la hauteur du champ et son air
+      (72 px). Mesuré : le champ naît à 593, le mot finit alors à 583. */
+[data-visage="home"] .monde-fond[data-vivante] .monde-mot {
+  top: auto;
+  bottom: calc(var(--reserve-barre) + 72px);
+}
+
 
 /* ══ LA RECHERCHE ET LES PORTES DESCENDENT — 14/11/2026 ══════════════════
    🔴 « Place la barre de saisie + les 2 boutons au-dessus de la bottom bar »
