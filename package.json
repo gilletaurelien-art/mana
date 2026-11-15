@@ -16,6 +16,7 @@
     "deploy:bzh": "./deploiement/deployer-mana-bzh.sh",
     "build:manahome": "MANA_BASE=/ VITE_GRAPHE_BASE=https://mana.bzh/bretagne/g MANA_TITRE=\"MANAhome — explorer, composer, marcher\" vite build && rm -rf site/bretagne site/monde",
     "deploy:tous": "./deploiement/deployer-les-hotes.sh",
+    "deploy:tuiles": "./deploiement/deployer-les-tuiles.sh",
     "build:manafrance": "MANA_BASE=/ VITE_GRAPHE_BASE=https://mana.bzh/bretagne/g MANA_TITRE=\"MANAfrance — explorer, composer, marcher\" vite build && rm -rf site/bretagne site/monde"
   },
   "dependencies": {

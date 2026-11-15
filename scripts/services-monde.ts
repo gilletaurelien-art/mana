@@ -88,27 +88,14 @@ const ZOOM = Z_SERVICES;
 const PLAFOND = 1500;
 
 /**
- * LES DIX FAMILLES, ET LEURS MOTS.
- *
- * ⚠️ `mots` EST UN VOCABULAIRE DE RECHERCHE, PAS UNE TAXONOMIE. `commerce`,
- *    `boutique` et `magasin` désignent les MÊMES fiches : additionner les mots
- *    triplerait le compte. On teste donc un recouvrement de tableau et on
- *    attribue UNE famille par ligne, par ordre de priorité.
- * ⭐ L'ordre compte : une pharmacie porte `sante` ET `commerce` ; on veut
- *    « Santé ». Les familles les plus spécifiques passent donc en premier.
+ * ⭐ LA TABLE DES FAMILLES A QUITTÉ CE FICHIER — 15/11/2026, au moment de
+ *    brancher le calque. L'écran a besoin des mêmes clés pour les traduire et
+ *    les filtrer ; recopiées, elles auraient donné deux tables — celle qui
+ *    ÉCRIT les tuiles et celle qui les LIT — qui divergent à la première
+ *    famille ajoutée, en silence. Elle vit dans `src/services-familles.ts`,
+ *    avec l'avertissement sur l'ORDRE, qui décide de ce que ce script écrit.
  */
-const FAMILLES: { cle: string; nom: string; mots: string[] }[] = [
-  { cle: "sante",     nom: "Santé",               mots: ["sante", "medical", "cabinet", "soin"] },
-  { cle: "ecole",     nom: "Écoles & enfance",    mots: ["ecole", "college", "lycee", "creche"] },
-  { cle: "public",    nom: "Services publics",    mots: ["servicepublic", "administration", "demarche", "guichet"] },
-  { cle: "dormir",    nom: "Hébergement",         mots: ["hebergement", "dormir", "loger"] },
-  { cle: "manger",    nom: "Restauration",        mots: ["restaurant", "manger", "table"] },
-  { cle: "boire",     nom: "Bars & cafés",        mots: ["bar", "pub", "boire"] },
-  { cle: "sport",     nom: "Sport & loisirs",     mots: ["sport", "loisir", "activite"] },
-  { cle: "garage",    nom: "Garages & auto",      mots: ["garage", "mecanicien", "garagiste"] },
-  { cle: "artisan",   nom: "Artisans & bâtiment", mots: ["artisan", "batiment", "chantier", "renovation"] },
-  { cle: "commerce",  nom: "Commerces",           mots: ["commerce", "boutique", "magasin"] },
-];
+import { FAMILLES } from "../src/services-familles";
 
 const litteral = (xs: string[]) => "array[" + xs.map((m) => `'${m}'`).join(",") + "]";
 

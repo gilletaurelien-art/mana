@@ -26,7 +26,7 @@ import { STYLE_CARTE as STYLE, STYLE_ORTHO } from "./carte-fond";
 /* ⭐ L'arithmétique vit dans `tuiles.ts`, qui s'éprouve sans navigateur —
    voir l'en-tête de ce fichier-là : un volet masqué fabrique un écran noir
    et interdit de conclure, il n'interdit pas de vérifier autrement. */
-import { Z, SITES_POSES, tuilesDuCadre } from "./tuiles";
+import { Z, SITES_POSES, tuilesDuCadre, Z_SERVICES } from "./tuiles";
 import { ID_CHAMP } from "./recherche";
 import { RechercheAccueil } from "./RechercheAccueil";
 import { chargerOT, type ItineraireOT } from "./ot";
@@ -38,6 +38,7 @@ import { etendueDe } from "./etendue";
    une couleur corrigée là se voit ici, et l'inverse. */
 import { couleurCategorie } from "./categories";
 import { direLeType } from "./hebergements-du-territoire";
+import { FAMILLES, direLaFamille } from "./services-familles";
 import { lienYAller, plateformeDe } from "./y-aller";
 import { usePropositions, type Destination } from "./propositions-du-point";
 import { baseUrl } from "./router";
@@ -70,6 +71,22 @@ const TUILES = `${BASE}/monde/s`;
    `scripts/hebergements-monde.ts`. `tuilesDuCadre()` sert les deux, donc un
    seul cadrage, un seul « trop loin », un seul cache par calque. */
 const TUILES_H = `${BASE}/monde/h`;
+/**
+ * 🔴 LES COMMERCES ET SERVICES — branchés le 15/11/2026, à la demande
+ *    d'Aurélien. Les 3 411 tuiles existaient depuis le matin et rien ne les
+ *    lisait : « une page que plus rien ne désigne est un fantôme », et un jeu
+ *    de données que rien ne lit en est un aussi.
+ *
+ * ⛔ PAS LE MÊME QUADRILLAGE QUE LES DEUX AUTRES, ET C'EST MESURÉ — voir
+ *    `Z_SERVICES` dans `tuiles.ts`. Au z8 partagé, le plafond de 1 500 ne
+ *    poserait que 6 % des 1,8 M de fiches, et l'écrêtage suit l'ordre
+ *    alphabétique : des VILLES ENTIÈRES disparaîtraient. À z11, 70 % passent.
+ * ⚠️ CONSÉQUENCE VOULUE : à quadrillage plus fin, un même cadre demande plus
+ *    de tuiles, donc `TUILES_MAX` refuse plus tôt. Les commerces n'arrivent
+ *    qu'au zoom « ville » — le moment où on les cherche. Une carte de France
+ *    couverte d'épingles de boulangerie ne servirait personne.
+ */
+const TUILES_C = `${BASE}/monde/c`;
 /* ⚠️ Le préfixe des ADRESSES de l'app (`/mana/` sur Pages, `/` ailleurs) —
    à ne pas confondre avec `BASE`, qui est celui des DONNÉES servies. */
 const B = baseUrl();
@@ -77,6 +94,11 @@ const B = baseUrl();
 interface Site { n: string; c: string; g: [number, number]; a?: 1 }
 /** Ce que porte une tuile d'hébergements — voir `scripts/hebergements-monde.ts`. */
 interface Heb { n: string; t?: string; c?: string; lits?: number; ch?: number; g: [number, number] }
+/** Ce que porte une tuile de services — voir `scripts/services-monde.ts`.
+ *  ⚠️ `c` est la COMMUNE ici, et un GENRE dans `Site` : deux tuiles, deux
+ *     vocabulaires. C'est pourquoi `Choisi` les sépare par un `genre` au lieu
+ *     de laisser un champ porter deux sens. */
+interface Serv { n: string; f: string; c?: string | null; g: [number, number] }
 
 /**
  * 🔴 CE QU'ON REGARDE — un site remarquable OU un hébergement, 15/11/2026.
@@ -90,7 +112,14 @@ interface Heb { n: string; t?: string; c?: string; lits?: number; ch?: number; g
 type Choisi =
   | { genre: "site"; n: string; c: string; g: [number, number]; a?: 1 }
   | { genre: "hebergement"; n: string; t?: string; commune?: string;
-      lits?: number; ch?: number; g: [number, number] };
+      lits?: number; ch?: number; g: [number, number] }
+  /* ⭐ TROISIÈME GENRE, MÊME RAISON QUE LE DEUXIÈME. La tuile de services
+     porte `f` (une famille) là où celle des sites porte `c` (un genre) et
+     celle des hébergements `t` (un type). Trois vocabulaires dans un seul
+     champ auraient fini lus avec le mauvais — le défaut que la note
+     ci-dessus raconte, une famille plus tard. */
+  | { genre: "service"; n: string; f: string; commune?: string;
+      g: [number, number] };
 
 const LIBELLES: Record<string, string> = {
   parc: "Parc", sommet: "Sommet", memorial: "Mémorial", plage: "Plage",
@@ -163,6 +192,16 @@ export const titreDe = (x: Choisi): string =>
  */
 export function direLeDetail(x: Choisi): string {
   if (x.genre === "site") return x.a ? "Sans nom connu" : direLeGenre(x.c);
+  /* ⚠️ LA FAMILLE D'ABORD, LA COMMUNE ENSUITE — et rien de plus : la moisson
+     ne sort NI l'adresse NI le téléphone, même pour un commerce. « La
+     position suffit à mener sur place, et une adresse en clair dans un
+     fichier servi est une donnée de plus à défendre pour un gain nul »
+     (`services-monde.ts`). Une fiche qui promettrait un horaire qu'elle n'a
+     pas serait pire que muette. */
+  if (x.genre === "service") {
+    const bouts = [direLaFamille(x.f), x.commune || null].filter(Boolean);
+    return bouts.join(" · ");
+  }
   const bouts = [
     x.t ? direLeType(x.t) : null,
     x.commune || null,
@@ -205,8 +244,16 @@ export function CarteMonde(
    *    `ot.json` pèse 264 Ko, et qui ouvre la carte pour regarder des sites
    *    n'a pas à les payer.
    */
+  /**
+   * 🔴 UN QUATRIÈME CALQUE — 15/11/2026 : « branche le calque des commerces
+   *    sur la carte ». Il naît ÉTEINT comme les deux autres, et pour une
+   *    raison de plus : son quadrillage est quatre fois plus fin, donc il ne
+   *    rend quelque chose qu'au zoom d'une ville. Allumé d'office, il serait
+   *    une case cochée qui ne montre rien — ce que ce panneau refuse depuis
+   *    qu'il existe.
+   */
   const [calques, setCalques] = useState({
-    sites: true, hebergements: false, balises: false,
+    sites: true, hebergements: false, balises: false, services: false,
   });
   /* ⚠️ Lue UNE FOIS : l'appareil ne change pas en cours de session, et
      `plateformeDe` lit le `userAgent` — même raison que sur la carte du
@@ -235,6 +282,20 @@ export function CarteMonde(
   const [cherche, setCherche] = useState(false);
   const [genres, setGenres] = useState<string[]>([]);
   const [genresChoisis, setGenresChoisis] = useState<ReadonlySet<string>>(new Set());
+  /* ⭐ LES FAMILLES SONT CONNUES D'AVANCE, LES GENRES NON. Les genres de sites
+     « se découvrent en marchant » parce que les tuiles en portent 32 dont la
+     plupart seraient vides ici ; les dix familles de services viennent d'une
+     table écrite (`services-familles.ts`), la même que la moisson applique.
+     ⚠️ Mais on ne propose QUE celles qu'on a sous les yeux, même règle que
+        les genres : un filtre qui ne trouve jamais rien se lit comme une
+        panne. */
+  const [familles, setFamilles] = useState<string[]>([]);
+  const [famillesChoisies, setFamillesChoisies] = useState<ReadonlySet<string>>(new Set());
+  /* ⛔ LE REFUS DU CALQUE A SON PROPRE MOT. Le `mot` général parle du cadrage
+     des SITES ; à z11, les services refusent bien plus tôt — et une case
+     cochée qui ne montre rien se lit « il n'y en a pas ici » au lieu de
+     « approchez ». */
+  const [motServices, setMotServices] = useState("");
   /** ⚠️ Posé par `installer()` : les effets de calque ne peuvent rien avant. */
   const [pret, setPret] = useState(false);
   /* ⭐ LES CLOSURES DE L'EFFET DE MONTAGE NE VOIENT PAS L'ÉTAT D'AUJOURD'HUI.
@@ -283,6 +344,11 @@ export function CarteMonde(
     const lots = {
       sites: { lues: new Set<string>(), points: [] as GeoJSON.Feature[] },
       hebergements: { lues: new Set<string>(), points: [] as GeoJSON.Feature[] },
+      /* ⚠️ SON PROPRE CACHE, ET C'EST OBLIGATOIRE ICI : les clés sont des
+         `x/y` d'un quadrillage DIFFÉRENT (z11). Partager le cache ferait
+         croire lue une tuile z11 parce qu'une tuile z8 porte les mêmes
+         coordonnées — et le calque resterait vide sans un mot. */
+      services: { lues: new Set<string>(), points: [] as GeoJSON.Feature[] },
     };
     const m = new maplibregl.Map({
       container: boite.current, style: enFond ? STYLE_ORTHO : STYLE,
@@ -420,6 +486,42 @@ export function CarteMonde(
       m.on("mouseenter", "hebergements", () => { m.getCanvas().style.cursor = "pointer"; });
       m.on("mouseleave", "hebergements", () => { m.getCanvas().style.cursor = ""; });
 
+      /* 🔴 LES COMMERCES ET SERVICES — UNE SEULE TEINTE POUR DIX FAMILLES, et
+         c'est la même décision que pour les hébergements, poussée d'un cran.
+         ⛔ Dix couleurs de plus se seraient battues avec les vingt-trois
+            genres de sites qui occupent déjà la palette (`couleurCategorie`),
+            et aucune légende ne tient dix pastilles sur un téléphone. La
+            famille se dit dans la FICHE et se choisit dans le FILTRE — deux
+            endroits où elle est écrite en toutes lettres, au lieu d'une
+            nuance qu'il faudrait apprendre.
+         ⭐ Et la teinte est choisie CONTRE LE FOND, pas dans l'absolu : un
+            bleu d'encre sur une orthophoto (verte, grise, sableuse) se voit
+            partout, là où un vert-de-gris avait disparu sur la Bretagne le
+            15/11 — « du vert sur du vert ». */
+      m.addSource("services", { type: "geojson",
+        data: { type: "FeatureCollection", features: [] } });
+      m.addLayer({
+        id: "services", type: "circle", source: "services",
+        layout: { visibility: "none" },
+        paint: {
+          "circle-radius": ["interpolate", ["linear"], ["zoom"], 11, 3, 14, 5, 17, 8],
+          "circle-color": "#2f5d8a",
+          "circle-stroke-width": 1,
+          "circle-stroke-color": "rgba(255,255,255,.9)",
+        },
+      });
+      m.on("click", "services", (e) => {
+        const p = e.features?.[0]?.properties as
+          { n: string; f: string; c?: string } | undefined;
+        const g = (e.features?.[0]?.geometry as GeoJSON.Point | undefined)?.coordinates;
+        if (p && g) {
+          setChoisi({ genre: "service", n: p.n, f: p.f,
+                      commune: p.c || undefined, g: [g[0], g[1]] });
+        }
+      });
+      m.on("mouseenter", "services", () => { m.getCanvas().style.cursor = "pointer"; });
+      m.on("mouseleave", "services", () => { m.getCanvas().style.cursor = ""; });
+
       taireLesEtiquettes();
       setPret(true);
       charger();
@@ -531,9 +633,21 @@ export function CarteMonde(
      *    que ça coûte (« deux moteurs pour un même travail »).
      */
     async function moissonner(
-      nom: "sites" | "hebergements", racine: string,
+      nom: "sites" | "hebergements" | "services", racine: string,
       tuiles: readonly (readonly [number, number])[],
       proprietes: (e: any) => Record<string, unknown>,
+      /* 🔴 LE QUADRILLAGE EST UN ARGUMENT DEPUIS LE 15/11/2026, ET IL ÉTAIT
+         ÉCRIT EN DUR JUSTE ICI. L'adresse se construisait `${racine}/${Z}/…`
+         avec la constante du module : les services, produits à z11, auraient
+         été demandés à z8. ⛔ Et le symptôme aurait été MUET — ce code traite
+         un 404 comme « il n'y a rien ici », donc le calque se serait allumé
+         sur un monde vide. C'est exactement le défaut que
+         `calques-monde.test.ts` garde depuis sa première ligne, pour les deux
+         autres calques.
+         ⚠️ Le défaut vaut `Z` : un appelant qui oublie la grille retombe sur
+            le comportement d'avant, pas sur un quadrillage surprise — même
+            règle que `tuilesDuCadre`. */
+      grille: number = Z,
     ) {
       const lot = lots[nom];
       let neuf = 0;
@@ -542,7 +656,7 @@ export function CarteMonde(
         if (lot.lues.has(clef)) continue;
         lot.lues.add(clef);
         try {
-          const r = await fetch(`${racine}/${Z}/${x}/${y}.json`);
+          const r = await fetch(`${racine}/${grille}/${x}/${y}.json`);
           if (!r.ok) continue;            // tuile vide : il n'y a rien ici
           const t = (await r.json()) as { l: any[] };
           for (const e of t.l) {
@@ -587,6 +701,19 @@ export function CarteMonde(
             g: (f.geometry as GeoJSON.Point).coordinates as [number, number],
           })));
       }
+      if (nom === "services") {
+        /* ⚠️ MÊME RÈGLE QUE LES GENRES : on propose ce qui est SOUS LES YEUX.
+           Les dix familles sont connues d'avance, mais un quartier n'en porte
+           souvent que trois — et un bouton qui ne trouve jamais rien se lit
+           comme une panne.
+           ⭐ ET L'ORDRE VIENT DE LA TABLE, pas de l'alphabet : `FAMILLES` est
+              rangée du plus spécifique au plus général (une pharmacie est
+              « Santé » avant d'être « Commerces »), et c'est la lecture qui
+              aide — pas un tri qui mettrait « Artisans » en tête. */
+        const vues = new Set<string>();
+        for (const f of lot.points) vues.add(String((f.properties as any).f));
+        setFamilles(FAMILLES.map((f) => f.cle).filter((c) => vues.has(c)));
+      }
     }
 
     /** Charge les tuiles du cadre visible, et seulement celles-là. */
@@ -598,7 +725,7 @@ export function CarteMonde(
       const b = m.getBounds();
       const choix = tuilesDuCadre(
         { ouest: b.getWest(), est: b.getEast(), nord: b.getNorth(), sud: b.getSouth() },
-        m.getZoom());
+        m.getZoom(), Z_SERVICES);
       if (choix.etat !== "ok") {
         /* ⭐ DIRE CE QU'IL Y A, PAS SEULEMENT CE QU'ON NE PEUT PAS. « Approchez »
            seul laisse croire à une carte vide ; le nombre dit qu'il y a de
@@ -622,6 +749,34 @@ export function CarteMonde(
              est vide. */
           (e: Heb) => ({ n: e.n, t: e.t ?? "", c: e.c ?? "",
                          lits: e.lits ?? 0, ch: e.ch ?? 0 }));
+      }
+
+      /* 🔴 LES SERVICES ONT LEUR PROPRE CADRAGE, ET C'EST LE CŒUR DU
+         BRANCHEMENT. `choix` ci-dessus est calculé sur la grille z8 des
+         sites ; à z11 le MÊME cadre couvre seize fois plus de tuiles, donc
+         `TUILES_MAX` répond « trop » bien plus tôt.
+         ⛔ RÉUTILISER `choix` AURAIT ÉTÉ LE DÉFAUT PARFAIT : des coordonnées
+            z8 demandées sous `/monde/c/11/`, donc des 404 — et un 404 se lit
+            ici « il n'y a rien ici ». Le calque se serait allumé sur un monde
+            vide, sans une erreur, exactement là où il y a 1,28 million de
+            fiches. */
+      if (calquesVivants.current.services) {
+        const b2 = m.getBounds();
+        const choixC = tuilesDuCadre(
+          { ouest: b2.getWest(), est: b2.getEast(),
+            nord: b2.getNorth(), sud: b2.getSouth() },
+          m.getZoom());
+        if (choixC.etat !== "ok") {
+          /* ⭐ ON DIT POURQUOI, ET OÙ CHERCHER. « Rien » laisserait croire
+             que le territoire est désert ; la phrase dit que c'est le ZOOM
+             qui décide, et à quelle échelle le calque répond. */
+          setMotServices("Approchez jusqu'à une ville : les commerces et "
+            + "services se posent quartier par quartier.");
+        } else {
+          setMotServices("");
+          await moissonner("services", TUILES_C, choixC.tuiles,
+            (e: Serv) => ({ n: e.n, f: e.f, c: e.c ?? "" }), Z_SERVICES);
+        }
       }
     }
     /* ⭐ Le relais vers l'extérieur de l'effet : allumer un calque doit
@@ -759,7 +914,13 @@ export function CarteMonde(
     m.setLayoutProperty("sites", "visibility", calques.sites ? "visible" : "none");
     m.setLayoutProperty("hebergements", "visibility",
       calques.hebergements ? "visible" : "none");
-    if (calques.hebergements) rechargerRef.current?.();
+    m.setLayoutProperty("services", "visibility",
+      calques.services ? "visible" : "none");
+    if (calques.hebergements || calques.services) rechargerRef.current?.();
+    /* ⚠️ ÉTEINDRE EFFACE AUSSI LE MOT. Sans ça, « approchez jusqu'à une
+       ville » resterait sous une case décochée — un refus orphelin, qui parle
+       d'un calque que personne ne regarde plus. */
+    if (!calques.services) setMotServices("");
   }, [calques, pret]);
 
   /**
@@ -780,6 +941,18 @@ export function CarteMonde(
       ? ["in", ["get", "c"], ["literal", [...genresChoisis]]] as any
       : null);
   }, [genresChoisis, pret]);
+
+  /* ⭐ MÊME OUTIL, MÊME RAISON — et la même sûreté : le clic des services
+     passe par `m.on("click", "services")`, que maplibre ne déclenche que pour
+     les objets rendus. Ce qui est cliquable est ce qui est visible, par
+     construction. */
+  useEffect(() => {
+    const m = carte.current;
+    if (!m || !pret || !m.getLayer("services")) return;
+    m.setFilter("services", famillesChoisies.size
+      ? ["in", ["get", "f"], ["literal", [...famillesChoisies]]] as any
+      : null);
+  }, [famillesChoisies, pret]);
 
   /* ⛔ ON NE TÉLÉCHARGE PAS LES CIRCUITS SUR UN HÔTE QUI N'A PAS D'OFFICE.
      C'est la règle déjà écrite dans `Territoire2030` le 7/11 : masquer coûte
@@ -847,6 +1020,13 @@ export function CarteMonde(
     setGenresChoisis((avant) => {
       const apres = new Set(avant);
       if (!apres.delete(g)) apres.add(g);
+      return apres;
+    });
+
+  const basculerFamille = (f: string) =>
+    setFamillesChoisies((avant) => {
+      const apres = new Set(avant);
+      if (!apres.delete(f)) apres.add(f);
       return apres;
     });
 
@@ -939,6 +1119,15 @@ export function CarteMonde(
         <div className="monde-calques" id="monde-calques">
           {([["sites", "Les sites remarquables"],
              ["hebergements", "Les hébergements"],
+             /* 🔴 « branche le calque des commerces sur la carte » —
+                Aurélien, 15/11/2026. ⚠️ L'option est offerte PARTOUT, y
+                compris hors de France où le calque sera vide : contrairement
+                aux balades de l'Office, ce n'est pas un territoire qui
+                manque mais une MOISSON (la passe monde ignore `shop=*`). Le
+                dire relève de la phrase sous la case, pas du retrait de
+                l'option — retirer la case ferait croire que le produit ne
+                sait pas faire. */
+             ["services", "Les commerces et services"],
              /* ⛔ L'OPTION N'EXISTE QUE LÀ OÙ L'OFFICE EXISTE — voir la note
                 sur le chargement : une case qui pilote un calque vide se lit
                 « il n'y en a pas ici ». */
@@ -952,6 +1141,34 @@ export function CarteMonde(
               <span className="terr-calque-nom">{nom}</span>
             </label>
           ))}
+          {/* ⛔ LE REFUS DU CALQUE SE DIT SOUS SA CASE, pas au milieu de la
+              carte : c'est de CETTE case qu'il parle. Une case cochée qui ne
+              montre rien, sans un mot, se lit « il n'y en a pas ici ». */}
+          {calques.services && motServices && (
+            <p className="terr-calque-mot">{motServices}</p>
+          )}
+          {calques.services && familles.length > 1 && (
+            <div className="terr-genres" role="group"
+                 aria-label="Familles de commerces et services">
+              <button type="button"
+                className={famillesChoisies.size === 0 ? "ot-filtre ot-filtre-actif" : "ot-filtre"}
+                aria-pressed={famillesChoisies.size === 0}
+                onClick={() => setFamillesChoisies(new Set())}>
+                Toutes
+              </button>
+              {familles.map((f) => {
+                const actif = famillesChoisies.has(f);
+                return (
+                  <button key={f} type="button"
+                    className={actif ? "ot-filtre ot-filtre-actif" : "ot-filtre"}
+                    aria-pressed={actif}
+                    onClick={() => basculerFamille(f)}>
+                    {direLaFamille(f)}
+                  </button>
+                );
+              })}
+            </div>
+          )}
           {/* ⭐ LE FILTRE NE PARAÎT QUE SI LE CALQUE EST ALLUMÉ — un contrôle
               qui ne change rien à l'écran se lit comme une panne. Et il
               attend d'avoir plus d'un genre : filtrer parmi un seul n'est pas
