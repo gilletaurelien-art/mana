@@ -33,7 +33,7 @@
 //    carte des sites remarquables.
 
 import { execFileSync } from "node:child_process";
-import { mkdirSync, writeFileSync, existsSync } from "node:fs";
+import { mkdirSync, writeFileSync, existsSync, readdirSync, rmSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -294,6 +294,8 @@ const [deb, fin] = process.argv.slice(2).length
 
 let total = 0, tuiles = 0, octets = 0, plafonnees = 0, anonymes = 0;
 const desaccords = [];
+/** Ce que CE passage a écrit — voir la purge, tout en bas. */
+const ecrites = new Set();
 for (let col = deb; col <= fin; col++) {
   const lonMin = -180 + col * 45, lonMax = lonMin + 45;
   const tuilesLues = demanderJson(`
@@ -349,6 +351,7 @@ for (let col = deb; col <= fin; col++) {
        ici il lit toujours la même chose. */
     const corps = JSON.stringify(tuile) + "\n";
     writeFileSync(resolve(dossier, `${ty}.json`), corps, "utf8");
+    ecrites.add(`${tx}/${ty}`);
     octets += Buffer.byteLength(corps);
     tuiles++; total += l.length;
     anonymes += l.filter((e) => e.a).length;
@@ -368,3 +371,48 @@ if (desaccords.length) {
   process.exit(1);
 }
 console.log("✓ SQL et estAnonyme() d'accord sur toutes les entrées");
+
+/* ══ LA PURGE DES TUILES DEVENUES VIDES ═══════════════════════════════════
+ *
+ * 🔴 CE SCRIPT N'ÉCRIT QUE LES TUILES QUI ONT DU CONTENU, et il ne touchait
+ *    pas aux autres. Une tuile dont toutes les entrées viennent d'être
+ *    RETIRÉES du gisement — les neuf mots de bruit, les 204 domiciles — reste
+ *    donc en place, avec son ancien contenu, et continue d'être servie.
+ * ⭐ C'est l'orphelin au nom plausible, à l'échelle d'une tuile : absent on
+ *    cherche, plausible on conclut. `services-monde.ts` purge déjà les
+ *    quadrillages étrangers pour la même raison ; ici c'est le contenu qui a
+ *    changé, pas la grille, et rien ne le disait.
+ *
+ * ⚠️ ET LA PURGE SUIT LES COLONNES DEMANDÉES, JAMAIS TOUT LE JEU. Relancer
+ *    une seule colonne ne doit pas effacer les tuiles des autres : on ne
+ *    balaie que les `tx` couverts par `[deb, fin]`. Sans ça, un passage
+ *    partiel détruirait les trois quarts du monde en croyant faire le ménage.
+ */
+{
+  const txDe = (lon) => Math.floor(((lon + 180) / 360) * 2 ** ZOOM);
+  const txMin = txDe(-180 + deb * 45);
+  const txMax = txDe(-180 + (fin + 1) * 45 - 1e-9);
+  let retirees = 0;
+  const racine = resolve(SORTIE, String(ZOOM));
+  if (existsSync(racine)) {
+    for (const nom of readdirSync(racine)) {
+      const tx = Number(nom);
+      if (!Number.isInteger(tx) || tx < txMin || tx > txMax) continue;
+      const dossier = resolve(racine, nom);
+      for (const f of readdirSync(dossier)) {
+        const ty = f.replace(/\.json$/, "");
+        if (f.endsWith(".json") && !ecrites.has(`${tx}/${ty}`)) {
+          rmSync(resolve(dossier, f));
+          retirees++;
+        }
+      }
+      if (readdirSync(dossier).length === 0) rmSync(dossier, { recursive: true });
+    }
+  }
+  if (retirees > 0) {
+    console.log(`⚠️  ${retirees} tuile(s) devenue(s) vide(s) retirée(s) `
+      + `(colonnes z3 ${deb}→${fin}, tx ${txMin}→${txMax}).`);
+  } else {
+    console.log("✓ aucune tuile orpheline — toutes celles en place ont été réécrites");
+  }
+}
