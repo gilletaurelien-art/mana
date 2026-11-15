@@ -4885,3 +4885,28 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
    `.rech` donnait à ses enfants, pour que l'accueil de mana.bzh ne bouge pas
    d'un pixel. */
 .rech-sous { display: flex; flex-direction: column; gap: 8px; }
+
+/* ── LA LISTE DES PROMENADES DE L'HÔTE — 15/11/2026 ───────────────────────
+   🔴 LE CATALOGUE REVIENT D'ENTRE LES FANTÔMES. 1 032 itinéraires étaient
+      servis en 160 Ko et plus aucun écran ne les appelait ; ils reparaissent
+      filtrés par le cadre de l'hôte (69 sur mana.bzh, le périmètre de Brest
+      terres océanes).
+   ⚠️ CES CINQ CLASSES SONT NÉES AVEC LEUR CSS, ET PAS APRÈS. Le composant a
+      d'abord été écrit avec des noms qui n'existaient dans aucune feuille :
+      rien n'aurait levé, les noms avaient l'air justes, et la liste se serait
+      affichée sans boîte ni marge. C'est le défaut du 15/11 au matin
+      (`ot-pastille`), à quelques heures près.
+   ⭐ Elle emprunte la forme de `.monde-prop` — même grille, même survol :
+      deux listes de lieux dans le même produit n'ont pas à se ressembler de
+      loin et différer de près. */
+.prom-cadre { margin-top: var(--sp-3); }
+.prom-liste { list-style: none; margin: var(--sp-2) 0 0; padding: 0; display: grid; gap: 2px; }
+.prom-ligne {
+  display: grid; gap: 2px; padding: 10px 8px; border-radius: var(--r-s, 8px);
+  color: var(--nuit); text-decoration: none;
+}
+.prom-ligne:hover { background: rgb(25 43 67 / 6%); }
+.prom-nom { font-size: var(--t-s); font-weight: 600; }
+/* ⚠️ `tabular-nums` : les kilométrages s'alignent, et une colonne de chiffres
+   qui danse se lit comme une liste mal rangée. */
+.prom-meta { font-size: var(--t-xs); color: var(--texte-doux); font-variant-numeric: tabular-nums; }

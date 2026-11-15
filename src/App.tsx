@@ -6,6 +6,7 @@ import { Invitation } from "./Invitation";
 import { LApplication } from "./LApplication";
 import { avecOffice, visage, signature, titrePourLHote, poserCanonique } from "./visage";
 import { entreesBarre, liensPied, piedDansReglages, accueilEstLaCarte } from "./barre";
+import { PromenadesDuCadre } from "./PromenadesDuCadre";
 import { carteEnFond, CARTE_EN_ACCUEIL } from "./fond-du-monde";
 import { couper, ecouterPoste, etatPoste, lire } from "./poste";
 import { Reglages } from "./Reglages";
@@ -444,7 +445,14 @@ export default function App() {
           </div>
         </main>
       ) : path === "/composer" ? (
-        <Composer />
+        /* 🔴 LE CATALOGUE REVIENT, FILTRÉ PAR L'HÔTE — 15/11/2026. Il était
+           devenu un fantôme : un fichier servi de 160 Ko que plus aucun écran
+           n'appelait. Il se rend À CÔTÉ du compositeur, pas dedans : l'outil
+           qu'on manipule et le catalogue qu'on feuillette sont deux choses. */
+        <>
+          <Composer />
+          <PromenadesDuCadre />
+        </>
       ) : path === "/promenades" ? (
         /* 🔴 MÊME ÉCRAN QUE `/composer`, DEPUIS LE 3/11/2026 — fusion
            demandée par le fondateur : « on s'épargne un clic ». Les deux
@@ -459,8 +467,14 @@ export default function App() {
            `Composer.tsx` rend : composer d'abord, parcourir ensuite, sans
            changer d'adresse. `Promenades.tsx` ne garde que les deux
            fonctions pures que `Promenades.test.ts` vérifie
-           (`surLaPresquile`, `PRESQUILE`) — plus de composant, plus de JSX. */
-        <Composer />
+           (`surLaPresquile`, `PRESQUILE`) — plus de composant, plus de JSX.
+           ⚠️ LES DEUX ADRESSES RENDENT LA MÊME CHOSE, liste comprise : les
+              fondre serait les rendre invisibles au garde de `prefixe.test.ts`,
+              qui extrait chaque route par le motif littéral `path === "/…"`. */
+        <>
+          <Composer />
+          <PromenadesDuCadre />
+        </>
       ) : path === "/balades-office" && avecOffice() ? (
         /* 🔴 EXTRAIT DE `Composer.tsx` LE 3/11/2026 — demande du fondateur :
            carte = nos sites et nos propositions, second onglet = les
