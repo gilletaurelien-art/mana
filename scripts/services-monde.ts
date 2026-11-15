@@ -54,7 +54,7 @@
 //       rend jamais rien se lit comme une panne, pas comme une absence.
 
 import { execFileSync } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync, existsSync, readdirSync, rmSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -158,6 +158,21 @@ console.log(`✓ garde : aucune association ne passe — ${Number(garde.exportab
 const [deb, fin] = process.argv.slice(2).length
   ? process.argv.slice(2).map(Number) : [0, 7];
 
+/* 🔴 ON EFFACE LES QUADRILLAGES ÉTRANGERS AVANT D'ÉCRIRE. Vécu le 15/11 :
+   un essai à z8 avait laissé 19 tuiles sous `c/8/`, et le passage en z11 ne
+   les a pas touchées — elles seraient restées servies, muettes et fausses.
+   ⭐ C'est la forme de l'orphelin au nom plausible : un fichier périmé coûte
+      plus cher qu'un fichier absent, parce qu'absent on cherche et plausible
+      on conclut. ⚠️ On ne vide QUE les autres grilles : relancer une colonne
+      ne doit pas détruire les tuiles des colonnes voisines. */
+if (existsSync(SORTIE)) {
+  for (const z of readdirSync(SORTIE)) {
+    if (z !== String(ZOOM)) {
+      rmSync(`${SORTIE}/${z}`, { recursive: true, force: true });
+      console.log(`  ⚠️  quadrillage orphelin retiré : c/${z}/`);
+    }
+  }
+}
 mkdirSync(SORTIE, { recursive: true });
 let total = 0, tuiles = 0, octets = 0, plafonnees = 0;
 
