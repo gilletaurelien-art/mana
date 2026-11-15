@@ -120,24 +120,66 @@ function demanderJson(sql: string): any[] {
 // ⛔ Il ne demande pas « ai-je écrit le filtre ? » mais « le filtre laisse-t-il
 //    passer une association ? ». Un garde qui relit sa propre intention est le
 //    défaut que ce dépôt a payé plus d'une fois.
+/**
+ * 🔴 LA SANTÉ SORT DE CE JEU — 15/11/2026, et c'est une décision DÉJÀ PRISE
+ *    par Aurélien le 21/10 (« Santé NAF 86.* : API eSanté »), que ce calque
+ *    venait de défaire sans le savoir.
+ *
+ * ⛔ CE QUE LA PREMIÈRE VERSION A PUBLIÉ, MESURÉ À L'ÉCRAN UNE HEURE APRÈS :
+ *    une épingle « ANTOINE FRANCOI PARMENTIER — Santé · BREST », au bâtiment
+ *    près. NAF 86.21Z, médecin généraliste, SIREN 919886382 : une ENTREPRISE
+ *    INDIVIDUELLE, dont la dénomination SIRENE EST le nom de la personne.
+ *    Sur les 569 956 lignes 86.* du gisement, **527 133 (92 %) portent un
+ *    titre tout en majuscules de deux à quatre mots sans chiffre** — la
+ *    signature d'un nom propre.
+ *
+ * ⭐ ET LE GARDE EXISTANT NE POUVAIT PAS LES VOIR. `adresse_est_un_domicile()`
+ *    répond « cette ligne est-elle une ASSOCIATION ? » — par la catégorie
+ *    juridique, pas par le NAF. Un praticien libéral n'est pas une
+ *    association : il traverse le garde en règle. ⛔ Le domicile déclaré d'un
+ *    infirmier ou d'un kiné est pourtant le même objet que le siège d'une
+ *    asso — « une carte au mètre est une adresse », écrit ici depuis le 19/10.
+ *
+ * ⚠️ ON EXCLUT LE NAF, PAS LA FAMILLE. Une pharmacie ou un hôpital venus
+ *    d'OSM n'ont pas de NAF et restent : ce sont des lieux publics, signalés
+ *    sur la voirie. Ce qui part, c'est l'inscription SIRENE d'une personne.
+ * ⏳ RESTE UN ARBITRAGE, ET IL N'EST PAS À MOI : 5 396 lignes d'autres NAF
+ *    (artisans, garages) portent le même profil de nom propre. Le motif
+ *    « majuscules, 2-4 mots » attraperait aussi « BOULANGERIE DU PORT » —
+ *    trop grossier pour trancher seul.
+ */
 const GISEMENT = `
   FROM public.ressources r
  WHERE r.geom IS NOT NULL
    AND r.titre IS NOT NULL AND btrim(r.titre) <> ''
    AND r.mots && ${TOUS_LES_MOTS}
    AND ST_Y(r.geom) BETWEEN -85 AND 85
+   AND coalesce(r.naf, '') NOT LIKE '86%'
    AND NOT public.adresse_est_un_domicile(r.source, r.rna, r.naf, r.siret)`;
 
 const [garde] = demanderJson(
   `SELECT json_build_object(
             'exportables', count(*),
             'assos_qui_passent', count(*) FILTER (
-               WHERE public.adresse_est_un_domicile(r.source, r.rna, r.naf, r.siret)))::text
+               WHERE public.adresse_est_un_domicile(r.source, r.rna, r.naf, r.siret)),
+            'sante_qui_passe', count(*) FILTER (WHERE coalesce(r.naf,'') LIKE '86%'))::text
      ${GISEMENT};`);
 if (Number(garde.assos_qui_passent) > 0) {
   console.error(`🔴 ${garde.assos_qui_passent} association(s) traversent le filtre.`);
   console.error("   Une épingle au bâtiment près sur le siège d'une association,");
   console.error("   c'est publier le domicile d'un bénévole. On n'exporte rien.");
+  process.exit(1);
+}
+/* ⛔ DEUXIÈME GARDE, MÊME FORME, AUTRE QUESTION. Il ne demande pas « ai-je
+   écrit `NOT LIKE '86%'` ? » — la condition est deux lignes plus haut, on la
+   voit — mais « le filtre laisse-t-il passer une ligne de santé ? ». Un garde
+   qui relit sa propre intention est le défaut que ce dépôt a payé plus d'une
+   fois, et celui-ci garde une décision du FONDATEUR, pas une règle de code. */
+if (Number(garde.sante_qui_passe) > 0) {
+  console.error(`🔴 ${garde.sante_qui_passe} ligne(s) de santé (NAF 86.*) traversent le filtre.`);
+  console.error("   92 % d'entre elles portent un NOM DE PERSONNE — une entreprise");
+  console.error("   individuelle est dénommée par son praticien. Aurélien a tranché le");
+  console.error("   21/10 : la santé sort de la base (API eSanté). On n'exporte rien.");
   process.exit(1);
 }
 console.log(`✓ garde : aucune association ne passe — ${Number(garde.exportables).toLocaleString("fr-FR")} fiches exportables`);
