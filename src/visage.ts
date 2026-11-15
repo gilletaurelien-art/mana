@@ -42,7 +42,19 @@
    ⭐ ET C'EST MOI QUI L'AI REPRODUIT en posant l'hôte sans toucher à ce
       fichier. Un nouveau visage n'est pas « un domaine de plus » : c'est une
       branche que trois fonctions doivent apprendre. */
-export type Visage = "bzh" | "love" | "home" | "france";
+/**
+ * ⭐ LA LISTE EST LA SOURCE, LE TYPE S'EN DÉDUIT — 15/11/2026.
+ *    Elle était une union de littéraux, donc INEXISTANTE à l'exécution : tout
+ *    garde qui veut parcourir « tous les visages » devait la recopier, et
+ *    `barre.test.ts` l'avait déjà fait. Une liste recopiée ne grandit pas avec
+ *    sa source — c'est exactement comment le quatrième visage a pu être posé
+ *    sans que trois fonctions ne l'apprennent.
+ * ⛔ L'ORDRE N'A PAS DE SENS, ET AUCUN GARDE NE DOIT S'Y FIER : c'est un
+ *    ensemble, pas un classement.
+ */
+export const VISAGES = ["bzh", "love", "home", "france"] as const;
+
+export type Visage = (typeof VISAGES)[number];
 
 /**
  * ⚠️ `?visage=love` EXISTE À DESSEIN, et ce n'est pas une porte dérobée : sans
@@ -54,7 +66,12 @@ export type Visage = "bzh" | "love" | "home" | "france";
 export function visage(): Visage {
   if (typeof location === "undefined") return "bzh";
   const force = new URLSearchParams(location.search).get("visage");
-  if (force === "love" || force === "bzh" || force === "home" || force === "france") return force;
+  /* ⭐ LA LISTE, PAS UNE CHAÎNE DE `===`. Elle était écrite ici une
+     cinquième fois ; un visage ajouté à `VISAGES` sans l'être ici n'aurait
+     simplement pas été forçable, donc invérifiable hors production — et une
+     branche que personne ne peut regarder est une branche que personne ne
+     corrige (c'est la raison d'être de ce paramètre, deux lignes plus haut). */
+  if (force && (VISAGES as readonly string[]).includes(force)) return force as Visage;
   const h = location.hostname;
   if (h === "mana.love") return "love";
   /* ⚠️ `endsWith` POUR LES SOUS-DOMAINES, comme `signature()` juste en dessous.

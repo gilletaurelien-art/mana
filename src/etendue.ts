@@ -84,10 +84,20 @@ function boiteBretonne(): [number, number, number, number] {
  *    faudra le dire le jour où manafrance ouvrira (⏳ une étendue par
  *    territoire ultramarin, ou une boîte qui fait le tour du globe : les deux
  *    se défendent, aucune ne s'improvise).
- * ⛔ `manafrance` N'EST PAS ENCORE UN VISAGE SERVI. L'étendue est écrite
- *    AVANT l'hôte, à dessein : la règle existe, et le jour où le domaine
- *    arrive, il n'y a qu'à le nommer. L'inverse — un hôte servi sans étendue
- *    — rendrait la France au monde entier sans que rien ne le signale.
+ * 🔴 ET « IL N'Y A QU'À LE NOMMER » NE S'EST PAS FAIT — corrigé le 15/11/2026
+ *    au soir. Cette note disait : « `manafrance` n'est pas encore un visage
+ *    servi. L'étendue est écrite AVANT l'hôte, à dessein […] l'inverse — un
+ *    hôte servi sans étendue — rendrait la France au monde entier sans que
+ *    rien ne le signale. » Le quatrième visage a été posé deux heures plus
+ *    tard, `etendueDe()` n'a pas été touchée, et c'est le mot pour mot de
+ *    cette phrase qui est arrivé : manafrance.org ouvrait sur [6, 48] —
+ *    l'Europe de l'Ouest, à cheval sur la frontière suisse — et rien ne l'a
+ *    signalé.
+ * ⭐ UNE PRÉDICTION ÉCRITE N'EST PAS UN GARDE. Celle-ci décrivait le défaut
+ *    exactement, dans le fichier où il allait se produire, et elle n'a servi
+ *    à rien — personne ne relit un commentaire en posant un hôte. C'est
+ *    `etendue.test.ts` qui l'énumère désormais : un visage sans étendue
+ *    propre y est une ligne rouge, pas une phrase à relire.
  */
 const FRANCE: [number, number, number, number] = [-5.3, 41.3, 9.7, 51.2];
 
@@ -118,6 +128,11 @@ export const ETENDUES: Record<Etendue["clef"], Etendue> = {
  */
 export function etendueDe(v: Visage): Etendue {
   if (v === "bzh") return ETENDUES.bretagne;
+  /* 🔴 LA LIGNE QUI MANQUAIT PENDANT DEUX HEURES — voir la note de `FRANCE`
+     ci-dessus. Sans elle, manafrance.org tombait dans le repli du monde :
+     une carte satellite ouverte sur l'Europe de l'Ouest, pour un site qui ne
+     revendique que la France. ⛔ Le repli ne criait pas, il CADRAIT MAL. */
+  if (v === "france") return ETENDUES.france;
   return ETENDUES.monde;
 }
 

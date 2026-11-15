@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readdirSync, readFileSync } from "node:fs";
-import { carteEnFond, CARTE_EN_ACCUEIL } from "./fond-du-monde";
+import { carteEnFond, CARTE_EN_ACCUEIL, CHARTE_SUR_CARTE } from "./fond-du-monde";
+import { VISAGES } from "./visage";
 
 /**
  * 🔴 CE QUE CE FICHIER PROTÈGE : « carte plein écran vue satellite sur chaque
@@ -77,6 +78,79 @@ describe("la politique de fond d'écran de MANAhome", () => {
 
   it("le drapeau par défaut est bien celui du module", () => {
     expect(carteEnFond("home", "/")).toBe(!CARTE_EN_ACCUEIL);
+  });
+
+  /* ⭐ L'ENSEMBLE COMMANDE, LA FONCTION SUIT — et il est énuméré, pas nié.
+     `v === "love"` accueillait tout visage nouveau sans que personne ne le
+     décide ; ici un cinquième visage n'a la carte en fond que si on l'écrit. */
+  it("un visage hors de l'ensemble n'a pas la carte pour sol", () => {
+    for (const v of VISAGES) {
+      expect(carteEnFond(v, "/reglages"), `le visage « ${v} »`)
+        .toBe(CHARTE_SUR_CARTE.has(v));
+    }
+  });
+});
+
+/* ═══ LA FEUILLE DE STYLE DIT-ELLE LA MÊME CHOSE ? ════════════════════════
+   🔴 LE DÉFAUT DU 15/11/2026 AU SOIR, ET IL ÉTAIT MUET DANS LES DEUX SENS.
+      `carteEnFond` répondait OUI pour manafrance.org (test en négatif), la
+      feuille de style ÉNUMÉRAIT `bzh` et `home` (test en positif). La carte
+      était donc montée, et le sol sable de l'application se peignait
+      par-dessus : à l'écran, « il n'y a pas la carte vue satellite », plus la
+      charte du logo et des encadrés restée à son état d'avant.
+   ⭐ CE GARDE EST LE SEUL ENDROIT OÙ LES DEUX LANGAGES SE PARLENT. Un test
+      qui n'interrogerait que la fonction resterait vert avec la feuille
+      périmée — c'est précisément ce qui vient d'arriver pendant deux heures.
+   ⚠️ Il lit le TEXTE de la feuille, et c'est assumé : une feuille de style ne
+      s'interroge pas. Mais il n'en extrait pas une apparence — il en extrait
+      les VISAGES NOMMÉS, et c'est la seule chose qu'il compare. */
+describe("la charte sur fond de carte nomme les mêmes visages des deux côtés", () => {
+  const feuille = ici("styles.css");
+
+  /**
+   * 🔴 ET CE GARDE A ÉTÉ ÉCRIT FAUX D'ABORD — validé par MUTATION, pas par
+   *    relecture. Première rédaction : il ramassait TOUS les
+   *    `[data-visage="…"]` de la feuille en UN ensemble et le comparait à
+   *    `CHARTE_SUR_CARTE`. Mutation posée pour l'éprouver : retirer
+   *    manafrance d'UNE règle sur cinquante-et-une. Le garde est resté VERT —
+   *    les cinquante autres suffisaient à faire apparaître le nom dans
+   *    l'ensemble.
+   * ⛔ OR C'EST EXACTEMENT LE DÉFAUT À ATTRAPER : une charte appliquée à 50
+   *    règles sur 51 ne ressemble pas à une charte absente, elle ressemble à
+   *    un détail de mise en page — la forme la plus silencieuse. L'ensemble se
+   *    vérifie donc RÈGLE PAR RÈGLE.
+   */
+  it("chaque règle de la charte nomme EXACTEMENT les visages de l'ensemble", () => {
+    const groupes = [...feuille.matchAll(
+      /:is\(((?:\s*\[data-visage="[a-z]+"\]\s*,?)+)\)/g)];
+    expect(groupes.length, "aucune règle de charte trouvée : le motif a raté sa cible")
+      .toBeGreaterThan(40);
+    for (const g of groupes) {
+      const noms = [...g[1].matchAll(/"([a-z]+)"/g)].map((m) => m[1]).sort();
+      expect(noms,
+        "une règle de la charte a divergé de `CHARTE_SUR_CARTE` — selon le "
+        + "sens, la carte sera montée puis cachée par le sol sable, ou la "
+        + "charte posée sur un hôte qui ne l'a pas demandée")
+        .toEqual([...CHARTE_SUR_CARTE].sort());
+    }
+    /* ⛔ ET AUCUN `[data-visage=]` NE VIT HORS DE CES GROUPES. Sans cette
+       ligne, une règle écrite en direct — `[data-visage="love"] body { … }` —
+       échapperait entièrement au garde : il ne regarde que les `:is()`. */
+    const dedans = groupes.reduce(
+      (n, g) => n + (g[1].match(/data-visage/g) ?? []).length, 0);
+    expect(dedans, "un `[data-visage=]` vit hors d'un groupe `:is()`, non gardé")
+      .toBe((feuille.match(/\[data-visage=/g) ?? []).length);
+    expect(CHARTE_SUR_CARTE.size).toBeGreaterThan(1);
+  });
+
+  /* ⚠️ Et les visages ÉCARTÉS ne doivent apparaître nulle part dans la
+     feuille : `[data-visage="love"]` posé par mégarde y donnerait à mana.love
+     une charte qui n'est pas la sienne — et personne ne compare deux chartes. */
+  it("aucun visage écarté n'est nommé dans la feuille", () => {
+    for (const v of VISAGES.filter((x) => !CHARTE_SUR_CARTE.has(x))) {
+      expect(feuille.includes(`[data-visage="${v}"]`), `« ${v} » est nommé`)
+        .toBe(false);
+    }
   });
 });
 

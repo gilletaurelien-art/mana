@@ -71,18 +71,45 @@ const AVEC_LEUR_CARTE: ReadonlySet<string> = new Set([
  *   règle s'éprouve dans les DEUX régimes — un défaut qui n'apparaît qu'après
  *   avoir relevé un drapeau est un défaut qu'aucun test ne verrait.
  */
+/**
+ * 🔴 LES HÔTES DONT LE SOL EST LA CARTE — et c'est la MÊME question que
+ *    « lesquels portent la charte de MANAhome ? », parce que cette charte
+ *    n'est rien d'autre que « laisser voir le satellite et protéger le texte
+ *    posé dessus ».
+ *
+ * ⛔ CE N'ÉTAIT PAS UNE LISTE, C'ÉTAIT `v === "love"` — un test en NÉGATIF, et
+ *    il a mordu le 15/11/2026. manafrance.org a été posé le soir même : la
+ *    fonction a répondu « oui, carte en fond » pour lui — correctement, par
+ *    accident — tandis que la feuille de style, elle, ÉNUMÉRAIT ses deux hôtes
+ *    (`:is([data-visage="bzh"],[data-visage="home"])`). Résultat à l'écran :
+ *    la carte était bien montée, et le sol sable de l'application se peignait
+ *    par-dessus. Le défaut ne ressemblait pas à une carte mal cadrée, il
+ *    ressemblait à une carte ABSENTE — avec, en prime, la charte du logo et
+ *    des encadrés restée à son état d'avant.
+ * ⭐ UN TEST EN NÉGATIF ET UNE ÉNUMÉRATION NE PEUVENT PAS RESTER D'ACCORD : le
+ *    premier accueille tout visage nouveau, la seconde en exclut tout visage
+ *    nouveau. Ils divergent à la première addition, et par construction dans
+ *    le sens le plus silencieux — rien ne manque, tout est simplement caché.
+ * ⚠️ D'où la forme : l'ensemble est ÉCRIT ICI, une fois, et
+ *    `fond-du-monde.test.ts` exige que la feuille de style nomme exactement
+ *    ces visages-là. Un cinquième visage fera tomber le test, des deux côtés.
+ */
+export const CHARTE_SUR_CARTE: ReadonlySet<Visage> = new Set(["bzh", "home", "france"]);
+
 export function carteEnFond(
   v: Visage,
   chemin: string,
   accueilEstLaCarte: boolean = CARTE_EN_ACCUEIL,
 ): boolean {
-  /* 🔄 NOS DEUX VISAGES, DEPUIS LE 15/11/2026 AU SOIR. Aurélien : « pour le
+  /* 🔄 NOS TROIS VISAGES, DEPUIS LE 15/11/2026 AU SOIR. Aurélien : « pour le
      site mana.bzh, tu vas lui offrir la même charte graphique que
      manahome.org, à l'identique » — et, interrogé sur le sol : le satellite,
      comme manahome. Les vingt-deux paysages tournants s'arrêtent là.
+     manafrance.org a suivi le soir même : « la version française de
+     manahome », donc le même sol, restreint à la France (voir `etendue.ts`).
      ⛔ mana.love RESTE DEHORS : elle n'emprunte que deux écrans à cette
         application et sa charte est celle de l'autre dépôt. */
-  if (v === "love") return false;
+  if (!CHARTE_SUR_CARTE.has(v)) return false;
   /* L'accueil en plein écran EST la carte : pas de seconde carte dessous. */
   if (chemin === "/" && accueilEstLaCarte) return false;
   if (AVEC_LEUR_CARTE.has(chemin)) return false;

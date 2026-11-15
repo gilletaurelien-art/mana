@@ -1,5 +1,6 @@
 import { ATTRIBUTION, lireFond, poserFond, type Fond } from "./carte-fond";
 import { visage } from "./visage";
+import { piedDansReglages } from "./barre";
 import { ContenuDuPied } from "./App";
 import { useEffect, useState } from "react";
 
@@ -155,7 +156,13 @@ export function Reglages({ base }: { base: string }) {
             ⚠️ Rendu seulement là où le pied a disparu. Ailleurs il est encore
                en bas de chaque page, et l'afficher deux fois serait pire que
                de ne pas l'avoir déplacé. */}
-        {visage() === "home" && (
+        {/* ⚠️ LA MOITIÉ COMPLÉMENTAIRE DE `App.tsx` — et c'est la MÊME
+            fonction, appelée là-bas sous une négation. Écrite deux fois en
+            toutes lettres (`!== "home"` ici, `=== "home"` là-bas), elle
+            laissait manafrance.org avec un pied en bas de page au lieu de
+            l'onglet. Le défaut qu'un seul des deux correctifs aurait créé est
+            pire que celui qu'on corrige : des mentions légales nulle part. */}
+        {piedDansReglages(visage()) && (
           <section className="reg-pied">
             <ContenuDuPied B={base} />
           </section>

@@ -76,6 +76,24 @@ export type Entree = {
  *    couche plus haut : un test à deux issues ne signale pas l'arrivée d'un
  *    troisième cas, il l'absorbe. On nomme donc les trois.
  */
+/**
+ * 🔴 L'ACCUEIL DE CET HÔTE EST-IL LA CARTE ? — Aurélien, 14/11/2026 : « la
+ *    page d'accueil est la carte des sites remarquables », puis « tout va se
+ *    faire via la carte => pas de listing ». manafrance.org suit : même
+ *    produit, étendue restreinte à la France.
+ *
+ * ⛔ ELLE ÉTAIT UNE VARIABLE LOCALE ICI, ET `App.tsx` POSAIT LA MÊME QUESTION
+ *    SOUS LA FORME `visage() === "home"` — c'est-à-dire par le NOM DE L'HÔTE,
+ *    la faute que l'en-tête ci-dessous raconte déjà deux fois. Elle dort
+ *    aujourd'hui (`CARTE_EN_ACCUEIL` est baissé) : le jour où le drapeau se
+ *    relève, manahome aurait eu l'accueil-carte et manafrance un accueil
+ *    éditorial, sans que personne ne l'ait décidé.
+ * ⭐ UN DÉFAUT QUI ATTEND UN DRAPEAU EST LE PLUS DURABLE : il ne se voit pas
+ *    tant que le drapeau est bas, et quand il se lève on cherche du côté de
+ *    ce qu'on vient de changer.
+ */
+export const accueilEstLaCarte = (v: Visage): boolean => v === "home" || v === "france";
+
 export function entreesBarre(v: Visage): Entree[] {
   /* 🔴 QUATRIÈME VISAGE, TROISIÈME FOIS QUE CE DÉFAUT MORD — 15/11/2026 au
      soir. L'en-tête juste au-dessus dit : « un test à deux issues ne signale
@@ -92,7 +110,6 @@ export function entreesBarre(v: Visage): Entree[] {
         nôtre », par opposition à mana.love où nous sommes INVITÉS. Un invité
         ne propose ni sa radio ni ses réglages, il emprunte les passerelles. */
   const office = v === "bzh";
-  const accueilEstLaCarte = v === "home" || v === "france";
   const notre = v !== "love";
   const e: (Entree | null)[] = [
     /* 🔴 CHEZ MANAHOME, CETTE COLONNE RAMÈNE À L'ACCUEIL — 15/11/2026, et
@@ -108,7 +125,7 @@ export function entreesBarre(v: Visage): Entree[] {
           l'écran de mana.bzh, avec ses graphes, ses circuits balisés et ses
           promenades. ⏳ L'unification des deux surfaces — une étendue par
           hôte sur UNE carte — est le chantier ouvert par la même décision. */
-    accueilEstLaCarte
+    accueilEstLaCarte(v)
       ? { clef: "carte", chemin: "/", glyphe: "carte", libelle: "La carte" }
       : { clef: "carte", chemin: "/carte?vue=carte", glyphe: "carte",
           libelle: "La carte du territoire" },
@@ -139,7 +156,15 @@ export function entreesBarre(v: Visage): Entree[] {
          ⚠️ `/hebergements` RESTE SERVI : l'écran n'est pas supprimé ici, il
             perd sa porte. ⏳ À trancher — une page que plus rien ne désigne
             est un fantôme, et ce dépôt les traque. */
-      : accueilEstLaCarte
+      /* ⚠️ `(v)` ET PAS LE NOM NU — mesuré le 15/11/2026 : en sortant cette
+         décision de la fonction, j'ai converti la variable locale en
+         fonction de module et laissé CETTE occurrence sans son argument. Une
+         fonction est toujours vraie : mana.love s'est mise à proposer
+         « Contribuer à la carte », un écran qu'elle ne sert pas. ⭐ Un test
+         l'a dit en deux secondes — et aucune relecture ne l'aurait vu, parce
+         que la ligne fautive est RESTÉE LISIBLE : elle se lit encore comme
+         une question. */
+      : accueilEstLaCarte(v)
       ? { clef: "contribuer", chemin: "/contribuer", glyphe: "contribution",
           libelle: "Contribuer à la carte" }
       : praticable("chat")
@@ -222,6 +247,31 @@ export function entreesBarre(v: Visage): Entree[] {
 }
 
 /** Les liens du pied, pour un visage donné. */
+/**
+ * 🔴 LE PIED DE PAGE VIT-IL DANS RÉGLAGES, PLUTÔT QU'EN BAS DE CHAQUE PAGE ?
+ *    Aurélien, 14/11/2026 : « le footer doit disparaître partout, et vivre
+ *    dans l'onglet réglages ». Borné à manahome ce jour-là ; manafrance.org,
+ *    « la version française de manahome », suit la même charte depuis le
+ *    15/11 au soir.
+ *
+ * ⛔ POURQUOI UNE FONCTION, ET POURQUOI C'EST LA PLUS IMPORTANTE DES TROIS
+ *    CORRECTIONS DE CE SOIR : la décision était écrite en DEUX MOITIÉS, dans
+ *    deux fichiers qui ne se parlent pas — `visage() !== "home"` dans
+ *    `App.tsx` (le pied en bas de page) et `visage() === "home"` dans
+ *    `Reglages.tsx` (le pied dans l'onglet). Elles sont COMPLÉMENTAIRES, et
+ *    c'est cette complémentarité qui garantit que les mentions légales et le
+ *    contact restent atteignables. Corriger une moitié sans l'autre ne donne
+ *    pas un demi-défaut : ça donne un hôte où le pied s'affiche DEUX fois, ou
+ *    un hôte où les mentions légales — une déclaration due par la loi — ne
+ *    s'affichent PLUS NULLE PART. Une seule fonction, deux appels, dont un
+ *    nié : la complémentarité devient structurelle au lieu d'être surveillée.
+ * ⭐ Et elle est nommée par ce qu'elle DÉCIDE, pas par l'hôte qui l'a
+ *    demandée — la règle posée dans `visage.ts` à propos d'`avecOffice()`, et
+ *    celle qu'`entreesBarre` a enfreinte hier en appelant « home » ce qui
+ *    voulait dire « l'accueil est la carte ».
+ */
+export const piedDansReglages = (v: Visage): boolean => v === "home" || v === "france";
+
 export function liensPied(v: Visage): { chemin: string; libelle: string }[] {
   /* ⭐ MÊME NOTION QUE DANS `entreesBarre`, ET MÊME CORRECTION (15/11/2026) :
      `office || home` nommait DEUX SITES là où la question est « cet hôte est-il

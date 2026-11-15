@@ -4272,12 +4272,24 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
    ⛔ `Fond.tsx` NE DISPARAÎT PAS POUR AUTANT : mana.love en vit encore. Une
       rotation qui ne sert plus qu'un hôte reste une rotation qui sert.
 
+   🔴 ET TROIS VISAGES DEPUIS LE 15/11/2026 AU SOIR — manafrance.org était
+      servi depuis deux heures, et CE BLOC NE LE NOMMAIT PAS. Le défaut ne
+      ressemblait pas à une charte manquante : la carte satellite ÉTAIT montée
+      (`carteEnFond` disait oui — en négatif, donc pour tout visage nouveau),
+      et le sol sable de l'application se peignait par-dessus. Aurélien l'a vu
+      comme « il n'y a pas la carte vue satellite centrée sur la France » :
+      deux défauts d'un coup, l'un caché par l'autre.
+   ⚠️ CETTE LISTE NE SE RECOPIE PLUS À L'AVEUGLE. L'ensemble vit dans
+      `fond-du-monde.ts` (`CHARTE_SUR_CARTE`) et un garde de
+      `fond-du-monde.test.ts` exige que les visages nommés ICI soient
+      EXACTEMENT ceux-là. Un cinquième visage fera tomber le test.
+
    ⭐ L'OMBRE EST DÉCLARÉE UNE FOIS. Elle protège les textes clairs qui n'ont
       plus de bandeau sous eux — la devise de l'accueil comme les titres des
       écrans. Recopiée aux deux endroits, elle aurait divergé à la première
       retouche, et une divergence de charte ne casse rien : personne ne la
       signale. */
-:is([data-visage="bzh"],[data-visage="home"]) {
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) {
   --ombre-sur-carte: 0 1px 2px rgb(10 18 30 / 55%), 0 2px 12px rgb(10 18 30 / 45%);
 }
 
@@ -4285,8 +4297,8 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
    peindrait par-dessus et le fond serait là, invisible — « un repli qui
    s'affiche en taille nulle est un repli qui n'existe pas », sous une
    troisième forme. */
-:is([data-visage="bzh"],[data-visage="home"]) body,
-:is([data-visage="bzh"],[data-visage="home"]) .fond { background: transparent; }
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) body,
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .fond { background: transparent; }
 
 /* 🔴 L'EN-TÊTE KAKI S'EFFACE, ET SON MOTIF EST DEVENU SON CONTRAIRE — mesuré
    à l'écran le 14/11/2026 : un bandeau PLEIN de 165 px en tête de `/radio` et
@@ -4298,7 +4310,7 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
       par négligence : sa cause a changé de camp.
    ⚠️ Le rembourrage RESTE : c'est lui qui tient l'espacement du titre. Seule
       la couleur part — sinon la mise en page sauterait sur deux écrans. */
-:is([data-visage="bzh"],[data-visage="home"]) .entete-kaki { background: transparent; }
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .entete-kaki { background: transparent; }
 
 /* ⭐ ON PROTÈGE LE TEXTE, PAS LA CARTE — la leçon du filigrane retiré ce matin,
    étendue aux écrans de contenu. Ces deux rôles sont calibrés CLAIR (voir
@@ -4306,8 +4318,8 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
    leur fond sombre en même temps que le bandeau. Un voile aurait coûté à TOUT
    ce qu'il recouvre ; l'ombre suit chaque lettre, donc elle ne dépend de rien
    — ni de la longueur du texte, ni de ce qu'il y a dessous. */
-:is([data-visage="bzh"],[data-visage="home"]) .page .hero-label,
-:is([data-visage="bzh"],[data-visage="home"]) .page .page-titre { text-shadow: var(--ombre-sur-carte); }
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .page .hero-label,
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .page .page-titre { text-shadow: var(--ombre-sur-carte); }
 
 /* 🔴 LES NOTES DE LA RECHERCHE SONT SUR LA CARTE, PAS DANS UNE BULLE — vu à
    l'écran le 15/11/2026 : « Dans la Bretagne — le reste du monde est sur la
@@ -4315,8 +4327,8 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
    illisible. ⭐ La ligne la plus importante de l'écran — celle qui dit que la
    liste en dessous n'est pas ce qu'on cherchait — ne peut pas être la moins
    lisible. Même ombre que les titres : on protège le TEXTE, pas la carte. */
-:is([data-visage="bzh"],[data-visage="home"]) .rech-portee,
-:is([data-visage="bzh"],[data-visage="home"]) .rech-mot { text-shadow: var(--ombre-sur-carte); }
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .rech-portee,
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .rech-mot { text-shadow: var(--ombre-sur-carte); }
 
 
 /* ══ LA CARTE DU MONDE — l'accueil de MANAhome, 14/11/2026 ═══════════════
@@ -4391,7 +4403,7 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
    ⭐ Le bas est d'ailleurs sa vraie place : c'est une réponse à un geste, et
       le pouce vit en bas — c'est déjà là que la carte du territoire la met.
       Même ancrage que le mot de la carte, juste au-dessus de la recherche. */
-:is([data-visage="bzh"],[data-visage="home"]) .monde-fond[data-vivante] .monde-choisi {
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .monde-fond[data-vivante] .monde-choisi {
   top: auto;
   bottom: calc(var(--reserve-barre) + 72px);
   max-height: calc(100dvh - var(--reserve-barre) - 220px);
@@ -4438,7 +4450,7 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
       Une seule ombre donne un autocollant, pas un objet posé.
    ⛔ Bornée à manahome : « on ne touche qu'à manahome.org » (Aurélien, le
       même jour). mana.bzh garde sa barre telle quelle. */
-:is([data-visage="bzh"],[data-visage="home"]) .site-header .wrap {
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .site-header .wrap {
   box-shadow:
     0 2px 6px rgb(10 18 30 / 28%),
     0 14px 34px rgb(10 18 30 / 34%);
@@ -4454,7 +4466,7 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
       à pleine vivacité sous du texte rend le texte illisible. Le voile est
       posé en `::after` plutôt que sur la carte, pour que le fond garde ses
       couleurs et que seule la LECTURE soit protégée. */
-:is([data-visage="bzh"],[data-visage="home"]) .monde-fond {
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .monde-fond {
   position: fixed; inset: 0; z-index: -1;
   pointer-events: none; overflow: hidden;
 }
@@ -4473,16 +4485,16 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
    portait sa propre masse ; à 2,2 rem sur une orthophoto de ville, chaque
    lettre a besoin de son contour. Deux couches : un liseré serré qui détache
    le trait, une ombre large qui assoit le mot. */
-:is([data-visage="bzh"],[data-visage="home"]) .inv-mot,
-:is([data-visage="bzh"],[data-visage="home"]) .inv-devise {
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .inv-mot,
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .inv-devise {
   text-shadow: 0 1px 1px rgb(10 18 30 / 72%), var(--ombre-sur-carte);
 }
 
 /* ⛔ LE FILIGRANE TOPOGRAPHIQUE AUSSI. Quatre courbes posées en haut à
    droite — « presque imperceptibles » sur un sol sable, mais c'est une
    trame de plus par-dessus une carte qui en est déjà une. */
-:is([data-visage="bzh"],[data-visage="home"]) .inv-filigrane { display: none; }
-:is([data-visage="bzh"],[data-visage="home"]) .monde-fond > .monde-plan {
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .inv-filigrane { display: none; }
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .monde-fond > .monde-plan {
   position: absolute; inset: 0; width: 100%; height: 100%;
 }
 
@@ -4514,25 +4526,25 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
       s'attrape ; le contenu se voit par-dessus.
    ⚠️ Seulement quand elle est VIVANTE : sur les écrans de contenu, le fond
       reste à −1, où il n'a rien à attraper. */
-:is([data-visage="bzh"],[data-visage="home"]) .monde-fond[data-vivante] { pointer-events: auto; z-index: 0; }
-:is([data-visage="bzh"],[data-visage="home"]) .monde-fond[data-vivante] ~ .app-colonne { pointer-events: none; }
-:is([data-visage="bzh"],[data-visage="home"]) .monde-fond[data-vivante] ~ .app-colonne .site-header,
-:is([data-visage="bzh"],[data-visage="home"]) .monde-fond[data-vivante] ~ .app-colonne .rech,
-:is([data-visage="bzh"],[data-visage="home"]) .monde-fond[data-vivante] ~ .app-colonne a,
-:is([data-visage="bzh"],[data-visage="home"]) .monde-fond[data-vivante] ~ .app-colonne button,
-:is([data-visage="bzh"],[data-visage="home"]) .monde-fond[data-vivante] ~ .app-colonne input,
-:is([data-visage="bzh"],[data-visage="home"]) .monde-fond[data-vivante] ~ .app-colonne label {
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .monde-fond[data-vivante] { pointer-events: auto; z-index: 0; }
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .monde-fond[data-vivante] ~ .app-colonne { pointer-events: none; }
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .monde-fond[data-vivante] ~ .app-colonne .site-header,
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .monde-fond[data-vivante] ~ .app-colonne .rech,
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .monde-fond[data-vivante] ~ .app-colonne a,
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .monde-fond[data-vivante] ~ .app-colonne button,
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .monde-fond[data-vivante] ~ .app-colonne input,
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .monde-fond[data-vivante] ~ .app-colonne label {
   pointer-events: auto;
 }
 /* ⭐ La main dit que ça se déplace. Sans ça, une carte plein écran sous du
    texte ressemble encore à une image. */
-:is([data-visage="bzh"],[data-visage="home"]) .monde-fond[data-vivante] .maplibregl-canvas { cursor: grab; }
-:is([data-visage="bzh"],[data-visage="home"]) .monde-fond[data-vivante] .maplibregl-canvas:active { cursor: grabbing; }
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .monde-fond[data-vivante] .maplibregl-canvas { cursor: grab; }
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .monde-fond[data-vivante] .maplibregl-canvas:active { cursor: grabbing; }
 
 /* ⚠️ LA FICHE DU LIEU CHOISI VIT DANS LE FOND, pas dans la colonne — elle
    appartient à la carte, qui la fait apparaître. Elle est donc hors du
    `pointer-events: none` ci-dessus, et n'a rien à y reprendre. */
-:is([data-visage="bzh"],[data-visage="home"]) .monde-fond[data-vivante] .monde-choisi { pointer-events: auto; }
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .monde-fond[data-vivante] .monde-choisi { pointer-events: auto; }
 
 /* 🔴 LE MOT DE LA CARTE DESCEND SOUS LA DEVISE — mesuré à l'écran le
    15/11/2026, et il recouvrait la marque : `.inv-marque` occupe 48→126 px,
@@ -4545,7 +4557,7 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
    ⚠️ Il se pose JUSTE AU-DESSUS de la recherche, qui est elle-même collée à
       la barre : `--reserve-barre` (88 px) + la hauteur du champ et son air
       (72 px). Mesuré : le champ naît à 593, le mot finit alors à 583. */
-:is([data-visage="bzh"],[data-visage="home"]) .monde-fond[data-vivante] .monde-mot {
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .monde-fond[data-vivante] .monde-mot {
   top: auto;
   bottom: calc(var(--reserve-barre) + 72px);
 }
@@ -4564,7 +4576,7 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
       sous la barre. Une liste qui déborde sous une barre flottante est le
       genre de défaut qu'on ne voit qu'en tapant trois lettres.
    ⛔ Borné à manahome : mana.bzh garde sa mise en page. */
-:is([data-visage="bzh"],[data-visage="home"]) .inv-contenu > .rech { margin-top: auto; }
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .inv-contenu > .rech { margin-top: auto; }
 
 
 /* ══ CONTRIBUER À LA CARTE — 15/11/2026 ═══════════════════════════════════
@@ -4617,8 +4629,8 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
    `pointer-events: auto` — mais il est aussi sous la devise, qui, elle, est
    dans la colonne éteinte. Rien à faire de plus, et c'est écrit pour qu'on ne
    le « répare » pas en ajoutant une règle qui n'a pas lieu d'être. */
-:is([data-visage="bzh"],[data-visage="home"]) .monde-fond[data-vivante] .monde-calques-bouton,
-:is([data-visage="bzh"],[data-visage="home"]) .monde-fond[data-vivante] .monde-calques {
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .monde-fond[data-vivante] .monde-calques-bouton,
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .monde-fond[data-vivante] .monde-calques {
   pointer-events: auto;
 }
 
@@ -4631,27 +4643,27 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
       marque — après le compteur de sites. L'accueil n'est plus une page avec
       une carte derrière : c'est une carte avec des choses POSÉES dessus, et
       chacune doit désormais dire où elle se pose. */
-:is([data-visage="bzh"],[data-visage="home"]) .monde-fond[data-vivante] .monde-calques {
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .monde-fond[data-vivante] .monde-calques {
   top: 140px;
 }
 
 
-:is([data-visage="bzh"],[data-visage="home"]) .monde-choisi {
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .monde-choisi {
   background: var(--bulle); color: var(--bulle-texte);
   -webkit-backdrop-filter: var(--bulle-flou); backdrop-filter: var(--bulle-flou);
   border-color: var(--bulle-trait);
 }
-:is([data-visage="bzh"],[data-visage="home"]) .monde-choisi-nom { color: var(--bulle-texte); }
-:is([data-visage="bzh"],[data-visage="home"]) .monde-choisi-dire,
-:is([data-visage="bzh"],[data-visage="home"]) .monde-choisi-mot,
-:is([data-visage="bzh"],[data-visage="home"]) .monde-prop-m { color: var(--bulle-texte-doux); }
-:is([data-visage="bzh"],[data-visage="home"]) .monde-prop { color: var(--bulle-texte); }
-:is([data-visage="bzh"],[data-visage="home"]) .monde-prop:hover { background: var(--bulle-survol); }
-:is([data-visage="bzh"],[data-visage="home"]) .monde-prop-rang {
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .monde-choisi-nom { color: var(--bulle-texte); }
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .monde-choisi-dire,
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .monde-choisi-mot,
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .monde-prop-m { color: var(--bulle-texte-doux); }
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .monde-prop { color: var(--bulle-texte); }
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .monde-prop:hover { background: var(--bulle-survol); }
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .monde-prop-rang {
   background: var(--action); color: var(--action-texte);
 }
 /* ⚠️ Le mot de la carte portait lui aussi sa propre matière. */
-:is([data-visage="bzh"],[data-visage="home"]) .monde-mot {
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .monde-mot {
   background: var(--bulle); color: var(--bulle-texte);
   border-color: var(--bulle-trait);
 }
@@ -4667,12 +4679,12 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
       `.ot-entete .ot-filtre-actif` — même forme, autre endroit.
    ⚠️ On reprend donc la main avec la MÊME spécificité, et seulement sous le
       visage qui a changé de palette. */
-:is([data-visage="bzh"],[data-visage="home"]) .terr-genres .ot-filtre-actif,
-:is([data-visage="bzh"],[data-visage="home"]) .monde-calques .ot-filtre-actif {
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .terr-genres .ot-filtre-actif,
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .monde-calques .ot-filtre-actif {
   color: var(--action-texte);
 }
 /* ⚠️ Et le genre choisi, lui, garde sa teinte de pin : c'est de la donnée. */
-:is([data-visage="bzh"],[data-visage="home"]) .terr-genre { color: var(--bulle-texte); }
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .terr-genre { color: var(--bulle-texte); }
 
 
 /* ══ LA MARQUE DE MANAHOME, SUR UNE LIGNE — 15/11/2026 ════════════════════
@@ -4698,7 +4710,7 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
       flotté au-dessus de « home.org ». `align-items: baseline` les pose sur
       le même sol, ce qui est la seule façon de lire les douze caractères
       comme UN mot. */
-:is([data-visage="bzh"],[data-visage="home"]) .inv-marque {
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .inv-marque {
   flex-direction: row;
   align-items: baseline;
   justify-content: center;
@@ -4711,7 +4723,7 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
    ensemble — ne hausser que la valeur préférée ferait grandir la marque sur
    un écran moyen et pas sur les deux extrêmes, donc changerait la PROPORTION
    avec « home.org » selon la largeur. 1,4 → 1,54 · 7 → 7,7 · 2,2 → 2,42. */
-:is([data-visage="bzh"],[data-visage="home"]) .inv-mot {
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .inv-mot {
   font-size: clamp(1.54rem, 7.7vw, 2.42rem);
 }
 /* ⚠️ La police pixel dessine sur une grille carrée : à taille égale elle est
@@ -4720,7 +4732,7 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
 /* 🔄 −10 % LE 15/11/2026, dans le même geste : la marque monte, la devise
    descend, et l'écart entre les deux se creuse de 20 %.
    0,6 → 0,54 · 2,9 → 2,61 · 0,95 → 0,855. */
-:is([data-visage="bzh"],[data-visage="home"]) .inv-devise {
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .inv-devise {
   font-family: "Press Start 2P", "Rubik", monospace;
   font-size: clamp(0.54rem, 2.61vw, 0.855rem);
   letter-spacing: 0;
@@ -4742,7 +4754,7 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
 /* 🔴 LE MENU REVIENT SOUS SON ICÔNE, et il peut y rester. Il s'en était
    détaché ce matin pour ne pas recouvrir une marque de 73 px ; celle-ci en
    fait 40. ⚠️ 52 px = le bouton (44) plus son air (8). */
-:is([data-visage="bzh"],[data-visage="home"]) .monde-fond[data-vivante] .monde-calques {
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .monde-fond[data-vivante] .monde-calques {
   top: calc(var(--sp-2) + env(safe-area-inset-top, 0px) + 52px);
 }
 
@@ -4797,15 +4809,15 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
 }
 .monde-marque .inv-mot { line-height: 0.92; }
 .monde-marque .inv-devise { line-height: 1; margin-top: -0.12em; }
-:is([data-visage="bzh"],[data-visage="home"]) .monde-marque .inv-mot,
-:is([data-visage="bzh"],[data-visage="home"]) .monde-marque .inv-devise { text-shadow: none; }
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .monde-marque .inv-mot,
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .monde-marque .inv-devise { text-shadow: none; }
 /* 🔴 « MANA » EN BLANC — Aurélien, 15/11/2026. Il héritait de `--craie`,
    l'encre de la charte bretonne : un blanc cassé, chaud, réglé pour le kaki.
    Sur le verre noir de MANAhome il tirait vers le jaune à côté de
    « home.org », qui est du blanc pur. Deux blancs voisins qui ne sont pas le
    même blanc se voient tout de suite, et se lisent comme une erreur
    d'impression. ⭐ Une palette noir et blanc n'a qu'un blanc. */
-:is([data-visage="bzh"],[data-visage="home"]) .inv-mot { color: var(--bulle-texte, #fff); }
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .inv-mot { color: var(--bulle-texte, #fff); }
 
 /* 🔴 L'ICÔNE RETROUVE SES TRAITS BLANCS — « remets la belle icône de base aux
    traits blancs ». En entrant dans la pilule, le bouton a perdu `terr-rond`,
@@ -4829,7 +4841,7 @@ body:has(.jeu), body:has(.terr), body:has(.cp-scene) { padding-bottom: 0; }
    lisible par une machine et par un lecteur d'écran, puisqu'il est le titre
    de la page. `clip-path` plutôt que `display: none` — ce qui disparaît ici
    est l'IMAGE du titre, pas le titre. */
-:is([data-visage="bzh"],[data-visage="home"]) .monde-fond[data-vivante] ~ .app-colonne .inv-marque {
+:is([data-visage="bzh"],[data-visage="home"],[data-visage="france"]) .monde-fond[data-vivante] ~ .app-colonne .inv-marque {
   position: absolute; width: 1px; height: 1px; overflow: hidden;
   clip-path: inset(50%); white-space: nowrap;
 }

@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { entreesBarre, liensPied } from "./barre";
+import { readFileSync } from "node:fs";
+import { entreesBarre, liensPied, piedDansReglages } from "./barre";
+import { VISAGES } from "./visage";
 import { PONTS } from "./passerelle";
 import { ROUTES_APP, ROUTES_LOVE, estANous } from "./routes";
 
@@ -131,7 +133,10 @@ describe("⛔ aucun hôte ne sert les passerelles d'un autre", () => {
         à la fois est précisément ce qui a laissé passer les trois : c'est
         l'ARRIVÉE d'un visage non prévu qu'il faut rendre visible, pas la
         justesse d'un visage connu. */
-  const VISAGES = ["bzh", "love", "home", "france"] as const;
+  /* ⭐ LA LISTE VIENT DE `visage.ts` DEPUIS LE 15/11/2026 AU SOIR. Elle était
+     recopiée ici — et une liste recopiée ne grandit pas avec sa source : ce
+     garde aurait énuméré quatre visages pendant qu'il y en aurait cinq, en
+     restant vert. C'est le défaut même qu'il est là pour attraper. */
   const clefs = (v: (typeof VISAGES)[number]) => entreesBarre(v).map((e) => e.clef);
 
   it("seul mana.love porte les passerelles de mana.love", () => {
@@ -162,5 +167,98 @@ describe("⛔ aucun hôte ne sert les passerelles d'un autre", () => {
     expect(paires.france).not.toBe(paires.love);
     expect(paires.france, "manafrance et manahome ont divergé sans décision")
       .toBe(paires.home);
+  });
+});
+
+/* ════════════════════════════════════════════════════════════════════════
+   OÙ VIT LE PIED DE PAGE — une décision, deux moitiés, deux fichiers
+   ════════════════════════════════════════════════════════════════════════
+   🔴 Elle était écrite en toutes lettres des deux côtés : `visage() !== "home"`
+      dans `App.tsx`, `visage() === "home"` dans `Reglages.tsx`. manafrance.org
+      n'était dans aucune des deux, donc gardait son pied en bas de page — un
+      hôte qui se présente comme « la version française de manahome » et qui
+      n'en a pas la charte.
+   ⛔ ET LE DÉFAUT QU'UN SEUL CORRECTIF AURAIT CRÉÉ EST PIRE : le pied affiché
+      deux fois, ou — dans l'autre sens — les mentions légales et le contact
+      nulle part. Une déclaration due par la loi, retirée par une correction
+      de mise en page.
+   ⭐ D'où ces trois gardes : le prédicat s'énumère, et les deux appels sont
+      vérifiés COMPLÉMENTAIRES dans le texte des deux fichiers. */
+describe("le pied de page est atteignable sur chaque hôte, exactement une fois", () => {
+  const lire = (f: string) => readFileSync(new URL(`./${f}`, import.meta.url), "utf8");
+
+  it("chaque visage a une décision prise, et manafrance suit manahome", () => {
+    const attendu: Record<string, boolean> = {
+      home: true,    // Aurélien, 14/11 : « le footer doit vivre dans réglages »
+      france: true,  // « la version française de manahome »
+      bzh: false,    // garde son pied en bas de page
+      love: false,   // invitée : elle a le pied de l'autre dépôt
+    };
+    for (const v of VISAGES) {
+      expect(attendu[v], `aucune décision de pied pour « ${v} »`).toBeDefined();
+      expect(piedDansReglages(v), `le visage « ${v} »`).toBe(attendu[v]);
+    }
+    expect(Object.keys(attendu).sort()).toEqual([...VISAGES].sort());
+  });
+
+  /* ⚠️ CE GARDE LIT LE TEXTE, ET C'EST LE SEUL MOYEN : ce qui doit être tenu
+     n'est pas une valeur mais la NÉGATION d'un côté et pas de l'autre. Deux
+     appels nus, ou deux appels niés, et le pied se multiplie ou disparaît. */
+  it("App.tsx le NIE, Reglages.tsx ne le nie pas", () => {
+    const app = lire("App.tsx");
+    const reg = lire("Reglages.tsx");
+    expect(app, "le pied de bas de page ne consulte plus la décision")
+      .toContain("!piedDansReglages(visage())");
+    expect(reg, "l'onglet Réglages ne consulte plus la décision")
+      .toMatch(/\{piedDansReglages\(visage\(\)\) &&/);
+    expect(reg, "Réglages NIE la décision : le pied n'existerait plus nulle part")
+      .not.toContain("!piedDansReglages");
+  });
+
+  /**
+   * ⛔ ET LE NOM DE L'HÔTE NE DOIT PLUS DÉCIDER DE RIEN ICI. C'est la forme
+   *    exacte du défaut : `=== "home"` lisait « manahome » là où la question
+   *    était « où vit le pied ». Un cinquième hôte le reproduirait.
+   *
+   * 🔴 ET CE GARDE EST TOMBÉ SUR SA PROPRE DOCUMENTATION. Première rédaction :
+   *    il cherchait le motif dans le fichier entier et le trouvait — dans le
+   *    COMMENTAIRE que je venais d'écrire au-dessus du correctif, qui CITE
+   *    `visage() !== "home"` pour raconter ce qui a été réparé. C'est mot pour
+   *    mot le piège que `CLAUDE.md` décrit sous « LA LIGNE CITÉE CONFIRME
+   *    ENCORE » : un `grep` ne distingue pas une règle d'un récit.
+   * ⭐ D'où le retrait des commentaires AVANT de chercher. Un garde qui lit du
+   *    texte doit au moins lire le texte qui s'exécute.
+   */
+  it("aucun des deux fichiers ne teste le nom de l'hôte pour le pied", () => {
+    /* Les blocs `/* … *\/` (donc aussi les `{/* … *\/}` du JSX) et les fins
+       de ligne `//` partent : il ne reste que ce que le navigateur exécute. */
+    const sansProse = (t: string) =>
+      t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^[^\n]*?\/\/[^\n]*$/gm, "");
+    for (const f of ["App.tsx", "Reglages.tsx"]) {
+      expect(sansProse(lire(f)), `${f} compare encore le visage à « home »`)
+        .not.toMatch(/visage\(\)\s*[!=]==\s*"home"/);
+    }
+    /* ⛔ ET LE DÉCAPAGE NE DOIT PAS TOUT EMPORTER : s'il vidait le fichier, le
+       garde passerait sur du vide — « une mutation qui rate sa cible ne dit
+       rien ». Le code rendu doit rester substantiel et contenir la décision. */
+    for (const f of ["App.tsx", "Reglages.tsx"]) {
+      const net = sansProse(lire(f));
+      expect(net.length, `${f} : le décapage a tout emporté`).toBeGreaterThan(2000);
+      expect(net, `${f} : la décision a disparu avec les commentaires`)
+        .toContain("piedDansReglages(visage())");
+    }
+  });
+
+  /* ⭐ ET LE CONTENU LUI-MÊME NE SE DÉDOUBLE PAS : c'est le MÊME composant
+     aux deux endroits, pas une recopie. Deux versions du même pied
+     divergeraient au premier lien ajouté, et personne ne compare un pied de
+     page à un écran de réglages. */
+  it("les deux endroits rendent le même composant de pied", () => {
+    for (const f of ["App.tsx", "Reglages.tsx"]) {
+      expect(lire(f), `${f} ne rend pas ContenuDuPied`).toContain("<ContenuDuPied");
+    }
+    /* Et les liens qu'il porte viennent d'une seule fonction, déjà gardée
+       plus haut dans ce fichier. */
+    expect(liensPied("france").length).toBeGreaterThan(3);
   });
 });

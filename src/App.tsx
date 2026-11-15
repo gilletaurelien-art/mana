@@ -5,7 +5,7 @@ import { GlyphRadio, GlyphEtincelles, GlyphReglages, GlyphNavigation, GlyphSecur
 import { Invitation } from "./Invitation";
 import { LApplication } from "./LApplication";
 import { avecOffice, visage, signature, titrePourLHote, poserCanonique } from "./visage";
-import { entreesBarre, liensPied } from "./barre";
+import { entreesBarre, liensPied, piedDansReglages, accueilEstLaCarte } from "./barre";
 import { carteEnFond, CARTE_EN_ACCUEIL } from "./fond-du-monde";
 import { couper, ecouterPoste, etatPoste, lire } from "./poste";
 import { Reglages } from "./Reglages";
@@ -488,7 +488,7 @@ export default function App() {
         <Territoire />
       ) : path === "/l-application" ? (
         <LApplication base={B} />
-      ) : path === "/" && visage() === "home" && CARTE_EN_ACCUEIL ? (
+      ) : path === "/" && accueilEstLaCarte(visage()) && CARTE_EN_ACCUEIL ? (
         /* 🔴 CHEZ MANAHOME, L'ACCUEIL EST LA CARTE — Aurélien, 14/11/2026 :
            « la page d'accueil est la carte des sites remarquables », puis
            « tout va se faire via la carte => pas de listing ».
@@ -569,7 +569,15 @@ export default function App() {
              pages indexables par un lien interne. Les déplacer dans Réglages
              les laisse atteignables par un humain, mais un moteur qui ne
              traverse pas cet écran ne les verra plus se faire citer. */}
-      {!SANS_PIED.has(path) && visage() !== "home" && (
+      {/* 🔴 ET TROIS VISAGES DEPUIS LE 15/11/2026 AU SOIR. Ce test était
+          `visage() !== "home"` : manafrance.org gardait donc son pied en bas
+          de page pendant que `Reglages.tsx` ne le rendait pas — cohérent,
+          mais DIFFÉRENT de manahome, dont il est « la version française ».
+          ⛔ Les deux moitiés de cette décision vivent désormais dans UNE
+             fonction (`piedDansReglages`, dans `barre.ts`) : en corriger une
+             seule donne soit un pied affiché deux fois, soit des mentions
+             légales qui ne s'affichent plus nulle part. */}
+      {!SANS_PIED.has(path) && !piedDansReglages(visage()) && (
       <footer className="site-footer">
         <ContenuDuPied B={B} />
       </footer>

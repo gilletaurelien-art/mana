@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { etendueDe, ETENDUES, centreDe, dansLEtendue } from "./etendue";
+import { VISAGES } from "./visage";
 import { TERRITOIRES } from "./territoires";
 
 /**
@@ -100,6 +101,64 @@ describe("l'étendue suit l'hôte", () => {
     for (const e of Object.values(ETENDUES)) {
       expect(e.zoom, `${e.clef} ouvre sous z6`).toBeGreaterThanOrEqual(6);
     }
+  });
+
+  /**
+   * 🔴 LE GARDE QUI MANQUAIT, ET LE COMMENTAIRE QUI TENAIT SA PLACE.
+   *    `ETENDUES.france` était testée depuis son écriture — sa boîte, son
+   *    centre, son zoom : quatre villes dedans, trois voisines dehors. Mais
+   *    AUCUN test ne demandait qui la REÇOIT. `etendueDe("france")` rendait le
+   *    monde, et les six tests de la France restaient verts : « un garde sur
+   *    l'OBJET ne dit rien du PRODUCTEUR ».
+   * ⭐ ET IL ÉNUMÈRE `VISAGES` PLUTÔT QUE DE NOMMER LES CAS CONNUS. Un
+   *    cinquième visage ajouté sans étendue tombe ici, au lieu d'ouvrir sur
+   *    l'Europe de l'Ouest en production — ce qui est exactement ce qui s'est
+   *    passé pour le quatrième, deux heures durant.
+   * ⚠️ La table est écrite À LA MAIN, à dessein : c'est une DÉCISION par hôte
+   *    (« que revendique ce domaine ? »), pas une formule. La dériver de
+   *    `etendueDe` ferait un test qui se contente d'être d'accord avec lui.
+   */
+  it("chaque visage servi a l'étendue que son domaine revendique", () => {
+    const attendu: Record<string, "monde" | "france" | "bretagne"> = {
+      bzh: "bretagne",   // la Bretagne seulement
+      home: "monde",     // l'architecture commune de base
+      france: "france",  // « manafrance = la france only »
+      love: "monde",     // invitée : aucun territoire à elle
+    };
+    for (const v of VISAGES) {
+      expect(attendu[v], `aucune étendue décidée pour le visage « ${v} »`)
+        .toBeDefined();
+      expect(etendueDe(v).clef, `le visage « ${v} »`).toBe(attendu[v]);
+    }
+    /* ⛔ Et la table ne décrit QUE des visages servis : un nom qui y
+       survivrait à la disparition d'un hôte serait un faux témoin de plus. */
+    expect(Object.keys(attendu).sort()).toEqual([...VISAGES].sort());
+  });
+
+  /**
+   * ⭐ LE SYMPTÔME EXACT — et ma première rédaction de ce test l'a décrit FAUX.
+   *    Elle affirmait que l'ancienne ouverture, [6, 48], tombait « hors de la
+   *    France, sur la frontière suisse », et exigeait `dansLEtendue → false`.
+   *    Le test est tombé : [6, 48] est EN France, du côté de Nancy. Le défaut
+   *    n'était donc pas « la carte s'ouvre à l'étranger » mais « la carte
+   *    s'ouvre à 300 km du centre, cadrée sur le nord-est » — ce qu'Aurélien a
+   *    vu comme « pas centrée sur la France ».
+   * ⛔ Un témoin inventé de mémoire aurait pu passer : s'il avait été vrai par
+   *    accident, le test serait resté vert en gardant une fausse description
+   *    du défaut dans le dépôt. C'est le test qui a corrigé le commentaire.
+   */
+  it("manafrance ouvre AU CENTRE de la France, pas à son bord", () => {
+    expect(etendueDe("france").ouverture).toEqual(centreDe(ETENDUES.france));
+    /* L'ancienne ouverture (celle du monde) était dans la boîte — donc aucun
+       garde de bornes ne l'aurait signalée — mais à des centaines de
+       kilomètres du centre. C'est cet ÉCART qui était le défaut. */
+    const [alo, ala] = ETENDUES.monde.ouverture;
+    const [clo, cla] = centreDe(ETENDUES.france);
+    expect(dansLEtendue(ETENDUES.france, alo, ala),
+      "le témoin ne vaut rien : [6, 48] n'est plus dans la boîte France").toBe(true);
+    expect(Math.hypot(alo - clo, ala - cla),
+      "l'ancienne ouverture était quasi centrée : le témoin ne démontre rien")
+      .toBeGreaterThan(3);
   });
 
   it("mana.love n'hérite d'aucun territoire", () => {
