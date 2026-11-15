@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { Z, Z_SERVICES } from "./tuiles";
+import { Z, Z_SERVICES, tuilesDuCadre } from "./tuiles";
 import { FAMILLES, direLaFamille } from "./services-familles";
 import { existsSync, readdirSync, readFileSync as lireFichier } from "node:fs";
 
@@ -140,17 +140,81 @@ describe("les commerces se lisent au quadrillage où ils sont écrits", () => {
       .toEqual([String(Z_SERVICES)]);
   });
 
-  it("le cadrage des services est CALCULÉ À PART, pas hérité des sites", () => {
-    /* ⛔ Réutiliser `choix` (grille z8) aurait demandé des coordonnées z8
-       sous `/monde/c/11/` : 404 partout, donc « il n'y a rien ici ». */
-    expect(carte, "les services réutilisent le cadrage des sites")
-      .toMatch(/tuilesDuCadre\([\s\S]{0,200}?Z_SERVICES\)/);
-    const i = carte.indexOf('moissonner("services"');
-    expect(i, "le calque des services n'est pas moissonné").toBeGreaterThan(0);
-    expect(carte.slice(i, i + 200),
+  /**
+   * 🔴 CE GARDE A ÉTÉ ÉCRIT FAUX, ET IL A LAISSÉ PARTIR LE DÉFAUT EN
+   *    PRODUCTION — 15/11/2026, mesuré à l'écran vingt minutes après le
+   *    déploiement. Sa première rédaction cherchait
+   *    `tuilesDuCadre(…{0,200}…Z_SERVICES)` N'IMPORTE OÙ dans le fichier. Il
+   *    y a DEUX appels à `tuilesDuCadre` : celui des sites (grille z8, par
+   *    défaut) et celui des services (z11). Le motif en trouvait un, se
+   *    déclarait content, et ne disait pas LEQUEL.
+   *
+   * ⛔ CE QUI EST ARRIVÉ EST EXACTEMENT CE QU'IL NE VOYAIT PAS. Mon banc de
+   *    mutation a déplacé `Z_SERVICES` d'un appel à l'autre (un
+   *    `replace(..., 1)` qui a mordu la première occurrence au retour) : les
+   *    SITES se sont mis à demander des coordonnées z11 sous `/monde/s/8/`
+   *    — 404 — et les services des coordonnées z8 sous `/monde/c/11/` — 404.
+   *    Les deux calques morts, aucune erreur à l'écran, et ce test VERT.
+   * ⭐ « Un contrôle qui réussit sur le mauvais objet endort. » Le garde
+   *    nomme donc chaque appel par ce qu'il sert, et vérifie les DEUX sens :
+   *    la grille fine sur les services, et son ABSENCE sur les sites.
+   */
+  it("chaque calque cadre sur SA grille, et le garde dit laquelle", () => {
+    /* Le cadrage des sites : celui qui précède `moissonner("sites"`. */
+    const iSites = carte.indexOf('moissonner("sites"');
+    const avantSites = carte.slice(Math.max(0, iSites - 900), iSites);
+    const appelSites = avantSites.slice(avantSites.lastIndexOf("tuilesDuCadre("));
+    expect(appelSites, "le cadrage des sites est introuvable").toContain("m.getZoom()");
+    expect(appelSites,
+      "les SITES cadrent sur la grille des services : ils demanderaient des "
+      + "coordonnées z11 sous /monde/s/8/, donc 404 — et un 404 se lit « rien ici »")
+      .not.toContain("Z_SERVICES");
+
+    /* Celui des services : entre le test du calque et sa moisson. */
+    const iServ = carte.indexOf('moissonner("services"');
+    expect(iServ, "le calque des services n'est pas moissonné").toBeGreaterThan(0);
+    const avantServ = carte.slice(Math.max(0, iServ - 900), iServ);
+    const appelServ = avantServ.slice(avantServ.lastIndexOf("tuilesDuCadre("));
+    expect(appelServ,
+      "les SERVICES cadrent sur la grille z8 : ils demanderaient des "
+      + "coordonnées z8 sous /monde/c/11/, donc 404 partout")
+      .toContain("Z_SERVICES");
+
+    /* ⚠️ Et la moisson elle-même doit porter la grille, pas seulement le
+       cadrage : ce sont deux endroits, et l'un sans l'autre suffit à tout
+       casser. */
+    expect(carte.slice(iServ, iServ + 200),
       "la moisson des services ne passe pas sa grille : elle retomberait sur z8")
       .toMatch(/Z_SERVICES\)/);
+    expect(carte.slice(iSites, iSites + 200),
+      "la moisson des sites passe une grille : elle quitterait le z8 partagé")
+      .not.toMatch(/Z_SERVICES/);
   });
+
+  /**
+   * ⭐ ET CELUI-CI NE LIT PAS LE CODE : IL DEMANDE AU SERVEUR. Le défaut
+   *    ci-dessus se résume à « l'adresse construite n'existe pas ». Aucune
+   *    relecture ne le dit ; une requête, si. On reconstruit les deux
+   *    adresses comme le fait l'écran, et on exige un 200 de chaque côté.
+   * ⚠️ Sauté hors ligne plutôt que rouge : un garde qui échoue parce qu'un
+   *    train n'a pas de réseau apprend à ignorer les gardes.
+   */
+  it("les deux adresses construites existent vraiment en ligne", async () => {
+    const cadre = { ouest: -4.52, est: -4.44, nord: 48.42, sud: 48.37 };  // Brest
+    const paires: [string, ReturnType<typeof tuilesDuCadre>, number][] = [
+      ["s", tuilesDuCadre(cadre, 12), Z],
+      ["c", tuilesDuCadre(cadre, 12, Z_SERVICES), Z_SERVICES],
+    ];
+    for (const [jeu, choix, grille] of paires) {
+      expect(choix.etat, `${jeu} : le cadre d'essai est refusé`).toBe("ok");
+      if (choix.etat !== "ok") continue;
+      const [x, y] = choix.tuiles[0];
+      const url = `https://mana.bzh/monde/${jeu}/${grille}/${x}/${y}.json`;
+      let code = 0;
+      try { code = (await fetch(url)).status; } catch { return; }   // hors ligne
+      expect(code, `${url} n'existe pas : le calque se tairait en 404`).toBe(200);
+    }
+  }, 20_000);
 
   it("l'adresse d'une tuile est bâtie sur la grille REÇUE, jamais sur `Z`", () => {
     /* 🔴 La ligne exacte du défaut : `${racine}/${Z}/${x}/${y}.json`. Elle

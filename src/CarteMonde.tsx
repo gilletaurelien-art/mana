@@ -725,7 +725,7 @@ export function CarteMonde(
       const b = m.getBounds();
       const choix = tuilesDuCadre(
         { ouest: b.getWest(), est: b.getEast(), nord: b.getNorth(), sud: b.getSouth() },
-        m.getZoom(), Z_SERVICES);
+        m.getZoom());
       if (choix.etat !== "ok") {
         /* ⭐ DIRE CE QU'IL Y A, PAS SEULEMENT CE QU'ON NE PEUT PAS. « Approchez »
            seul laisse croire à une carte vide ; le nombre dit qu'il y a de
@@ -765,7 +765,7 @@ export function CarteMonde(
         const choixC = tuilesDuCadre(
           { ouest: b2.getWest(), est: b2.getEast(),
             nord: b2.getNorth(), sud: b2.getSouth() },
-          m.getZoom());
+          m.getZoom(), Z_SERVICES);
         if (choixC.etat !== "ok") {
           /* ⭐ ON DIT POURQUOI, ET OÙ CHERCHER. « Rien » laisserait croire
              que le territoire est désert ; la phrase dit que c'est le ZOOM
