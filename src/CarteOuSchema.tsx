@@ -21,28 +21,15 @@
  * ⚠️ Un repli ne se décrète pas, il se VOIT refuser. Le test de ce fichier
  *    force l'import à échouer et vérifie que le schéma s'affiche.
  */
-import { Component, Suspense, type ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
+import { GardeDEcran } from "./garde-ecran";
 
-class SiLaCarteTombe extends Component<
-  { schema: ReactNode; children: ReactNode },
-  { tombee: boolean }
-> {
-  state = { tombee: false };
-
-  static getDerivedStateFromError() {
-    return { tombee: true };
-  }
-
-  componentDidCatch() {
-    // ⛔ On ne remonte rien nulle part : la position de quelqu'un qui marche
-    //    n'a pas à partir dans un rapport d'erreur. Le défaut se voit à
-    //    l'écran, il ne se télémètre pas.
-  }
-
-  render() {
-    return this.state.tombee ? this.props.schema : this.props.children;
-  }
-}
+/* ⭐ LA FRONTIÈRE VIT DÉSORMAIS DANS `garde-ecran.tsx`, ET C'EST TOUT
+   L'INTÉRÊT. Cette classe était ici, excellente, et n'a protégé que les
+   TROIS écrans qui pensaient à l'importer : six autres `Suspense` sont
+   restés nus pendant dix-sept jours. Une leçon rangée dans un composant
+   ne se propage pas toute seule — voir `rendez-vous-load.test.ts`, qui a
+   appris la même chose sur les cartes le même jour. */
 
 /**
  * Affiche `children` (la carte réelle, chargée à la demande) et retombe sur
@@ -57,8 +44,8 @@ export function CarteOuSchema({
   children: ReactNode;
 }) {
   return (
-    <SiLaCarteTombe schema={schema}>
+    <GardeDEcran repli={schema}>
       <Suspense fallback={schema}>{children}</Suspense>
-    </SiLaCarteTombe>
+    </GardeDEcran>
   );
 }

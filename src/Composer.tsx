@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
+import { GardeDEcran } from "./garde-ecran";
 import { lienYAller, plateformeDe } from "./y-aller";
 import { lieuxDuTerritoire } from "./lieux-du-territoire";
 import type { TraceCarte } from "./CarteReelle";
@@ -1181,6 +1182,9 @@ export function Composer() {
      proposition qu'on avait sous les yeux, sans la recalculer. */
   if (enMarche && walk) {
     return (
+      <GardeDEcran repli={<main className="page"><div className="wrap">
+        <p className="page-note">L’écran de marche n’a pas pu être chargé. Rechargez la page.</p>
+      </div></main>}>
       <Suspense fallback={<main className="page"><div className="wrap">
         <p className="page-note">Préparation de l'écran de marche…</p>
       </div></main>}>
@@ -1205,6 +1209,7 @@ export function Composer() {
           }
         />
       </Suspense>
+      </GardeDEcran>
     );
   }
 

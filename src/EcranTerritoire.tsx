@@ -1,4 +1,5 @@
 import { lazy, Suspense, useState } from "react";
+import { GardeDEcran } from "./garde-ecran";
 import { SwipeBalades } from "./SwipeBalades";
 
 /**
@@ -62,8 +63,12 @@ export function EcranTerritoire({ base }: { base: string }) {
      retour PROPRE vers lui, et c'est voulu : la carte, désormais le défaut
      de l'onglet, n'a plus besoin de savoir d'où l'on vient. */
   return (
-    <Suspense fallback={<p className="jeu-vide" role="status">Lecture du territoire…</p>}>
-      <Territoire2030 base={base} centre={centre} />
-    </Suspense>
+    <GardeDEcran repli={<p className="jeu-vide" role="status">
+      La carte du territoire n’a pas pu être chargée. Rechargez la page.
+    </p>}>
+      <Suspense fallback={<p className="jeu-vide" role="status">Lecture du territoire…</p>}>
+        <Territoire2030 base={base} centre={centre} />
+      </Suspense>
+    </GardeDEcran>
   );
 }

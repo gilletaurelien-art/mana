@@ -1,4 +1,5 @@
 import { useState, lazy, Suspense } from "react";
+import { GardeDEcran } from "./garde-ecran";
 import { useEffect, useRef, useLayoutEffect } from "react";
 import { usePath, baseUrl, routePromenade, routeEnChemin, routeRencontres, routeComplet } from "./router";
 import { GlyphRadio, GlyphEtincelles, GlyphReglages, GlyphNavigation, GlyphSecurite, GlyphDecouverte, GlyphCarte, GlyphSentier, GlyphContribution } from "./Glyphs";
@@ -324,9 +325,15 @@ export default function App() {
            ⚠️ Sur les autres écrans elle reste FIGÉE : une carte vivante sous
               un écran de réglages avalerait les gestes destinés aux
               commandes, et personne ne l'a demandée là. */
-        <Suspense fallback={null}>
-          <CarteMonde enFond vivante={path === "/"} />
-        </Suspense>
+        /* ⭐ REPLI MUET, et c'est le seul endroit où « ne rien afficher » est
+           la bonne réponse : ce fond est un décor posé DERRIÈRE la devise, la
+           recherche et la barre. Sans la frontière, son échec emportait la
+           page entière — mesuré, #root à 0 nœud. */
+        <GardeDEcran repli={null}>
+          <Suspense fallback={null}>
+            <CarteMonde enFond vivante={path === "/"} />
+          </Suspense>
+        </GardeDEcran>
       )}
       {/* ⭐ LA COLONNE. « Les bulles s'affichent au format mobile partout —
           mobile, desktop, tablette ; seul le fond s'élargit » (31/10). Une
@@ -508,10 +515,16 @@ export default function App() {
            « tout va se faire via la carte => pas de listing ».
            ⚠️ mana.bzh garde son accueil : la devise, la recherche, les trois
               portes. On ne touche qu'à manahome. */
-        <Suspense fallback={<main className="page"><div className="wrap">
-          <p className="page-texte">Carte…</p></div></main>}>
-          <CarteMonde />
-        </Suspense>
+        /* ⚠️ Ici la carte n'est pas un décor, c'est l'écran : un repli muet
+           laisserait une page blanche qu'on prendrait pour une panne du site. */
+        <GardeDEcran repli={<main className="page"><div className="wrap">
+          <p className="page-texte">La carte n’a pas pu être chargée. Rechargez la page.</p>
+        </div></main>}>
+          <Suspense fallback={<main className="page"><div className="wrap">
+            <p className="page-texte">Carte…</p></div></main>}>
+            <CarteMonde />
+          </Suspense>
+        </GardeDEcran>
       ) : path === "/hebergements" ? (
         <Hebergements />
       ) : path === "/contribuer" ? (

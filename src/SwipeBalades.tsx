@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { GardeDEcran } from "./garde-ecran";
 import { chargerOT, PRATIQUE, type ItineraireOT } from "./ot";
 import { portrait } from "./portrait";
 import { ATTRIBUTION, lireFond, poserFond, type Fond } from "./carte-fond";
@@ -466,9 +467,13 @@ function Carte({
              à l'écran. */}
       <div className="jeu-portrait">
         {fond && (
-          <Suspense fallback={null}>
-            <CarteFondOT p={w.p} lieux={sites} basOcculte={occulte.bas} hautOcculte={occulte.haut} fond={substrat} />
-          </Suspense>
+          /* ⭐ Décor : la silhouette au-dessus porte l'information vraie, et
+             elle se dessine sans réseau. Repli muet, donc. */
+          <GardeDEcran repli={null}>
+            <Suspense fallback={null}>
+              <CarteFondOT p={w.p} lieux={sites} basOcculte={occulte.bas} hautOcculte={occulte.haut} fond={substrat} />
+            </Suspense>
+          </GardeDEcran>
         )}
         {/* ⚠️ La silhouette est repoussée au-dessus de la feuille par le même
             chiffre : sinon le repli se dessine, lui aussi, derrière elle. */}

@@ -18,6 +18,7 @@
 //    promettrait. Il dit ce qu'on sait : un nom, un type, une commune, une
 //    distance.
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { GardeDEcran } from "./garde-ecran";
 import { DEFAUT, territoireDe, urlHebergements, type Territoire } from "./territoires";
 import { metres } from "./composition";
 import type { Walk } from "./walks";
@@ -170,6 +171,7 @@ export function Hebergements() {
               {RAYON_M / 1000} km. Touchez une épingle.
             </p>
             <div className="heb-scene">
+              <GardeDEcran repli={<div className="heb-attente">Carte indisponible</div>}>
               <Suspense fallback={<div className="heb-attente">Carte…</div>}>
                 <CarteReelle
                   walk={SANS_CHEMIN}
@@ -182,6 +184,7 @@ export function Hebergements() {
                   }))}
                 />
               </Suspense>
+              </GardeDEcran>
               {/* ⭐ L'ENCART DU CHOISI, posé SUR la carte — même grammaire que
                   le compositeur, où la ligne de faits flotte au bas de la
                   scène. On ne pousse pas la carte pour faire de la place à

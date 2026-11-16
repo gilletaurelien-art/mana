@@ -90,10 +90,34 @@ interface ItineraireDistant extends Fiche {
   g: { type: string; coordinates: [number, number][][] };
 }
 
+/**
+ * ⛔ « ABSENT » ET « PAS PU LIRE » NE SONT PAS LA MÊME RÉPONSE — 16/11/2026.
+ *
+ * 🔴 Cette fonction rendait `null` pour TOUT `!r.ok`. Un 502 du relais, un 504
+ *    à froid, une coupure : l'écran répondait « Cette promenade n'existe pas.
+ *    Aucun parcours ne porte le nom « … ». Il a peut-être été renommé. »
+ *    ⭐ Ce sont les 69 liens de la liste « promenades au départ de Brest terres
+ *    océanes », montrée aux intercommunalités. Un produit qui accuse sa propre
+ *    donnée d'être absente alors qu'elle est là coûte plus cher qu'un produit
+ *    qui dit « je n'ai pas pu lire » : on ne rouvre pas une certitude.
+ *
+ * ⚠️ SEUL LE 404 EST UNE ABSENCE. Tout le reste LÈVE, et l'appelant décide quoi
+ *    en dire. `points.length === 0` reste une absence : le fichier est là, il
+ *    ne contient pas de chemin — l'écran n'a rien à montrer et le dire autrement
+ *    serait inventer une panne.
+ */
+export class PromenadeIllisible extends Error {
+  constructor(public readonly statut: number) {
+    super(`la promenade n'a pas pu être lue (HTTP ${statut})`);
+    this.name = "PromenadeIllisible";
+  }
+}
+
 /** Un itinéraire complet, géométrie comprise. */
 export async function chargerItineraire(slug: string): Promise<Walk | null> {
   const r = await fetch(`${BASE}/t/${encodeURIComponent(slug)}.json`);
-  if (!r.ok) return null;
+  if (r.status === 404) return null;
+  if (!r.ok) throw new PromenadeIllisible(r.status);
   const d: ItineraireDistant = await r.json();
 
   // ⛔ LES MORCEAUX RESTENT DES MORCEAUX. On les expose en `traits` ; `points`

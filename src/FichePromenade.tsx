@@ -79,18 +79,24 @@ export function FichePromenade({ base, slug }: { base: string; slug: string }) {
   const embarquee = WALKS.find((w) => w.slug === slug);
   const [distante, setDistante] = useState<Walk | null>(null);
   const [cherche, setCherche] = useState(!embarquee);
+  /** « on a essayé et on a échoué » — distinct de « on n’a rien trouvé » */
+  const [illisible, setIllisible] = useState(false);
 
   useEffect(() => {
     if (embarquee) { setCherche(false); return; }
     let vivant = true;
     setCherche(true);
+    setIllisible(false);
     /* ⭐ UNE SEULE QUESTION, UN SEUL ENDROIT QUI RÉPOND. `chargerPromenade`
        sait où chercher — embarquée, circuit d'Office, catalogue distant — et
        c'est volontairement hors de cet écran : trois fois cette année, une
        source ajoutée à UN écran a laissé les voisins en arrière. */
     chargerPromenade(slug)
-      .then((w) => { if (vivant) setDistante(w); })
-      .catch(() => { if (vivant) setDistante(null); })
+      .then((w) => { if (vivant) { setDistante(w); setIllisible(false); } })
+      /* ⛔ UN ÉCHEC N'EST PAS UNE ABSENCE. Avant le 16/11/2026, ce `catch`
+         rendait `null` comme un 404, et l'écran annonçait « cette promenade
+         n'existe pas » à cause d'un 502. */
+      .catch(() => { if (vivant) { setDistante(null); setIllisible(true); } })
       .finally(() => { if (vivant) setCherche(false); });
     return () => { vivant = false; };
   }, [slug, embarquee]);
@@ -155,6 +161,19 @@ export function FichePromenade({ base, slug }: { base: string; slug: string }) {
         <section className="fiche-vide">
           <h1 className="m-titre">Chargement…</h1>
           <p className="m-texte">Le tracé arrive.</p>
+        </section>
+      );
+    }
+    /* ⚠️ ET « JE N'AI PAS PU LIRE » N'EST PAS « ÇA N'EXISTE PAS ». Le second
+       accuse la donnée et clôt la question ; le premier dit quoi faire. */
+    if (illisible) {
+      return (
+        <section className="fiche-vide">
+          <h1 className="m-titre">Cette promenade n’a pas pu être chargée</h1>
+          <p className="m-texte">
+            Le tracé est bien là, mais il n’a pas pu être lu. Réessayez dans un
+            instant. <a className="m-lien" href={`${base}/carte`}>Voir le territoire</a>.
+          </p>
         </section>
       );
     }
