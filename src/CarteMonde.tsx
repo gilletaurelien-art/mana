@@ -469,8 +469,8 @@ export function CarteMonde(
          se confondrait avec l'une d'elles. Le blanc cerné d'encre ne
          ressemble à aucune pastille, et se lit sans légende comme au
          daltonisme. */
-      m.addSource("hebergements", { type: "geojson",
-        data: { type: "FeatureCollection", features: [] } });
+      if (!poserLaSource(m, "hebergements",
+            { type: "geojson", data: { type: "FeatureCollection", features: [] } })) return;
       m.addLayer({
         id: "hebergements", type: "circle", source: "hebergements",
         layout: { visibility: "none" },
@@ -512,8 +512,8 @@ export function CarteMonde(
             bleu d'encre sur une orthophoto (verte, grise, sableuse) se voit
             partout, là où un vert-de-gris avait disparu sur la Bretagne le
             15/11 — « du vert sur du vert ». */
-      m.addSource("services", { type: "geojson",
-        data: { type: "FeatureCollection", features: [] } });
+      if (!poserLaSource(m, "services",
+            { type: "geojson", data: { type: "FeatureCollection", features: [] } })) return;
       m.addLayer({
         id: "services", type: "circle", source: "services",
         layout: { visibility: "none" },
@@ -583,6 +583,13 @@ export function CarteMonde(
      *    repasse, `addSource` lèverait cette fois « There is already a source
      *    with ID », et on prendrait une porte ouverte pour une porte fermée.
      */
+    /* ⚠️ ET LES TROIS AUTRES SOURCES PASSENT PAR LE MÊME POSEUR depuis le
+       16/11/2026, alors qu'elles ne peuvent PAS lever : elles vivent après la
+       pose réussie de « sites ». ⭐ L'uniformité n'est pas du zèle — le garde
+       de `rendez-vous-load.test.ts` refuse toute pose nue, et un garde qui
+       tolère une exception finit par être contourné par elle. C'est la
+       mutation « reposer à nu » qui l'a montré : elle passait tant que le
+       fichier contenait `poserLaSource` AILLEURS. */
     let installe = false;
     const tenter = () => {
       if (installe) return;
@@ -996,7 +1003,8 @@ export function CarteMonde(
     const m = carte.current;
     if (!m || !pret) return;
     if (!m.getSource("ot-circuits")) {
-      m.addSource("ot-circuits", { type: "geojson", data: otGeoJSON });
+      if (!poserLaSource(m, "ot-circuits",
+            { type: "geojson", data: otGeoJSON })) return;
       /* 🔴 DEUX TRAITS, PAS UN — et c'est une mesure qui l'a imposé. La
          première version reprenait la couleur de la carte du territoire
          (`#92977c`, gris-vert, 1,6 px). Vérifié dans la page : la couche

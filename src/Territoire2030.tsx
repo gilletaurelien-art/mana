@@ -31,6 +31,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { TOUT, deContree, territoireDe, urlGraphe } from "./territoires";
 import { chargerHebergements, direLeType, type Hebergement } from "./hebergements-du-territoire";
 import { chargerOT, type ItineraireOT } from "./ot";
+import { poserLaSource } from "./style-pret";
 import { chargerLieux, lienWiki, type Inventaire, type Lieu } from "./lieux";
 import { chercher, type Resultat } from "./recherche";
 import { avecOffice } from "./visage";
@@ -197,7 +198,28 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
       attributionControl: false,
     });
     maplibreCarte.current = m;
-    m.on("load", () => setMaplibrePrete(true));
+    /**
+     * 🔴 `load` EST UN RENDEZ-VOUS QU'ON PEUT MANQUER — réparé le 16/11/2026,
+     *    en même temps que `CarteBalades`, où la panne s'était VUE : « les
+     *    balades des Offices ne sont plus cliquables ».
+     *
+     *    maplibre n'émet `load` qu'une fois le style analysé ET le premier
+     *    rendu fait. Onglet d'arrière-plan, conteneur encore masqué, tuile
+     *    ortho qui tarde (le relais rend des 504 à froid) : pas de premier
+     *    rendu, donc pas de `load`, donc `maplibrePrete` reste faux POUR
+     *    TOUJOURS — et les trois effets qui posent `hebergements`, `sites` et
+     *    `ot-circuits` ne s'exécutent jamais. La carte s'affiche, vide.
+     *
+     * ⚠️ `styledata` SE RÉPÈTE, et il n'attend pas le rendu. Mais il peut
+     *    aussi arriver AVANT que le style soit analysé : c'est pourquoi les
+     *    trois effets posent désormais par `poserLaSource`, qui rend `false`
+     *    au lieu de lever. Avancer le drapeau sans ça aurait remplacé une
+     *    carte vide par un écran en erreur.
+     */
+    const armer = () => setMaplibrePrete(true);
+    m.on("load", armer);
+    m.on("styledata", armer);
+    armer();
     return () => { m.remove(); maplibreCarte.current = null; setMaplibrePrete(false); };
   }, []);
 
@@ -386,7 +408,10 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
     const m = maplibreCarte.current;
     if (!m || !maplibrePrete) return;
     if (!m.getSource("hebergements")) {
-      m.addSource("hebergements", { type: "geojson", data: hebGeoJSON });
+      /* ⭐ LA SOURCE EST LA SONDE : `addSource` lève tant que le style
+         n'est pas analysé, et SEULEMENT pour cette raison. On repassera
+         au prochain `styledata`. */
+      if (!poserLaSource(m, "hebergements", { type: "geojson", data: hebGeoJSON })) return;
       /* ⭐ UNE FORME, PAS UNE COULEUR DE PLUS. Les vingt-trois genres de
          sites occupent déjà la palette (`COULEUR_CATEGORIE`) ; une
          vingt-quatrième teinte se confondrait avec l'une d'elles. Un
@@ -490,7 +515,10 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
     const m = maplibreCarte.current;
     if (!m || !maplibrePrete) return;
     if (!m.getSource("sites")) {
-      m.addSource("sites", { type: "geojson", data: sitesGeoJSON });
+      /* ⭐ LA SOURCE EST LA SONDE : `addSource` lève tant que le style
+         n'est pas analysé, et SEULEMENT pour cette raison. On repassera
+         au prochain `styledata`. */
+      if (!poserLaSource(m, "sites", { type: "geojson", data: sitesGeoJSON })) return;
       m.addLayer({
         id: "sites-genre", type: "circle", source: "sites",
         paint: {
@@ -706,7 +734,10 @@ export function Territoire2030({ base, centre }: { base: string; centre?: [numbe
     const m = maplibreCarte.current;
     if (!m || !maplibrePrete) return;
     if (!m.getSource("ot-circuits")) {
-      m.addSource("ot-circuits", { type: "geojson", data: otGeoJSON });
+      /* ⭐ LA SOURCE EST LA SONDE : `addSource` lève tant que le style
+         n'est pas analysé, et SEULEMENT pour cette raison. On repassera
+         au prochain `styledata`. */
+      if (!poserLaSource(m, "ot-circuits", { type: "geojson", data: otGeoJSON })) return;
       /* ⛔ AVANT « sites-genre » DANS L'ORDRE D'AJOUT, DONC DESSOUS : ce ne
          sont pas nos tracés, ils ne doivent pas prendre le dessus sur les
          sites — la même hiérarchie que l'ancien dessin au canvas tenait. */

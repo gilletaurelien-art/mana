@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import { ATTRIBUTION, STYLES, type Fond } from "./carte-fond";
+import { poserLaSource } from "./style-pret";
 import type { ItineraireOT } from "./ot";
 
 /**
@@ -182,8 +183,43 @@ export function CarteBalades({
     m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
     carte.current = m;
 
-    m.on("load", () => {
-      m.addSource("balades", { type: "geojson", data: geo(vus.current.circuits) });
+    /**
+     * 🔴 CETTE CARTE ATTENDAIT `load`, ET `load` EST UN RENDEZ-VOUS QU'ON PEUT
+     *    MANQUER — réparé le 16/11/2026, après qu'Aurélien a signalé que les
+     *    balades d'Office « ne sont plus cliquables ».
+     *
+     *    maplibre n'émet `load` qu'une fois le style analysé ET le premier
+     *    rendu fait. Un onglet d'arrière-plan, un conteneur encore masqué, ou
+     *    simplement une tuile ortho qui tarde — le relais rend des 504 à
+     *    froid — et le premier rendu n'arrive pas. Le gestionnaire ne tourne
+     *    alors JAMAIS : ni source, ni tracés, et rien à cliquer. Mesuré dans
+     *    la page le 16/11 : `isStyleLoaded()` faux, sources `ne2_shaded` et
+     *    `openmaptiles` seules, aucun calque `balades-*`.
+     *
+     * ⛔ ET LA PANNE EST MUETTE DANS LES DEUX SENS. Rien n'échoue : la carte
+     *    s'affiche, le fond se peint, la liste des 116 circuits dessous est
+     *    parfaitement cliquable. Seuls les tracés manquent — ce qui se lit
+     *    « les balades ne sont plus cliquables » et jamais « la carte n'a pas
+     *    fini de charger ».
+     *
+     * ⭐ `CarteMonde` A PAYÉ EXACTEMENT ÇA DEUX JOURS, les 14-15/11, et la
+     *    leçon vit déjà dans `style-pret.ts` : on ne DEMANDE pas si le style
+     *    est prêt, on POSE la source — `addSource` lève tant que le style
+     *    n'est pas analysé, et seulement pour cette raison. Le correctif
+     *    n'avait pas été porté ici parce que ce fichier n'était pas ouvert ce
+     *    jour-là. ⚠️ Une leçon apprise dans un composant ne se propage pas
+     *    toute seule aux composants jumeaux : les deux cartes posaient des
+     *    sources, une seule a été réparée.
+     *
+     * ⚠️ TROIS CHEMINS, AUCUN DE TROP : `load` peut être DÉJÀ passé quand on
+     *    s'abonne (StrictMode monte l'effet deux fois, le style est alors en
+     *    cache) ; `styledata` se répète ; et on tente tout de suite.
+     * ⚠️ `installe` passe à `true` APRÈS la pose réussie — repasser ferait
+     *    lever « There is already a source with ID », qu'on prendrait pour
+     *    une porte fermée.
+     */
+    let installe = false;
+    const installer = () => {
       m.addLayer({
         id: "balades-cible", type: "line", source: "balades",
         layout: { "line-join": "round", "line-cap": "round" },
@@ -284,7 +320,19 @@ export function CarteBalades({
 
       cadrer(m, vus.current.circuits);
       setPrete(true);
-    });
+    };
+    const tenter = () => {
+      if (installe) return;
+      /* ⭐ LA SOURCE EST LA SONDE. Pas d'appel à blanc : une sonde séparée
+         mesurerait un instant, et la pose vraie aurait lieu à un autre. */
+      if (!poserLaSource(m, "balades",
+            { type: "geojson", data: geo(vus.current.circuits) })) return;
+      installe = true;
+      installer();
+    };
+    m.on("load", tenter);
+    m.on("styledata", tenter);
+    tenter();
 
     const ro = new ResizeObserver(() => {
       m.resize();
